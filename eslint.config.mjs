@@ -11,14 +11,51 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends("prettier"),
   {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-    ],
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["**/app/api/**", "**/lib/supabase/server.ts"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          args: "all",
+          argsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "next/headers",
+              message: "Server-only; allowed only in app/api/** route handlers (issue #8).",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value='use server']",
+          message:
+            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+        },
+        {
+          selector: 'Literal[value="use server"]',
+          message:
+            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+        },
+      ],
+    },
+  },
+  {
+    ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"],
   },
 ];
 
