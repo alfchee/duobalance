@@ -396,23 +396,26 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          is_enabled: boolean
           minor_unit: number
-          name: string
-          symbol: string
+          name_en: string
+          symbol: string | null
         }
         Insert: {
           code: string
           created_at?: string
-          minor_unit: number
-          name: string
-          symbol: string
+          is_enabled?: boolean
+          minor_unit?: number
+          name_en: string
+          symbol?: string | null
         }
         Update: {
           code?: string
           created_at?: string
+          is_enabled?: boolean
           minor_unit?: number
-          name?: string
-          symbol?: string
+          name_en?: string
+          symbol?: string | null
         }
         Relationships: []
       }
@@ -483,40 +486,30 @@ export type Database = {
       }
       fx_rates: {
         Row: {
-          as_of_date: string
-          base_code: string
-          created_at: string
-          quote_code: string
-          rate: number
+          code: string
+          fetched_at: string
+          rate_date: string
           source: string
+          usd_rate: number
         }
         Insert: {
-          as_of_date: string
-          base_code: string
-          created_at?: string
-          quote_code: string
-          rate: number
+          code: string
+          fetched_at?: string
+          rate_date: string
           source?: string
+          usd_rate: number
         }
         Update: {
-          as_of_date?: string
-          base_code?: string
-          created_at?: string
-          quote_code?: string
-          rate?: number
+          code?: string
+          fetched_at?: string
+          rate_date?: string
           source?: string
+          usd_rate?: number
         }
         Relationships: [
           {
-            foreignKeyName: "fx_rates_base_code_fkey"
-            columns: ["base_code"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code"]
-          },
-          {
-            foreignKeyName: "fx_rates_quote_code_fkey"
-            columns: ["quote_code"]
+            foreignKeyName: "fx_rates_code_fkey"
+            columns: ["code"]
             isOneToOne: false
             referencedRelation: "currencies"
             referencedColumns: ["code"]
