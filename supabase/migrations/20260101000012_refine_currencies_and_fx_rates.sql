@@ -44,8 +44,9 @@ $$;
 alter table public.currencies
   add column is_enabled boolean not null default true;
 
-create index currencies_enabled_idx
-  on public.currencies (code) where is_enabled;
+-- No index on is_enabled: the table tops out at a few dozen ISO codes, so a
+-- partial index buys nothing here and just adds write-path bookkeeping plus
+-- a `where is_enabled` (not `= true`) matching footgun for callers.
 
 comment on column public.currencies.name_en   is 'English name. Localized names (name_es, etc.) land in #16.';
 comment on column public.currencies.is_enabled is 'False hides the code from the household-base-currency picker without losing the row.';
@@ -82,4 +83,13 @@ create policy fx_rates_read on public.fx_rates
   for select to authenticated using (true);
 
 grant select on public.fx_rates to anon, authenticated;
-grant select on public.currencies to anon, authenticated;
+-- The grant mirrors migration 11's standard `to anon, authenticated` posture.
+-- RLS still gates access: the policy below is `to authenticated only`, so
+-- anon is denied (returns 0 rows) but does not get a hard "permission denied"
+-- error. That's the Supabase convention — table-level grants are broad, RLS
+-- is the actual boundary. A hard grant-narrowing here would surface a noisy
+-- error in the anon client instead of the empty-result semantics the rest
+-- of the codebase relies on.
+--
+-- currencies grants are inherited from migration 11; the table is unchanged
+-- in shape here (only column-level alterations), so no re-grant is needed.
