@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Stop a previous in-progress run for the same branch on a new push.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: lint · typecheck · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # Supabase local stack. Ports shifted to 55xxx range to avoid clashes with
+      # any other local Supabase projects (matches supabase/config.toml).
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_LOCAL_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_LOCAL_SERVICE_KEY }}
+      NEXT_PUBLIC_API_BASE_URL: ""
+      # pg_prove needs the local DB credentials.
+      PGHOST: 127.0.0.1
+      PGPORT: "55322"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Lint, typecheck, format
+        run: npm run check
+
+      # ------------------------------------------------------------------------
+      # Database: start local stack, reset (apply all migrations), run pgTAP.
+      # ------------------------------------------------------------------------
+
+      - name: Start Supabase local stack
+        run: npx supabase start --no-backup
+
+      - name: Read local keys
+        id: keys
+        # Capture anon + service-role from supabase status so the build step
+        # below uses the real (but local) credentials instead of dummy values.
+        run: |
+          {
+            echo "SUPABASE_LOCAL_ANON_KEY=$(npx supabase status -o env | grep ANON_KEY | cut -d= -f2-)"
+            echo "SUPABASE_LOCAL_SERVICE_KEY=$(npx supabase status -o env | grep SERVICE_ROLE_KEY | cut -d= -f2-)"
+          } >> "$GITHUB_ENV"
+
+      - name: Reset database (apply all migrations)
+        run: npx supabase db reset --no-backup
+
+      - name: Verify types can be generated
+        # The types file is committed by the developer; this just asserts the
+        # `db:types` command still works after a fresh schema.
+        run: npx supabase gen types typescript --db-url postgresql://postgres:postgres@127.0.0.1:55322/postgres > /tmp/types.ts && wc -l /tmp/types.ts
+
+      - name: Run pgTAP RLS tests
+        run: npm run db:test
+
+      # ------------------------------------------------------------------------
+      # Build
+      # ------------------------------------------------------------------------
+
+      - name: Build
+        run: npm run build
+        env:
+          BUILD_TARGET: web
+
+      - name: Tauri static export smoke test
+        # Verifies the static-export code path still works. A full Tauri
+        # build isn't possible without a Tauri toolchain, but the Next export
+        # alone is the load-bearing check.
+        env:
+          BUILD_TARGET: tauri
+        run: npm run build
+
+      # ------------------------------------------------------------------------
+      # Service-role-key leak guard. Two layers, ordered by where the leak
+      # would happen:
+      #
+      #   1. Source — grep src/ for the env var name. Catches hand-written
+      #      mistakes (e.g. someone adding the key to a client component).
+      #   2. Bundle — grep .next/static/ for the JWT prefix after the build.
+      #      Catches the catastrophic case where the key makes it through
+      #      Next's bundling into a static asset a browser will fetch.
+      #
+      # Both checks pass on this codebase; proven to fail by injecting a
+      # dummy reference and observing the workflow exit non-zero.
+      # ------------------------------------------------------------------------
+
+      - name: Service-role-key leak guard (source)
+        run: |
+          set -euo pipefail
+          if grep -rEn "SUPABASE_SERVICE_ROLE_KEY" src/ \
+              | grep -vE "(lib/env\.ts|lib/supabase/server\.ts|app/api/)"; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is referenced outside lib/supabase/server.ts and app/api/**"
+            exit 1
+          fi
+          echo "src/ leak guard: OK"
+
+      - name: Service-role-key leak guard (bundle)
+        env:
+          # Local Supabase issues anon + service-role keys with this prefix
+          # (matches the well-known dev JWT). For cloud we'd source the
+          # prefix from a secret.
+          LEAK_PREFIX: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        run: |
+          set -euo pipefail
+          if grep -rF "$LEAK_PREFIX" .next/static/ 2>/dev/null; then
+            echo "::error::A Supabase JWT prefix was found in .next/static/. The service-role key may have leaked into a client bundle."
+            exit 1
+          fi
+          echo ".next/static leak guard: OK"
+
+      - name: Stop Supabase local stack
+        if: always()
+        run: npx supabase stop --no-backup

@@ -16,9 +16,9 @@
     "db:migrate": "supabase migration up",
     "db:reset": "supabase db reset",
     "db:new": "supabase migration new",
-    "db:types": "supabase gen types typescript --local > src/lib/supabase/types.ts",
+    "db:types": "(supabase gen types typescript --db-url postgresql://postgres:postgres@127.0.0.1:55322/postgres && echo '/* eslint-disable */' | cat - src/lib/supabase/types.ts > /tmp/types.ts && mv /tmp/types.ts src/lib/supabase/types.ts)",
     "db:push": "supabase db push",
-    "db:test": "pg_prove supabase/tests/*.sql"
+    "db:test": "pg_prove -d postgres --no-color supabase/tests/[0-9]*.sql"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.15",
@@ -48,6 +48,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.3.0",
     "prettier": "^3.9.6",
+    "supabase": "^2.111.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
