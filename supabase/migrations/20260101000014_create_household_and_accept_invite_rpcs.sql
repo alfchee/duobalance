@@ -30,9 +30,19 @@ as $$
   );
 $$;
 
+-- households_update (migration 11) inlined this same "am I the owner"
+-- subquery before this helper existed. Point it at is_owner() instead so
+-- there's one definition of "owner" instead of two that can drift apart.
+-- is_owner() implies membership, so the separate is_member(id) check the
+-- using-clause also had is redundant and is dropped here. The with-check
+-- clause (updated row must still belong to a household the caller is a
+-- member of) is untouched.
+alter policy households_update on public.households
+  using (public.is_owner(id));
+
 -- ============================================================================
 -- create_household: creates the household and its first (owner) member row
--- atomically. Without this, signup is impossible — households_members has
+-- atomically. Without this, signup is impossible — household_members has
 -- no INSERT policy a brand-new user could satisfy on their own.
 -- p_timezone/p_locale are optional; the migration 13 trigger derives them
 -- from p_country via country_defaults when omitted.
@@ -73,6 +83,10 @@ $$;
 -- this mutates data via a SECURITY DEFINER escalation, so only authenticated
 -- callers should reach it at all (anon has no auth.uid() and would just hit
 -- the exception above, but there's no reason to let it try).
+-- Note this also revokes the implicit PUBLIC grant from service_role: per
+-- architecture-conventions, household creation is client-side only today,
+-- so nothing server-side needs to call this. If a future route handler
+-- ever does, it needs its own explicit `grant execute ... to service_role`.
 revoke all on function public.create_household(text, text, text, text, text, text) from public;
 grant execute on function public.create_household(text, text, text, text, text, text) to authenticated;
 
@@ -98,7 +112,12 @@ begin
     raise exception 'authentication required';
   end if;
 
-  select * into inv from public.household_invites where token = p_token;
+  -- FOR UPDATE: without a row lock, two concurrent calls with the same
+  -- token (e.g. a double-click) can both read accepted_at is null before
+  -- either writes, then race on the household_members unique constraint —
+  -- the loser would see a raw 23505 instead of the intended, friendlier
+  -- "invite already accepted" error below.
+  select * into inv from public.household_invites where token = p_token for update;
 
   if not found then
     raise exception 'invite not found';
@@ -113,14 +132,21 @@ begin
   end if;
 
   -- Case-insensitive: household_invites.email is normalized lowercase on
-  -- insert (migration 3), but auth.jwt()->>'email' isn't guaranteed to be.
+  -- insert (migration 3), but auth.email() isn't guaranteed to be.
   -- Without this check, a leaked token lets anyone with an account join.
-  if lower(coalesce(auth.jwt()->>'email', '')) <> inv.email then
+  if lower(coalesce(auth.email(), '')) <> inv.email then
     raise exception 'invite email does not match authenticated user';
   end if;
 
-  new_display_name := nullif(split_part(coalesce(auth.jwt()->>'email', ''), '@', 1), '');
+  new_display_name := nullif(split_part(coalesce(auth.email(), ''), '@', 1), '');
 
+  -- inv.role (not a hardcoded 'partner') — household_invites.role already
+  -- carries the intended role for whoever accepts, and honoring it means
+  -- one column drives this instead of the invite table's role becoming
+  -- unread dead data. In practice this is 'partner' for every invite the
+  -- app issues today (there's no UI path to invite a second owner), so
+  -- behavior matches the #12 spec as written; this only diverges if a
+  -- future flow starts issuing owner-role invites.
   insert into public.household_members (household_id, user_id, role, display_name)
   values (inv.household_id, auth.uid(), inv.role, coalesce(new_display_name, 'Partner'));
 

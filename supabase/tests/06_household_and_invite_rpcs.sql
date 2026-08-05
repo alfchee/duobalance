@@ -34,6 +34,14 @@ begin
   insert into public.household_members (id, household_id, user_id, role, display_name) values
     (member_id, hh_id, owner_id, 'owner', 'Owner');
 
+  -- A second member of hh_id, role partner, used only to exercise is_owner()
+  -- and the households_update policy below (distinct from the invite flow).
+  insert into auth.users (id, email) values
+    ('e8e8e8e8-8888-8888-8888-888888888888', 'partner12@test.local');
+
+  insert into public.household_members (household_id, user_id, role, display_name) values
+    (hh_id, 'e8e8e8e8-8888-8888-8888-888888888888', 'partner', 'Partner');
+
   insert into auth.users (id, email) values
     ('e3e3e3e3-3333-3333-3333-333333333333', 'expired@test.local'),
     ('e4e4e4e4-4444-4444-4444-444444444444', 'accepted@test.local'),
@@ -50,7 +58,64 @@ begin
 end
 $$;
 
-select plan(15);
+select plan(20);
+
+-- ============================================================================
+-- is_owner helper — direct behavior checks, not just "it exists".
+-- ============================================================================
+
+select tests.authenticate_as('e1e1e1e1-1111-1111-1111-111111111111');
+
+select ok(
+  ( select public.is_owner('55555555-5555-5555-5555-555555555555') ),
+  'is_owner is true for the household owner'
+);
+
+select tests.authenticate_as('e8e8e8e8-8888-8888-8888-888888888888');
+
+select ok(
+  ( select not public.is_owner('55555555-5555-5555-5555-555555555555') ),
+  'is_owner is false for a partner (member, not owner)'
+);
+
+select tests.authenticate_as('e3e3e3e3-3333-3333-3333-333333333333');
+
+select ok(
+  ( select not public.is_owner('55555555-5555-5555-5555-555555555555') ),
+  'is_owner is false for a non-member'
+);
+
+-- ============================================================================
+-- households_update — now backed by is_owner() instead of an inlined
+-- subquery (migration 11 -> altered here). Regression check that the swap
+-- didn't change who can update a household.
+-- ============================================================================
+
+select tests.authenticate_as('e8e8e8e8-8888-8888-8888-888888888888');
+
+select results_eq(
+  $$ with updated as (
+       update public.households set name = 'Pwned'
+         where id = '55555555-5555-5555-5555-555555555555'
+         returning 1
+     )
+     select count(*)::int from updated $$,
+  $$ values (0::int) $$,
+  'partner UPDATE on households: 0 rows (is_owner denies non-owners)'
+);
+
+select tests.authenticate_as('e1e1e1e1-1111-1111-1111-111111111111');
+
+select results_eq(
+  $$ with updated as (
+       update public.households set name = 'Renamed'
+         where id = '55555555-5555-5555-5555-555555555555'
+         returning 1
+     )
+     select count(*)::int from updated $$,
+  $$ values (1::int) $$,
+  'owner UPDATE on households: 1 row (is_owner allows the owner)'
+);
 
 -- ============================================================================
 -- create_household
