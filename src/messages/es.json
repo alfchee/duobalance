@@ -73,6 +73,7 @@
       "successTitle": "Contraseña actualizada",
       "successBody": "Ya puedes iniciar sesión con tu nueva contraseña.",
       "goToLogin": "Ir a iniciar sesión",
+      "requestNewLink": "Solicitar un nuevo enlace",
       "invalidLink": "Este enlace no es válido o ya expiró. Solicita uno nuevo.",
       "mismatch": "Las contraseñas no coinciden."
     },

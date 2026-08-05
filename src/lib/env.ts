@@ -4,9 +4,8 @@ import { z } from "zod";
 // and ends up in the browser bundle, so the service-role key must never be
 // validated here — see the comment in lib/supabase/server.ts.
 //
-// Supabase renamed the browser-safe key: anon → publishable. Both names are
-// accepted so older .env files keep working; supabaseClientKey prefers the
-// anon name and falls back to the publishable one.
+// Supabase renamed the browser-safe key: anon → publishable. Publishable is
+// preferred; anon is accepted so older .env files keep working.
 const schema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
@@ -22,4 +21,4 @@ export const env = schema.parse({
 });
 
 export const supabaseClientKey =
-  env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? null;
+  env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? null;

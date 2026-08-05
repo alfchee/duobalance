@@ -73,6 +73,7 @@
       "successTitle": "Password updated",
       "successBody": "You can now log in with your new password.",
       "goToLogin": "Go to login",
+      "requestNewLink": "Request a new link",
       "invalidLink": "This link is invalid or has expired. Request a new one.",
       "mismatch": "Passwords don't match."
     },

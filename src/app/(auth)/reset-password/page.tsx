@@ -98,7 +98,7 @@ export default function ResetPasswordPage() {
           <CardDescription>{t("invalidLink")}</CardDescription>
         </CardHeader>
         <CardFooter>
-          <Button onClick={() => router.replace("/forgot-password")}>{t("goToLogin")}</Button>
+          <Button onClick={() => router.replace("/forgot-password")}>{t("requestNewLink")}</Button>
         </CardFooter>
       </Card>
     );
