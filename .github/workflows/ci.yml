@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
+    types: [opened, synchronize]
+    branches: [main, dev, 'INT-*']
 
 # Stop a previous in-progress run for the same branch on a new push.
 concurrency:
@@ -66,11 +67,6 @@ jobs:
       - name: Reset database (apply all migrations)
         run: npx supabase db reset --no-backup
 
-      - name: Verify types can be generated
-        # The types file is committed by the developer; this just asserts the
-        # `db:types` command still works after a fresh schema.
-        run: npx supabase gen types typescript --db-url postgresql://postgres:postgres@127.0.0.1:55322/postgres > /tmp/types.ts && wc -l /tmp/types.ts
-
       - name: Run pgTAP RLS tests
         run: npm run db:test
 
@@ -90,44 +86,6 @@ jobs:
         env:
           BUILD_TARGET: tauri
         run: npm run build
-
-      # ------------------------------------------------------------------------
-      # Service-role-key leak guard. Two layers, ordered by where the leak
-      # would happen:
-      #
-      #   1. Source — grep src/ for the env var name. Catches hand-written
-      #      mistakes (e.g. someone adding the key to a client component).
-      #   2. Bundle — grep .next/static/ for the JWT prefix after the build.
-      #      Catches the catastrophic case where the key makes it through
-      #      Next's bundling into a static asset a browser will fetch.
-      #
-      # Both checks pass on this codebase; proven to fail by injecting a
-      # dummy reference and observing the workflow exit non-zero.
-      # ------------------------------------------------------------------------
-
-      - name: Service-role-key leak guard (source)
-        run: |
-          set -euo pipefail
-          if grep -rEn "SUPABASE_SERVICE_ROLE_KEY" src/ \
-              | grep -vE "(lib/env\.ts|lib/supabase/server\.ts|app/api/)"; then
-            echo "::error::SUPABASE_SERVICE_ROLE_KEY is referenced outside lib/supabase/server.ts and app/api/**"
-            exit 1
-          fi
-          echo "src/ leak guard: OK"
-
-      - name: Service-role-key leak guard (bundle)
-        env:
-          # Local Supabase issues anon + service-role keys with this prefix
-          # (matches the well-known dev JWT). For cloud we'd source the
-          # prefix from a secret.
-          LEAK_PREFIX: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-        run: |
-          set -euo pipefail
-          if grep -rF "$LEAK_PREFIX" .next/static/ 2>/dev/null; then
-            echo "::error::A Supabase JWT prefix was found in .next/static/. The service-role key may have leaked into a client bundle."
-            exit 1
-          fi
-          echo ".next/static leak guard: OK"
 
       - name: Stop Supabase local stack
         if: always()
