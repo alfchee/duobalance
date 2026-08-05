@@ -391,6 +391,24 @@ export type Database = {
           },
         ]
       }
+      country_defaults: {
+        Row: {
+          country: string
+          locale: string
+          timezone: string
+        }
+        Insert: {
+          country: string
+          locale: string
+          timezone: string
+        }
+        Update: {
+          country?: string
+          locale?: string
+          timezone?: string
+        }
+        Relationships: []
+      }
       currencies: {
         Row: {
           code: string
@@ -568,6 +586,8 @@ export type Database = {
       }
       household_members: {
         Row: {
+          avatar_url: string | null
+          color_hex: string | null
           display_name: string
           household_id: string
           id: string
@@ -576,6 +596,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
+          color_hex?: string | null
           display_name: string
           household_id: string
           id?: string
@@ -584,6 +606,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
+          color_hex?: string | null
           display_name?: string
           household_id?: string
           id?: string
@@ -617,7 +641,7 @@ export type Database = {
           country: string
           created_at?: string
           id?: string
-          locale?: string
+          locale: string
           name: string
           timezone: string
           updated_at?: string
@@ -1079,6 +1103,8 @@ export type Database = {
       current_member: {
         Args: { household: string }
         Returns: {
+          avatar_url: string | null
+          color_hex: string | null
           display_name: string
           household_id: string
           id: string
