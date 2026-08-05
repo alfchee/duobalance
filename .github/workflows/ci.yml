@@ -21,8 +21,8 @@ jobs:
       # Supabase local stack. Ports shifted to 55xxx range to avoid clashes with
       # any other local Supabase projects (matches supabase/config.toml).
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_LOCAL_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_LOCAL_SERVICE_KEY }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_LOCAL_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_LOCAL_SERVICE_KEY }}
       NEXT_PUBLIC_API_BASE_URL: ""
       # pg_prove needs the local DB credentials.
       PGHOST: 127.0.0.1
