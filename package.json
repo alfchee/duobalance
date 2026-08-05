@@ -16,9 +16,9 @@
     "db:migrate": "supabase migration up",
     "db:reset": "supabase db reset",
     "db:new": "supabase migration new",
-    "db:types": "(supabase gen types typescript --db-url postgresql://postgres:postgres@127.0.0.1:55322/postgres && echo '/* eslint-disable */' | cat - src/lib/supabase/types.ts > /tmp/types.ts && mv /tmp/types.ts src/lib/supabase/types.ts)",
+    "db:types": "supabase gen types typescript --db-url postgresql://postgres:postgres@127.0.0.1:55322/postgres > src/lib/supabase/types.ts",
     "db:push": "supabase db push",
-    "db:test": "pg_prove -d postgres --no-color supabase/tests/[0-9]*.sql"
+    "db:test": "PGPASSWORD=postgres pg_prove -h 127.0.0.1 -p 55322 -U postgres -d postgres --no-color supabase/tests/[0-9]*.sql"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.15",
