@@ -1,1 +1,110 @@
-{}
+{
+  "common": {
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "back": "Atrás",
+    "somethingWrong": "Algo salió mal."
+  },
+  "nav": {
+    "balances": "Saldos",
+    "transactions": "Movimientos",
+    "budget": "Presupuesto",
+    "bills": "Cuentas",
+    "more": "Más"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Ingresa a tu hogar compartido.",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Iniciar sesión",
+      "submitting": "Ingresando…",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "noAccount": "¿No tienes cuenta?",
+      "signupLink": "Crear cuenta"
+    },
+    "signup": {
+      "title": "Crear cuenta",
+      "subtitleCredentials": "Crea tu cuenta para empezar.",
+      "subtitleHousehold": "Ahora configura tu hogar.",
+      "displayName": "Tu nombre",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "passwordHint": "Mínimo 6 caracteres.",
+      "passwordStrength": {
+        "weak": "Débil",
+        "fair": "Aceptable",
+        "strong": "Fuerte"
+      },
+      "continue": "Continuar",
+      "submitting": "Creando cuenta…",
+      "householdName": "Nombre del hogar",
+      "householdNamePlaceholder": "p. ej. Casa de Alf y María",
+      "country": "País",
+      "countryPlaceholder": "Selecciona un país",
+      "baseCurrency": "Moneda principal",
+      "baseCurrencyPlaceholder": "Selecciona una moneda",
+      "createHousehold": "Crear hogar",
+      "creatingHousehold": "Creando hogar…",
+      "haveAccount": "¿Ya tienes cuenta?",
+      "loginLink": "Iniciar sesión",
+      "checkEmailTitle": "Revisa tu correo",
+      "checkEmailBody": "Te enviamos un enlace para confirmar tu cuenta. Vuelve e inicia sesión luego de confirmar."
+    },
+    "forgotPassword": {
+      "title": "Recuperar contraseña",
+      "subtitle": "Te enviaremos un enlace para restablecerla.",
+      "email": "Correo electrónico",
+      "submit": "Enviar enlace",
+      "submitting": "Enviando…",
+      "sentTitle": "Enlace enviado",
+      "sentBody": "Si el correo existe, recibirás un enlace para restablecer tu contraseña.",
+      "backToLogin": "Volver a iniciar sesión"
+    },
+    "resetPassword": {
+      "title": "Nueva contraseña",
+      "subtitle": "Elige una nueva contraseña para tu cuenta.",
+      "password": "Nueva contraseña",
+      "confirmPassword": "Confirma la contraseña",
+      "submit": "Guardar contraseña",
+      "submitting": "Guardando…",
+      "successTitle": "Contraseña actualizada",
+      "successBody": "Ya puedes iniciar sesión con tu nueva contraseña.",
+      "goToLogin": "Ir a iniciar sesión",
+      "invalidLink": "Este enlace no es válido o ya expiró. Solicita uno nuevo.",
+      "mismatch": "Las contraseñas no coinciden."
+    },
+    "logout": "Cerrar sesión",
+    "errors": {
+      "invalidCredentials": "Correo o contraseña incorrectos.",
+      "emailNotConfirmed": "Confirma tu correo antes de iniciar sesión.",
+      "userAlreadyExists": "Ya existe una cuenta con este correo.",
+      "weakPassword": "La contraseña es demasiado corta o débil.",
+      "rateLimited": "Demasiados intentos. Espera un momento y vuelve a intentar.",
+      "sameNewPassword": "La nueva contraseña debe ser distinta a la actual.",
+      "sessionExpired": "Tu sesión expiró. Inicia sesión de nuevo.",
+      "generic": "Algo salió mal. Intenta de nuevo."
+    }
+  },
+  "household": {
+    "picker": {
+      "title": "Elige un hogar",
+      "subtitle": "Perteneces a más de un hogar.",
+      "select": "Entrar"
+    },
+    "loading": "Cargando tu hogar…",
+    "empty": "No encontramos un hogar para tu cuenta."
+  },
+  "settings": {
+    "title": "Configuración",
+    "signedInAs": "Sesión iniciada como",
+    "household": "Hogar",
+    "role": {
+      "owner": "Propietario",
+      "partner": "Compañero/a"
+    },
+    "logout": "Cerrar sesión"
+  }
+}

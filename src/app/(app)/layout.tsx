@@ -1,7 +1,52 @@
-import type { ReactNode } from "react";
+"use client";
 
-// No-op shell. #14 replaces this with a client-side useSession() guard
-// and a HouseholdProvider, plus the bottom nav.
+import { useEffect, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useSession } from "@/hooks/useSession";
+import { useHousehold } from "@/hooks/useHousehold";
+import { HouseholdPicker } from "@/components/household/household-picker";
+import { BottomNav } from "@/components/nav/bottom-nav";
+import { FullPageSpinner } from "@/components/full-page-spinner";
+
+// AC (#14): auth guarding happens client-side here, never in middleware.ts —
+// middleware doesn't exist in a static export (architecture rule #1).
 export default function AppLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  const router = useRouter();
+  const { session, loading: sessionLoading } = useSession();
+  const { loading: householdLoading, needsPicker, householdId } = useHousehold();
+  const t = useTranslations("household");
+
+  useEffect(() => {
+    if (!sessionLoading && !session) {
+      router.replace("/login");
+    }
+  }, [sessionLoading, session, router]);
+
+  if (sessionLoading || !session) {
+    return <FullPageSpinner />;
+  }
+
+  if (householdLoading) {
+    return <FullPageSpinner label={t("loading")} />;
+  }
+
+  if (needsPicker) {
+    return <HouseholdPicker />;
+  }
+
+  if (!householdId) {
+    return (
+      <main className="flex min-h-dvh w-full flex-col items-center justify-center p-6 text-center">
+        <p className="text-sm text-muted-foreground">{t("empty")}</p>
+      </main>
+    );
+  }
+
+  return (
+    <>
+      <div className="pb-16">{children}</div>
+      <BottomNav />
+    </>
+  );
 }

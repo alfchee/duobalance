@@ -1,8 +1,47 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { useSession } from "@/hooks/useSession";
+import { useHousehold } from "@/hooks/useHousehold";
+
 export default function SettingsPage() {
+  const router = useRouter();
+  const t = useTranslations("settings");
+  const { user } = useSession();
+  const { householdName, role } = useHousehold();
+
+  async function handleLogout() {
+    const supabase = createSupabaseBrowser();
+    await supabase?.auth.signOut();
+    router.replace("/login");
+  }
+
   return (
     <main className="mx-auto w-full max-w-2xl p-6">
-      <h1 className="text-2xl font-semibold">Settings</h1>
-      <p className="text-sm text-muted-foreground">Placeholder — populated by #14+.</p>
+      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="text-base">{t("signedInAs")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1 text-sm text-muted-foreground">
+          <p>{user?.email}</p>
+          {householdName ? (
+            <p>
+              {t("household")}: {householdName}
+              {role ? ` · ${t(`role.${role}`)}` : null}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Button variant="outline" className="mt-4" onClick={handleLogout}>
+        {t("logout")}
+      </Button>
     </main>
   );
 }

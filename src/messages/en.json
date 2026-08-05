@@ -1,1 +1,110 @@
-{}
+{
+  "common": {
+    "loading": "Loading…",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "back": "Back",
+    "somethingWrong": "Something went wrong."
+  },
+  "nav": {
+    "balances": "Balances",
+    "transactions": "Transactions",
+    "budget": "Budget",
+    "bills": "Bills",
+    "more": "More"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "subtitle": "Sign in to your shared household.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "forgotPassword": "Forgot your password?",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Create account"
+    },
+    "signup": {
+      "title": "Create account",
+      "subtitleCredentials": "Create your account to get started.",
+      "subtitleHousehold": "Now set up your household.",
+      "displayName": "Your name",
+      "email": "Email",
+      "password": "Password",
+      "passwordHint": "Minimum 6 characters.",
+      "passwordStrength": {
+        "weak": "Weak",
+        "fair": "Fair",
+        "strong": "Strong"
+      },
+      "continue": "Continue",
+      "submitting": "Creating account…",
+      "householdName": "Household name",
+      "householdNamePlaceholder": "e.g. Alf & María's home",
+      "country": "Country",
+      "countryPlaceholder": "Select a country",
+      "baseCurrency": "Base currency",
+      "baseCurrencyPlaceholder": "Select a currency",
+      "createHousehold": "Create household",
+      "creatingHousehold": "Creating household…",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Log in",
+      "checkEmailTitle": "Check your email",
+      "checkEmailBody": "We sent you a link to confirm your account. Come back and log in once confirmed."
+    },
+    "forgotPassword": {
+      "title": "Reset password",
+      "subtitle": "We'll send you a link to reset it.",
+      "email": "Email",
+      "submit": "Send link",
+      "submitting": "Sending…",
+      "sentTitle": "Link sent",
+      "sentBody": "If that email exists, you'll receive a link to reset your password.",
+      "backToLogin": "Back to login"
+    },
+    "resetPassword": {
+      "title": "New password",
+      "subtitle": "Choose a new password for your account.",
+      "password": "New password",
+      "confirmPassword": "Confirm password",
+      "submit": "Save password",
+      "submitting": "Saving…",
+      "successTitle": "Password updated",
+      "successBody": "You can now log in with your new password.",
+      "goToLogin": "Go to login",
+      "invalidLink": "This link is invalid or has expired. Request a new one.",
+      "mismatch": "Passwords don't match."
+    },
+    "logout": "Log out",
+    "errors": {
+      "invalidCredentials": "Incorrect email or password.",
+      "emailNotConfirmed": "Confirm your email before logging in.",
+      "userAlreadyExists": "An account with this email already exists.",
+      "weakPassword": "The password is too short or weak.",
+      "rateLimited": "Too many attempts. Wait a moment and try again.",
+      "sameNewPassword": "The new password must be different from the current one.",
+      "sessionExpired": "Your session expired. Log in again.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "household": {
+    "picker": {
+      "title": "Choose a household",
+      "subtitle": "You belong to more than one household.",
+      "select": "Enter"
+    },
+    "loading": "Loading your household…",
+    "empty": "We couldn't find a household for your account."
+  },
+  "settings": {
+    "title": "Settings",
+    "signedInAs": "Signed in as",
+    "household": "Household",
+    "role": {
+      "owner": "Owner",
+      "partner": "Partner"
+    },
+    "logout": "Log out"
+  }
+}
