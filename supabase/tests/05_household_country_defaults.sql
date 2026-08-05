@@ -8,7 +8,7 @@
 
 begin;
 
-select plan(6);
+select plan(7);
 
 -- Setup (we're postgres, RLS bypassed).
 insert into public.currencies (code, name_en, symbol, minor_unit) values
@@ -59,17 +59,27 @@ select throws_ok(
   'unknown country with no explicit timezone fails rather than guessing'
 );
 
+-- 5. Lowercase/mixed-case country is rejected outright (not a silent miss
+--    that falls through to the "unknown country" NOT NULL failure).
+select throws_ok(
+  $$ insert into public.households (id, name, country, base_currency, timezone)
+     values ('10000000-0000-0000-0000-000000000005', 'Lowercase', 'br', 'BRL', 'America/Sao_Paulo') $$,
+  '23514',  -- check_violation
+  null,
+  'lowercase country is rejected by the uppercase check constraint'
+);
+
 -- Switch to authenticated for RLS checks.
 select tests.authenticate_as('00000000-0000-0000-0000-000000000bbb');
 
--- 5. Authenticated can read country_defaults.
+-- 6. Authenticated can read country_defaults.
 select results_eq(
   $$ select count(*)::int from public.country_defaults where country = 'CL' $$,
   $$ values (1::int) $$,
   'authenticated can read country_defaults'
 );
 
--- 6. Authenticated cannot insert into country_defaults (service-role only).
+-- 7. Authenticated cannot insert into country_defaults (service-role only).
 select throws_ok(
   $$ insert into public.country_defaults (country, timezone, locale)
      values ('ZZ', 'UTC', 'en') $$,

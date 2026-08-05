@@ -22,8 +22,9 @@ comment on column public.household_members.color_hex is 'Per-person color for ch
 -- ============================================================================
 
 create table public.country_defaults (
-  country   text not null primary key check (char_length(country) = 2),  -- ISO 3166-1 alpha-2
-  timezone  text not null,                                                -- IANA
+  country   text not null primary key
+    check (char_length(country) = 2 and country = upper(country)),  -- ISO 3166-1 alpha-2, uppercase
+  timezone  text not null,                                           -- IANA
   locale    text not null check (locale in ('es', 'en', 'pt-BR'))
 );
 
@@ -50,6 +51,15 @@ grant select on public.country_defaults to anon, authenticated;
 -- tell those apart and still fall back to es itself when needed.
 alter table public.households
   alter column locale drop default;
+
+-- Enforce the same uppercase normalization as country_defaults.country (and
+-- as household_invites.email is normalized to lowercase in migration 3).
+-- Without this, a lowercase or mixed-case country ('br') silently misses
+-- every country_defaults row and falls through to the "unknown country"
+-- path — surfacing as a confusing NOT NULL violation on `timezone` instead
+-- of a clear "country must be uppercase" error.
+alter table public.households
+  add constraint households_country_uppercase check (country = upper(country));
 
 create or replace function public.tg_household_country_defaults()
 returns trigger
