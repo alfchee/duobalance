@@ -100,13 +100,10 @@ export default function SignupPage() {
       return;
     }
 
-    // Supabase's anti-enumeration idiom for an already-registered email:
-    // success response, but the returned user has no identities.
-    if (data.user && data.user.identities?.length === 0) {
-      setCredentialsError("userAlreadyExists");
-      return;
-    }
-
+    // Treat every successful response identically so the flow can't reveal
+    // whether an email is already registered: existing emails return no
+    // session, so they fall through to the same check-email step a brand-new
+    // user sees. (Matches the neutral forgot-password flow.)
     setDisplayName(name);
     setStep(data.session ? "household" : "check-email");
   }

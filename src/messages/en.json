@@ -80,7 +80,6 @@
     "errors": {
       "invalidCredentials": "Incorrect email or password.",
       "emailNotConfirmed": "Confirm your email before logging in.",
-      "userAlreadyExists": "An account with this email already exists.",
       "weakPassword": "The password is too short or weak.",
       "rateLimited": "Too many attempts. Wait a moment and try again.",
       "sameNewPassword": "The new password must be different from the current one.",

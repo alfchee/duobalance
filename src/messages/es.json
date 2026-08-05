@@ -80,7 +80,6 @@
     "errors": {
       "invalidCredentials": "Correo o contraseña incorrectos.",
       "emailNotConfirmed": "Confirma tu correo antes de iniciar sesión.",
-      "userAlreadyExists": "Ya existe una cuenta con este correo.",
       "weakPassword": "La contraseña es demasiado corta o débil.",
       "rateLimited": "Demasiados intentos. Espera un momento y vuelve a intentar.",
       "sameNewPassword": "La nueva contraseña debe ser distinta a la actual.",

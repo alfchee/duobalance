@@ -6,8 +6,8 @@ import { isAuthError } from "@supabase/supabase-js";
 const CODE_TO_KEY: Record<string, string> = {
   invalid_credentials: "invalidCredentials",
   email_not_confirmed: "emailNotConfirmed",
-  user_already_exists: "userAlreadyExists",
-  email_exists: "userAlreadyExists",
+  // user_already_exists / email_exists deliberately unmapped: surfacing them
+  // would let a client probe which emails are registered (account enumeration).
   weak_password: "weakPassword",
   over_request_rate_limit: "rateLimited",
   over_email_send_rate_limit: "rateLimited",

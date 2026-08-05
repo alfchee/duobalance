@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,17 @@ export default function ResetPasswordPage() {
   const { session, loading } = useSession();
   const t = useTranslations("auth.resetPassword");
   const tErrors = useTranslations("auth.errors");
+
+  // A recovery link lands on /reset-password?code=… (PKCE). The code is present
+  // when the page mounts and is stripped only after the async code exchange, so
+  // capturing it on mount is the reliable way to require a recovery grant — a
+  // plain signed-in session must not change the password without the current
+  // one. (A useState initializer can't be used: under static export the server
+  // render runs first with `window` undefined and hydration keeps that value.)
+  const [cameViaRecovery, setCameViaRecovery] = useState(false);
+  useEffect(() => {
+    setCameViaRecovery(new URLSearchParams(window.location.search).has("code"));
+  }, []);
 
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +88,9 @@ export default function ResetPasswordPage() {
     );
   }
 
-  if (!loading && !session) {
+  // A recovery-grant session is required: a plain signed-in session must not
+  // change the password without the current one.
+  if (!loading && (!session || !cameViaRecovery)) {
     return (
       <Card className="w-full">
         <CardHeader>
