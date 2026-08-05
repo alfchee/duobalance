@@ -18,8 +18,10 @@ alter default privileges in schema tests
   grant execute on functions to anon, authenticated;
 
 -- Switch to a specific user. Subsequent queries in the same transaction
--- run as the `authenticated` role with that user's JWT.
-create or replace function tests.authenticate_as(user_id uuid)
+-- run as the `authenticated` role with that user's JWT. user_email is
+-- optional — only RLS/RPCs that read auth.jwt()->>'email' (e.g.
+-- accept_invite) need it.
+create or replace function tests.authenticate_as(user_id uuid, user_email text default null)
 returns void
 language plpgsql
 as $$
@@ -28,7 +30,7 @@ begin
   perform set_config('request.jwt.claim.sub', user_id::text, true);
   perform set_config(
     'request.jwt.claims',
-    json_build_object('sub', user_id, 'role', 'authenticated')::text,
+    json_build_object('sub', user_id, 'role', 'authenticated', 'email', user_email)::text,
     true
   );
 end;
