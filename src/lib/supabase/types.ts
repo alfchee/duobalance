@@ -1064,6 +1064,7 @@ export type Database = {
       _table_privs: { Args: never; Returns: unknown[] }
       _temptypes: { Args: { "": string }; Returns: string }
       _todo: { Args: never; Returns: string }
+      accept_invite: { Args: { p_token: string }; Returns: string }
       col_is_null:
         | {
             Args: {
@@ -1100,6 +1101,17 @@ export type Database = {
             }
             Returns: string
           }
+      create_household: {
+        Args: {
+          p_base_currency: string
+          p_country: string
+          p_display_name: string
+          p_locale?: string
+          p_name: string
+          p_timezone?: string
+        }
+        Returns: string
+      }
       current_member: {
         Args: { household: string }
         Returns: {
@@ -1146,6 +1158,7 @@ export type Database = {
       in_todo: { Args: never; Returns: boolean }
       is_empty: { Args: { "": string }; Returns: string }
       is_member: { Args: { household: string }; Returns: boolean }
+      is_owner: { Args: { household: string }; Returns: boolean }
       isnt_empty: { Args: { "": string }; Returns: string }
       lives_ok: { Args: { "": string }; Returns: string }
       no_plan: { Args: never; Returns: boolean[] }
