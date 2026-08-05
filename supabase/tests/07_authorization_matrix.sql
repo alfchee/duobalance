@@ -14,11 +14,16 @@
 -- Several cases in the issue assume columns/functions that live in OTHER,
 -- still-open issues (accounts.is_shared / owner_member_id + split RLS from
 -- #19; transactions.spent_by from #23; fx_rate_on()/fx_usd_rate() from #18).
--- Rather than hardcode those as permanently-skipped, each such case gates on
--- `information_schema` / `pg_proc` at run time via psql's `\if`: the moment
--- the relevant migration lands, the branch flips from `skip()` to the real
--- assertion with zero edits here. See the issue: "mark them as TODO-skips
+-- Tests 2/3/4/5 gate on `information_schema` at run time via psql's `\if`:
+-- the moment the relevant column lands, the branch flips from `skip()` to a
+-- real assertion with no edits here. See the issue: "mark them as TODO-skips
 -- and enable them in the relevant phase rather than omitting them."
+--
+-- Tests 9/11/12 are permanent skips instead, even once their column/function
+-- exists: this file doesn't own #18/#19, so hard-failing CI the instant that
+-- schema lands (e.g. via a hard `ok(false)`) would break unrelated work on
+-- whatever PR happens to introduce it. Whoever implements #18/#19 replaces
+-- the skip with the real assertion as part of that work.
 
 \set ON_ERROR_STOP on
 \i supabase/tests/_lib/helpers.sql
@@ -126,6 +131,11 @@ select exists (
 ) as has_is_shared \gset
 
 \if :has_is_shared
+-- TODO(#19): the fixture's acct_alice row still needs is_shared = false (and
+-- owner_member_id = alice_member) set explicitly once those columns exist —
+-- is_shared defaults to true per #19's spec, so without that update this row
+-- isn't actually private and this assertion would pass for the wrong reason.
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
 select is_empty(
   $$ select * from public.accounts where id = 'a3000000-0000-0000-0000-000000000002'::uuid $$,
   'Bob cannot SELECT Alice''s private account (is_shared = false)'
@@ -285,19 +295,8 @@ select results_eq(
 --    with no such resolution function (blocked by #18).
 -- ============================================================================
 
-select exists (
-  select 1 from pg_proc
-  where proname = 'fx_rate_on' and pronamespace = 'public'::regnamespace
-) as has_fx_rate_on \gset
-
-\if :has_fx_rate_on
-select ok(
-  false,
-  'fx_rate_on() exists — replace this placeholder with the real override-precedence assertion from the issue'
-);
-\else
+-- Permanent skip (see file header): don't hard-fail CI for whoever lands #18.
 select skip('fx_rate_on()/fx_usd_rate() household-override resolution not yet implemented — blocked by #18', 1);
-\endif
 
 -- ============================================================================
 -- 10. Basic cross-tenant isolation for Carol against household A, all four
@@ -353,14 +352,8 @@ select results_eq(
 --     membership row. Gated on accounts.owner_member_id (blocked by #19).
 -- ============================================================================
 
-\if :has_owner_member_id
-select ok(
-  false,
-  'accounts.owner_member_id exists — replace this placeholder with the real reassignment WITH CHECK assertion from the issue'
-);
-\else
+-- Permanent skip (see file header): don't hard-fail CI for whoever lands #19.
 select skip('accounts.owner_member_id reassignment WITH CHECK semantics not yet implemented — blocked by #19', 1);
-\endif
 
 -- ============================================================================
 -- 12. Transaction visibility must inherit account visibility: Bob must not
@@ -368,14 +361,8 @@ select skip('accounts.owner_member_id reassignment WITH CHECK semantics not yet 
 --     accounts.is_shared (blocked by #19).
 -- ============================================================================
 
-\if :has_is_shared
-select ok(
-  false,
-  'accounts.is_shared exists — replace this placeholder with the real transaction-visibility assertion from the issue'
-);
-\else
+-- Permanent skip (see file header): don't hard-fail CI for whoever lands #19.
 select skip('accounts.is_shared / transaction visibility inheritance not yet implemented — blocked by #19', 1);
-\endif
 
 select * from finish();
 rollback;
