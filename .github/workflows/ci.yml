@@ -57,8 +57,11 @@ jobs:
       - name: Reset database (apply all migrations)
         run: npx supabase db reset
 
-      # - name: Run pgTAP RLS tests
-      #   run: npm run db:test
+      - name: Install pg_prove
+        run: sudo apt-get update && sudo apt-get install -y libtap-parser-sourcehandler-pgtap-perl
+
+      - name: Run pgTAP RLS tests
+        run: npm run db:test
 
       # ------------------------------------------------------------------------
       # Build
