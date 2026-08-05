@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
     types: [opened, synchronize]
-    branches: [main, dev, 'INT-*']
+    branches: [main, dev, "INT-*"]
 
 # Stop a previous in-progress run for the same branch on a new push.
 concurrency:
