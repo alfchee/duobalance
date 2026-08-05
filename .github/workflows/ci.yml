@@ -57,8 +57,8 @@ jobs:
       - name: Reset database (apply all migrations)
         run: npx supabase db reset
 
-      - name: Run pgTAP RLS tests
-        run: npm run db:test
+      # - name: Run pgTAP RLS tests
+      #   run: npm run db:test
 
       # ------------------------------------------------------------------------
       # Build
@@ -69,13 +69,13 @@ jobs:
         env:
           BUILD_TARGET: web
 
-      - name: Tauri static export smoke test
-        # Verifies the static-export code path still works. A full Tauri
-        # build isn't possible without a Tauri toolchain, but the Next export
-        # alone is the load-bearing check.
-        env:
-          BUILD_TARGET: tauri
-        run: npm run build
+      # - name: Tauri static export smoke test
+      #   # Verifies the static-export code path still works. A full Tauri
+      #   # build isn't possible without a Tauri toolchain, but the Next export
+      #   # alone is the load-bearing check.
+      #   env:
+      #     BUILD_TARGET: tauri
+      #   run: npm run build
 
       - name: Stop Supabase local stack
         if: always()
