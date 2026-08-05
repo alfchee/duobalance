@@ -52,20 +52,10 @@ jobs:
       # ------------------------------------------------------------------------
 
       - name: Start Supabase local stack
-        run: npx supabase start --no-backup
-
-      - name: Read local keys
-        id: keys
-        # Capture anon + service-role from supabase status so the build step
-        # below uses the real (but local) credentials instead of dummy values.
-        run: |
-          {
-            echo "SUPABASE_LOCAL_ANON_KEY=$(npx supabase status -o env | grep ANON_KEY | cut -d= -f2-)"
-            echo "SUPABASE_LOCAL_SERVICE_KEY=$(npx supabase status -o env | grep SERVICE_ROLE_KEY | cut -d= -f2-)"
-          } >> "$GITHUB_ENV"
+        run: npx supabase start
 
       - name: Reset database (apply all migrations)
-        run: npx supabase db reset --no-backup
+        run: npx supabase db reset
 
       - name: Run pgTAP RLS tests
         run: npm run db:test
