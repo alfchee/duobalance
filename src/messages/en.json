@@ -4,7 +4,13 @@
     "retry": "Retry",
     "cancel": "Cancel",
     "back": "Back",
-    "somethingWrong": "Something went wrong."
+    "somethingWrong": "Something went wrong.",
+    "unknownError": "Unknown error",
+    "pageNotFound": "This page doesn't exist.",
+    "backHome": "Back home",
+    "placeholder": "Placeholder — populated by Phase 1.",
+    "scaffoldDescription": "Scaffolded. Every later issue (#9, #10, #14, #15, #16) builds on this shell.",
+    "moneyFormatSmokeTest": "Money formatting smoke test: {clp} / {usd} / {brl}"
   },
   "nav": {
     "balances": "Balances",
@@ -145,6 +151,14 @@
         "notOwner": "Only the household owner can invite members.",
         "generic": "Something went wrong. Try again."
       }
+    },
+    "locale": {
+      "title": "Language",
+      "subtitle": "Interface language."
+    },
+    "languages": {
+      "es": "Español",
+      "en": "English"
     },
     "logout": "Log out"
   }

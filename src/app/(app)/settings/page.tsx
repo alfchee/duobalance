@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { useHousehold } from "@/hooks/useHousehold";
+import { LocaleSwitcher } from "./locale-switcher";
 import { MembersSection } from "./members-section";
 
 export default function SettingsPage() {
@@ -39,6 +40,8 @@ export default function SettingsPage() {
           ) : null}
         </CardContent>
       </Card>
+
+      <LocaleSwitcher />
 
       <MembersSection />
 

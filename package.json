@@ -11,8 +11,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "locales:check": "node scripts/check-locales.mjs",
     "prepare": "husky",
-    "check": "npm run typecheck && npm run lint && npm run format:check",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run locales:check",
     "db:start": "supabase start",
     "db:migrate": "supabase migration up",
     "db:reset": "supabase db reset",
@@ -54,7 +57,8 @@
     "prettier": "^3.9.6",
     "supabase": "^2.111.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
