@@ -168,6 +168,16 @@
       "refreshError": "Couldn't refresh exchange rates. Try again.",
       "notSignedIn": "Sign in again to refresh exchange rates."
     },
+    "overrides": {
+      "title": "Effective exchange rates",
+      "subtitle": "The rate each currency resolves to right now. Manual overrides win over the daily feed.",
+      "noData": "No rates available yet. Refresh exchange rates or add an override.",
+      "loadError": "Couldn't load effective exchange rates.",
+      "source": {
+        "override": "Manual override",
+        "feed": "ExchangeRate-API"
+      }
+    },
     "languages": {
       "es": "Español",
       "en": "English"

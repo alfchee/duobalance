@@ -10,6 +10,7 @@ import { useHousehold } from "@/hooks/useHousehold";
 import { LocaleSwitcher } from "./locale-switcher";
 import { MembersSection } from "./members-section";
 import { FxRatesSection } from "./fx-rates-section";
+import { FxOverridesSection } from "./fx-overrides-section";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -47,6 +48,8 @@ export default function SettingsPage() {
       <MembersSection />
 
       <FxRatesSection />
+
+      <FxOverridesSection />
 
       <Button variant="outline" className="mt-4" onClick={handleLogout}>
         {t("logout")}

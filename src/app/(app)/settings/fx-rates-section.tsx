@@ -14,7 +14,7 @@ const STALE_AFTER_DAYS = 3;
 
 // rate_date is the UTC day the rates are for; formatting it in the device
 // timezone could show the previous day, so pin the formatter to UTC.
-function formatRateDate(isoDate: string, locale: string): string {
+export function formatRateDate(isoDate: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { timeZone: "UTC", dateStyle: "medium" }).format(
     new Date(`${isoDate}T00:00:00Z`),
   );
