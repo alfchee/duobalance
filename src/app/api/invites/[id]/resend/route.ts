@@ -14,6 +14,11 @@ import {
   requireOwner,
 } from "../../_shared";
 
+// Static-export-safe (CLAUDE.md hard rule #5). `force-static` + a placeholder
+// param list make this a no-op route file under `output: "export"` (Tauri) —
+// the exporter is satisfied without emitting anything for real invite ids.
+export const dynamic = "force-static";
+
 // Web-only API route. Under `output: "export"` (Tauri) it is not exported at
 // all — a placeholder param list satisfies the exporter without emitting
 // anything for real invite ids.
@@ -58,6 +63,16 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     return Response.json({ error: "invite already accepted" }, { status: 409 });
   }
 
+  // Refresh the expiry so a resent link is usable for another full window.
+  const { error: updateError } = await supabase
+    .from("household_invites")
+    .update({ expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() })
+    .eq("id", id);
+  if (updateError) throw updateError;
+
+  // Count the send against the user's rate-limit quota only after the expiry
+  // refresh is durably written — a failed update above would otherwise burn
+  // quota for an email that never went out (migration 16's trigger).
   try {
     await recordInviteSend(supabase, user.id);
   } catch (err) {
@@ -65,13 +80,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       return Response.json({ error: err.message }, { status: err.status });
     throw err;
   }
-
-  // Refresh the expiry so a resent link is usable for another full window.
-  const { error: updateError } = await supabase
-    .from("household_invites")
-    .update({ expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() })
-    .eq("id", id);
-  if (updateError) throw updateError;
 
   const locale = owner.households?.locale ?? "en";
   try {

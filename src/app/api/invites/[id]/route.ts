@@ -4,6 +4,11 @@
 import { z } from "zod";
 import { createRouteContext, getAuthedUser, HttpError, requireOwner } from "../_shared";
 
+// Static-export-safe (CLAUDE.md hard rule #5). `force-static` + a placeholder
+// param list make this a no-op route file under `output: "export"` (Tauri) —
+// the exporter is satisfied without emitting anything for real invite ids.
+export const dynamic = "force-static";
+
 // Web-only API route. Under `output: "export"` (Tauri) it is not exported at
 // all — a placeholder param list satisfies the exporter without emitting
 // anything for real invite ids.

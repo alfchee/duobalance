@@ -55,10 +55,17 @@ begin
     (hh_id, 'accepted@test.local', 'token-accepted', 'partner', member_id, now() + interval '7 days', now() - interval '1 hour'),
     (hh_id, 'mismatch@test.local', 'token-mismatch', 'partner', member_id, now() + interval '7 days', null),
     (hh_id, 'valid@test.local',    'token-valid',    'partner', member_id, now() + interval '7 days', null);
+
+  -- A disabled currency for the create_household rejection test below
+  -- (migration 17). Inserted here in the superuser `do` block because
+  -- `currencies` is RLS-locked to read-only for data-API roles.
+  insert into public.currencies (code, name_en, symbol, minor_unit, is_enabled) values
+    ('XXX', 'Disabled fixture', '$', 2, false)
+  on conflict (code) do update set is_enabled = false;
 end
 $$;
 
-select plan(20);
+select plan(21);
 
 -- ============================================================================
 -- is_owner helper — direct behavior checks, not just "it exists".
@@ -162,6 +169,21 @@ select throws_ok(
   '42501',
   null,
   'anon cannot call create_household (no EXECUTE grant)'
+);
+
+-- Migration 17 hardening: create_household rejects a base currency whose
+-- is_enabled flag is false. The disabled 'XXX' code is seeded in the fixture
+-- block above (before any authenticate_as, i.e. as the superuser) — `currencies`
+-- is read-only under RLS for the data-API roles, so inserting it as the
+-- authenticated 'newowner' user below would be denied. CLP from the fixture
+-- stays enabled and is the happy path already exercised by 'New House'.
+select tests.authenticate_as('e7e7e7e7-7777-7777-7777-777777777777', 'newowner@test.local');
+
+select throws_ok(
+  $$ select public.create_household('Bad Currency House', 'CL', 'XXX', 'Owner') $$,
+  'P0001',
+  'base currency is not enabled',
+  'create_household rejects a disabled base currency'
 );
 
 -- ============================================================================

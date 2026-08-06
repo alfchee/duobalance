@@ -3,6 +3,11 @@
 // credential: it goes in the email and nowhere else. The response returns
 // only the invite id, never the token.
 
+// Static-export-safe (CLAUDE.md hard rule #5). `force-static` makes this a
+// no-op route file under `output: "export"` (Tauri) — there are no params to
+// prerender, and the handler only runs server-side at runtime on the web.
+export const dynamic = "force-static";
+
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { sendInviteEmail } from "@/lib/invite-email";
@@ -45,14 +50,6 @@ export async function POST(request: Request) {
     throw err;
   }
 
-  try {
-    await recordInviteSend(supabase, user.id);
-  } catch (err) {
-    if (err instanceof HttpError)
-      return Response.json({ error: err.message }, { status: err.status });
-    throw err;
-  }
-
   // Replace any existing un-accepted invite for the same (household, email),
   // then insert the fresh one. Two statements — a crash between them leaves
   // the old invite in place, which is recoverable (revoke/resend), so no
@@ -85,6 +82,21 @@ export async function POST(request: Request) {
 
   if (insertError || !invite) {
     return Response.json({ error: "failed to create invite" }, { status: 500 });
+  }
+
+  // Count the send against the user's rate-limit quota only after the invite
+  // row is durably written — a failed insert below this point would otherwise
+  // burn quota for an email that never went out (migration 16's trigger).
+  try {
+    await recordInviteSend(supabase, user.id);
+  } catch (err) {
+    if (err instanceof HttpError) {
+      // The invite row exists but the rate limit denied the send — revoke it
+      // so a dangling, unreachable invite can't pile up; the caller can retry.
+      await supabase.from("household_invites").delete().eq("id", invite.id);
+      return Response.json({ error: err.message }, { status: err.status });
+    }
+    throw err;
   }
 
   const locale = owner.households?.locale ?? "en";
