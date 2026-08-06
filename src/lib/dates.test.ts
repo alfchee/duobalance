@@ -44,12 +44,30 @@ describe("startOfMonthInHousehold", () => {
   });
 });
 
+// formatDate is a thin wrapper over Intl.DateTimeFormat. The expected value is
+// computed with the same options so the test stays stable across ICU builds
+// (month-abbreviation casing/punctuation varies), while still pinning that the
+// wrapper threads locale + timeZone + date through — a wrong timezone or a
+// dropped locale would change the output and fail the assertion.
+function expectedFormat(date: Date, locale: string, timeZone: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone,
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
 describe("formatDate", () => {
   it("formats in the household timezone with the given locale", () => {
-    expect(formatDate(MANAGUA_EVENING, "es", "America/Managua")).toBe("4 jul 2026");
+    expect(formatDate(MANAGUA_EVENING, "es", "America/Managua")).toBe(
+      expectedFormat(MANAGUA_EVENING, "es", "America/Managua"),
+    );
   });
 
   it("formats with an en locale", () => {
-    expect(formatDate(MANAGUA_EVENING, "en", "America/Managua")).toBe("Jul 4, 2026");
+    expect(formatDate(MANAGUA_EVENING, "en", "America/Managua")).toBe(
+      expectedFormat(MANAGUA_EVENING, "en", "America/Managua"),
+    );
   });
 });

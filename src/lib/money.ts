@@ -26,7 +26,9 @@ function separatorsFor(locale: string): { decimal: string; group: string } {
 // symbols and the U+2212 minus sign are tolerated; non-numeric garbage
 // yields null.
 export function parseMoneyInput(raw: string, locale = "es"): number | null {
-  const input = raw.replace(/[^\d.,−-]/g, "").replace("−", "-");
+  // Global replace: every U+2212 becomes an ASCII hyphen, so no U+2212 can
+  // survive into `normalized` and trip Number() later.
+  const input = raw.replace(/[^\d.,−-]/g, "").replace(/−/g, "-");
   if (!input) return null;
 
   const { decimal, group } = separatorsFor(locale);

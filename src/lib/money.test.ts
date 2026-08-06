@@ -42,6 +42,12 @@ describe("parseMoneyInput", () => {
     expect(parseMoneyInput("-1,234.56", "en")).toBe(-1234.56);
   });
 
+  it("treats a doubled minus sign as garbage, not a negative", () => {
+    // Every U+2212 is normalized to "-" first; "−1−234,56" is then "-1-234.56",
+    // which Number() rejects — so garbage in, null out.
+    expect(parseMoneyInput("−1−234,56", "es")).toBeNull();
+  });
+
   it("parses whole numbers without separators", () => {
     expect(parseMoneyInput("1234", "es")).toBe(1234);
     expect(parseMoneyInput("0", "en")).toBe(0);
