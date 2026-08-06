@@ -56,13 +56,19 @@ export async function POST(request: Request) {
   // Replace any existing un-accepted invite for the same (household, email),
   // then insert the fresh one. Two statements — a crash between them leaves
   // the old invite in place, which is recoverable (revoke/resend), so no
-  // transaction is needed.
-  await supabase
+  // transaction is needed. A failed delete can't be ignored: proceeding would
+  // leave two pending invites for the same (household, email) and the old
+  // token would still work, so abort the whole create.
+  const { error: deleteError } = await supabase
     .from("household_invites")
     .delete()
     .eq("household_id", household_id)
     .eq("email", email)
     .is("accepted_at", null);
+
+  if (deleteError) {
+    return Response.json({ error: "failed to create invite" }, { status: 500 });
+  }
 
   const token = randomBytes(32).toString("base64url");
   const { data: invite, error: insertError } = await supabase
