@@ -19,11 +19,15 @@
 -- real assertion with no edits here. See the issue: "mark them as TODO-skips
 -- and enable them in the relevant phase rather than omitting them."
 --
--- Tests 9/11/12 are permanent skips instead, even once their column/function
--- exists: this file doesn't own #18/#19, so hard-failing CI the instant that
+-- Tests 11/12 are permanent skips instead, even once their column/function
+-- exists: this file doesn't own #19, so hard-failing CI the instant that
 -- schema lands (e.g. via a hard `ok(false)`) would break unrelated work on
--- whatever PR happens to introduce it. Whoever implements #18/#19 replaces
+-- whatever PR happens to introduce it. Whoever implements #19 replaces
 -- the skip with the real assertion as part of that work.
+--
+-- Test 9 (fx_rate_on/fx_usd_rate override resolution) was one such skip and
+-- became a real assertion when #18 landed — see test 9 below; the fuller
+-- suite lives in 10_fx_overrides_resolution.sql.
 
 \set ON_ERROR_STOP on
 \i supabase/tests/_lib/helpers.sql
@@ -99,10 +103,15 @@ begin
 
   insert into public.bill_instances (id, bill_id, household_id, due_on, amount, is_paid) values
     (bill_inst_a, bill_a, hh_a, current_date, 15000, false);
+
+  -- Global CLP rate for test 9's cross-tenant slice: household B (no override)
+  -- must resolve this, while household A's override at value 1 wins over it.
+  insert into public.fx_rates (rate_date, code, usd_rate) values
+    (current_date, 'CLP', 940);
 end
 $$;
 
-select plan(17);
+select plan(18);
 
 -- ============================================================================
 -- 1. budget_status view — Carol (household B, no budgets of her own) must
@@ -290,13 +299,30 @@ select results_eq(
 
 -- ============================================================================
 -- 9. fx_rate_on()/fx_usd_rate() must honor a household's manual override
---    over the global rate. Gated on fx_rate_on existing — today's
---    fx_overrides (migration 10) is a different, transaction-keyed design
---    with no such resolution function (blocked by #18).
+--    over the global rate. The full suite lives in 10_fx_overrides_resolution
+--    (#18); this is the cross-tenant slice the matrix owns: household A's
+--    override must win for A, while Carol (household B) still resolves the
+--    global feed rate.
 -- ============================================================================
 
--- Permanent skip (see file header): don't hard-fail CI for whoever lands #18.
-select skip('fx_rate_on()/fx_usd_rate() household-override resolution not yet implemented — blocked by #18', 1);
+select tests.clear_auth();
+
+insert into public.fx_overrides (household_id, rate_date, code, usd_rate, note)
+values ('a0000000-0000-0000-0000-00000000000a', current_date, 'CLP', 1, 'A fix');
+
+select results_eq(
+  $$ select public.fx_rate_on('a0000000-0000-0000-0000-00000000000a', current_date, 'USD', 'CLP') $$,
+  $$ values (1::numeric) $$,
+  'household A override wins over the global CLP rate'
+);
+
+select tests.authenticate_as('b1000000-0000-0000-0000-000000000001');
+
+select isnt(
+  ( select public.fx_rate_on('b0000000-0000-0000-0000-00000000000b', current_date, 'USD', 'CLP') ),
+  1::numeric,
+  'household B resolves the global CLP rate, unaffected by household A override'
+);
 
 -- ============================================================================
 -- 10. Basic cross-tenant isolation for Carol against household A, all four

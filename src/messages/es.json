@@ -168,6 +168,16 @@
       "refreshError": "No se pudieron actualizar los tipos de cambio. Intenta de nuevo.",
       "notSignedIn": "Vuelve a iniciar sesión para actualizar los tipos de cambio."
     },
+    "overrides": {
+      "title": "Tipos de cambio efectivos",
+      "subtitle": "La tasa a la que cada moneda se resuelve ahora mismo. Los ajustes manuales tienen prioridad sobre la fuente diaria.",
+      "noData": "Aún no hay tasas disponibles. Actualiza los tipos de cambio o añade un ajuste.",
+      "loadError": "No se pudieron cargar los tipos de cambio efectivos.",
+      "source": {
+        "override": "Ajuste manual",
+        "feed": "ExchangeRate-API"
+      }
+    },
     "languages": {
       "es": "Español",
       "en": "English"
