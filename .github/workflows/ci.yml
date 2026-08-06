@@ -38,7 +38,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # jsdom@30 / undici@8 require Node >= 22 (Node 20 is EOL as of 2026-04).
+          node-version: 22
           cache: npm
 
       - name: Install npm dependencies
