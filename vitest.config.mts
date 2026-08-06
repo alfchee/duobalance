@@ -1,10 +1,14 @@
 import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  // Next's tsconfig sets `jsx: preserve`, which makes Vite's transform leave
+  // JSX untransformed. plugin-react compiles it for the test run.
+  plugins: [react()],
   test: {
     // jsdom for hooks/component tests; pure logic tests don't care.
     environment: "jsdom",
@@ -15,10 +19,5 @@ export default defineConfig({
     alias: {
       "@": path.resolve(dirname, "./src"),
     },
-  },
-  esbuild: {
-    // Next's tsconfig sets `jsx: preserve`, which makes esbuild leave JSX
-    // untransformed. Test files need it compiled, so override here.
-    jsx: "automatic",
   },
 });
