@@ -100,6 +100,18 @@ export default function SignupPage() {
       return;
     }
 
+    // Preserve an invite flow: coming from /accept-invite/{token} via
+    // ?next=, the account is created but no household — the invite's
+    // accept_invite RPC attaches the user to the inviter's household. Only
+    // skip household setup when we actually have a session; with email
+    // confirmation pending the user falls through to check-email and picks
+    // the invite back up from the accept page's login link after confirming.
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (next && data.session) {
+      router.replace(next);
+      return;
+    }
+
     // Treat every successful response identically so the flow can't reveal
     // whether an email is already registered: existing emails return no
     // session, so they fall through to the same check-email step a brand-new

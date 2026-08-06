@@ -46,7 +46,10 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { errorKey: getAuthErrorKey(error) };
 
-    router.replace("/balances");
+    // Preserve an invite flow: coming from /accept-invite/{token} via
+    // ?next=, land back on the accept screen so the invite is completed.
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.replace(next ?? "/balances");
     return { errorKey: null };
   }
 
