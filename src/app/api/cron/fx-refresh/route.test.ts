@@ -51,6 +51,13 @@ function providerResponse(conversion_rates: Record<string, number>, status = 200
   });
 }
 
+function authedRequest(path: string, init: RequestInit = {}): Request {
+  return new Request(path, {
+    ...init,
+    headers: { authorization: "Bearer test-secret", ...init.headers },
+  });
+}
+
 beforeEach(() => {
   process.env.CRON_SECRET = "test-secret";
   process.env.EXCHANGERATE_API_KEY = "test-key";
@@ -64,12 +71,73 @@ afterEach(() => {
 });
 
 describe("/api/cron/fx-refresh", () => {
-  it("rejects a GET without the vercel-cron user agent", async () => {
+  it("rejects a GET with no credentials", async () => {
     const res = await GET(new Request("http://localhost/api/cron/fx-refresh"));
     expect(res.status).toBe(401);
   });
 
-  it("accepts a GET with the vercel-cron user agent and returns counts", async () => {
+  it("rejects a POST with no credentials", async () => {
+    const res = await POST(new Request("http://localhost/api/cron/fx-refresh", { method: "POST" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects a wrong Bearer secret even with a spoofable user agent", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/cron/fx-refresh", {
+        method: "POST",
+        headers: {
+          authorization: "Bearer wrong",
+          "user-agent": "vercel-cron/1.0",
+        },
+      }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("accepts a GET with the matching Bearer CRON_SECRET and returns counts", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(providerResponse({ USD: 1, CLP: 950 })));
+    const client = makeClient({ currencies: ["USD", "CLP"] });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/fx-refresh"));
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      rateDate: expect.stringMatching(RATE_DATE_RE),
+      inserted: 2,
+      updated: 0,
+      skipped: 0,
+    });
+    expect(client.upsertRates).toHaveBeenCalledTimes(1);
+    expect(client.insertLog).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "success", inserted: 2 }),
+    );
+  });
+
+  it("accepts a POST with the matching Bearer CRON_SECRET and returns counts", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(providerResponse({ USD: 1, CLP: 950 })));
+    const client = makeClient({ currencies: ["USD", "CLP"] });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
+
+    const res = await POST(
+      authedRequest("http://localhost/api/cron/fx-refresh", { method: "POST" }),
+    );
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      rateDate: expect.stringMatching(RATE_DATE_RE),
+      inserted: 2,
+      updated: 0,
+      skipped: 0,
+    });
+    expect(client.upsertRates).toHaveBeenCalledTimes(1);
+    expect(client.insertLog).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "success", inserted: 2 }),
+    );
+  });
+
+  it("falls back to the vercel-cron user agent when no CRON_SECRET is configured", async () => {
+    delete process.env.CRON_SECRET;
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(providerResponse({ USD: 1, CLP: 950 })));
     const client = makeClient({ currencies: ["USD", "CLP"] });
     vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
@@ -93,64 +161,6 @@ describe("/api/cron/fx-refresh", () => {
     );
   });
 
-  it("rejects requests without the cron secret or vercel-cron user agent", async () => {
-    const res = await POST(new Request("http://localhost/api/cron/fx-refresh", { method: "POST" }));
-    expect(res.status).toBe(401);
-  });
-
-  it("accepts a matching Bearer CRON_SECRET and returns counts", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(providerResponse({ USD: 1, CLP: 950 })));
-    const client = makeClient({ currencies: ["USD", "CLP"] });
-    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
-
-    const res = await POST(
-      new Request("http://localhost/api/cron/fx-refresh", {
-        method: "POST",
-        headers: { authorization: "Bearer test-secret" },
-      }),
-    );
-
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({
-      rateDate: expect.stringMatching(RATE_DATE_RE),
-      inserted: 2,
-      updated: 0,
-      skipped: 0,
-    });
-    expect(client.upsertRates).toHaveBeenCalledTimes(1);
-    expect(client.insertLog).toHaveBeenCalledWith(
-      expect.objectContaining({ outcome: "success", inserted: 2 }),
-    );
-  });
-
-  it("accepts the vercel-cron user agent", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(providerResponse({ USD: 1 })));
-    const client = makeClient({ currencies: ["USD"] });
-    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
-
-    const res = await POST(
-      new Request("http://localhost/api/cron/fx-refresh", {
-        method: "POST",
-        headers: { "user-agent": "vercel-cron/1.0" },
-      }),
-    );
-
-    expect(res.status).toBe(200);
-  });
-
-  it("rejects a wrong Bearer secret even with a spoofable user agent", async () => {
-    const res = await POST(
-      new Request("http://localhost/api/cron/fx-refresh", {
-        method: "POST",
-        headers: {
-          authorization: "Bearer wrong",
-          "user-agent": "not-vercel-cron",
-        },
-      }),
-    );
-    expect(res.status).toBe(401);
-  });
-
   it("retries once on a transient provider failure, then succeeds", async () => {
     const fetchMock = vi
       .fn()
@@ -161,10 +171,7 @@ describe("/api/cron/fx-refresh", () => {
     vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
 
     const res = await POST(
-      new Request("http://localhost/api/cron/fx-refresh", {
-        method: "POST",
-        headers: { "user-agent": "vercel-cron/1.0" },
-      }),
+      authedRequest("http://localhost/api/cron/fx-refresh", { method: "POST" }),
     );
 
     expect(res.status).toBe(200);
@@ -178,10 +185,7 @@ describe("/api/cron/fx-refresh", () => {
     vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
 
     const res = await POST(
-      new Request("http://localhost/api/cron/fx-refresh", {
-        method: "POST",
-        headers: { "user-agent": "vercel-cron/1.0" },
-      }),
+      authedRequest("http://localhost/api/cron/fx-refresh", { method: "POST" }),
     );
 
     expect(res.status).toBe(502);

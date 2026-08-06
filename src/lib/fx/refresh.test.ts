@@ -51,7 +51,7 @@ describe("applyDailyRates", () => {
         { rate_date: "2026-08-06", code: "CLP", usd_rate: 950 },
         { rate_date: "2026-08-06", code: "NIO", usd_rate: 36.6 },
       ],
-      { onConflict: "rate_date, code" },
+      { onConflict: "rate_date,code" },
     );
   });
 

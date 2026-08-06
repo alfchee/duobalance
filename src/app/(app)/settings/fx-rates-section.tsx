@@ -8,6 +8,7 @@ import { useHousehold } from "@/hooks/useHousehold";
 import { useFxRefresh, useFxRatesStatus } from "@/hooks/useFxRates";
 import { daysSinceNewestRate } from "@/lib/fx/staleness";
 import { todayInHousehold } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 
 const STALE_AFTER_DAYS = 3;
 
@@ -44,7 +45,7 @@ export function FxRatesSection() {
       </CardHeader>
       <CardContent className="space-y-4">
         {newest ? (
-          <p className={`text-sm ${stale ? "text-destructive" : "text-muted-foreground"}`}>
+          <p className={cn("text-sm", stale ? "text-destructive" : "text-muted-foreground")}>
             {t("lastUpdated", { date: formatRateDate(newest, locale) })}
           </p>
         ) : (

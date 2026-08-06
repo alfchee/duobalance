@@ -160,7 +160,7 @@
       "title": "Exchange rates",
       "subtitle": "Daily rates from ExchangeRate-API.",
       "noData": "No exchange rates loaded yet.",
-      "lastUpdated": "Last updated {date}.",
+      "lastUpdated": "Last updated: {date}.",
       "stale": "Exchange rates haven't updated in over {days} days. The daily update may be failing.",
       "refresh": "Refresh now",
       "refreshing": "Refreshing…",

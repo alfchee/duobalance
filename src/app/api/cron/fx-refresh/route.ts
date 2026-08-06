@@ -1,8 +1,11 @@
 // /api/cron/fx-refresh — daily FX rate population (#17), fired by the Vercel
-// cron job (vercel.json). Vercel cron jobs send an HTTP GET and cannot set an
-// Authorization header, so this endpoint authenticates on Vercel's documented
-// `vercel-cron/1.0` user agent, or a matching Bearer CRON_SECRET for manual
-// runs. POST is also accepted (same code path) for secret-triggered scripts.
+// cron job (vercel.json). When CRON_SECRET is configured in the Vercel project,
+// Vercel automatically sends it as `Authorization: Bearer <CRON_SECRET>` on
+// every cron invocation, so that header is the primary authentication here and
+// is required whenever the secret is set. The vercel-cron/1.0 user agent is a
+// spoofable signal, so it is only trusted as a fallback when no CRON_SECRET is
+// configured (local/dev). POST is also accepted (same code path) so the
+// endpoint can be triggered from scripts with the secret.
 //
 // `dynamic = "force-static"` satisfies the Tauri static-export build
 // (`BUILD_TARGET=tauri`), which rejects GET route handlers that don't declare
@@ -41,7 +44,8 @@ async function handle(request: Request) {
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  if (secret && auth === `Bearer ${secret}`) return true;
+  if (secret) {
+    return request.headers.get("authorization") === `Bearer ${secret}`;
+  }
   return request.headers.get("user-agent") === "vercel-cron/1.0";
 }

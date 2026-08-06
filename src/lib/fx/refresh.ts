@@ -76,7 +76,7 @@ export async function applyDailyRates(
   if (rows.length > 0) {
     const { error: upsertError } = await supabase
       .from("fx_rates")
-      .upsert(rows, { onConflict: "rate_date, code" });
+      .upsert(rows, { onConflict: "rate_date,code" });
     if (upsertError) throw upsertError;
   }
 
