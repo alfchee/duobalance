@@ -436,6 +436,39 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_fetch_log: {
+        Row: {
+          error: string | null
+          id: string
+          inserted: number
+          outcome: string
+          ran_at: string
+          rate_date: string
+          skipped: number
+          updated: number
+        }
+        Insert: {
+          error?: string | null
+          id?: string
+          inserted?: number
+          outcome: string
+          ran_at?: string
+          rate_date: string
+          skipped?: number
+          updated?: number
+        }
+        Update: {
+          error?: string | null
+          id?: string
+          inserted?: number
+          outcome?: string
+          ran_at?: string
+          rate_date?: string
+          skipped?: number
+          updated?: number
+        }
+        Relationships: []
+      }
       fx_overrides: {
         Row: {
           household_id: string

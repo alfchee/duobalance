@@ -156,6 +156,18 @@
       "title": "Idioma",
       "subtitle": "Idioma de la interfaz."
     },
+    "fx": {
+      "title": "Tipos de cambio",
+      "subtitle": "Tasas diarias desde ExchangeRate-API.",
+      "noData": "Aún no hay tipos de cambio cargados.",
+      "lastUpdated": "Última actualización: {date}.",
+      "stale": "Los tipos de cambio no se actualizan desde hace más de {days} días. La actualización diaria podría estar fallando.",
+      "refresh": "Actualizar ahora",
+      "refreshing": "Actualizando…",
+      "refreshSuccess": "Actualizados: {inserted} nuevos, {updated} existentes, {skipped} omitidos.",
+      "refreshError": "No se pudieron actualizar los tipos de cambio. Intenta de nuevo.",
+      "notSignedIn": "Vuelve a iniciar sesión para actualizar los tipos de cambio."
+    },
     "languages": {
       "es": "Español",
       "en": "English"
