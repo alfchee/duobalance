@@ -35,6 +35,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<SupportedLocale>("es");
   const [hasStoredPreference, setHasStoredPreference] = useState(false);
 
+  // Avoids next-intl's ENVIRONMENT_FALLBACK timezone warning. Business dates
+  // are computed with the household timezone via lib/dates.ts, never here.
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "es" || stored === "en") {
@@ -45,6 +49,11 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Keep <html lang> in sync so screen readers announce in the right language.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   function setLocale(next: SupportedLocale) {
     setLocaleState(next);
     setHasStoredPreference(true);
@@ -53,7 +62,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   return (
     <LocaleContext.Provider value={{ locale, hasStoredPreference, setLocale }}>
-      <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]}>
+      <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]} timeZone={timeZone}>
         {children}
       </NextIntlClientProvider>
     </LocaleContext.Provider>

@@ -4,7 +4,13 @@
     "retry": "Reintentar",
     "cancel": "Cancelar",
     "back": "Atrás",
-    "somethingWrong": "Algo salió mal."
+    "somethingWrong": "Algo salió mal.",
+    "unknownError": "Error desconocido",
+    "pageNotFound": "Esta página no existe.",
+    "backHome": "Volver al inicio",
+    "placeholder": "Marcador — se completará en la Fase 1.",
+    "scaffoldDescription": "Andamiaje. Cada issue posterior (#9, #10, #14, #15, #16) se construye sobre este caparazón.",
+    "moneyFormatSmokeTest": "Prueba de formato de dinero: {clp} / {usd} / {brl}"
   },
   "nav": {
     "balances": "Saldos",
@@ -145,6 +151,14 @@
         "notOwner": "Solo el propietario del hogar puede invitar miembros.",
         "generic": "Algo salió mal. Intenta de nuevo."
       }
+    },
+    "locale": {
+      "title": "Idioma",
+      "subtitle": "Idioma de la interfaz."
+    },
+    "languages": {
+      "es": "Español",
+      "en": "English"
     },
     "logout": "Cerrar sesión"
   }

@@ -13,6 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // lang is static because locale resolution is client-side (localStorage).
+    // LocaleProvider syncs <html lang> after mount; suppressHydrationWarning
+    // avoids a mismatch warning in the window before that effect runs.
     <html lang="es" suppressHydrationWarning>
       <body className="min-h-dvh bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
