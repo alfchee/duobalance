@@ -47,6 +47,16 @@ describe("parseMoneyInput", () => {
     expect(parseMoneyInput("0", "en")).toBe(0);
   });
 
+  it("treats a dot without a comma as grouping in es, not as a decimal", () => {
+    // "5.25" in es means 5 followed by 25 → 525, NOT 5.25. Pinned so a future
+    // change can't silently multiply es decimal entries by 1000.
+    expect(parseMoneyInput("5.25", "es")).toBe(525);
+  });
+
+  it("collapses negative zero to 0", () => {
+    expect(parseMoneyInput("-0", "es")).toBe(0);
+  });
+
   it("returns null for empty or non-numeric input", () => {
     expect(parseMoneyInput("", "es")).toBeNull();
     expect(parseMoneyInput("abc", "es")).toBeNull();
@@ -59,6 +69,11 @@ describe("roundToMinorUnit", () => {
   it("rounds to the currency's minor unit", () => {
     expect(roundToMinorUnit(1234.567, 0)).toBe(1235);
     expect(roundToMinorUnit(1234.567, 2)).toBe(1234.57);
+  });
+
+  it("rounds half-cent values the way a human expects", () => {
+    // 1.005*100 is 100.4999… in IEEE-754; must still round to 1.01.
+    expect(roundToMinorUnit(1.005, 2)).toBe(1.01);
   });
 });
 

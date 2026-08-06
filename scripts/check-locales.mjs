@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Fails if any locale file is missing a message key that another file has.
 // Keeps es/en from silently diverging so untranslated UI never ships.
+// Also checks that language endonyms (the name of a language in its own
+// language) are identical in every file — those have only one correct value.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +10,7 @@ import { fileURLToPath } from "node:url";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const messagesDir = path.resolve(dirname, "../src/messages");
 const FILES = ["es.json", "en.json"];
+const ENDONYMS = ["settings.languages.es", "settings.languages.en"];
 
 function flattenKeys(obj, prefix = "", out = []) {
   for (const [key, value] of Object.entries(obj)) {
@@ -21,12 +24,14 @@ function flattenKeys(obj, prefix = "", out = []) {
   return out;
 }
 
-const byFile = Object.fromEntries(
-  FILES.map((file) => [
-    file,
-    new Set(flattenKeys(JSON.parse(readFileSync(path.join(messagesDir, file), "utf8")))),
-  ]),
+function lookup(obj, dotted) {
+  return dotted.split(".").reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
+}
+
+const parsed = Object.fromEntries(
+  FILES.map((file) => [file, JSON.parse(readFileSync(path.join(messagesDir, file), "utf8"))]),
 );
+const byFile = Object.fromEntries(FILES.map((file) => [file, new Set(flattenKeys(parsed[file]))]));
 
 const errors = [];
 for (const [file, keys] of Object.entries(byFile)) {
@@ -37,6 +42,13 @@ for (const [file, keys] of Object.entries(byFile)) {
         errors.push(`${file} has "${key}" but ${otherFile} does not`);
       }
     }
+  }
+}
+
+for (const key of ENDONYMS) {
+  const values = new Set(FILES.map((file) => lookup(parsed[file], key)));
+  if (values.size > 1) {
+    errors.push(`endonym "${key}" differs between files: ${[...values].join(" vs ")}`);
   }
 }
 

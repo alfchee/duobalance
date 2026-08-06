@@ -1,5 +1,7 @@
 "use client";
 
+// useTranslations works here because the root layout's <Providers>
+// (LocaleProvider) stays mounted around this error boundary.
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";

@@ -6,13 +6,19 @@ export function formatMoney(amount: number, currency: string, locale = "es"): st
 
 // Derive the locale's decimal/grouping separators. A 7-digit sample forces
 // grouping to appear even in trimmed ICU builds (Node), where 4-digit samples
-// may render without a group separator.
+// may render without a group separator. Cached — keypads call this per keystroke.
+const separatorCache = new Map<string, { decimal: string; group: string }>();
 function separatorsFor(locale: string): { decimal: string; group: string } {
+  const cached = separatorCache.get(locale);
+  if (cached) return cached;
   const parts = new Intl.NumberFormat(locale).formatToParts(1234567.89);
   const value = (type: "decimal" | "group") => parts.find((p) => p.type === type)?.value ?? "";
-  const decimal = value("decimal") || ".";
-  const group = value("group") || ",";
-  return { decimal, group };
+  const separators = {
+    decimal: value("decimal") || ".",
+    group: value("group") || ",",
+  };
+  separatorCache.set(locale, separators);
+  return separators;
 }
 
 // Parse a user-typed amount in a locale's grouping/decimal convention:
@@ -28,12 +34,15 @@ export function parseMoneyInput(raw: string, locale = "es"): number | null {
   if (normalized === "-" || normalized === "." || normalized === "-.") return null;
 
   const amount = Number(normalized);
-  return Number.isFinite(amount) ? amount : null;
+  if (!Number.isFinite(amount)) return null;
+  return amount === 0 ? 0 : amount; // collapse -0, which Object.is treats as distinct
 }
 
 export function roundToMinorUnit(amount: number, minorUnit: number): number {
   const f = 10 ** minorUnit;
-  return Math.round(amount * f) / f;
+  // Number.EPSILON nudges binary float error (1.005 * 100 = 100.49999…)
+  // so half-cent values round the way a human expects.
+  return Math.round((amount + Number.EPSILON) * f) / f;
 }
 
 export function formatSignedMoney(amount: number, currency: string, locale = "es"): string {

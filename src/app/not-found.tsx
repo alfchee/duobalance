@@ -1,5 +1,7 @@
 "use client";
 
+// useTranslations works here because the root layout's <Providers>
+// (LocaleProvider) stays mounted around this boundary.
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
