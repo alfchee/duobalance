@@ -1,21 +1,31 @@
-// POST /api/cron/fx-refresh — daily FX rate population (#17).
+// /api/cron/fx-refresh — daily FX rate population (#17), fired by the Vercel
+// cron job (vercel.json). Vercel cron jobs send an HTTP GET and cannot set an
+// Authorization header, so this endpoint authenticates on Vercel's documented
+// `vercel-cron/1.0` user agent, or a matching Bearer CRON_SECRET for manual
+// runs. POST is also accepted (same code path) for secret-triggered scripts.
 //
-// POST (not GET) so the handler stays a live server function: under
-// `output: 'export'` (the Tauri build), GET route handlers are prerendered at
-// build time, which would freeze today's rates forever. POST handlers export
-// as dynamic modules, exactly like /api/invites.
-//
-// Authorized for Vercel Cron jobs (user-agent `vercel-cron/1.0` — cron jobs
-// cannot set an Authorization header, so Vercel documents the user agent as
-// the way to recognize them) or a matching Bearer CRON_SECRET, which lets the
-// endpoint be hit manually. Writes use the service role; the client never
-// calls this path directly — the Settings manual refresh goes through
-// POST /api/fx/refresh instead.
+// `dynamic = "force-static"` satisfies the Tauri static-export build
+// (`BUILD_TARGET=tauri`), which rejects GET route handlers that don't declare
+// it. On the Vercel web build that declaration is overridden by the handler
+// reading `request.headers` — Next then serves the route as a live dynamic
+// function (verified: it exports as `ƒ Dynamic` in the web build), which is
+// what the cron needs. The Tauri build-time prerender bakes an unauthorized
+// 401, which is harmless because the desktop app never calls this endpoint.
 
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 import { runFxRefresh } from "@/lib/fx/refresh";
 
+export const dynamic = "force-static";
+
+export async function GET(request: Request) {
+  return handle(request);
+}
+
 export async function POST(request: Request) {
+  return handle(request);
+}
+
+async function handle(request: Request) {
   if (!isAuthorized(request)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }

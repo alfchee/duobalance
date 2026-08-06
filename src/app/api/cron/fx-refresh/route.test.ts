@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseRouteHandler: vi.fn() }));
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
@@ -63,7 +63,36 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("POST /api/cron/fx-refresh", () => {
+describe("/api/cron/fx-refresh", () => {
+  it("rejects a GET without the vercel-cron user agent", async () => {
+    const res = await GET(new Request("http://localhost/api/cron/fx-refresh"));
+    expect(res.status).toBe(401);
+  });
+
+  it("accepts a GET with the vercel-cron user agent and returns counts", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(providerResponse({ USD: 1, CLP: 950 })));
+    const client = makeClient({ currencies: ["USD", "CLP"] });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
+
+    const res = await GET(
+      new Request("http://localhost/api/cron/fx-refresh", {
+        headers: { "user-agent": "vercel-cron/1.0" },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      rateDate: expect.stringMatching(RATE_DATE_RE),
+      inserted: 2,
+      updated: 0,
+      skipped: 0,
+    });
+    expect(client.upsertRates).toHaveBeenCalledTimes(1);
+    expect(client.insertLog).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "success", inserted: 2 }),
+    );
+  });
+
   it("rejects requests without the cron secret or vercel-cron user agent", async () => {
     const res = await POST(new Request("http://localhost/api/cron/fx-refresh", { method: "POST" }));
     expect(res.status).toBe(401);

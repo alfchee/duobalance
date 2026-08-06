@@ -9,6 +9,7 @@
 import { z } from "zod";
 
 const EXCHANGERATE_API_URL = "https://v6.exchangerate-api.com/v6";
+const FX_FETCH_TIMEOUT_MS = 10_000;
 
 // One USD-base request returns every currency as "1 USD = usd_rate units".
 const dailyRatesSchema = z.object({
@@ -45,7 +46,12 @@ export async function fetchDailyRates(): Promise<Record<string, number>> {
 
   let res: Response;
   try {
-    res = await fetch(`${EXCHANGERATE_API_URL}/${apiKey}/latest/USD`);
+    // AbortSignal.timeout bounds the call so a hung upstream can't hold the
+    // cron/function open past its limit; the abort lands in the catch below
+    // and is classified as retryable.
+    res = await fetch(`${EXCHANGERATE_API_URL}/${apiKey}/latest/USD`, {
+      signal: AbortSignal.timeout(FX_FETCH_TIMEOUT_MS),
+    });
   } catch (err) {
     throw new FxProviderError(`provider unreachable: ${(err as Error).message}`, true);
   }

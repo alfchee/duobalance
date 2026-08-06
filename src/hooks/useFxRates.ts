@@ -12,7 +12,7 @@ export type FxRefreshResult = {
 };
 
 // Newest fx_rates row, for the stale-rate warning (#17). fx_rates is
-// SELECT-granted to authenticated under RLS (migration 11), so the client
+// SELECT-granted to authenticated under RLS (migration 12), so the client
 // reads it directly.
 export function useFxRatesStatus() {
   return useQuery({
