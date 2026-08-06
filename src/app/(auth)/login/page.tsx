@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { getAuthErrorKey } from "@/lib/supabase/auth-errors";
+import { pendingInvitePath } from "@/lib/pending-invite";
 import { useSession } from "@/hooks/useSession";
 
 type FormState = { errorKey: string | null };
@@ -30,7 +31,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && session) {
-      router.replace("/balances");
+      // An invite in progress (pendingInvitePath) beats /balances: this runs
+      // on the session change caused by login too, so peeking keeps both this
+      // effect and the submit handler headed to the same place.
+      router.replace(pendingInvitePath() ?? "/balances");
     }
   }, [loading, session, router]);
 
@@ -46,7 +50,11 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { errorKey: getAuthErrorKey(error) };
 
-    router.replace("/balances");
+    // Preserve an invite flow: coming from /accept-invite/{token}, the token
+    // traveled via sessionStorage (never the URL). Peek, don't consume — the
+    // accept page clears it on resolution, and consuming here would race the
+    // session-change effect above.
+    router.replace(pendingInvitePath() ?? "/balances");
     return { errorKey: null };
   }
 

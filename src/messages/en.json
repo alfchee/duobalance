@@ -63,6 +63,22 @@
       "sentBody": "If that email exists, you'll receive a link to reset your password.",
       "backToLogin": "Back to login"
     },
+    "acceptInvite": {
+      "title": "Accept invitation",
+      "subtitle": "You're about to join the household that invited you.",
+      "notAuthenticatedTitle": "You need an account",
+      "notAuthenticatedBody": "To accept the invitation, create an account or log in. You'll be brought back here automatically.",
+      "signupLink": "Create account",
+      "loginLink": "Log in",
+      "accepting": "Accepting invitation…",
+      "errors": {
+        "expired": "This invitation has expired. Ask your partner to resend it.",
+        "alreadyAccepted": "This invitation was already accepted. You should already see the household on your account.",
+        "emailMismatch": "This invitation was sent to a different email. Use the account for that email to accept it.",
+        "invalidToken": "This link isn't valid. Ask your partner to send you a new invitation.",
+        "generic": "Something went wrong accepting the invitation. Please try again."
+      }
+    },
     "resetPassword": {
       "title": "New password",
       "subtitle": "Choose a new password for your account.",
@@ -104,6 +120,31 @@
     "role": {
       "owner": "Owner",
       "partner": "Partner"
+    },
+    "members": {
+      "title": "Members",
+      "subtitle": "Who belongs to this household, and pending invitations.",
+      "currentMembers": "Members",
+      "pendingInvites": "Pending invitations",
+      "count": "{count, plural, =0 {No pending} one {# pending} other {# pending}}",
+      "inviteLabel": "Partner's email",
+      "invitePlaceholder": "partner@example.com",
+      "inviteButton": "Invite",
+      "sending": "Sending…",
+      "noInvites": "No pending invitations.",
+      "expires": "Expires {date}",
+      "expired": "Expired",
+      "resend": "Resend",
+      "revoke": "Revoke",
+      "roles": {
+        "owner": "Owner"
+      },
+      "errors": {
+        "rateLimited": "You've sent too many invitations recently. Try again later.",
+        "emailFailed": "We couldn't send the invitation email. Try again.",
+        "notOwner": "Only the household owner can invite members.",
+        "generic": "Something went wrong. Try again."
+      }
     },
     "logout": "Log out"
   }

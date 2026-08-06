@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { useHousehold } from "@/hooks/useHousehold";
+import { MembersSection } from "./members-section";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -38,6 +39,8 @@ export default function SettingsPage() {
           ) : null}
         </CardContent>
       </Card>
+
+      <MembersSection />
 
       <Button variant="outline" className="mt-4" onClick={handleLogout}>
         {t("logout")}

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { getAuthErrorKey } from "@/lib/supabase/auth-errors";
+import { pendingInvitePath } from "@/lib/pending-invite";
 import { useSession } from "@/hooks/useSession";
 import { useCountries } from "@/hooks/useCountries";
 import { useCurrencies } from "@/hooks/useCurrencies";
@@ -66,7 +67,9 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (!loading && session && step === "credentials") {
-      router.replace("/balances");
+      // An invite in progress beats the default destination, mirroring the
+      // submit handler below — both peek so they can't clobber each other.
+      router.replace(pendingInvitePath() ?? "/balances");
     }
   }, [loading, session, step, router]);
 
@@ -98,6 +101,21 @@ export default function SignupPage() {
     if (error) {
       setCredentialsError(getAuthErrorKey(error));
       return;
+    }
+
+    // Preserve an invite flow: coming from /accept-invite/{token}, the token
+    // travels via sessionStorage (never the URL). The account is created but
+    // no household — the invite's accept_invite RPC attaches the user to the
+    // inviter's household. Only skip household setup when we actually have a
+    // session; with email confirmation pending the user falls through to
+    // check-email and picks the invite back up from the accept page's login
+    // link after confirming.
+    if (data.session) {
+      const path = pendingInvitePath();
+      if (path) {
+        router.replace(path);
+        return;
+      }
     }
 
     // Treat every successful response identically so the flow can't reveal
