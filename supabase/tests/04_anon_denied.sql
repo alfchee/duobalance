@@ -31,36 +31,50 @@ begin
 end
 $$;
 
-select plan(5);
+select plan(7);
 
 -- Switch to anon role
 select tests.authenticate_anon();
 
--- 1. Anon cannot see households
+-- 1-2. Anon is blocked on the reference tables too (issue #10 RLS: authenticated
+-- only, not anon). These would fail if someone widened the policy to `to
+-- authenticated, anon` — the spec says authenticated only, so anon reads must
+-- return 0 rows.
+select is_empty(
+  $$ select * from public.currencies $$,
+  'anon SELECT on currencies: empty (policy is authenticated only)'
+);
+
+select is_empty(
+  $$ select * from public.fx_rates $$,
+  'anon SELECT on fx_rates: empty (policy is authenticated only)'
+);
+
+-- 3. Anon cannot see households
 select is_empty(
   $$ select * from public.households $$,
   'anon SELECT on households: empty'
 );
 
--- 2. Anon cannot see accounts
+-- 4. Anon cannot see accounts
 select is_empty(
   $$ select * from public.accounts $$,
   'anon SELECT on accounts: empty'
 );
 
--- 3. Anon cannot see transactions
+-- 5. Anon cannot see transactions
 select is_empty(
   $$ select * from public.transactions $$,
   'anon SELECT on transactions: empty'
 );
 
--- 4. Anon cannot see household_members
+-- 6. Anon cannot see household_members
 select is_empty(
   $$ select * from public.household_members $$,
   'anon SELECT on household_members: empty'
 );
 
--- 5. Anon cannot insert an account
+-- 7. Anon cannot insert an account
 select throws_ok(
   $$ insert into public.accounts (household_id, name, type, currency)
      values ('44444444-4444-4444-4444-444444444444', 'pwn', 'checking', 'CLP') $$,

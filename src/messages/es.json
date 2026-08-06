@@ -1,1 +1,165 @@
-{}
+{
+  "common": {
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "back": "Atrás",
+    "somethingWrong": "Algo salió mal.",
+    "unknownError": "Error desconocido",
+    "pageNotFound": "Esta página no existe.",
+    "backHome": "Volver al inicio",
+    "placeholder": "Marcador — se completará en la Fase 1.",
+    "scaffoldDescription": "Andamiaje. Cada issue posterior (#9, #10, #14, #15, #16) se construye sobre este caparazón.",
+    "moneyFormatSmokeTest": "Prueba de formato de dinero: {clp} / {usd} / {brl}"
+  },
+  "nav": {
+    "balances": "Saldos",
+    "transactions": "Movimientos",
+    "budget": "Presupuesto",
+    "bills": "Cuentas",
+    "more": "Más"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Ingresa a tu hogar compartido.",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Iniciar sesión",
+      "submitting": "Ingresando…",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "noAccount": "¿No tienes cuenta?",
+      "signupLink": "Crear cuenta"
+    },
+    "signup": {
+      "title": "Crear cuenta",
+      "subtitleCredentials": "Crea tu cuenta para empezar.",
+      "subtitleHousehold": "Ahora configura tu hogar.",
+      "displayName": "Tu nombre",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "passwordHint": "Mínimo 6 caracteres.",
+      "passwordStrength": {
+        "weak": "Débil",
+        "fair": "Aceptable",
+        "strong": "Fuerte"
+      },
+      "continue": "Continuar",
+      "submitting": "Creando cuenta…",
+      "householdName": "Nombre del hogar",
+      "householdNamePlaceholder": "p. ej. Casa de Alf y María",
+      "country": "País",
+      "countryPlaceholder": "Selecciona un país",
+      "baseCurrency": "Moneda principal",
+      "baseCurrencyPlaceholder": "Selecciona una moneda",
+      "createHousehold": "Crear hogar",
+      "creatingHousehold": "Creando hogar…",
+      "haveAccount": "¿Ya tienes cuenta?",
+      "loginLink": "Iniciar sesión",
+      "checkEmailTitle": "Revisa tu correo",
+      "checkEmailBody": "Te enviamos un enlace para confirmar tu cuenta. Vuelve e inicia sesión luego de confirmar."
+    },
+    "forgotPassword": {
+      "title": "Recuperar contraseña",
+      "subtitle": "Te enviaremos un enlace para restablecerla.",
+      "email": "Correo electrónico",
+      "submit": "Enviar enlace",
+      "submitting": "Enviando…",
+      "sentTitle": "Enlace enviado",
+      "sentBody": "Si el correo existe, recibirás un enlace para restablecer tu contraseña.",
+      "backToLogin": "Volver a iniciar sesión"
+    },
+    "acceptInvite": {
+      "title": "Aceptar invitación",
+      "subtitle": "Estás por unirte al hogar que te invitó.",
+      "notAuthenticatedTitle": "Necesitas una cuenta",
+      "notAuthenticatedBody": "Para aceptar la invitación, crea una cuenta o inicia sesión. Volverás aquí automáticamente.",
+      "signupLink": "Crear cuenta",
+      "loginLink": "Iniciar sesión",
+      "accepting": "Aceptando invitación…",
+      "errors": {
+        "expired": "Esta invitación venció. Pídele a tu pareja que la envíe de nuevo.",
+        "alreadyAccepted": "Esta invitación ya fue aceptada. Ya deberías ver el hogar en tu cuenta.",
+        "emailMismatch": "Esta invitación fue enviada a otro correo. Usa la cuenta de ese correo para aceptarla.",
+        "invalidToken": "Este enlace no es válido. Pídele a tu pareja que te envíe una invitación nueva.",
+        "generic": "Algo salió mal al aceptar la invitación. Intenta de nuevo."
+      }
+    },
+    "resetPassword": {
+      "title": "Nueva contraseña",
+      "subtitle": "Elige una nueva contraseña para tu cuenta.",
+      "password": "Nueva contraseña",
+      "confirmPassword": "Confirma la contraseña",
+      "submit": "Guardar contraseña",
+      "submitting": "Guardando…",
+      "successTitle": "Contraseña actualizada",
+      "successBody": "Ya puedes iniciar sesión con tu nueva contraseña.",
+      "goToLogin": "Ir a iniciar sesión",
+      "requestNewLink": "Solicitar un nuevo enlace",
+      "invalidLink": "Este enlace no es válido o ya expiró. Solicita uno nuevo.",
+      "mismatch": "Las contraseñas no coinciden."
+    },
+    "logout": "Cerrar sesión",
+    "errors": {
+      "invalidCredentials": "Correo o contraseña incorrectos.",
+      "emailNotConfirmed": "Confirma tu correo antes de iniciar sesión.",
+      "weakPassword": "La contraseña es demasiado corta o débil.",
+      "rateLimited": "Demasiados intentos. Espera un momento y vuelve a intentar.",
+      "sameNewPassword": "La nueva contraseña debe ser distinta a la actual.",
+      "sessionExpired": "Tu sesión expiró. Inicia sesión de nuevo.",
+      "generic": "Algo salió mal. Intenta de nuevo."
+    }
+  },
+  "household": {
+    "picker": {
+      "title": "Elige un hogar",
+      "subtitle": "Perteneces a más de un hogar.",
+      "select": "Entrar"
+    },
+    "loading": "Cargando tu hogar…",
+    "empty": "No encontramos un hogar para tu cuenta."
+  },
+  "settings": {
+    "title": "Configuración",
+    "signedInAs": "Sesión iniciada como",
+    "household": "Hogar",
+    "role": {
+      "owner": "Propietario",
+      "partner": "Compañero/a"
+    },
+    "members": {
+      "title": "Miembros",
+      "subtitle": "Quiénes pertenecen a este hogar e invitaciones pendientes.",
+      "currentMembers": "Miembros",
+      "pendingInvites": "Invitaciones pendientes",
+      "count": "{count, plural, =0 {Sin pendientes} one {# pendiente} other {# pendientes}}",
+      "inviteLabel": "Correo de tu pareja",
+      "invitePlaceholder": "pareja@ejemplo.com",
+      "inviteButton": "Invitar",
+      "sending": "Enviando…",
+      "noInvites": "No hay invitaciones pendientes.",
+      "expires": "Vence el {date}",
+      "expired": "Vencida",
+      "resend": "Reenviar",
+      "revoke": "Revocar",
+      "roles": {
+        "owner": "Propietario"
+      },
+      "errors": {
+        "rateLimited": "Enviaste demasiadas invitaciones recientemente. Intenta de nuevo más tarde.",
+        "emailFailed": "No pudimos enviar el correo de la invitación. Intenta de nuevo.",
+        "notOwner": "Solo el propietario del hogar puede invitar miembros.",
+        "generic": "Algo salió mal. Intenta de nuevo."
+      }
+    },
+    "locale": {
+      "title": "Idioma",
+      "subtitle": "Idioma de la interfaz."
+    },
+    "languages": {
+      "es": "Español",
+      "en": "English"
+    },
+    "logout": "Cerrar sesión"
+  }
+}
