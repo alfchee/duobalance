@@ -1,6 +1,8 @@
 // POST /api/invites/:id/resend — re-send the email with the existing token
 // (no new token is generated, per #15). Refreshes expires_at so the resent
-// link actually works. Owner-only and rate-limited like create.
+// link works for another full window; this also revives an invite that has
+// already expired (the UI flags it, and resend is the recovery path — no 410).
+// Owner-only and rate-limited like create.
 
 import { z } from "zod";
 import { sendInviteEmail } from "@/lib/invite-email";
@@ -54,9 +56,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   if (invite.accepted_at) {
     return Response.json({ error: "invite already accepted" }, { status: 409 });
-  }
-  if (new Date(invite.expires_at) < new Date()) {
-    return Response.json({ error: "invite expired" }, { status: 410 });
   }
 
   try {

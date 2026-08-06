@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FullPageSpinner } from "@/components/full-page-spinner";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { clearPendingInvite, savePendingInvite } from "@/lib/pending-invite";
 import { useSession } from "@/hooks/useSession";
 
 const ACTIVE_HOUSEHOLD_STORAGE_KEY = "duobalance:activeHouseholdId";
@@ -32,9 +33,18 @@ export function AcceptInviteClient({ token }: { token: string }) {
   const [state, setState] = useState<"idle" | "accepting" | "success" | "error">("idle");
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
+  // While not authenticated, stash the token in sessionStorage so the
+  // login/signup detour can route back here — without putting the bearer
+  // token in the URL (it would land in history and the Referer header).
+  useEffect(() => {
+    if (!loading && !session) {
+      savePendingInvite(token);
+    }
+  }, [loading, session, token]);
+
   // While not authenticated, hang on the "you need an account" screen. The
-  // token is preserved through login/signup via ?next=/accept-invite/{token},
-  // so completing either flow returns here and this effect kicks in.
+  // token is preserved through login/signup via sessionStorage, so completing
+  // either flow returns here and this effect kicks in.
   useEffect(() => {
     if (loading || !session || state !== "idle") return;
 
@@ -52,6 +62,10 @@ export function AcceptInviteClient({ token }: { token: string }) {
       const { data: householdId, error } = await supabase.rpc("accept_invite", { p_token: token });
 
       if (cancelled) return;
+
+      // The invite intent has been resolved (accepted or not) — a stale
+      // pending token must not bounce a later /login back to this screen.
+      clearPendingInvite();
 
       if (error) {
         setState("error");
@@ -78,8 +92,6 @@ export function AcceptInviteClient({ token }: { token: string }) {
     return <FullPageSpinner />;
   }
 
-  const next = `/accept-invite/${token}`;
-
   if (!session) {
     return (
       <Card className="w-full">
@@ -89,10 +101,10 @@ export function AcceptInviteClient({ token }: { token: string }) {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <Button asChild>
-            <Link href={`/signup?next=${next}`}>{t("signupLink")}</Link>
+            <Link href="/signup">{t("signupLink")}</Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href={`/login?next=${next}`}>{t("loginLink")}</Link>
+            <Link href="/login">{t("loginLink")}</Link>
           </Button>
         </CardContent>
       </Card>

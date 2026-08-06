@@ -30,6 +30,7 @@ export function MembersSection() {
 
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const fmt = dateFormatter(locale);
 
@@ -57,19 +58,23 @@ export function MembersSection() {
   }
 
   async function handleRevoke(inviteId: string) {
+    setActionError(null);
     try {
       await revoke.mutateAsync(inviteId);
-    } catch {
+    } catch (err) {
       // List is refreshed via query invalidation; a failed revoke leaves the
       // invite visible so the owner can retry.
+      setActionError(inviteErrorKey(err));
     }
   }
 
   async function handleResend(inviteId: string) {
+    setActionError(null);
     try {
       await resend.mutateAsync(inviteId);
-    } catch {
+    } catch (err) {
       // Same as revoke — keep the row so the owner can retry.
+      setActionError(inviteErrorKey(err));
     }
   }
 
@@ -147,6 +152,12 @@ export function MembersSection() {
             </form>
           ) : null}
 
+          {actionError ? (
+            <p role="alert" className="mb-3 text-sm text-destructive">
+              {tErrors(actionError)}
+            </p>
+          ) : null}
+
           {invites.isPending ? (
             <div className="space-y-2">
               <Skeleton className="h-5 w-full" />
@@ -155,37 +166,47 @@ export function MembersSection() {
             <p className="text-sm text-muted-foreground">{t("noInvites")}</p>
           ) : (
             <ul className="divide-y">
-              {(invites.data ?? []).map((invite) => (
-                <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
-                  <div>
-                    <p className="font-medium">{invite.email}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("expires", { date: fmt.format(new Date(invite.expires_at)) })}
-                    </p>
-                  </div>
-                  {isOwner ? (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleResend(invite.id)}
-                        disabled={resend.isPending}
-                      >
-                        {t("resend")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleRevoke(invite.id)}
-                        disabled={revoke.isPending}
-                      >
-                        {t("revoke")}
-                      </Button>
+              {(invites.data ?? []).map((invite) => {
+                const expired = new Date(invite.expires_at) < new Date();
+                return (
+                  <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
+                    <div>
+                      <p className="flex items-center gap-2 font-medium">
+                        {invite.email}
+                        {expired ? (
+                          <span className="rounded-full border px-2 py-0.5 text-xs text-destructive">
+                            {t("expired")}
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("expires", { date: fmt.format(new Date(invite.expires_at)) })}
+                      </p>
                     </div>
-                  ) : null}
-                </li>
-              ))}
+                    {isOwner ? (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleResend(invite.id)}
+                          disabled={resend.isPending && resend.variables === invite.id}
+                        >
+                          {t("resend")}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleRevoke(invite.id)}
+                          disabled={revoke.isPending && revoke.variables === invite.id}
+                        >
+                          {t("revoke")}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

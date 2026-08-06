@@ -35,6 +35,12 @@ comment on table public.invite_sends is
 -- the window is rejected outright (no row is written). Also prunes rows older
 -- than 24h opportunistically — the table only needs the current window plus
 -- history long enough to count the cap, so old rows are dead weight.
+--
+-- The count-then-reject trigger is not serialized against concurrent inserts
+-- (two sends racing the same window can both pass the count), so it is a
+-- best-effort spam guard, not a hard invariant. That's acceptable here: the
+-- cost of an occasional overshoot is a couple of extra emails, not data
+-- corruption.
 -- ============================================================================
 
 create or replace function public.tg_limit_invite_sends()

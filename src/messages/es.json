@@ -133,6 +133,7 @@
       "sending": "Enviando…",
       "noInvites": "No hay invitaciones pendientes.",
       "expires": "Vence el {date}",
+      "expired": "Vencida",
       "resend": "Reenviar",
       "revoke": "Revocar",
       "roles": {

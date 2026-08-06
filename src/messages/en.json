@@ -133,6 +133,7 @@
       "sending": "Sending…",
       "noInvites": "No pending invitations.",
       "expires": "Expires {date}",
+      "expired": "Expired",
       "resend": "Resend",
       "revoke": "Revoke",
       "roles": {
