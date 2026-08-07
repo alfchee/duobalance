@@ -67,15 +67,41 @@ function sectionForKind(kind: string): BalanceSectionId | null {
   return null;
 }
 
-// A "rates" lookup keyed by code. The base currency always resolves to 1 even
-// when the feed has no row for it (the base's own row never exists per the
-// fx_overrides_resolution comment in #18). Missing rows return null — the
-// caller decides what to show.
+// A "rates" lookup keyed by code. USD implicitly resolves to usdRate = 1 even
+// when the feed has no row (the fx_rates refresh never writes USD because the
+// base unit is itself 1 USD; household overrides on USD are still honoured if
+// present). Every other currency (including the household base when it isn't
+// USD) still requires a feed row or override row — missing rows return null
+// from resolveRate and propagate up to the caller.
 export type RatesByCode = Map<string, EffectiveRate>;
+
+function fallbackRateDate(rates: RatesByCode): string {
+  for (const r of rates.values()) return r.rateDate;
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Resolve the effective rate for a code, with the USD=1 implicit unit so the
+// behaviour mirrors fx_usd_rate at the DB layer. Currencies other than USD
+// return null when absent — the caller decides how to surface the ambiguity.
+function resolveRate(code: string, rates: RatesByCode): EffectiveRate | null {
+  const existing = rates.get(code);
+  if (existing) return existing;
+  if (code === "USD") {
+    return {
+      code: "USD",
+      usdRate: 1,
+      source: "feed",
+      rateDate: fallbackRateDate(rates),
+      note: null,
+    };
+  }
+  return null;
+}
 
 // `1 CODE -> X BASE` for an account balance in `code`. Mirrors fx_rate_on:
 // amount_in_base = amount_in_code * (usdRate_base / usdRate_code). Same-currency
-// returns the amount unchanged.
+// returns the amount unchanged. USD is synthesised via resolveRate so a missing
+// USD feed row doesn't break USD-base households or USD-denominated accounts.
 export function convertToBase(
   amount: number,
   code: string,
@@ -83,8 +109,8 @@ export function convertToBase(
   rates: RatesByCode,
 ): number | null {
   if (code === base) return amount;
-  const from = rates.get(code);
-  const to = rates.get(base);
+  const from = resolveRate(code, rates);
+  const to = resolveRate(base, rates);
   if (!from || !to) return null;
   return (amount * to.usdRate) / from.usdRate;
 }
@@ -114,12 +140,12 @@ export function buildCurrencyBreakdown(
     if (account.currency === base) continue;
     totals.set(account.currency, (totals.get(account.currency) ?? 0) + balance);
   }
-  const baseRate = rates.get(base);
   const lines: CurrencyLine[] = [];
   for (const [code, amount] of totals) {
-    const rate = rates.get(code);
-    if (!rate || !baseRate) continue;
-    const baseAmount = (amount * baseRate.usdRate) / rate.usdRate;
+    const rate = resolveRate(code, rates);
+    if (!rate) continue;
+    const baseAmount = convertToBase(amount, code, base, rates);
+    if (baseAmount == null) continue;
     lines.push({
       code,
       amount,

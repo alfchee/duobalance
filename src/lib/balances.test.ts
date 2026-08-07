@@ -129,6 +129,12 @@ describe("convertToBase", () => {
     ["NIO", 36],
     ["CLP", 900],
   ]);
+  // Matches the real feed — no USD row (fx_rates never writes USD, since USD is
+  // the implicit base). resolveRate() in balances.ts must synthesise it.
+  const noUsdRow = rates([
+    ["NIO", 36],
+    ["CLP", 900],
+  ]);
 
   it("returns the amount unchanged when the account is in the base currency", () => {
     expect(convertToBase(1234, "CLP", "CLP", r)).toBe(1234);
@@ -141,6 +147,27 @@ describe("convertToBase", () => {
     expect(convertToBase(1, "USD", "CLP", r)).toBeCloseTo(900, 10);
     // 36 NIO -> 1 USD -> 900 CLP
     expect(convertToBase(36, "NIO", "CLP", r)).toBeCloseTo(900, 10);
+  });
+
+  it("synthesises USD=1 implicitly when the feed has no USD row (USD base household)", () => {
+    // USD is the base and is missing from the rates map; NIO -> USD cross-rate
+    // should still compute because resolveRate injects USD.
+    expect(convertToBase(36, "NIO", "USD", noUsdRow)).toBeCloseTo(1, 10);
+    expect(convertToBase(72, "NIO", "USD", noUsdRow)).toBeCloseTo(2, 10);
+  });
+
+  it("synthesises USD=1 implicitly when the feed has no USD row (USD-denominated account)", () => {
+    // USD is the *account* code and is missing from rates map; USD -> CLP should
+    // resolve to the USD feed rate for CLP (i.e. 1 USD = 900 CLP).
+    expect(convertToBase(1, "USD", "CLP", noUsdRow)).toBeCloseTo(900, 10);
+    expect(convertToBase(2.5, "USD", "CLP", noUsdRow)).toBeCloseTo(2250, 10);
+  });
+
+  it("synthesises USD=1 implicitly for a three-way cross through USD with no USD row", () => {
+    // NIO -> CLP goes NIO -> USD -> CLP; neither leg is the code/base but USD
+    // still has to resolve to 1 internally. Without the synthetic row this would
+    // be null.
+    expect(convertToBase(36, "NIO", "CLP", noUsdRow)).toBeCloseTo(900, 10);
   });
 
   it("returns null when either leg has no rate (a missing override/feed row)", () => {
@@ -201,6 +228,27 @@ describe("buildCurrencyBreakdown", () => {
     );
     expect(breakdown).toEqual([]);
   });
+
+  it("resolves a USD-denominated line in the breakdown even when the feed has no USD row", () => {
+    // Non-USD base (CLP = 900/USD), and we hold a USD account. Since buildCurrencyBreakdown
+    // now routes through convertToBase + resolveRate, the USD rate should be synthesised.
+    const noUsdRow = rates([["CLP", 900]]);
+    const breakdown = buildCurrencyBreakdown(
+      [account({ id: "u", kind: "checking", currency: "USD", opening_balance: 2.5 })],
+      "CLP",
+      noUsdRow,
+      (a) => a.opening_balance,
+    );
+    expect(breakdown).toHaveLength(1);
+    expect(breakdown[0]).toMatchObject({
+      code: "USD",
+      amount: 2.5,
+      usdRate: 1,
+      source: "feed",
+    });
+    // 2.5 USD → 2250 CLP
+    expect(breakdown[0]?.baseAmount).toBeCloseTo(2250, 6);
+  });
 });
 
 describe("sumBalances", () => {
@@ -236,6 +284,34 @@ describe("sumBalances", () => {
     );
     // 1000 + 900 + (-0.5*900) = 1450
     expect(total).toBeCloseTo(1450, 6);
+  });
+
+  it("resolves a USD base household with foreign accounts when the feed has no USD row", () => {
+    const noUsdRow = rates([["NIO", 36]]);
+    const total = sumBalances(
+      [
+        account({ id: "u", currency: "USD", opening_balance: 10 }), // identity
+        account({ id: "n", currency: "NIO", opening_balance: 360 }), // 360 NIO = 10 USD
+      ],
+      "USD",
+      noUsdRow,
+      (a) => a.opening_balance,
+    );
+    expect(total).toBeCloseTo(20, 6);
+  });
+
+  it("resolves USD-denominated accounts in a non-USD base when feed has no USD row", () => {
+    const noUsdRow = rates([["CLP", 900]]);
+    const total = sumBalances(
+      [
+        account({ id: "u", currency: "USD", opening_balance: 2 }), // 2 USD = 1800 CLP
+        account({ id: "c", currency: "CLP", opening_balance: 9000 }),
+      ],
+      "CLP",
+      noUsdRow,
+      (a) => a.opening_balance,
+    );
+    expect(total).toBeCloseTo(10_800, 6);
   });
 
   it("returns null when at least one currency has no rate", () => {
