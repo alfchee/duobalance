@@ -13,32 +13,46 @@ declare
   partner_id uuid := 'dddddddd-dddd-dddd-dddd-dddddddddddd';
   owner_member   uuid := 'c1c1c1c1-1111-1111-1111-111111111111';
   partner_member uuid := 'd1d1d1d1-2222-2222-2222-222222222222';
+  -- A second partner who owns an account — the accounts.owner_member_id FK is
+  -- on delete restrict (#19), so this member must be un-removable while the
+  -- account exists.
+  partner2_user   uuid := 'e2e2e2e2-2222-2222-2222-222222222222';
+  partner2_member uuid := 'e3e3e3e3-3333-3333-3333-333333333333';
+  acct_owned      uuid := 'f4f4f4f4-4444-4444-4444-444444444444';
 begin
   insert into auth.users (id, email) values
-    (owner_id,   'owner@test.local'),
-    (partner_id, 'partner@test.local');
+    (owner_id,    'owner@test.local'),
+    (partner_id,  'partner@test.local'),
+    (partner2_user, 'partner2@test.local');
 
   insert into public.households (id, name, country, base_currency, timezone) values
     (hh_id, 'Two Partners', 'CL', 'CLP', 'America/Santiago');
 
   insert into public.household_members (id, household_id, user_id, role, display_name) values
     (owner_member,   hh_id, owner_id,   'owner',   'Owner'),
-    (partner_member, hh_id, partner_id, 'partner', 'Partner');
+    (partner_member, hh_id, partner_id, 'partner', 'Partner'),
+    (partner2_member, hh_id, partner2_user, 'partner', 'Partner2');
+
+  -- Partner2 owns an account (joint-style account in the same household), so
+  -- removing them must be blocked by the accounts FK restrict.
+  insert into public.accounts
+    (id, household_id, name, kind, currency, owner_member_id) values
+    (acct_owned, hh_id, 'Partner2 checking', 'checking', 'CLP', partner2_member);
 end
 $$;
 
-select plan(5);
+select plan(6);
 
 -- ============================================================================
 -- As partner
 -- ============================================================================
 select tests.authenticate_as('dddddddd-dddd-dddd-dddd-dddddddddddd');
 
--- 1. Partner can see both members
+-- 1. Partner can see all members
 select results_eq(
   $$ select count(*)::int from public.household_members $$,
-  $$ values (2::int) $$,
-  'partner sees both members'
+  $$ values (3::int) $$,
+  'partner sees all three members'
 );
 
 -- 2. Partner cannot delete the owner
@@ -85,7 +99,7 @@ select throws_ok(
 -- ============================================================================
 select tests.authenticate_as('cccccccc-cccc-cccc-cccc-cccccccccccc');
 
--- 5. Owner CAN delete the partner
+-- 5. Owner CAN delete the partner (partner owns no accounts, so no FK blocks)
 select results_eq(
   $$ with deleted as (
        delete from public.household_members
@@ -95,6 +109,16 @@ select results_eq(
      select count(*)::int from deleted $$,
   $$ values (1::int) $$,
   'owner DELETE on partner: 1 row removed'
+);
+
+-- 6. But a member who still owns an account cannot be removed — the
+-- accounts.owner_member_id FK is on delete restrict (#19).
+select throws_ok(
+  $$ delete from public.household_members
+     where id = 'e3e3e3e3-3333-3333-3333-333333333333'::uuid $$,
+  '23503',
+  null,
+  'owner cannot DELETE a partner who still owns accounts (FK restrict)'
 );
 
 select * from finish();

@@ -12,18 +12,19 @@
 --     cross-tenant assertion.
 --
 -- Several cases in the issue assume columns/functions that live in OTHER,
--- still-open issues (accounts.is_shared / owner_member_id + split RLS from
--- #19; transactions.spent_by from #23; fx_rate_on()/fx_usd_rate() from #18).
--- Tests 2/3/4/5 gate on `information_schema` at run time via psql's `\if`:
--- the moment the relevant column lands, the branch flips from `skip()` to a
--- real assertion with no edits here. See the issue: "mark them as TODO-skips
--- and enable them in the relevant phase rather than omitting them."
+-- still-open issues (transactions.entered_by / spent_by from #23;
+-- fx_rate_on()/fx_usd_rate() from #18). Tests 3/4 gate on `information_schema`
+-- at run time via psql's `\if`: the moment the relevant column lands, the
+-- branch flips from `skip()` to a real assertion with no edits here. See the
+-- issue: "mark them as TODO-skips and enable them in the relevant phase
+-- rather than omitting them."
 --
--- Tests 11/12 are permanent skips instead, even once their column/function
--- exists: this file doesn't own #19, so hard-failing CI the instant that
--- schema lands (e.g. via a hard `ok(false)`) would break unrelated work on
--- whatever PR happens to introduce it. Whoever implements #19 replaces
--- the skip with the real assertion as part of that work.
+-- #19 (accounts ownership/visibility + split RLS) landed in migration
+-- 20260807000001: tests 2, 5 and 11 are real assertions below, and tests 13/14
+-- cover the #19 AC directly (partner INSERT ownership semantics; the
+-- joint+private CHECK constraint). Test 12 stays a skip — transaction
+-- visibility inheriting account visibility is owned by the transactions phase
+-- (#23), not #19.
 --
 -- Test 9 (fx_rate_on/fx_usd_rate override resolution) was one such skip and
 -- became a real assertion when #18 landed — see test 9 below; the fuller
@@ -77,14 +78,13 @@ begin
     (bob_member,   hh_a, bob_user,   'partner', 'Bob'),
     (carol_member, hh_b, carol_user, 'owner',   'Carol');
 
-  insert into public.accounts (id, household_id, name, type, currency) values
-    (acct_joint, hh_a, 'Joint checking',  'checking', 'CLP'),
-    -- Stands in for the "private account" fixture the issue asks for. There
-    -- is no is_shared concept yet (blocked by #19) — tests 2/12 gate on that
-    -- column's existence and skip until it lands; this row just gives them
-    -- something to point at once it does.
-    (acct_alice, hh_a, 'Alice checking',  'checking', 'CLP'),
-    (acct_carol, hh_b, 'Carol checking',  'checking', 'BRL');
+  insert into public.accounts
+    (id, household_id, name, kind, currency, is_shared, owner_member_id) values
+    (acct_joint, hh_a, 'Joint checking', 'checking', 'CLP', true,  null),
+    -- Alice's private account: invisible to Bob (is_shared = false, and
+    -- owned by Alice, not by the joint pool). Test 2 asserts Bob can't see it.
+    (acct_alice, hh_a, 'Alice checking', 'checking', 'CLP', false, alice_member),
+    (acct_carol, hh_b, 'Carol checking', 'checking', 'BRL', true,  carol_member);
 
   insert into public.categories (id, household_id, name) values
     (cat_a, hh_a, 'Groceries'),
@@ -111,7 +111,7 @@ begin
 end
 $$;
 
-select plan(18);
+select plan(28);
 
 -- ============================================================================
 -- 1. budget_status view — Carol (household B, no budgets of her own) must
@@ -129,29 +129,26 @@ select is_empty(
 
 -- ============================================================================
 -- 2. Private account visibility — a member-scoped FOR ALL policy must never
---    widen reads past what a dedicated SELECT policy allows. Gated on
---    accounts.is_shared, which doesn't exist yet (blocked by #19: today
---    accounts_all is a single FOR ALL policy with no privacy concept at all).
+--    widen reads past what a dedicated SELECT policy allows. The #19 SELECT
+--    policy is one of four; acct_alice is is_shared = false (see fixture), so
+--    Bob must not see it even though he is a member of the same household.
 -- ============================================================================
 
-select exists (
-  select 1 from information_schema.columns
-  where table_schema = 'public' and table_name = 'accounts' and column_name = 'is_shared'
-) as has_is_shared \gset
-
-\if :has_is_shared
--- TODO(#19): the fixture's acct_alice row still needs is_shared = false (and
--- owner_member_id = alice_member) set explicitly once those columns exist —
--- is_shared defaults to true per #19's spec, so without that update this row
--- isn't actually private and this assertion would pass for the wrong reason.
 select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
 select is_empty(
   $$ select * from public.accounts where id = 'a3000000-0000-0000-0000-000000000002'::uuid $$,
   'Bob cannot SELECT Alice''s private account (is_shared = false)'
 );
-\else
-select skip('accounts.is_shared not yet implemented — blocked by #19', 1);
-\endif
+
+-- And the mirror: Alice (its owner) CAN see it. Guards against the inverse
+-- regression — a SELECT policy that drops the owner clause would leave private
+-- accounts invisible to everyone, including their owner.
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000001');
+select results_eq(
+  $$ select count(*)::int from public.accounts where id = 'a3000000-0000-0000-0000-000000000002'::uuid $$,
+  $$ values (1::int) $$,
+  'Alice CAN see her own private account (owner = self)'
+);
 
 -- ============================================================================
 -- 3. entered_by must be write-once — an audit trail a partner can rewrite is
@@ -212,26 +209,39 @@ select skip('transactions.spent_by (attribution independent of entered_by) not y
 -- ============================================================================
 -- 5. Cross-household containment on accounts.owner_member_id — an FK to
 --    household_members proves "is a member", not "is a member of *this*
---    household". Gated on accounts.owner_member_id (blocked by #19).
+--    household". Runs as superuser (RLS bypassed) so the check under test is
+--    the containment trigger itself, not the INSERT policy.
 -- ============================================================================
 
-select exists (
-  select 1 from information_schema.columns
-  where table_schema = 'public' and table_name = 'accounts' and column_name = 'owner_member_id'
-) as has_owner_member_id \gset
+select tests.clear_auth();
 
-\if :has_owner_member_id
-select tests.authenticate_as('a1000000-0000-0000-0000-000000000001');
+select results_eq(
+  $$ insert into public.accounts (household_id, owner_member_id, name, kind, currency)
+     values ('a0000000-0000-0000-0000-00000000000a', 'a2000000-0000-0000-0000-000000000001', 'Alice solo', 'checking', 'CLP')
+     returning 1 $$,
+  $$ values (1) $$,
+  'an owner from the same household is accepted (containment trigger does not over-fire)'
+);
+
 select throws_ok(
-  $$ insert into public.accounts (household_id, owner_member_id, name, type, currency)
+  $$ insert into public.accounts (household_id, owner_member_id, name, kind, currency)
      values ('a0000000-0000-0000-0000-00000000000a', 'b2000000-0000-0000-0000-000000000001', 'Sneaky', 'checking', 'CLP') $$,
   null,
   null,
-  'inserting an account owned by a member of another household is rejected (containment check)'
+  'inserting an account owned by a member of another household is rejected (containment trigger)'
 );
-\else
-select skip('accounts.owner_member_id + cross-household containment trigger not yet implemented — blocked by #19', 1);
-\endif
+
+-- The trigger is before insert OR update; the reassignment path is covered here
+-- too, still as superuser so the check under test is the trigger, not the RLS
+-- UPDATE WITH CHECK.
+select throws_ok(
+  $$ update public.accounts
+       set owner_member_id = 'b2000000-0000-0000-0000-000000000001'::uuid
+       where id = 'a3000000-0000-0000-0000-000000000001'::uuid $$,
+  null,
+  null,
+  'reassigning an account to a member of another household is rejected (containment trigger on UPDATE)'
+);
 
 -- ============================================================================
 -- 6. The invited partner must not be a second-class member: Bob (role =
@@ -373,22 +383,111 @@ select results_eq(
 );
 
 -- ============================================================================
--- 11. Ownership reassignment: ordinarily-shaped WITH CHECK should permit
---     assigning to the joint pool but block assigning to someone else's
---     membership row. Gated on accounts.owner_member_id (blocked by #19).
+-- 11. Ownership reassignment: the UPDATE policy's WITH CHECK should permit
+--     assigning to the joint pool and to yourself, but block assigning to
+--     someone else's membership row. acct_joint starts as joint (owner null).
 -- ============================================================================
 
--- Permanent skip (see file header): don't hard-fail CI for whoever lands #19.
-select skip('accounts.owner_member_id reassignment WITH CHECK semantics not yet implemented — blocked by #19', 1);
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
+
+select results_eq(
+  $$ with claimed as (
+       update public.accounts
+         set owner_member_id = 'a2000000-0000-0000-0000-000000000002'::uuid
+         where id = 'a3000000-0000-0000-0000-000000000001'::uuid
+         returning 1
+     )
+     select count(*)::int from claimed $$,
+  $$ values (1::int) $$,
+  'Bob can claim a joint account for himself (WITH CHECK: owner = current member)'
+);
+
+select throws_ok(
+  $$ update public.accounts
+       set owner_member_id = 'a2000000-0000-0000-0000-000000000001'::uuid
+       where id = 'a3000000-0000-0000-0000-000000000001'::uuid $$,
+  null,
+  null,
+  'Bob cannot reassign an account to Alice (WITH CHECK blocks partner ownership)'
+);
+
+-- Claiming a joint account is fine (above), but claiming it AND hiding it from
+-- the other partner (is_shared -> false) in the same statement is blocked by the
+-- accounts_check_claim_stays_shared trigger.
+select results_eq(
+  $$ insert into public.accounts (id, household_id, name, kind, currency)
+     values ('a3000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-00000000000a', 'Joint 2', 'checking', 'CLP')
+     returning 1 $$,
+  $$ values (1) $$,
+  'setup: a fresh joint account exists to claim'
+);
+
+select throws_ok(
+  $$ update public.accounts
+       set is_shared = false, owner_member_id = 'a2000000-0000-0000-0000-000000000002'::uuid
+       where id = 'a3000000-0000-0000-0000-000000000003'::uuid $$,
+  null,
+  null,
+  'Bob cannot claim a joint account and make it private in the same statement'
+);
 
 -- ============================================================================
 -- 12. Transaction visibility must inherit account visibility: Bob must not
---     see transactions posted against Alice's private account. Gated on
---     accounts.is_shared (blocked by #19).
+--     see transactions posted against Alice's private account. Owned by the
+--     transactions phase (#23), not #19 — stays a skip until then.
 -- ============================================================================
 
--- Permanent skip (see file header): don't hard-fail CI for whoever lands #19.
-select skip('accounts.is_shared / transaction visibility inheritance not yet implemented — blocked by #19', 1);
+select skip('transactions inheriting account visibility (is_shared) — owned by #23', 1);
+
+-- ============================================================================
+-- 13. INSERT ownership semantics (#19 AC): a partner can create a joint
+--     account or their own private account, but not one owned by their spouse.
+-- ============================================================================
+
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
+
+select results_eq(
+  $$ insert into public.accounts (household_id, name, kind, currency)
+     values ('a0000000-0000-0000-0000-00000000000a', 'Bob joint', 'checking', 'CLP')
+     returning 1 $$,
+  $$ values (1) $$,
+  'Bob can create a joint account (owner null)'
+);
+
+select results_eq(
+  $$ insert into public.accounts
+       (household_id, name, kind, currency, is_shared, owner_member_id)
+     values ('a0000000-0000-0000-0000-00000000000a', 'Bob personal', 'checking', 'CLP', false,
+             'a2000000-0000-0000-0000-000000000002')
+     returning 1 $$,
+  $$ values (1) $$,
+  'Bob can create his own private account (owner = self)'
+);
+
+select throws_ok(
+  $$ insert into public.accounts (household_id, name, kind, currency, owner_member_id)
+     values ('a0000000-0000-0000-0000-00000000000a', 'Alice account', 'checking', 'CLP',
+             'a2000000-0000-0000-0000-000000000001') $$,
+  null,
+  null,
+  'Bob cannot create an account owned by Alice (INSERT WITH CHECK)'
+);
+
+-- ============================================================================
+-- 14. accounts_private_needs_owner (#19 AC): a joint (owner null) account that
+--     isn't shared would be visible to nobody, including its creator — reject
+--     it. Runs as superuser so the check under test is the CHECK constraint.
+-- ============================================================================
+
+select tests.clear_auth();
+
+select throws_ok(
+  $$ insert into public.accounts (household_id, name, kind, currency, is_shared)
+     values ('a0000000-0000-0000-0000-00000000000a', 'Joint-private', 'checking', 'CLP', false) $$,
+  '23514',
+  null,
+  'a joint + private account is rejected (accounts_private_needs_owner)'
+);
 
 select * from finish();
 rollback;

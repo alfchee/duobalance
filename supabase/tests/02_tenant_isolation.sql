@@ -37,7 +37,7 @@ begin
     (hh_a, usr_a, 'owner',   'Alice'),
     (hh_b, usr_b, 'owner',   'Bob');
 
-  insert into public.accounts (id, household_id, name, type, currency) values
+  insert into public.accounts (id, household_id, name, kind, currency) values
     (acct_a, hh_a, 'Alice checking', 'checking', 'CLP'),
     (acct_b, hh_b, 'Bob checking',   'checking', 'BRL');
 
