@@ -111,7 +111,7 @@ begin
 end
 $$;
 
-select plan(24);
+select plan(28);
 
 -- ============================================================================
 -- 1. budget_status view — Carol (household B, no budgets of her own) must
@@ -138,6 +138,16 @@ select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
 select is_empty(
   $$ select * from public.accounts where id = 'a3000000-0000-0000-0000-000000000002'::uuid $$,
   'Bob cannot SELECT Alice''s private account (is_shared = false)'
+);
+
+-- And the mirror: Alice (its owner) CAN see it. Guards against the inverse
+-- regression — a SELECT policy that drops the owner clause would leave private
+-- accounts invisible to everyone, including their owner.
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000001');
+select results_eq(
+  $$ select count(*)::int from public.accounts where id = 'a3000000-0000-0000-0000-000000000002'::uuid $$,
+  $$ values (1::int) $$,
+  'Alice CAN see her own private account (owner = self)'
 );
 
 -- ============================================================================
@@ -219,6 +229,18 @@ select throws_ok(
   null,
   null,
   'inserting an account owned by a member of another household is rejected (containment trigger)'
+);
+
+-- The trigger is before insert OR update; the reassignment path is covered here
+-- too, still as superuser so the check under test is the trigger, not the RLS
+-- UPDATE WITH CHECK.
+select throws_ok(
+  $$ update public.accounts
+       set owner_member_id = 'b2000000-0000-0000-0000-000000000001'::uuid
+       where id = 'a3000000-0000-0000-0000-000000000001'::uuid $$,
+  null,
+  null,
+  'reassigning an account to a member of another household is rejected (containment trigger on UPDATE)'
 );
 
 -- ============================================================================
@@ -387,6 +409,26 @@ select throws_ok(
   null,
   null,
   'Bob cannot reassign an account to Alice (WITH CHECK blocks partner ownership)'
+);
+
+-- Claiming a joint account is fine (above), but claiming it AND hiding it from
+-- the other partner (is_shared -> false) in the same statement is blocked by the
+-- accounts_check_claim_stays_shared trigger.
+select results_eq(
+  $$ insert into public.accounts (id, household_id, name, kind, currency)
+     values ('a3000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-00000000000a', 'Joint 2', 'checking', 'CLP')
+     returning 1 $$,
+  $$ values (1) $$,
+  'setup: a fresh joint account exists to claim'
+);
+
+select throws_ok(
+  $$ update public.accounts
+       set is_shared = false, owner_member_id = 'a2000000-0000-0000-0000-000000000002'::uuid
+       where id = 'a3000000-0000-0000-0000-000000000003'::uuid $$,
+  null,
+  null,
+  'Bob cannot claim a joint account and make it private in the same statement'
 );
 
 -- ============================================================================

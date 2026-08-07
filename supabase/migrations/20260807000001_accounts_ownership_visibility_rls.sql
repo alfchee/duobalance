@@ -63,6 +63,11 @@ alter table public.accounts add constraint accounts_private_needs_owner
 -- has no such constraint; drop migration 4's.
 alter table public.accounts drop constraint if exists accounts_household_id_name_key;
 
+-- FK columns aren't indexed automatically: the restrict-on-delete lookup (when a
+-- member who owns accounts is removed) and the RLS owner clause both scan the
+-- table without this.
+create index accounts_owner_member_idx on public.accounts (owner_member_id);
+
 -- ============================================================================
 -- 2. Cross-household containment trigger
 -- ============================================================================
@@ -101,6 +106,29 @@ end $$;
 create trigger accounts_check_member_in_household
   before insert or update on public.accounts
   for each row execute function public.tg_check_account_owner_household();
+
+-- Claiming a joint account (owner null -> me) must not silently hide it from the
+-- other partner in the same statement. accounts_private_needs_owner already
+-- blocks un-sharing a still-joint row (owner would be null); this closes the
+-- combined claim + un-share path. After the claim the account is shared-owned,
+-- so a separate, later un-share remains possible.
+create or replace function public.tg_check_account_claim_stays_shared()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if old.owner_member_id is null
+     and new.owner_member_id is not null
+     and not new.is_shared then
+    raise exception 'a joint account must stay shared when claimed (cannot be made private in the same update)';
+  end if;
+  return new;
+end $$;
+
+create trigger accounts_check_claim_stays_shared
+  before update on public.accounts
+  for each row execute function public.tg_check_account_claim_stays_shared();
 
 -- The id of the current user's household_members row in a household, or NULL.
 -- Shorthand the #19 policies use for "whose account is it" (mirrors the issue's
