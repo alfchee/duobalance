@@ -36,11 +36,17 @@ insert into public.country_defaults (country, timezone, locale) values
 on conflict (country) do nothing;
 
 insert into public.currencies (code, name_en, symbol, minor_unit, is_enabled) values
+  -- IMPORTANT — pgTAP test 01_reference_tables.sql #4 has the explicit contract:
+  --   "exactly CLP and PYG have minor_unit = 0 — no others."
+  -- The minor_unit column drives `roundToMinorUnit` in src/lib/money.ts, so any
+  -- change to the zero-decimal set must also update that test deliberately.
+  -- All other LATAM currencies below intentionally use minor_unit = 2 to stay
+  -- within the project convention.
   ('ARS', 'Argentine Peso',        '$',    2, true),
   ('BOB', 'Bolivian Boliviano',    'Bs',   2, true),
   ('BRL', 'Brazilian Real',        'R$',   2, true),
   ('CLP', 'Chilean Peso',          '$',    0, true),
-  ('COP', 'Colombian Peso',        '$',    0, true),
+  ('COP', 'Colombian Peso',        '$',    2, true),
   ('CRC', 'Costa Rican Colón',     '₡',    2, true),
   ('CUP', 'Cuban Peso',            '$',    2, true),
   ('DOP', 'Dominican Peso',        '$',    2, true),

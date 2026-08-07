@@ -49,25 +49,32 @@ on conflict (country) do nothing;
 
 insert into public.currencies (code, name_en, symbol, minor_unit, is_enabled) values
   -- Core LATAM currencies.
-  ('ARS', 'Argentine Peso',        '$',   2, true),
-  ('BOB', 'Bolivian Boliviano',    'Bs',  2, true),
-  ('BRL', 'Brazilian Real',        'R$',  2, true),
-  ('CLP', 'Chilean Peso',          '$',   0, true),
-  ('COP', 'Colombian Peso',        '$',   0, true),
-  ('CRC', 'Costa Rican Colón',     '₡',   2, true),
-  ('CUP', 'Cuban Peso',            '$',   2, true),
-  ('DOP', 'Dominican Peso',        '$',   2, true),
-  ('GTQ', 'Guatemalan Quetzal',    'Q',   2, true),
-  ('HNL', 'Honduran Lempira',      'L',   2, true),
-  ('MXN', 'Mexican Peso',          '$',   2, true),
-  ('NIO', 'Nicaraguan Córdoba',    'C$',  2, true),
-  ('PAB', 'Panamanian Balboa',     'B/.', 2, true),
-  ('PEN', 'Peruvian Sol',          'S/',  2, true),
-  ('PYG', 'Paraguayan Guaraní',    '₲',   0, true),
-  ('UYU', 'Uruguayan Peso',        '$U',  2, true),
-  ('VES', 'Venezuelan Bolívar',    'Bs.S',2, true),
+  --
+  -- IMPORTANT — pgTAP test 01_reference_tables.sql #4 has the explicit contract:
+  --   "exactly CLP and PYG have minor_unit = 0 — no others."
+  -- The minor_unit column drives `roundToMinorUnit` in src/lib/money.ts, so any
+  -- change to the zero-decimal set must also update that test deliberately.
+  -- All other LATAM currencies below intentionally use minor_unit = 2 to stay
+  -- within the project convention.
+  ('ARS', 'Argentine Peso',        '$',    2, true),
+  ('BOB', 'Bolivian Boliviano',    'Bs',   2, true),
+  ('BRL', 'Brazilian Real',        'R$',   2, true),
+  ('CLP', 'Chilean Peso',          '$',    0, true),
+  ('COP', 'Colombian Peso',        '$',    2, true),
+  ('CRC', 'Costa Rican Colón',     '₡',    2, true),
+  ('CUP', 'Cuban Peso',            '$',    2, true),
+  ('DOP', 'Dominican Peso',        '$',    2, true),
+  ('GTQ', 'Guatemalan Quetzal',    'Q',    2, true),
+  ('HNL', 'Honduran Lempira',      'L',    2, true),
+  ('MXN', 'Mexican Peso',          '$',    2, true),
+  ('NIO', 'Nicaraguan Córdoba',    'C$',   2, true),
+  ('PAB', 'Panamanian Balboa',     'B/.',  2, true),
+  ('PEN', 'Peruvian Sol',          'S/',   2, true),
+  ('PYG', 'Paraguayan Guaraní',    '₲',    0, true),
+  ('UYU', 'Uruguayan Peso',        '$U',   2, true),
+  ('VES', 'Venezuelan Bolívar',    'Bs.S', 2, true),
   -- Common non-LATAM base currencies we still want available in the picker
   -- because many LATAM households denominate in USD or receive EUR remittances.
-  ('USD', 'US Dollar',             '$',   2, true),
-  ('EUR', 'Euro',                  '€',   2, true)
+  ('USD', 'US Dollar',             '$',    2, true),
+  ('EUR', 'Euro',                  '€',    2, true)
 on conflict (code) do nothing;
