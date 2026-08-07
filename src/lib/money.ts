@@ -40,6 +40,44 @@ export function parseMoneyInput(raw: string, locale = "es"): number | null {
   return amount === 0 ? 0 : amount; // collapse -0, which Object.is treats as distinct
 }
 
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Live mask for an amount input, enforced per keystroke: only digits, one
+// leading minus, and the locale's decimal/group separators survive, and the
+// fraction never exceeds minorUnit places (CLP accepts no decimals). The
+// value is still a string — parse with parseMoneyInput on submit.
+export function maskMoneyInput(raw: string, locale: string, minorUnit: number): string {
+  const { decimal, group } = separatorsFor(locale);
+  const filtered = raw
+    .replace(new RegExp(`[^0-9${escapeRegExp(decimal)}${escapeRegExp(group)}−-]`, "g"), "")
+    .replace(/−/g, "-");
+
+  const hasMinus = filtered.startsWith("-");
+  let unsigned = (hasMinus ? filtered.slice(1) : filtered).replace(/-/g, "");
+
+  // No fraction for whole-unit currencies: the decimal separator would read as
+  // a decimal to parseMoneyInput (es "12,345" -> 12.345), so treat it as a
+  // group separator and drop it.
+  if (minorUnit === 0) {
+    unsigned = unsigned
+      .split(decimal)
+      .join("")
+      .replace(new RegExp(`${escapeRegExp(group)}$`), "");
+    return (hasMinus ? "-" : "") + unsigned;
+  }
+
+  // Only the first decimal separator survives; anything after it is a fraction.
+  const [intPart, ...fractionParts] = unsigned.split(decimal);
+  let out = (hasMinus ? "-" : "") + intPart;
+  if (fractionParts.length > 0) {
+    const fraction = fractionParts.join("").slice(0, minorUnit);
+    out += `${decimal}${fraction}`;
+  }
+  return out;
+}
+
 export function roundToMinorUnit(amount: number, minorUnit: number): number {
   const f = 10 ** minorUnit;
   // Number.EPSILON nudges binary float error (1.005 * 100 = 100.49999…)
