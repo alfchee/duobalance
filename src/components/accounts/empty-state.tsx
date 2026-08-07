@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useAccountMutations } from "@/hooks/useAccounts";
+import type { AccountKind } from "@/lib/accounts";
 import { KindIcon } from "./kind-icon";
 
 const DEFAULTS = [
@@ -17,7 +18,7 @@ export function EmptyAccounts() {
   const { householdId, baseCurrency } = useHousehold();
   const { create } = useAccountMutations(householdId);
 
-  function quickCreate(kind: string, name: string) {
+  function quickCreate(kind: AccountKind, name: string) {
     if (!householdId || !baseCurrency) return;
     create.mutate({
       name,
@@ -50,6 +51,11 @@ export function EmptyAccounts() {
           </Button>
         ))}
       </div>
+      {create.isError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t("error")}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -127,7 +127,8 @@
       "subtitle": "Empieza con las más comunes; puedes agregar más después.",
       "defaultCash": "Efectivo",
       "defaultChecking": "Cuenta corriente",
-      "defaultCreditCard": "Tarjeta de crédito"
+      "defaultCreditCard": "Tarjeta de crédito",
+      "error": "No se pudo crear la cuenta. Intenta de nuevo."
     },
     "list": {
       "showArchived": "Mostrar archivadas ({count})",
@@ -152,7 +153,6 @@
       "manualDescription": "Tú indicas el saldo. Ideal para préstamos, inversiones o cuentas que revisas una vez al mes."
     },
     "row": {
-      "joint": "Conjunta",
       "private": "Privada",
       "archived": "Archivada",
       "dragHandle": "Reordenar",

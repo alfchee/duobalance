@@ -127,7 +127,8 @@
       "subtitle": "Start with the common ones — you can add more later.",
       "defaultCash": "Cash",
       "defaultChecking": "Checking",
-      "defaultCreditCard": "Credit card"
+      "defaultCreditCard": "Credit card",
+      "error": "Couldn't create the account. Try again."
     },
     "list": {
       "showArchived": "Show archived ({count})",
@@ -152,7 +153,6 @@
       "manualDescription": "You type in the balance yourself. Best for loans, investments, or accounts you check monthly."
     },
     "row": {
-      "joint": "Joint",
       "private": "Private",
       "archived": "Archived",
       "dragHandle": "Reorder",

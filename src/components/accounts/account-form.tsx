@@ -24,14 +24,19 @@ import { Switch } from "@/components/ui/switch";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useAccountMutations, type AccountInput } from "@/hooks/useAccounts";
 import { useCurrencies } from "@/hooks/useCurrencies";
-import { ACCOUNT_KINDS, isPrivateNeedsOwnerError, type Account } from "@/lib/accounts";
+import {
+  ACCOUNT_KINDS,
+  isPrivateNeedsOwnerError,
+  type Account,
+  type AccountKind,
+} from "@/lib/accounts";
 import { maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 import { CurrencyPicker } from "./currency-picker";
 
 type Draft = {
   name: string;
-  kind: string;
+  kind: AccountKind;
   currency: string | null;
   balanceMode: "ledger" | "manual";
   openingBalance: string;
@@ -83,7 +88,7 @@ function AccountFormContent({
 
   const [draft, setDraft] = useState<Draft>(() => ({
     name: account?.name ?? "",
-    kind: account?.kind ?? "checking",
+    kind: (account?.kind as AccountKind) ?? "checking",
     currency: account?.currency ?? baseCurrency,
     balanceMode: account?.balance_mode === "manual" ? "manual" : "ledger",
     openingBalance: account ? formatInputAmount(account.opening_balance, locale) : "0",
@@ -215,7 +220,10 @@ function AccountFormContent({
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="account-kind">{t("kind")}</Label>
-          <Select value={draft.kind} onValueChange={(kind) => setDraft((d) => ({ ...d, kind }))}>
+          <Select
+            value={draft.kind}
+            onValueChange={(kind) => setDraft((d) => ({ ...d, kind: kind as AccountKind }))}
+          >
             <SelectTrigger id="account-kind" className="w-full">
               <SelectValue placeholder={t("kindPlaceholder")} />
             </SelectTrigger>

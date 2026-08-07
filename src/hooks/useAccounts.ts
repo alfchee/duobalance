@@ -2,11 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
-import type { Account } from "@/lib/accounts";
+import { nextDisplayOrder, type Account, type AccountKind } from "@/lib/accounts";
 
 export type AccountInput = {
   name: string;
-  kind: string;
+  kind: AccountKind;
   currency: string;
   balance_mode: "ledger" | "manual";
   opening_balance: number;
@@ -57,11 +57,14 @@ export function useAccountMutations(householdId: string | null) {
 
   const create = useMutation({
     mutationFn: async (input: AccountInput) => {
-      if (!householdId) throw new Error("no household");
+      if (!householdId || !key) throw new Error("no household");
       const supabase = requireSupabase();
+      // Append new accounts at the end: display_order is queried nullsFirst, so
+      // without this a fresh account (null order) would sort to the top.
+      const existing = queryClient.getQueryData<Account[]>(key) ?? [];
       const { data, error } = await supabase
         .from("accounts")
-        .insert({ ...input, household_id: householdId })
+        .insert({ ...input, household_id: householdId, display_order: nextDisplayOrder(existing) })
         .select()
         .single();
       if (error) throw error;
