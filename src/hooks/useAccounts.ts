@@ -125,11 +125,16 @@ export function useAccountMutations(householdId: string | null) {
     mutationFn: async ({ accounts, memberId }: { accounts: Account[]; memberId: string }) => {
       const supabase = requireSupabase();
       const results = await Promise.all(
-        accounts.map((account, i) => {
+        accounts.map((account) => {
           if (account.owner_member_id !== null && account.owner_member_id !== memberId) {
             return Promise.resolve({ error: null });
           }
-          return supabase.from("accounts").update({ display_order: i }).eq("id", account.id);
+          // display_order was pre-computed by reorderAccounts so locked rows
+          // keep their stored value and editable rows slot around them.
+          return supabase
+            .from("accounts")
+            .update({ display_order: account.display_order })
+            .eq("id", account.id);
         }),
       );
       const firstError = results.find((r) => r.error)?.error;

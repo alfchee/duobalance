@@ -55,8 +55,18 @@ export function isPrivateNeedsOwnerError(error: unknown): boolean {
 // New relative order for the visible (non-archived) accounts. The visible list
 // takes over the active slots in its new order; any active account absent from
 // it (a partial reorder) falls back to its original relative position. Archived
-// accounts keep their slots; the result gets fresh 0..n display_order values.
-export function reorderAccounts(all: Account[], visible: Account[]): Account[] {
+// accounts keep their slots. `lockedIds` are rows this user can't write (a
+// partner-owned shared account is read-only under RLS): they keep their stored
+// display_order, and the editable rows get fresh sequential values that slot
+// around those fixed anchors. Without this, the reorder would renumber locked
+// rows too and the mutation would skip them — leaving duplicate display_order
+// values and a persisted order that diverges from the UI after refetch.
+export function reorderAccounts(
+  all: Account[],
+  visible: Account[],
+  options: { lockedIds?: ReadonlySet<string> } = {},
+): Account[] {
+  const lockedIds = options.lockedIds ?? new Set<string>();
   const actives = all.filter((a) => !a.is_archived);
   const visibleIds = new Set(visible.map((a) => a.id));
   const leftovers = actives.filter((a) => !visibleIds.has(a.id));
@@ -66,5 +76,13 @@ export function reorderAccounts(all: Account[], visible: Account[]): Account[] {
     if (account.is_archived) return account;
     return newActives[ai++] ?? account;
   });
-  return ordered.map((account, i) => ({ ...account, display_order: i }));
+  let cursor = -Infinity;
+  return ordered.map((account) => {
+    if (lockedIds.has(account.id)) {
+      cursor = Math.max(cursor, account.display_order ?? 0);
+      return account;
+    }
+    cursor = cursor < 0 ? 0 : cursor + 1;
+    return { ...account, display_order: cursor };
+  });
 }

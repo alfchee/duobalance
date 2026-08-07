@@ -40,8 +40,15 @@ export function AccountList() {
     const newIndex = ids.indexOf(String(over.id));
     if (oldIndex < 0 || newIndex < 0) return;
     const nextVisible = arrayMove(visible, oldIndex, newIndex);
+    // Partner-owned shared accounts are read-only under RLS, so they must keep
+    // their display_order while the editable rows renumber around them.
+    const lockedIds = new Set(
+      all
+        .filter((a) => a.owner_member_id !== null && a.owner_member_id !== memberId)
+        .map((a) => a.id),
+    );
     reorder.mutate({
-      accounts: reorderAccounts(all, nextVisible),
+      accounts: reorderAccounts(all, nextVisible, { lockedIds }),
       memberId,
     });
   }

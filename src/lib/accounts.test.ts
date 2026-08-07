@@ -57,7 +57,7 @@ describe("accountBalance", () => {
     expect(accountBalance(account({ balance_mode: "manual", manual_balance: 500 }))).toBe(500);
   });
 
-  it("falls back to opening_balance when manual_balance is null", () => {
+  it("returns 0 when manual_balance is null", () => {
     expect(accountBalance(account({ balance_mode: "manual", manual_balance: null }))).toBe(0);
   });
 
@@ -128,5 +128,27 @@ describe("reorderAccounts", () => {
   it("falls back to the original account when visible runs short", () => {
     const reordered = reorderAccounts([joint, mine], [mine]);
     expect(reordered.map((a) => a.id)).toEqual(["b", "a"]);
+  });
+
+  it("keeps locked accounts fixed and renumbers the rest around them", () => {
+    // partner-owned shared account (owner_member_id: p1) is read-only under RLS;
+    // dragging "a" past it must leave its display_order untouched, with the
+    // editable rows slotting around it (no duplicate values).
+    const locked = new Set(["b"]);
+    const reordered = reorderAccounts(
+      [
+        account({ id: "a", display_order: 0 }),
+        account({ id: "b", owner_member_id: "p1", display_order: 1 }),
+        account({ id: "c", display_order: 2 }),
+      ],
+      [
+        account({ id: "b", owner_member_id: "p1", display_order: 1 }),
+        account({ id: "c", display_order: 2 }),
+        account({ id: "a", display_order: 0 }),
+      ],
+      { lockedIds: locked },
+    );
+    expect(reordered.map((a) => a.id)).toEqual(["b", "c", "a"]);
+    expect(reordered.map((a) => a.display_order)).toEqual([1, 2, 3]);
   });
 });
