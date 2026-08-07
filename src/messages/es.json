@@ -119,6 +119,91 @@
     "loading": "Cargando tu hogar…",
     "empty": "No encontramos un hogar para tu cuenta."
   },
+  "accounts": {
+    "subtitle": "Cuentas que tu hogar registra.",
+    "newAccount": "Nueva cuenta",
+    "empty": {
+      "title": "Aún no hay cuentas",
+      "subtitle": "Empieza con las más comunes; puedes agregar más después.",
+      "defaultCash": "Efectivo",
+      "defaultChecking": "Cuenta corriente",
+      "defaultCreditCard": "Tarjeta de crédito"
+    },
+    "list": {
+      "showArchived": "Mostrar archivadas ({count})",
+      "hideArchived": "Ocultar archivadas",
+      "archivedSection": "Archivadas",
+      "loadingError": "No se pudieron cargar las cuentas.",
+      "retry": "Reintentar"
+    },
+    "kinds": {
+      "cash": "Efectivo",
+      "checking": "Cuenta corriente",
+      "savings": "Ahorro",
+      "credit_card": "Tarjeta de crédito",
+      "loan": "Préstamo",
+      "investment": "Inversión"
+    },
+    "balanceModes": {
+      "label": "¿Cómo se determina el saldo?",
+      "ledger": "Por movimientos",
+      "ledgerDescription": "El saldo se calcula con cada movimiento que registras. Ideal si anotas cada compra.",
+      "manual": "Manual",
+      "manualDescription": "Tú indicas el saldo. Ideal para préstamos, inversiones o cuentas que revisas una vez al mes."
+    },
+    "row": {
+      "joint": "Conjunta",
+      "private": "Privada",
+      "archived": "Archivada",
+      "dragHandle": "Reordenar",
+      "edit": "Editar",
+      "updateBalance": "Actualizar saldo"
+    },
+    "form": {
+      "titleCreate": "Nueva cuenta",
+      "titleEdit": "Editar cuenta",
+      "name": "Nombre",
+      "namePlaceholder": "p. ej. Cuenta del día a día",
+      "kind": "Tipo",
+      "kindPlaceholder": "Selecciona un tipo",
+      "currency": "Moneda",
+      "currencyPlaceholder": "Selecciona una moneda",
+      "currencySearch": "Buscar monedas…",
+      "currencyNoResults": "Ninguna moneda coincide.",
+      "openingBalance": "Saldo inicial",
+      "openingBalanceHint": "Saldo inicial antes de los movimientos.",
+      "manualBalance": "Saldo actual",
+      "creditLimit": "Límite de crédito",
+      "creditLimitHint": "Opcional — se muestra en la cuenta.",
+      "share": "Compartir con tu pareja",
+      "shareHint": "Tu pareja puede ver y actualizar esta cuenta.",
+      "privateNote": "Una cuenta privada solo es visible para ti, así que debe ser tuya.",
+      "ownership": "Propietario",
+      "joint": "Conjunta",
+      "mine": "Mía",
+      "archive": "Archivar cuenta",
+      "restore": "Restaurar cuenta",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "errors": {
+        "nameRequired": "Ingresa un nombre (de 1 a 80 caracteres).",
+        "kindRequired": "Elige un tipo de cuenta.",
+        "currencyRequired": "Elige una moneda.",
+        "balanceRequired": "Ingresa un saldo.",
+        "privateNeedsOwner": "Una cuenta privada debe pertenecer a uno de ustedes. Establece el propietario en “Mía”.",
+        "generic": "Algo salió mal al guardar la cuenta. Intenta de nuevo."
+      }
+    },
+    "manualBalanceSheet": {
+      "title": "Actualizar saldo",
+      "subtitle": "Establece el saldo al nuevo valor y lo marca como actualizado ahora.",
+      "current": "Saldo actual",
+      "newValue": "Nuevo saldo",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "error": "No se pudo actualizar el saldo. Intenta de nuevo."
+    }
+  },
   "settings": {
     "title": "Configuración",
     "signedInAs": "Sesión iniciada como",

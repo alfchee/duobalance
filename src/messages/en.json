@@ -119,6 +119,91 @@
     "loading": "Loading your household…",
     "empty": "We couldn't find a household for your account."
   },
+  "accounts": {
+    "subtitle": "Accounts your household tracks.",
+    "newAccount": "New account",
+    "empty": {
+      "title": "No accounts yet",
+      "subtitle": "Start with the common ones — you can add more later.",
+      "defaultCash": "Cash",
+      "defaultChecking": "Checking",
+      "defaultCreditCard": "Credit card"
+    },
+    "list": {
+      "showArchived": "Show archived ({count})",
+      "hideArchived": "Hide archived",
+      "archivedSection": "Archived",
+      "loadingError": "Couldn't load accounts.",
+      "retry": "Retry"
+    },
+    "kinds": {
+      "cash": "Cash",
+      "checking": "Checking",
+      "savings": "Savings",
+      "credit_card": "Credit card",
+      "loan": "Loan",
+      "investment": "Investment"
+    },
+    "balanceModes": {
+      "label": "How is the balance set?",
+      "ledger": "From transactions",
+      "ledgerDescription": "The balance is calculated from every transaction you record. Best when you log each purchase.",
+      "manual": "Manual",
+      "manualDescription": "You type in the balance yourself. Best for loans, investments, or accounts you check monthly."
+    },
+    "row": {
+      "joint": "Joint",
+      "private": "Private",
+      "archived": "Archived",
+      "dragHandle": "Reorder",
+      "edit": "Edit",
+      "updateBalance": "Update balance"
+    },
+    "form": {
+      "titleCreate": "New account",
+      "titleEdit": "Edit account",
+      "name": "Name",
+      "namePlaceholder": "e.g. Everyday account",
+      "kind": "Type",
+      "kindPlaceholder": "Select a type",
+      "currency": "Currency",
+      "currencyPlaceholder": "Select a currency",
+      "currencySearch": "Search currencies…",
+      "currencyNoResults": "No currencies match.",
+      "openingBalance": "Opening balance",
+      "openingBalanceHint": "Starting balance before transactions.",
+      "manualBalance": "Current balance",
+      "creditLimit": "Credit limit",
+      "creditLimitHint": "Optional — shown on the account.",
+      "share": "Share with partner",
+      "shareHint": "Your partner sees and can update this account.",
+      "privateNote": "A private account is visible only to you, so it must belong to you.",
+      "ownership": "Owner",
+      "joint": "Joint",
+      "mine": "Mine",
+      "archive": "Archive account",
+      "restore": "Restore account",
+      "save": "Save",
+      "saving": "Saving…",
+      "errors": {
+        "nameRequired": "Enter a name (1–80 characters).",
+        "kindRequired": "Choose an account type.",
+        "currencyRequired": "Choose a currency.",
+        "balanceRequired": "Enter a balance.",
+        "privateNeedsOwner": "A private account must belong to one of you. Set the owner to Mine.",
+        "generic": "Something went wrong saving the account. Try again."
+      }
+    },
+    "manualBalanceSheet": {
+      "title": "Update balance",
+      "subtitle": "Sets the balance to the new value and marks it as updated now.",
+      "current": "Current balance",
+      "newValue": "New balance",
+      "save": "Save",
+      "saving": "Saving…",
+      "error": "Couldn't update the balance. Try again."
+    }
+  },
   "settings": {
     "title": "Settings",
     "signedInAs": "Signed in as",
