@@ -110,6 +110,43 @@
       "generic": "Algo salió mal. Intenta de nuevo."
     }
   },
+  "balances": {
+    "headerAriaLabel": "Resumen de saldos del hogar",
+    "tabsAriaLabel": "Alcance del saldo",
+    "netWorthLabel": "Patrimonio",
+    "netWorthLoading": "Calculando…",
+    "accountCount": "{count, plural, =0 {Sin cuentas} one {# cuenta} other {# cuentas}}",
+    "partnerPlaceholder": "Pareja",
+    "partnerAriaLabel": "Pareja — {name}",
+    "ownerLoading": "Titular",
+    "jointLabel": "Conjunta",
+    "tab": {
+      "mine": "Mías",
+      "all": "Todas",
+      "joint": "Conjuntas"
+    },
+    "tabEmpty": "Aún no hay cuentas en esta vista.",
+    "loadError": "No se pudieron cargar tus saldos.",
+    "retry": "Reintentar",
+    "newAccount": "Nueva cuenta",
+    "computedOn": "Tipos de cambio al {date}.",
+    "updated": "Actualizado {when}",
+    "neverUpdated": "Nunca actualizado",
+    "stale": "Desactualizado — actualiza el saldo",
+    "updateBalance": "Actualizar saldo",
+    "section": {
+      "cash": "Efectivo y cuenta corriente",
+      "credit": "Tarjetas de crédito",
+      "savings": "Ahorros e inversiones",
+      "loans": "Préstamos"
+    },
+    "breakdownToggle": "Ver desglose por moneda",
+    "breakdownTitle": "Desglose por moneda",
+    "breakdownBaseRate": "Tasa base: {date}",
+    "breakdownEmpty": "Todas tus cuentas están en la moneda base del hogar.",
+    "breakdownClose": "Cerrar",
+    "rateUsed": "1 USD = {rate}"
+  },
   "household": {
     "picker": {
       "title": "Elige un hogar",
