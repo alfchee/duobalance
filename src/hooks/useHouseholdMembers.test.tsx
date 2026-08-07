@@ -14,6 +14,7 @@ const MEMBERS = [
     display_name: "Ana",
     role: "owner",
     joined_at: "2026-01-01T00:00:00Z",
+    color_hex: "#3B82F6",
   },
 ];
 

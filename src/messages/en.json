@@ -110,6 +110,41 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "balances": {
+    "headerAriaLabel": "Household balance summary",
+    "tabsAriaLabel": "Balance scope",
+    "netWorthLabel": "Net worth",
+    "netWorthLoading": "Calculating…",
+    "accountCount": "{count, plural, =0 {No accounts} one {# account} other {# accounts}}",
+    "partnerPlaceholder": "Partner",
+    "partnerAriaLabel": "Partner — {name}",
+    "jointLabel": "Joint",
+    "tab": {
+      "mine": "Mine",
+      "all": "All",
+      "joint": "Joint"
+    },
+    "tabEmpty": "No accounts in this view yet.",
+    "loadError": "Couldn't load your balances.",
+    "retry": "Retry",
+    "newAccount": "New account",
+    "computedOn": "Exchange rates as of {date}.",
+    "updated": "Updated {when}",
+    "stale": "Stale — update the balance",
+    "updateBalance": "Update balance",
+    "section": {
+      "cash": "Cash & Checking",
+      "credit": "Credit Cards",
+      "savings": "Savings & Investments",
+      "loans": "Loans"
+    },
+    "breakdownToggle": "See per-currency breakdown",
+    "breakdownTitle": "Per-currency breakdown",
+    "breakdownBaseRate": "Base rate: {date}",
+    "breakdownEmpty": "All your accounts are in the household's base currency.",
+    "breakdownClose": "Close",
+    "rateUsed": "1 USD = {rate}"
+  },
   "household": {
     "picker": {
       "title": "Choose a household",
