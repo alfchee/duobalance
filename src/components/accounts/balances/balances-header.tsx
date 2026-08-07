@@ -1,12 +1,13 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useFxOverrides, type EffectiveRate } from "@/hooks/useFxOverrides";
+import { useFxOverrides } from "@/hooks/useFxOverrides";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
+import { useRatesByCode } from "@/hooks/useRatesByCode";
 import { displayBalance, type Account } from "@/lib/accounts";
 import {
   buildCurrencyBreakdown,
@@ -31,14 +32,9 @@ export function BalancesHeader({ accounts }: { accounts: Account[] }) {
   const locale = useLocale();
   const { householdId, baseCurrency, memberId } = useHousehold();
   const { data: members } = useHouseholdMembers(householdId);
-  const { data: rates, isLoading: ratesLoading } = useFxOverrides();
+  const { isLoading: ratesLoading } = useFxOverrides();
+  const ratesByCode = useRatesByCode();
   const [open, setOpen] = useState(false);
-
-  const ratesByCode = useMemo<RatesByCode>(() => {
-    const m = new Map<string, EffectiveRate>();
-    for (const r of rates ?? []) m.set(r.code, r);
-    return m;
-  }, [rates]);
 
   const netWorth = baseCurrency
     ? sumBalances(accounts, baseCurrency, ratesByCode, displayBalance)
@@ -75,7 +71,6 @@ export function BalancesHeader({ accounts }: { accounts: Account[] }) {
           <button
             type="button"
             className="group flex w-full flex-col items-start gap-1 rounded-lg border bg-card p-4 text-left transition-colors hover:bg-accent/40"
-            aria-haspopup="dialog"
             aria-expanded={open}
             disabled={!baseCurrency || ratesLoading}
           >

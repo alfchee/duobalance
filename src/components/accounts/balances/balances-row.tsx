@@ -29,6 +29,7 @@ export function BalancesRow({ account, now }: { account: Account; now: Date }) {
   const balance = displayBalance(account);
   const freshness = formatUpdatedAgo(account.balance_updated_at, now, locale);
   const stale = isStaleBalance(account, now);
+  const updatedCopy = freshness.never ? t("neverUpdated") : t("updated", { when: freshness.text });
 
   return (
     <li className="border-b last:border-b-0">
@@ -46,7 +47,7 @@ export function BalancesRow({ account, now }: { account: Account; now: Date }) {
             <OwnerBadge account={account} />
           </div>
           <p className="truncate text-xs text-muted-foreground">
-            {account.institution ?? account.currency}
+            {account.institution?.trim() ? account.institution : account.kind}
             {" · "}
             {isManual ? tModes("manual") : tModes("ledger")}
           </p>
@@ -77,8 +78,8 @@ export function BalancesRow({ account, now }: { account: Account; now: Date }) {
         )}
       >
         {stale ? <AlertTriangle className="size-3" /> : null}
-        {t("updated", { when: freshness.text })}
-        {stale ? ` · ${t("stale")}` : ""}
+        {updatedCopy}
+        {stale && !freshness.never ? ` · ${t("stale")}` : ""}
       </p>
     </li>
   );

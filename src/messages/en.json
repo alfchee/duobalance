@@ -118,6 +118,7 @@
     "accountCount": "{count, plural, =0 {No accounts} one {# account} other {# accounts}}",
     "partnerPlaceholder": "Partner",
     "partnerAriaLabel": "Partner — {name}",
+    "ownerLoading": "Owner",
     "jointLabel": "Joint",
     "tab": {
       "mine": "Mine",
@@ -130,6 +131,7 @@
     "newAccount": "New account",
     "computedOn": "Exchange rates as of {date}.",
     "updated": "Updated {when}",
+    "neverUpdated": "Never updated",
     "stale": "Stale — update the balance",
     "updateBalance": "Update balance",
     "section": {

@@ -118,6 +118,7 @@
     "accountCount": "{count, plural, =0 {Sin cuentas} one {# cuenta} other {# cuentas}}",
     "partnerPlaceholder": "Pareja",
     "partnerAriaLabel": "Pareja — {name}",
+    "ownerLoading": "Titular",
     "jointLabel": "Conjunta",
     "tab": {
       "mine": "Mías",
@@ -130,6 +131,7 @@
     "newAccount": "Nueva cuenta",
     "computedOn": "Tipos de cambio al {date}.",
     "updated": "Actualizado {when}",
+    "neverUpdated": "Nunca actualizado",
     "stale": "Desactualizado — actualiza el saldo",
     "updateBalance": "Actualizar saldo",
     "section": {

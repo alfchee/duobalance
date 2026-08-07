@@ -5,6 +5,7 @@ import {
   filterByTab,
   formatUpdatedAgo,
   groupBySection,
+  isBalanceTab,
   isStaleBalance,
   sumBalances,
   type RatesByCode,
@@ -77,6 +78,24 @@ describe("filterByTab", () => {
     for (const tab of ["mine", "joint", "all"] as const) {
       expect(filterByTab(all, tab, "u1").some((a) => a.is_archived)).toBe(false);
     }
+  });
+});
+
+describe("isBalanceTab", () => {
+  it("accepts the three canonical values", () => {
+    expect(isBalanceTab("mine")).toBe(true);
+    expect(isBalanceTab("all")).toBe(true);
+    expect(isBalanceTab("joint")).toBe(true);
+  });
+
+  it("rejects case variants, whitespace, typos and empty input", () => {
+    expect(isBalanceTab("")).toBe(false);
+    expect(isBalanceTab("MINE")).toBe(false);
+    expect(isBalanceTab("mine ")).toBe(false);
+    expect(isBalanceTab("All")).toBe(false);
+    expect(isBalanceTab("mines")).toBe(false);
+    expect(isBalanceTab("individual")).toBe(false);
+    expect(isBalanceTab("shared")).toBe(false);
   });
 });
 
@@ -236,6 +255,7 @@ describe("sumBalances", () => {
 
 describe("isStaleBalance", () => {
   const NOW = new Date("2026-08-07T12:00:00Z");
+  const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
   it("is never stale for ledger accounts", () => {
     const acct = account({ balance_mode: "ledger", balance_updated_at: null });
@@ -256,6 +276,26 @@ describe("isStaleBalance", () => {
     expect(isStaleBalance(acct, NOW)).toBe(true);
   });
 
+  it("marks exactly-14d-old manual data as fresh (boundary)", () => {
+    const exactlyFourteen = new Date(NOW.getTime() - FOURTEEN_DAYS_MS).toISOString();
+    const acct = account({
+      balance_mode: "manual",
+      manual_balance: 100,
+      balance_updated_at: exactlyFourteen,
+    });
+    expect(isStaleBalance(acct, NOW)).toBe(false);
+  });
+
+  it("marks 14d + 1ms old manual data as stale (boundary)", () => {
+    const staleByOne = new Date(NOW.getTime() - FOURTEEN_DAYS_MS - 1).toISOString();
+    const acct = account({
+      balance_mode: "manual",
+      manual_balance: 100,
+      balance_updated_at: staleByOne,
+    });
+    expect(isStaleBalance(acct, NOW)).toBe(true);
+  });
+
   it("is fresh when a manual account was updated recently", () => {
     const acct = account({
       balance_mode: "manual",
@@ -269,22 +309,25 @@ describe("isStaleBalance", () => {
 describe("formatUpdatedAgo", () => {
   const NOW = new Date("2026-08-07T12:00:00Z");
 
-  it("returns a 'today' phrasing for a null timestamp", () => {
-    const { text, days } = formatUpdatedAgo(null, NOW, "en");
-    expect(days).toBeNull();
-    expect(text).toBe("today");
+  it("flags never=true and returns empty text for a null timestamp", () => {
+    const freshness = formatUpdatedAgo(null, NOW, "en");
+    expect(freshness.never).toBe(true);
+    expect(freshness.days).toBeNull();
+    expect(freshness.text).toBe("");
   });
 
   it("returns the day count for multi-day ages", () => {
-    const { text, days } = formatUpdatedAgo("2026-08-04T12:00:00Z", NOW, "en");
+    const { text, days, never } = formatUpdatedAgo("2026-08-04T12:00:00Z", NOW, "en");
     expect(days).toBe(3);
     expect(text).toBe("3 days ago");
+    expect(never).toBe(false);
   });
 
   it("returns the hour count for sub-day ages", () => {
-    const { text, days } = formatUpdatedAgo("2026-08-07T09:00:00Z", NOW, "en");
+    const { text, days, never } = formatUpdatedAgo("2026-08-07T09:00:00Z", NOW, "en");
     expect(days).toBe(0);
     expect(text).toBe("3 hours ago");
+    expect(never).toBe(false);
   });
 
   it("uses the active locale", () => {

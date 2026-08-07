@@ -1,4 +1,4 @@
-import type { Account, AccountKind } from "@/lib/accounts";
+import type { Account } from "@/lib/accounts";
 import type { EffectiveRate } from "@/hooks/useFxOverrides";
 
 // Issue #21: Balances screen helpers. Pure functions — no React, no Supabase.
@@ -12,10 +12,10 @@ export type BalanceTab = (typeof BALANCE_TABS)[number];
 // Savings & Investments → Loans. Keeping the mapping centralised means the
 // header, the section iteration, and the tests share one source of truth.
 export const BALANCE_SECTIONS = [
-  { id: "cash", titleKey: "sectionCash", kinds: ["cash", "checking"] },
-  { id: "credit", titleKey: "sectionCredit", kinds: ["credit_card"] },
-  { id: "savings", titleKey: "sectionSavings", kinds: ["savings", "investment"] },
-  { id: "loans", titleKey: "sectionLoans", kinds: ["loan"] },
+  { id: "cash", kinds: ["cash", "checking"] },
+  { id: "credit", kinds: ["credit_card"] },
+  { id: "savings", kinds: ["savings", "investment"] },
+  { id: "loans", kinds: ["loan"] },
 ] as const;
 
 export type BalanceSectionId = (typeof BALANCE_SECTIONS)[number]["id"];
@@ -54,7 +54,7 @@ export function groupBySection(accounts: Account[]): Record<BalanceSectionId, Ac
     loans: [],
   };
   for (const account of accounts) {
-    const section = sectionForKind(account.kind as AccountKind);
+    const section = sectionForKind(account.kind);
     if (section) out[section].push(account);
   }
   return out;
@@ -111,14 +111,15 @@ export function buildCurrencyBreakdown(
   for (const account of accounts) {
     if (account.is_archived) continue;
     const balance = accountBalanceValue(account);
-    if (codeIsBase(account.currency, base)) continue;
+    if (account.currency === base) continue;
     totals.set(account.currency, (totals.get(account.currency) ?? 0) + balance);
   }
+  const baseRate = rates.get(base);
   const lines: CurrencyLine[] = [];
   for (const [code, amount] of totals) {
     const rate = rates.get(code);
-    if (!rate) continue;
-    const baseAmount = (amount * (rates.get(base)?.usdRate ?? 1)) / rate.usdRate;
+    if (!rate || !baseRate) continue;
+    const baseAmount = (amount * baseRate.usdRate) / rate.usdRate;
     lines.push({
       code,
       amount,
@@ -129,10 +130,6 @@ export function buildCurrencyBreakdown(
     });
   }
   return lines.sort((a, b) => a.code.localeCompare(b.code));
-}
-
-function codeIsBase(code: string, base: string): boolean {
-  return code === base;
 }
 
 // Sum the display balances (debt kinds already negative) across the list.
@@ -181,29 +178,34 @@ export function isStaleBalance(
 // examples: hours when <1 day, days otherwise. Intl.RelativeTimeFormat picks
 // the right unit for the locale (es "hace 3 d" / en "3 days ago" patterns
 // are produced by the same `numeric: 'auto'` setting).
+//
+// `balance_updated_at === null` means the balance has never been refreshed
+// (manual accounts right after creation, or ledger accounts whose field is
+// simply NULL). The issue explicitly forbids implying that a value is
+// authoritative when we don't know, so this case returns a caller-visible
+// `never: true` flag — the caller (BalancesRow) can then render a distinct
+// translated string instead of saying "Updated today" which would mislead.
 export function formatUpdatedAgo(
   iso: string | null,
   now: Date,
   locale: string,
-): { text: string; days: number | null } {
-  if (!iso) return { text: formatNoUpdate(locale), days: null };
+): { text: string; days: number | null; never: boolean } {
+  if (!iso) return { text: "", days: null, never: true };
   const then = new Date(iso);
   const diffMs = now.getTime() - then.getTime();
-  if (diffMs < 0) return { text: formatNoUpdate(locale), days: 0 };
+  if (diffMs < 0) return { text: "", days: 0, never: true };
   const days = Math.floor(diffMs / 86_400_000);
   if (days >= 1) {
     return {
       text: new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-days, "day"),
       days,
+      never: false,
     };
   }
   const hours = Math.max(0, Math.floor(diffMs / 3_600_000));
   return {
     text: new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-hours, "hour"),
     days: 0,
+    never: false,
   };
-}
-
-function formatNoUpdate(locale: string): string {
-  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "day");
 }

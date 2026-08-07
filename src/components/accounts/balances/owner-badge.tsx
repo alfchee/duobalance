@@ -15,7 +15,7 @@ export function OwnerBadge({ account, className }: { account: Account; className
   const ownerMemberId = account.owner_member_id;
   const owner = ownerMemberId ? members?.find((m) => m.id === ownerMemberId) : null;
   const isJoint = ownerMemberId == null;
-  const displayName = owner?.display_name ?? (isJoint ? t("jointLabel") : "");
+  const displayName = owner?.display_name ?? (isJoint ? t("jointLabel") : t("ownerLoading"));
   const color = isJoint ? null : (owner?.color_hex ?? null);
 
   return (
@@ -28,7 +28,7 @@ export function OwnerBadge({ account, className }: { account: Account; className
       style={color ? { backgroundColor: color } : undefined}
       title={displayName}
     >
-      {isJoint ? t("jointLabel") : (owner?.display_name ?? t("jointLabel"))}
+      {displayName}
     </span>
   );
 }

@@ -1,10 +1,9 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo } from "react";
 import { displayBalance, type Account } from "@/lib/accounts";
-import { sumBalances, type BalanceSectionId, type RatesByCode } from "@/lib/balances";
-import { useFxOverrides, type EffectiveRate } from "@/hooks/useFxOverrides";
+import { sumBalances, type BalanceSectionId } from "@/lib/balances";
+import { useRatesByCode } from "@/hooks/useRatesByCode";
 import { useHousehold } from "@/hooks/useHousehold";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/money";
@@ -28,13 +27,7 @@ export function BalancesSection({
   const t = useTranslations("balances");
   const locale = useLocale();
   const { baseCurrency } = useHousehold();
-  const { data: rates } = useFxOverrides();
-
-  const ratesByCode = useMemo<RatesByCode>(() => {
-    const m = new Map<string, EffectiveRate>();
-    for (const r of rates ?? []) m.set(r.code, r);
-    return m;
-  }, [rates]);
+  const ratesByCode = useRatesByCode();
 
   const subtotal = baseCurrency
     ? sumBalances(accounts, baseCurrency, ratesByCode, displayBalance)
