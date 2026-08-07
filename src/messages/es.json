@@ -154,7 +154,41 @@
       "select": "Entrar"
     },
     "loading": "Cargando tu hogar…",
-    "empty": "No encontramos un hogar para tu cuenta."
+    "empty": "No encontramos un hogar para tu cuenta.",
+    "onboarding": {
+      "title": "Configura tu hogar compartido",
+      "subtitle": "Crea un hogar nuevo para ti y tu pareja, o únete a uno al que te hayan invitado.",
+      "tabCreate": "Crear un hogar",
+      "tabInvite": "Tengo una invitación",
+      "displayName": "Tu nombre",
+      "displayNamePlaceholder": "p. ej. Alex",
+      "householdName": "Nombre del hogar",
+      "householdNamePlaceholder": "p. ej. Casa de Alex y Sam",
+      "country": "País",
+      "countryPlaceholder": "Selecciona un país",
+      "baseCurrency": "Moneda base",
+      "baseCurrencyPlaceholder": "Selecciona una moneda",
+      "createButton": "Crear hogar",
+      "creating": "Creando hogar…",
+      "inviteToken": "Código de invitación",
+      "inviteTokenPlaceholder": "Pega el código de invitación",
+      "inviteAccept": "Unirse al hogar",
+      "inviteAccepting": "Uniéndote al hogar…",
+      "errors": {
+        "displayNameRequired": "Ingresa tu nombre.",
+        "householdNameRequired": "Ingresa un nombre para el hogar.",
+        "countryRequired": "Elige un país.",
+        "baseCurrencyRequired": "Elige una moneda base.",
+        "tokenRequired": "Pega el código de invitación.",
+        "generic": "Algo salió mal. Intenta de nuevo."
+      },
+      "errorsInvite": {
+        "expired": "Esta invitación venció. Pídele a tu pareja que la reenvíe.",
+        "alreadyAccepted": "Esta invitación ya fue aceptada — actualiza la página.",
+        "emailMismatch": "Esta invitación fue enviada a otro correo. Inicia sesión con la cuenta correcta.",
+        "invalidToken": "Este código de invitación no es válido. Pídele a tu pareja uno nuevo."
+      }
+    }
   },
   "accounts": {
     "subtitle": "Cuentas que tu hogar registra.",

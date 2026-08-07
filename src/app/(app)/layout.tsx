@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useSession } from "@/hooks/useSession";
 import { useHousehold } from "@/hooks/useHousehold";
 import { HouseholdPicker } from "@/components/household/household-picker";
+import { HouseholdOnboarding } from "@/components/household/household-onboarding";
 import { BottomNav } from "@/components/nav/bottom-nav";
 import { FullPageSpinner } from "@/components/full-page-spinner";
 
@@ -14,7 +15,7 @@ import { FullPageSpinner } from "@/components/full-page-spinner";
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { session, loading: sessionLoading } = useSession();
-  const { loading: householdLoading, needsPicker, householdId } = useHousehold();
+  const { loading: householdLoading, needsPicker, householdId, memberships } = useHousehold();
   const t = useTranslations("household");
 
   useEffect(() => {
@@ -35,12 +36,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return <HouseholdPicker />;
   }
 
-  if (!householdId) {
-    return (
-      <main className="flex min-h-dvh w-full flex-col items-center justify-center p-6 text-center">
-        <p className="text-sm text-muted-foreground">{t("empty")}</p>
-      </main>
-    );
+  if (!householdId || memberships.length === 0) {
+    return <HouseholdOnboarding />;
   }
 
   return (

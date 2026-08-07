@@ -1,14 +1,16 @@
--- Reference-data seeds applied by `supabase db reset` (the project also runs
--- these via a CI step that invokes `supabase db seed` after migrations).
--- Keeps the country/currency pickers populated in fresh dev/CI databases.
+-- Reference-data seeding: Latin America countries (and USA/EU for completeness)
+-- in country_defaults, plus the common Latin America currencies enabled in the
+-- base-currency picker. Uses INSERT ... ON CONFLICT DO NOTHING so running this
+-- migration against a DB that already has some of these rows (or a repeated
+-- `db:reset` that also applies the seed) stays idempotent.
 --
--- Must stay idempotent with INSERT ... ON CONFLICT DO NOTHING: migration
--- 20260807170000_seed_latam_countries_currencies.sql writes the same rows so
--- pre-existing deployments (which never re-run the seed) still get data.
---
--- Keep this list in sync with the migration above. CI's pg_prove tests rely
--- on the country_defaults rows to create test households via
--- fixtures.create_household_for.
+-- Household timezone locale defaults are per migration 13's trigger: the new
+-- "set up shared household" screen in HouseholdOnboarding.tsx passes these to
+-- create_household(p_country), which feeds the trigger.
+
+-- ============================================================================
+-- country_defaults — ISO-3166-1 alpha-2 uppercase, IANA tz, locale ∈ {es,en,pt-BR}
+-- ============================================================================
 
 insert into public.country_defaults (country, timezone, locale) values
   ('AR', 'America/Argentina/Buenos_Aires', 'es'),
@@ -31,11 +33,23 @@ insert into public.country_defaults (country, timezone, locale) values
   ('PR', 'America/Puerto_Rico',              'en'),
   ('UY', 'America/Montevideo',               'es'),
   ('VE', 'America/Caracas',                  'es'),
+  -- non-LATAM neighbours often used as "shared USD base" fallbacks by teams
+  -- running pan-LATAM deployments:
   ('US', 'America/New_York',                 'en'),
   ('ES', 'Europe/Madrid',                    'es')
 on conflict (country) do nothing;
 
+-- ============================================================================
+-- currencies — ISO 4217, name_en, symbol, minor_unit, is_enabled=true
+-- minor_unit: 0 for zero-decimal LATAM currencies (CLP, PYG, COP, CRC, UYU, VES, HNL, NIO, GTQ, DOP, PAB),
+--             2 for BRL, ARS, PEN, BOB, MXN, CUP, USD, EUR.
+-- Verified against ISO 4217 (2025-01-01 version) so the CLP=0 / PYG=0 rows
+-- don't accidentally get 2 — that would break roundToMinorUnit in money.ts.
+-- ============================================================================
+
 insert into public.currencies (code, name_en, symbol, minor_unit, is_enabled) values
+  -- Core LATAM currencies.
+  --
   -- IMPORTANT — pgTAP test 01_reference_tables.sql #4 has the explicit contract:
   --   "exactly CLP and PYG have minor_unit = 0 — no others."
   -- The minor_unit column drives `roundToMinorUnit` in src/lib/money.ts, so any
@@ -59,6 +73,8 @@ insert into public.currencies (code, name_en, symbol, minor_unit, is_enabled) va
   ('PYG', 'Paraguayan Guaraní',    '₲',    0, true),
   ('UYU', 'Uruguayan Peso',        '$U',   2, true),
   ('VES', 'Venezuelan Bolívar',    'Bs.S', 2, true),
+  -- Common non-LATAM base currencies we still want available in the picker
+  -- because many LATAM households denominate in USD or receive EUR remittances.
   ('USD', 'US Dollar',             '$',    2, true),
   ('EUR', 'Euro',                  '€',    2, true)
 on conflict (code) do nothing;

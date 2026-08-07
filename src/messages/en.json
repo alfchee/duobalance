@@ -154,7 +154,41 @@
       "select": "Enter"
     },
     "loading": "Loading your household…",
-    "empty": "We couldn't find a household for your account."
+    "empty": "We couldn't find a household for your account.",
+    "onboarding": {
+      "title": "Set up your shared household",
+      "subtitle": "Create a new household for you and a partner, or join one you've been invited to.",
+      "tabCreate": "Create a household",
+      "tabInvite": "I have an invitation",
+      "displayName": "Your name",
+      "displayNamePlaceholder": "e.g. Alex",
+      "householdName": "Household name",
+      "householdNamePlaceholder": "e.g. Alex & Sam's home",
+      "country": "Country",
+      "countryPlaceholder": "Select a country",
+      "baseCurrency": "Base currency",
+      "baseCurrencyPlaceholder": "Select a currency",
+      "createButton": "Create household",
+      "creating": "Creating household…",
+      "inviteToken": "Invitation code",
+      "inviteTokenPlaceholder": "Paste your invitation code",
+      "inviteAccept": "Join household",
+      "inviteAccepting": "Joining household…",
+      "errors": {
+        "displayNameRequired": "Enter your name.",
+        "householdNameRequired": "Enter a household name.",
+        "countryRequired": "Choose a country.",
+        "baseCurrencyRequired": "Choose a base currency.",
+        "tokenRequired": "Paste the invitation code.",
+        "generic": "Something went wrong. Try again."
+      },
+      "errorsInvite": {
+        "expired": "This invitation has expired. Ask your partner to resend it.",
+        "alreadyAccepted": "This invitation was already accepted — refresh the page.",
+        "emailMismatch": "This invitation was sent to a different email. Sign in with the right account.",
+        "invalidToken": "This invitation code isn't valid. Ask your partner for a new one."
+      }
+    }
   },
   "accounts": {
     "subtitle": "Accounts your household tracks.",
