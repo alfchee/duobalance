@@ -875,64 +875,73 @@ export type Database = {
         Row: {
           account_id: string
           amount: number
+          base_amount: number | null
           category_id: string | null
           created_at: string
-          created_by: string
           currency: string
           description: string
-          direction: Database["public"]["Enums"]["transaction_direction"]
-          fx_rate: number | null
+          entered_by: string
+          fx_rate: number
           household_id: string
           id: string
           import_batch_id: string | null
+          import_hash: string | null
           is_cleared: boolean
           is_pending_review: boolean
           merchant: string | null
           notes: string | null
-          occurred_at: string
-          transfer_pair_id: string | null
+          occurred_on: string
+          receipt_url: string | null
+          spent_by: string | null
+          transfer_group_id: string | null
           updated_at: string
         }
         Insert: {
           account_id: string
           amount: number
+          base_amount?: number | null
           category_id?: string | null
           created_at?: string
-          created_by: string
           currency: string
           description: string
-          direction: Database["public"]["Enums"]["transaction_direction"]
-          fx_rate?: number | null
+          entered_by: string
+          fx_rate?: number
           household_id: string
           id?: string
           import_batch_id?: string | null
+          import_hash?: string | null
           is_cleared?: boolean
           is_pending_review?: boolean
           merchant?: string | null
           notes?: string | null
-          occurred_at: string
-          transfer_pair_id?: string | null
+          occurred_on: string
+          receipt_url?: string | null
+          spent_by?: string | null
+          transfer_group_id?: string | null
           updated_at?: string
         }
         Update: {
           account_id?: string
           amount?: number
+          base_amount?: number | null
           category_id?: string | null
           created_at?: string
-          created_by?: string
           currency?: string
           description?: string
-          direction?: Database["public"]["Enums"]["transaction_direction"]
-          fx_rate?: number | null
+          entered_by?: string
+          fx_rate?: number
           household_id?: string
           id?: string
           import_batch_id?: string | null
+          import_hash?: string | null
           is_cleared?: boolean
           is_pending_review?: boolean
           merchant?: string | null
           notes?: string | null
-          occurred_at?: string
-          transfer_pair_id?: string | null
+          occurred_on?: string
+          receipt_url?: string | null
+          spent_by?: string | null
+          transfer_group_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -952,7 +961,7 @@ export type Database = {
           },
           {
             foreignKeyName: "transactions_created_by_fkey"
-            columns: ["created_by"]
+            columns: ["entered_by"]
             isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
@@ -979,10 +988,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_transfer_pair_id_fkey"
-            columns: ["transfer_pair_id"]
+            foreignKeyName: "transactions_spent_by_fkey"
+            columns: ["spent_by"]
             isOneToOne: false
-            referencedRelation: "transactions"
+            referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
         ]
@@ -1302,7 +1311,6 @@ export type Database = {
       household_member_role: "owner" | "partner"
       import_batch_status: "pending" | "imported" | "failed" | "cancelled"
       import_file_format: "csv" | "ofx" | "qif"
-      transaction_direction: "debit" | "credit"
     }
     CompositeTypes: {
       _time_trial_type: {
@@ -1440,7 +1448,6 @@ export const Constants = {
       household_member_role: ["owner", "partner"],
       import_batch_status: ["pending", "imported", "failed", "cancelled"],
       import_file_format: ["csv", "ofx", "qif"],
-      transaction_direction: ["debit", "credit"],
     },
   },
 } as const

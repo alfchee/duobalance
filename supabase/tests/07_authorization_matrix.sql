@@ -11,24 +11,30 @@
 --   Household B — Carol (owner): entirely unrelated, used for every
 --     cross-tenant assertion.
 --
--- Several cases in the issue assume columns/functions that live in OTHER,
--- still-open issues (transactions.entered_by / spent_by from #23;
--- fx_rate_on()/fx_usd_rate() from #18). Tests 3/4 gate on `information_schema`
--- at run time via psql's `\if`: the moment the relevant column lands, the
--- branch flips from `skip()` to a real assertion with no edits here. See the
--- issue: "mark them as TODO-skips and enable them in the relevant phase
--- rather than omitting them."
+-- Several cases in the issue originally assumed columns/functions that lived
+-- in OTHER, still-open issues. Tests 3/4 gate on `information_schema` at run
+-- time via psql's `\if`: the moment the relevant column lands, the branch
+-- flips from `skip()` to a real assertion with no edits here — see the issue:
+-- "mark them as TODO-skips and enable them in the relevant phase rather than
+-- omitting them." All of the originally-deferred cases have since landed:
 --
 -- #19 (accounts ownership/visibility + split RLS) landed in migration
 -- 20260807000001: tests 2, 5 and 11 are real assertions below, and tests 13/14
 -- cover the #19 AC directly (partner INSERT ownership semantics; the
--- joint+private CHECK constraint). Test 12 stays a skip — transaction
--- visibility inheriting account visibility is owned by the transactions phase
--- (#23), not #19.
+-- joint+private CHECK constraint).
 --
--- Test 9 (fx_rate_on/fx_usd_rate override resolution) was one such skip and
--- became a real assertion when #18 landed — see test 9 below; the fuller
--- suite lives in 10_fx_overrides_resolution.sql.
+-- Test 9 (fx_rate_on/fx_usd_rate override resolution) became a real assertion
+-- when #18 landed — see test 9 below; the fuller suite lives in
+-- 10_fx_overrides_resolution.sql.
+--
+-- #23 (transactions ledger refinement) landed in migration
+-- 20260808004306: tests 3 and 4 flip live via the `\if` gates above (entered_by
+-- write-once, spent_by independent of entered_by), and test 12 (transaction
+-- visibility inheriting account visibility) is now a real assertion below.
+-- The #23-specific coverage that doesn't fit this file's Household A/B
+-- narrative (base_amount generation, entered_by pinned to the caller's own
+-- member id, cross-household containment, account-delete cascade) lives in
+-- 12_transactions_ledger.sql.
 
 \set ON_ERROR_STOP on
 \i supabase/tests/_lib/helpers.sql
@@ -94,9 +100,9 @@ begin
     (budget_a, hh_a, null, 'monthly', 500000, 'CLP', date_trunc('month', current_date)::date);
 
   insert into public.transactions
-    (id, household_id, account_id, category_id, direction, amount, currency, occurred_at, description, created_by)
+    (id, household_id, account_id, category_id, amount, currency, occurred_on, description, entered_by)
   values
-    (tx_a1, hh_a, acct_joint, cat_a, 'debit', 20000, 'CLP', current_date, 'Alice groceries', alice_member);
+    (tx_a1, hh_a, acct_joint, cat_a, -20000, 'CLP', current_date, 'Alice groceries', alice_member);
 
   insert into public.bills (id, household_id, name, amount, currency, account_id, category_id, frequency) values
     (bill_a, hh_a, 'Internet', 15000, 'CLP', acct_joint, cat_a, 'monthly');
@@ -111,7 +117,7 @@ begin
 end
 $$;
 
-select plan(28);
+select plan(30);
 
 -- ============================================================================
 -- 1. budget_status view — Carol (household B, no budgets of her own) must
@@ -190,11 +196,11 @@ select exists (
 select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
 select results_eq(
   $$ insert into public.transactions
-       (household_id, account_id, category_id, direction, amount, currency,
-        occurred_at, description, entered_by, spent_by)
+       (household_id, account_id, category_id, amount, currency,
+        occurred_on, description, entered_by, spent_by)
      values (
        'a0000000-0000-0000-0000-00000000000a', 'a3000000-0000-0000-0000-000000000001',
-       'a4000000-0000-0000-0000-000000000001', 'debit', 5000, 'CLP', current_date,
+       'a4000000-0000-0000-0000-000000000001', -5000, 'CLP', current_date,
        'Bob records Alice''s purchase',
        'a2000000-0000-0000-0000-000000000002', 'a2000000-0000-0000-0000-000000000001'
      )
@@ -252,11 +258,11 @@ select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
 
 select results_eq(
   $$ insert into public.transactions
-       (household_id, account_id, category_id, direction, amount, currency,
-        occurred_at, description, created_by)
+       (household_id, account_id, category_id, amount, currency,
+        occurred_on, description, entered_by)
      values (
        'a0000000-0000-0000-0000-00000000000a', 'a3000000-0000-0000-0000-000000000001',
-       'a4000000-0000-0000-0000-000000000001', 'debit', 3000, 'CLP', current_date,
+       'a4000000-0000-0000-0000-000000000001', -3000, 'CLP', current_date,
        'Bob buys groceries', 'a2000000-0000-0000-0000-000000000002'
      )
      returning 1 $$,
@@ -346,14 +352,17 @@ select is_empty(
   'Carol SELECT on household A accounts: 0 rows'
 );
 
+-- entered_by is Alice's member id (not Carol's) so the failure is isolated
+-- to the RLS WITH CHECK — a mismatched entered_by would instead be rejected
+-- by the transactions_containment trigger before RLS is ever reached.
 select throws_ok(
   $$ insert into public.transactions
-       (household_id, account_id, category_id, direction, amount, currency,
-        occurred_at, description, created_by)
+       (household_id, account_id, category_id, amount, currency,
+        occurred_on, description, entered_by)
      values (
        'a0000000-0000-0000-0000-00000000000a', 'a3000000-0000-0000-0000-000000000001',
-       'a4000000-0000-0000-0000-000000000001', 'debit', 100, 'CLP', current_date,
-       'sneak', 'b2000000-0000-0000-0000-000000000001'
+       'a4000000-0000-0000-0000-000000000001', -100, 'CLP', current_date,
+       'sneak', 'a2000000-0000-0000-0000-000000000001'
      ) $$,
   '42501',
   null,
@@ -433,11 +442,41 @@ select throws_ok(
 
 -- ============================================================================
 -- 12. Transaction visibility must inherit account visibility: Bob must not
---     see transactions posted against Alice's private account. Owned by the
---     transactions phase (#23), not #19 — stays a skip until then.
+--     see transactions posted against Alice's private account, but Alice
+--     (its owner) must. `account_id in (select id from accounts)` is itself
+--     RLS-filtered by the #19 accounts_select policy, so this falls out of
+--     the #23 transactions_select policy with no separate is_shared check.
 -- ============================================================================
 
-select skip('transactions inheriting account visibility (is_shared) — owned by #23', 1);
+select tests.clear_auth();
+
+select results_eq(
+  $$ insert into public.transactions
+       (id, household_id, account_id, category_id, amount, currency,
+        occurred_on, description, entered_by)
+     values (
+       'a6000000-0000-0000-0000-000000000002',
+       'a0000000-0000-0000-0000-00000000000a', 'a3000000-0000-0000-0000-000000000002',
+       'a4000000-0000-0000-0000-000000000001', -4000, 'CLP', current_date,
+       'Alice private spend', 'a2000000-0000-0000-0000-000000000001'
+     )
+     returning 1 $$,
+  $$ values (1) $$,
+  'setup: a transaction exists against Alice''s private account'
+);
+
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
+select is_empty(
+  $$ select * from public.transactions where id = 'a6000000-0000-0000-0000-000000000002'::uuid $$,
+  'Bob cannot see a transaction posted against Alice''s private account'
+);
+
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000001');
+select results_eq(
+  $$ select count(*)::int from public.transactions where id = 'a6000000-0000-0000-0000-000000000002'::uuid $$,
+  $$ values (1::int) $$,
+  'Alice (owner of the private account) CAN see her own transaction'
+);
 
 -- ============================================================================
 -- 13. INSERT ownership semantics (#19 AC): a partner can create a joint
