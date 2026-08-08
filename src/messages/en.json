@@ -275,6 +275,81 @@
       "error": "Couldn't update the balance. Try again."
     }
   },
+  "categories": {
+    "title": "Categories",
+    "subtitle": "Organize income and expenses for your household.",
+    "new": "New category",
+    "kind": {
+      "expense": "Expenses",
+      "income": "Income"
+    },
+    "empty": "No categories in this group.",
+    "ruleCount": "{count, plural, =0 {No rules} one {# rule} other {# rules}}",
+    "edit": "Edit category",
+    "delete": "Delete category",
+    "loadError": "Couldn't load categories.",
+    "retry": "Retry",
+    "deleteError": "Couldn't delete this category. Reassign its budgets or bills first.",
+    "newTitle": "New category",
+    "editTitle": "Edit category",
+    "formDescription": "Categories can have one level of nesting.",
+    "name": "Name",
+    "kindLabel": "Kind",
+    "parent": "Parent category",
+    "root": "No parent",
+    "icon": "Icon",
+    "color": "Color",
+    "nameRequired": "Enter a category name.",
+    "saveError": "Couldn't save the category.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…"
+  },
+  "rules": {
+    "title": "Categorization rules",
+    "subtitle": "Apply a category automatically when a description matches.",
+    "new": "New rule",
+    "bulkApply": "Apply rules to existing transactions",
+    "empty": "No rules yet.",
+    "active": "Rule active",
+    "priority": "Priority {value}",
+    "unknownCategory": "Unknown category",
+    "moveUp": "Move rule up",
+    "moveDown": "Move rule down",
+    "edit": "Edit rule",
+    "delete": "Delete rule",
+    "loadError": "Couldn't load rules.",
+    "retry": "Retry",
+    "saveError": "Couldn't save the rule.",
+    "newTitle": "New rule",
+    "editTitle": "Edit rule",
+    "formDescription": "Lower priority values win when multiple rules match.",
+    "form": {
+      "pattern": "Pattern",
+      "patternHint": "Use % for any number of characters and _ for one character.",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "priority": "Priority",
+      "invalid": "Enter a pattern and choose a category. A pattern cannot contain only wildcards.",
+      "invalidPriority": "Enter a whole-number priority."
+    },
+    "tester": {
+      "label": "Live tester",
+      "placeholder": "Type a transaction description",
+      "winner": "“{pattern}” wins and assigns {category}.",
+      "noMatch": "No active rule matches this description."
+    },
+    "bulkPreview": {
+      "title": "Apply rules to existing transactions",
+      "description": "Review the changes before applying them. Transactions are grouped by their new category.",
+      "empty": "No existing transactions would change.",
+      "count": "{count, plural, one {# transaction} other {# transactions}}",
+      "confirm": "Apply to {count, plural, one {# transaction} other {# transactions}}"
+    },
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…"
+  },
   "settings": {
     "title": "Settings",
     "signedInAs": "Signed in as",
