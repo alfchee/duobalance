@@ -28,6 +28,8 @@ alter table public.transactions
 
 drop type public.transaction_direction;
 
+drop view public.budget_status;
+
 alter table public.transactions
   alter column amount type numeric(18,4),
   add constraint transactions_amount_nonzero_check check (amount <> 0);
@@ -269,3 +271,5 @@ group by b.id, b.household_id, b.category_id, b.period, b.amount, b.currency, b.
 
 comment on view public.budget_status is
   'Active budgets with spent/remaining for the current period. Recomputed on read. Spent = -sum(amount) WHERE amount < 0 (only money-out rows contribute); does not yet convert cross-currency transactions into the budget''s own currency.';
+
+grant select on public.budget_status to anon, authenticated;
