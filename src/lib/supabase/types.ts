@@ -232,6 +232,20 @@ export type Database = {
             foreignKeyName: "bills_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -414,6 +428,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "categorization_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "categorization_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "categorization_rules_account_id_fkey"
             columns: ["account_id"]
@@ -841,6 +869,20 @@ export type Database = {
             foreignKeyName: "import_profiles_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "import_profiles_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_profiles_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -949,6 +991,20 @@ export type Database = {
             foreignKeyName: "transactions_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -998,6 +1054,53 @@ export type Database = {
       }
     }
     Views: {
+      account_balances: {
+        Row: {
+          account_id: string | null
+          balance: number | null
+          balance_mode: string | null
+          balance_updated_at: string | null
+          created_at: string | null
+          credit_limit: number | null
+          currency: string | null
+          display_order: number | null
+          household_id: string | null
+          id: string | null
+          institution: string | null
+          is_archived: boolean | null
+          is_shared: boolean | null
+          kind: string | null
+          last_transaction_at: string | null
+          manual_balance: number | null
+          name: string | null
+          opening_balance: number | null
+          owner_member_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "accounts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_owner_member_id_fkey"
+            columns: ["owner_member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bill_instances_view: {
         Row: {
           account_id: string | null
@@ -1019,6 +1122,20 @@ export type Database = {
             columns: ["paid_transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
             referencedColumns: ["id"]
           },
           {
@@ -1113,6 +1230,20 @@ export type Database = {
         }
         Returns: string
       }
+      create_transfer: {
+        Args: {
+          p_description: string
+          p_from_account: string
+          p_from_amount: number
+          p_from_fx_rate: number
+          p_household: string
+          p_occurred_on: string
+          p_to_account: string
+          p_to_amount: number
+          p_to_fx_rate: number
+        }
+        Returns: string
+      }
       current_member: {
         Args: { household: string }
         Returns: {
@@ -1133,6 +1264,10 @@ export type Database = {
         }
       }
       current_member_id: { Args: { household: string }; Returns: string }
+      delete_transfer: {
+        Args: { p_transaction_id: string }
+        Returns: undefined
+      }
       fx_rate_on: {
         Args: {
           p_date: string

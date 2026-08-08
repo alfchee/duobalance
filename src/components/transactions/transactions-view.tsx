@@ -170,9 +170,13 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
         </div>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        <Button className="sm:w-auto" onClick={openCreate}>
+        <Button className="sm:w-auto" onClick={() => openCreate()}>
           <Plus />
           {t("new")}
+        </Button>
+        <Button className="sm:w-auto" variant="outline" onClick={() => openCreate("transfer")}>
+          <ArrowLeftRight />
+          {t("newTransfer")}
         </Button>
         {hasFilters ? (
           <Button
@@ -311,7 +315,8 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
           ).map(([date, dayTransactions]) => {
             if (!dayTransactions) return null;
             const daySubtotal = dayTransactions.reduce(
-              (total, transaction) => total + (transaction.base_amount ?? 0),
+              (total, transaction) =>
+                transaction.transfer_group_id ? total : total + (transaction.base_amount ?? 0),
               0,
             );
             return (

@@ -6,7 +6,8 @@ import type { Transaction } from "@/lib/transactions";
 type TransactionsUiState = {
   formOpen: boolean;
   editingTransaction: Transaction | null;
-  openCreate: () => void;
+  createMode: "transaction" | "transfer";
+  openCreate: (mode?: "transaction" | "transfer") => void;
   openEdit: (transaction: Transaction) => void;
   closeForm: () => void;
 };
@@ -14,7 +15,10 @@ type TransactionsUiState = {
 export const useTransactionsUiStore = create<TransactionsUiState>((set) => ({
   formOpen: false,
   editingTransaction: null,
-  openCreate: () => set({ formOpen: true, editingTransaction: null }),
-  openEdit: (transaction) => set({ formOpen: true, editingTransaction: transaction }),
-  closeForm: () => set({ formOpen: false, editingTransaction: null }),
+  createMode: "transaction",
+  openCreate: (mode = "transaction") =>
+    set({ formOpen: true, editingTransaction: null, createMode: mode }),
+  openEdit: (transaction) =>
+    set({ formOpen: true, editingTransaction: transaction, createMode: "transaction" }),
+  closeForm: () => set({ formOpen: false, editingTransaction: null, createMode: "transaction" }),
 }));

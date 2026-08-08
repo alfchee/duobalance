@@ -8,7 +8,7 @@ import { useFxOverrides } from "@/hooks/useFxOverrides";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
 import { useRatesByCode } from "@/hooks/useRatesByCode";
-import { displayBalance, type Account } from "@/lib/accounts";
+import { displayBalance, type AccountWithBalance } from "@/lib/accounts";
 import {
   buildCurrencyBreakdown,
   sumBalances,
@@ -26,7 +26,7 @@ const SOURCE_LABELS = {
 // Top of the Balances screen: member avatars, account count, household net
 // worth in the base currency. Tapping the net worth opens the per-currency
 // breakdown popover (#21 AC: "transparently show the conversion used").
-export function BalancesHeader({ accounts }: { accounts: Account[] }) {
+export function BalancesHeader({ accounts }: { accounts: AccountWithBalance[] }) {
   const t = useTranslations("balances");
   const tSettings = useTranslations("settings.overrides");
   const locale = useLocale();

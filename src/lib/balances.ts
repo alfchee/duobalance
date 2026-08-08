@@ -1,4 +1,4 @@
-import type { Account } from "@/lib/accounts";
+import type { Account, AccountWithBalance } from "@/lib/accounts";
 import type { EffectiveRate } from "@/hooks/useFxOverrides";
 
 // Issue #21: Balances screen helpers. Pure functions — no React, no Supabase.
@@ -27,11 +27,11 @@ export function isBalanceTab(value: string): value is BalanceTab {
 // Tab filter — non-archived only. Archived accounts are a management concern
 // (#20), not a balances-screen concern, and the issue's layout spec doesn't
 // list them.
-export function filterByTab(
-  accounts: Account[],
+export function filterByTab<T extends Account>(
+  accounts: T[],
   tab: BalanceTab,
   currentMemberId: string | null,
-): Account[] {
+): T[] {
   const active = accounts.filter((a) => !a.is_archived);
   switch (tab) {
     case "mine":
@@ -46,8 +46,8 @@ export function filterByTab(
 // Group accounts by section id, preserving the section order. Sections with
 // no accounts are still emitted so the iteration can decide whether to render
 // them or collapse the section list (callers filter as they like).
-export function groupBySection(accounts: Account[]): Record<BalanceSectionId, Account[]> {
-  const out: Record<BalanceSectionId, Account[]> = {
+export function groupBySection<T extends Account>(accounts: T[]): Record<BalanceSectionId, T[]> {
+  const out: Record<BalanceSectionId, T[]> = {
     cash: [],
     credit: [],
     savings: [],
@@ -128,10 +128,10 @@ export type CurrencyLine = {
 };
 
 export function buildCurrencyBreakdown(
-  accounts: Account[],
+  accounts: AccountWithBalance[],
   base: string,
   rates: RatesByCode,
-  accountBalanceValue: (account: Account) => number,
+  accountBalanceValue: (account: AccountWithBalance) => number,
 ): CurrencyLine[] {
   const totals = new Map<string, number>();
   for (const account of accounts) {
@@ -162,10 +162,10 @@ export function buildCurrencyBreakdown(
 // Debt is preserved by the caller passing `displayBalance` as
 // `accountBalanceValue`; the net worth is the sum of those.
 export function sumBalances(
-  accounts: Account[],
+  accounts: AccountWithBalance[],
   base: string,
   rates: RatesByCode,
-  accountBalanceValue: (account: Account) => number,
+  accountBalanceValue: (account: AccountWithBalance) => number,
 ): number | null {
   let total = 0;
   let allResolved = true;

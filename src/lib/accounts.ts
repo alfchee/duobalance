@@ -1,6 +1,11 @@
 import type { Database } from "@/lib/supabase/types";
 
 export type Account = Database["public"]["Tables"]["accounts"]["Row"];
+export type AccountWithBalance = Account & {
+  account_id: string;
+  balance: number;
+  last_transaction_at: string | null;
+};
 
 export const ACCOUNT_KINDS = [
   "cash",
@@ -25,14 +30,13 @@ export function isDebtKind(kind: string): boolean {
 // The balance an account reports: manual accounts use the typed-in value;
 // ledger accounts derive from opening_balance + sum(transactions) once #26
 // lands — until transactions exist, opening_balance is the balance.
-export function accountBalance(account: Account): number {
-  if (account.balance_mode === "manual") return account.manual_balance ?? 0;
-  return account.opening_balance;
+export function accountBalance(account: AccountWithBalance): number {
+  return account.balance;
 }
 
 // Debt kinds render their balance as an obligation: a stored positive owed
 // amount shows negative, a stored negative stays negative.
-export function displayBalance(account: Account): number {
+export function displayBalance(account: AccountWithBalance): number {
   const balance = accountBalance(account);
   return isDebtKind(account.kind) ? -Math.abs(balance) : balance;
 }

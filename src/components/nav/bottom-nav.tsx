@@ -44,7 +44,7 @@ export function BottomNav() {
       <button
         type="button"
         aria-label={t("addTransaction")}
-        onClick={openCreate}
+        onClick={() => openCreate()}
         className="absolute right-4 bottom-16 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <Plus className="size-6" />

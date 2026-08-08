@@ -16,7 +16,7 @@ import {
 import { useHousehold } from "@/hooks/useHousehold";
 import { useAccountMutations } from "@/hooks/useAccounts";
 import { useCurrencies } from "@/hooks/useCurrencies";
-import { accountBalance, type Account } from "@/lib/accounts";
+import { accountBalance, type AccountWithBalance } from "@/lib/accounts";
 import { formatMoney, maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 
@@ -40,7 +40,7 @@ function ManualBalanceContent({
   account,
   onClose,
 }: {
-  account: Account | null;
+  account: AccountWithBalance | null;
   onClose: () => void;
 }) {
   const t = useTranslations("accounts.manualBalanceSheet");
