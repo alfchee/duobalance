@@ -28,8 +28,12 @@ alter table public.transactions
 
 drop type public.transaction_direction;
 
+alter table public.transactions
+  alter column amount type numeric(18,4),
+  add constraint transactions_amount_nonzero_check check (amount <> 0);
+
 comment on column public.transactions.amount is
-  'Signed, in `currency`. Negative = money out. Report on base_amount, never this column, once more than one currency is in play.';
+  'Signed, in `currency`. Negative = money out. Report on base_amount, never this column, once more than one currency is in play. numeric(18,4) per #23 spec — do not widen without also widening base_amount.';
 
 -- ============================================================================
 -- 2. fx_rate: snapshot rate from `currency` to the household's base_currency
@@ -63,6 +67,19 @@ alter table public.transactions
 -- ============================================================================
 
 alter table public.transactions rename column created_by to entered_by;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.table_constraints
+    where constraint_name = 'transactions_created_by_fkey'
+      and table_schema = 'public' and table_name = 'transactions'
+  ) then
+    alter table public.transactions
+      rename constraint transactions_created_by_fkey
+      to transactions_entered_by_fkey;
+  end if;
+end $$;
 
 alter table public.transactions
   add column spent_by uuid references public.household_members(id) on delete restrict;
@@ -241,6 +258,7 @@ left join public.transactions t
   on t.household_id  = b.household_id
  and (b.category_id is null or t.category_id = b.category_id)
  and t.occurred_on  >= b.starts_on
+ and t.amount       <  0
  and case b.period
        when 'weekly'  then t.occurred_on <  b.starts_on + interval '7 days'
        when 'monthly' then t.occurred_on <  b.starts_on + interval '1 month'
@@ -250,4 +268,4 @@ where b.is_active
 group by b.id, b.household_id, b.category_id, b.period, b.amount, b.currency, b.starts_on;
 
 comment on view public.budget_status is
-  'Active budgets with spent/remaining for the current period. Recomputed on read. Spent = -sum(amount) (amount is signed, negative = money out); does not yet convert cross-currency transactions into the budget''s own currency.';
+  'Active budgets with spent/remaining for the current period. Recomputed on read. Spent = -sum(amount) WHERE amount < 0 (only money-out rows contribute); does not yet convert cross-currency transactions into the budget''s own currency.';

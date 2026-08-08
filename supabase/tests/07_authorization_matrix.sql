@@ -117,7 +117,7 @@ begin
 end
 $$;
 
-select plan(30);
+select plan(32);
 
 -- ============================================================================
 -- 1. budget_status view — Carol (household B, no budgets of her own) must
@@ -131,6 +131,53 @@ select tests.authenticate_as('b1000000-0000-0000-0000-000000000001');
 select is_empty(
   $$ select * from public.budget_status $$,
   'Carol sees 0 rows in budget_status despite household A having an active budget (security_invoker holds)'
+);
+
+-- ============================================================================
+-- 1b. budget_status — signed-amount math after #23's convention change.
+--     Fixture (DO block above): budget_a = 500,000 CLP/mo category=null,
+--     tx_a1 = amount -20,000 (signed expense) within current month.
+--     Expected: spent = -(-20000) = 20000, remaining = 480000, pct_used = 4%.
+--     Runs as clear_auth so RLS bypass is not a factor — this is pure math.
+-- ============================================================================
+
+select tests.clear_auth();
+
+select results_eq(
+  $$ select budgeted::numeric, spent::numeric, remaining::numeric, pct_used::numeric
+     from public.budget_status
+     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (500000::numeric, 20000::numeric, 480000::numeric, 4.00::numeric) $$,
+  'budget_status: signed-amount math correct — spent = 20000, remaining = 480000, pct_used = 4%'
+);
+
+-- ============================================================================
+-- 1c. budget_status — PR #55 issue #3 REGRESSION GUARD: a positive-amount
+--     (income/refund) transaction matching the budget filters MUST NOT
+--     reduce reported spent. Insert +5000 "grocery refund" on same household/
+--     category/date as tx_a1; spent should remain 20000 (pct_used stays 4%),
+--     NOT drop to 15000 (3%). The fix: budget_status filters `t.amount < 0`.
+-- ============================================================================
+
+select results_eq(
+  $$ with refund as (
+       insert into public.transactions
+         (id, household_id, account_id, category_id, amount, currency,
+          occurred_on, description, entered_by)
+         values (
+           'a6000000-0000-0000-0000-000000000099',
+           'a0000000-0000-0000-0000-00000000000a',
+           'a3000000-0000-0000-0000-000000000001',
+           'a4000000-0000-0000-0000-000000000001',
+           5000, 'CLP', current_date,
+           'Grocery refund — must NOT reduce budget spent',
+           'a2000000-0000-0000-0000-000000000001'
+         ) returning 1
+     )
+     select spent::numeric, pct_used::numeric from public.budget_status
+     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (20000::numeric, 4.00::numeric) $$,
+  'budget_status regression (#3): positive refund row does NOT reduce spent or pct_used (amount<0 filter holds)'
 );
 
 -- ============================================================================

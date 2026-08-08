@@ -960,18 +960,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_created_by_fkey"
-            columns: ["entered_by"]
-            isOneToOne: false
-            referencedRelation: "household_members"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "transactions_currency_fkey"
             columns: ["currency"]
             isOneToOne: false
             referencedRelation: "currencies"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "transactions_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "transactions_household_id_fkey"
