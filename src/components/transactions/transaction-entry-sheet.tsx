@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { CurrencyPicker } from "@/components/accounts/currency-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,6 +35,7 @@ import { matchCategory } from "@/lib/categories";
 import { todayInHousehold } from "@/lib/dates";
 import {
   appendMoneyPadInput,
+  formatMoneyInput,
   maskMoneyInput,
   parseMoneyInput,
   roundToMinorUnit,
@@ -68,9 +70,10 @@ function makeDraft(
   today: string,
   lastAccountId: string | null,
   memberId: string | null,
+  locale: string,
 ): Draft {
   return {
-    amount: transaction ? String(Math.abs(transaction.amount)) : "",
+    amount: transaction ? formatMoneyInput(Math.abs(transaction.amount), locale) : "",
     description: transaction?.description ?? "",
     accountId: transaction?.account_id ?? lastAccountId ?? "",
     categoryId: transaction?.category_id ?? null,
@@ -127,10 +130,13 @@ function TransactionEntryContent({
   const { data: members = [] } = useHouseholdMembers(householdId);
   const { data: descriptions = [] } = useTransactionDescriptions(householdId);
   const { data: effectiveRates = [] } = useFxOverrides();
-  const [draft, setDraft] = useState(() => makeDraft(transaction, today, lastAccountId, memberId));
+  const [draft, setDraft] = useState(() =>
+    makeDraft(transaction, today, lastAccountId, memberId, locale),
+  );
   const [showMore, setShowMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categoryOverridden, setCategoryOverridden] = useState(transaction !== null);
+  const [fxRateOverridden, setFxRateOverridden] = useState(transaction !== null);
   const amountRef = useRef<HTMLInputElement>(null);
   const selectedAccount = accounts.find((account) => account.id === draft.accountId) ?? null;
   const minorUnit =
@@ -175,10 +181,10 @@ function TransactionEntryContent({
   }, [categories, categoryOverridden, draft.description, rules]);
 
   useEffect(() => {
-    if (isForeignCurrency && rateQuery.data != null) {
+    if (isForeignCurrency && !fxRateOverridden && rateQuery.data != null) {
       setDraft((current) => ({ ...current, fxRate: String(rateQuery.data) }));
     }
-  }, [isForeignCurrency, rateQuery.data]);
+  }, [fxRateOverridden, isForeignCurrency, rateQuery.data]);
 
   useEffect(() => {
     amountRef.current?.focus();
@@ -187,7 +193,22 @@ function TransactionEntryContent({
   function setAccount(accountId: string) {
     const account = accounts.find((item) => item.id === accountId);
     if (!account) return;
-    setDraft((current) => ({ ...current, accountId, currency: account.currency }));
+    setFxRateOverridden(false);
+    setDraft((current) => ({
+      ...current,
+      accountId,
+      currency: account.currency,
+      fxRate: account.currency === baseCurrency ? "1" : current.fxRate,
+    }));
+  }
+
+  function setCurrency(currency: string) {
+    setFxRateOverridden(false);
+    setDraft((current) => ({
+      ...current,
+      currency,
+      fxRate: currency === baseCurrency ? "1" : current.fxRate,
+    }));
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -203,11 +224,13 @@ function TransactionEntryContent({
     if (!draft.occurredOn || (today && draft.occurredOn > addDays(today, 1)))
       return setError("date");
 
+    const inputMinorUnit =
+      currencies.find((currency) => currency.code === draft.currency)?.minor_unit ?? 2;
     const input = {
       account_id: draft.accountId,
       amount: draft.isExpense
-        ? -roundToMinorUnit(amount, minorUnit)
-        : roundToMinorUnit(amount, minorUnit),
+        ? -roundToMinorUnit(amount, inputMinorUnit)
+        : roundToMinorUnit(amount, inputMinorUnit),
       category_id: draft.categoryId,
       currency: draft.currency,
       description,
@@ -333,6 +356,11 @@ function TransactionEntryContent({
         </div>
 
         <div className="space-y-2">
+          <Label>{t("form.currency")}</Label>
+          <CurrencyPicker value={draft.currency || null} onSelect={setCurrency} />
+        </div>
+
+        <div className="space-y-2">
           <Label>{t("form.category")}</Label>
           <Select
             value={draft.categoryId ?? "none"}
@@ -366,9 +394,10 @@ function TransactionEntryContent({
               type="date"
               value={draft.occurredOn}
               max={today ? addDays(today, 1) : undefined}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, occurredOn: event.target.value }))
-              }
+              onChange={(event) => {
+                setFxRateOverridden(false);
+                setDraft((current) => ({ ...current, occurredOn: event.target.value }));
+              }}
             />
           </div>
           <div className="space-y-2">
@@ -404,12 +433,13 @@ function TransactionEntryContent({
               id="transaction-rate"
               inputMode="decimal"
               value={draft.fxRate}
-              onChange={(event) =>
+              onChange={(event) => {
+                setFxRateOverridden(true);
                 setDraft((current) => ({
                   ...current,
                   fxRate: maskMoneyInput(event.target.value, "en", 8),
-                }))
-              }
+                }));
+              }}
             />
             <p className="text-xs text-muted-foreground">
               {effectiveRate

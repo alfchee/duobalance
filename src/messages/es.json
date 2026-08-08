@@ -40,6 +40,7 @@
       "descriptionPlaceholder": "p. ej. Café",
       "account": "Cuenta",
       "accountPlaceholder": "Elige una cuenta",
+      "currency": "Moneda",
       "category": "Categoría",
       "categoryPlaceholder": "Elige una categoría",
       "noCategory": "Sin categoría",

@@ -40,6 +40,7 @@
       "descriptionPlaceholder": "e.g. Coffee",
       "account": "Account",
       "accountPlaceholder": "Choose an account",
+      "currency": "Currency",
       "category": "Category",
       "categoryPlaceholder": "Choose a category",
       "noCategory": "No category",

@@ -4,6 +4,10 @@ export function formatMoney(amount: number, currency: string, locale = "es"): st
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount);
 }
 
+export function formatMoneyInput(amount: number, locale = "es"): string {
+  return new Intl.NumberFormat(locale).format(amount);
+}
+
 // Derive the locale's decimal/grouping separators. A 7-digit sample forces
 // grouping to appear even in trimmed ICU builds (Node), where 4-digit samples
 // may render without a group separator. Cached — keypads call this per keystroke.
