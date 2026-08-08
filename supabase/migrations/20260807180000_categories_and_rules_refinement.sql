@@ -48,6 +48,11 @@ end $$;
 -- database carrying such a pair. Merge each duplicate group onto the
 -- earliest-created row first, repointing every FK reference (and any
 -- children's parent_id) before dropping the extras.
+--
+-- Dedupe groups by NULL parent_id first: "is not distinct from NULL" is the
+-- same behavior the final UNIQUE NULLS NOT DISTINCT index will enforce — we
+-- build the same grouping here so the merge resolves every collision before
+-- the CREATE UNIQUE INDEX runs.
 do $$
 declare
   grp     record;
@@ -56,17 +61,17 @@ declare
 begin
   for grp in
     select household_id,
-           coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid) as parent_key,
+           parent_id,
            kind,
            lower(name) as lname
     from public.categories
-    group by household_id, parent_key, kind, lname
+    group by household_id, parent_id, kind, lname
     having count(*) > 1
   loop
     select id into keep_id
       from public.categories
       where household_id = grp.household_id
-        and coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid) = grp.parent_key
+        and (parent_id is not distinct from grp.parent_id)
         and kind = grp.kind
         and lower(name) = grp.lname
       order by created_at asc, id asc
@@ -75,7 +80,7 @@ begin
     for dup_id in
       select id from public.categories
       where household_id = grp.household_id
-        and coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid) = grp.parent_key
+        and (parent_id is not distinct from grp.parent_id)
         and kind = grp.kind
         and lower(name) = grp.lname
         and id <> keep_id
@@ -90,18 +95,18 @@ begin
   end loop;
 end $$;
 
--- Case-insensitive + kind-aware uniqueness. ILIKE-based B-tree via `lower(name)`
--- means 'Comida' and 'comida' collide under the same (household, parent, kind).
--- parent_id is coalesced to a sentinel nil-UUID so that two root-level rows
--- (parent_id IS NULL) are considered siblings by the index (Postgres would
--- otherwise treat NULLs as distinct in a UNIQUE index).
+-- Case-insensitive + kind-aware uniqueness. NULL parent_id treats root-level
+-- rows as siblings (Postgres 15+ UNIQUE ... NULLS NOT DISTINCT) so there's no
+-- need for a sentinel coalesce() value that could collide with legitimate
+-- category UUIDs. `lower(name)` makes the 'Comida' vs 'comida' check explicit.
 create unique index categories_uniq_household_parent_kind_name
   on public.categories (
     household_id,
-    coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    parent_id,
     kind,
     lower(name)
-  );
+  )
+  nulls not distinct;
 
 -- ============================================================================
 -- 2. categorization_rules: align columns with #22 spec
@@ -112,13 +117,18 @@ alter table public.categorization_rules
   rename column pattern to match_pattern;
 
 -- match_pattern sanity: must be non-empty and a "sane" ILIKE pattern.
--- We ban bare patterns that are just a single `%` (match-everything is OK via
--- explicit opt-in but we require an anchor character), and forbid ASCII NUL.
+-- Wildcard-only patterns (any combination of the ILIKE metacharacters % and _
+-- with nothing else, e.g. '%', '%%', '_%_') are explicitly banned — a
+-- match-everything rule is almost always a misclick, and when genuinely
+-- wanted should be requested via a sentinel/flag rather than silently
+-- inserted through the pattern field. ASCII NUL is banned because
+-- match_pattern is text.
 alter table public.categorization_rules
   add constraint categorization_rules_match_pattern_sane
   check (
     char_length(match_pattern) between 1 and 200
     and match_pattern !~ '\x00'
+    and char_length(btrim(match_pattern, '%_')) > 0
   );
 
 -- updated_at.
