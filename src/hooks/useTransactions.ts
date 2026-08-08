@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import type { Transaction, TransactionInsert, TransactionUpdate } from "@/lib/transactions";
 
@@ -16,16 +16,76 @@ function requireSupabase() {
   return supabase;
 }
 
-export function useTransactions(householdId: string | null) {
-  return useQuery({
-    queryKey: ["transactions", householdId],
-    queryFn: async () => {
-      const { data, error } = await requireSupabase()
+export type TransactionFilters = {
+  accountIds: readonly string[];
+  categoryIds: readonly string[];
+  endDate: string | null;
+  memberId: string | null;
+  query: string;
+  startDate: string | null;
+  type: "all" | "expense" | "income" | "transfer";
+};
+
+type Cursor = Pick<Transaction, "occurred_on" | "id">;
+
+export function useTransactions(householdId: string | null, filters: TransactionFilters) {
+  return useInfiniteQuery({
+    queryKey: ["transactions", householdId, filters],
+    queryFn: async ({ pageParam }) => {
+      let query = requireSupabase()
         .from("transactions")
-        .select("*")
-        .eq("household_id", householdId!)
+        .select(
+          "id, account_id, amount, base_amount, category_id, currency, description, entered_by, fx_rate, household_id, notes, occurred_on, spent_by, transfer_group_id, created_at, updated_at, import_batch_id, import_hash, is_cleared, is_pending_review, merchant, receipt_url",
+        )
+        .eq("household_id", householdId!);
+      if (filters.startDate) query = query.gte("occurred_on", filters.startDate);
+      if (filters.endDate) query = query.lte("occurred_on", filters.endDate);
+      if (filters.accountIds.length) query = query.in("account_id", filters.accountIds);
+      if (filters.categoryIds.length) query = query.in("category_id", filters.categoryIds);
+      if (filters.memberId) query = query.eq("spent_by", filters.memberId);
+      if (filters.type === "expense") query = query.lt("amount", 0);
+      if (filters.type === "income") query = query.gt("amount", 0);
+      if (filters.type === "transfer") query = query.not("transfer_group_id", "is", null);
+      const search = filters.query.trim().replace(/[(),]/g, " ");
+      if (search) query = query.or(`description.ilike.%${search}%,notes.ilike.%${search}%`);
+      const cursor = pageParam as Cursor | null;
+      if (cursor)
+        query = query.or(
+          `occurred_on.lt.${cursor.occurred_on},and(occurred_on.eq.${cursor.occurred_on},id.lt.${cursor.id})`,
+        );
+      const { data, error } = await query
         .order("occurred_on", { ascending: false })
-        .order("created_at", { ascending: false });
+        .order("id", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data;
+    },
+    initialPageParam: null as Cursor | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.length === 50 ? (lastPage.at(-1) ?? null) : undefined,
+    enabled: householdId !== null,
+  });
+}
+
+export function useTransactionSummary(householdId: string | null, filters: TransactionFilters) {
+  return useQuery({
+    queryKey: ["transactions", householdId, "summary", filters],
+    queryFn: async () => {
+      let query = requireSupabase()
+        .from("transactions")
+        .select("amount, base_amount, transfer_group_id")
+        .eq("household_id", householdId!);
+      if (filters.startDate) query = query.gte("occurred_on", filters.startDate);
+      if (filters.endDate) query = query.lte("occurred_on", filters.endDate);
+      if (filters.accountIds.length) query = query.in("account_id", filters.accountIds);
+      if (filters.categoryIds.length) query = query.in("category_id", filters.categoryIds);
+      if (filters.memberId) query = query.eq("spent_by", filters.memberId);
+      if (filters.type === "expense") query = query.lt("amount", 0);
+      if (filters.type === "income") query = query.gt("amount", 0);
+      if (filters.type === "transfer") query = query.not("transfer_group_id", "is", null);
+      const search = filters.query.trim().replace(/[(),]/g, " ");
+      if (search) query = query.or(`description.ilike.%${search}%,notes.ilike.%${search}%`);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -69,36 +129,6 @@ export function useTransactionMutations(householdId: string | null, memberId: st
         .single();
       if (error) throw error;
       return data;
-    },
-    onMutate: async (input) => {
-      if (!key || !householdId || !memberId) return undefined;
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<Transaction[]>(key);
-      const optimistic: Transaction = {
-        ...input,
-        category_id: input.category_id ?? null,
-        id: `optimistic-${crypto.randomUUID()}`,
-        household_id: householdId,
-        entered_by: memberId,
-        fx_rate: input.fx_rate ?? 1,
-        base_amount: input.amount * (input.fx_rate ?? 1),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        import_batch_id: null,
-        import_hash: null,
-        is_cleared: input.is_cleared ?? false,
-        is_pending_review: input.is_pending_review ?? false,
-        merchant: input.merchant ?? null,
-        notes: input.notes ?? null,
-        receipt_url: input.receipt_url ?? null,
-        spent_by: input.spent_by ?? null,
-        transfer_group_id: input.transfer_group_id ?? null,
-      };
-      queryClient.setQueryData<Transaction[]>(key, (current = []) => [optimistic, ...current]);
-      return { previous };
-    },
-    onError: (_error, _input, context) => {
-      if (key && context?.previous) queryClient.setQueryData(key, context.previous);
     },
     onSettled: invalidate,
   });

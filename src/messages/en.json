@@ -26,7 +26,35 @@
     "retry": "Retry",
     "new": "New transaction",
     "empty": "No transactions yet. Record the first one in a few taps.",
+    "noResults": "No transactions match these filters.",
+    "search": "Search description or notes",
+    "clearFilters": "Clear filters",
+    "loadMore": "Load more",
+    "transfer": "Transfer",
     "edit": "Edit {description}",
+    "filters": {
+      "allTypes": "All types",
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer",
+      "account": "Account",
+      "allAccounts": "All accounts",
+      "category": "Category",
+      "allCategories": "All categories",
+      "member": "Member",
+      "allMembers": "All members",
+      "startDate": "Start date",
+      "endDate": "End date"
+    },
+    "summary": {
+      "count": "Count",
+      "inflow": "Inflow",
+      "outflow": "Outflow",
+      "net": "Net"
+    },
+    "accountDetail": {
+      "neverUpdated": "Balance never updated"
+    },
     "form": {
       "title": "New transaction",
       "editTitle": "Edit transaction",
@@ -56,7 +84,9 @@
       "notes": "Notes",
       "save": "Save",
       "saving": "Saving…",
+      "duplicate": "Duplicate",
       "delete": "Delete",
+      "confirmDelete": "Delete “{description}”? This cannot be undone.",
       "errors": {
         "amount": "Enter an amount other than zero.",
         "description": "Enter a description between 1 and 200 characters.",

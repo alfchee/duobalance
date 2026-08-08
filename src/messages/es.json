@@ -26,7 +26,35 @@
     "retry": "Reintentar",
     "new": "Nuevo movimiento",
     "empty": "Aún no hay movimientos. Registra el primero en pocos toques.",
+    "noResults": "Ningún movimiento coincide con estos filtros.",
+    "search": "Buscar en descripción o notas",
+    "clearFilters": "Limpiar filtros",
+    "loadMore": "Cargar más",
+    "transfer": "Transferencia",
     "edit": "Editar {description}",
+    "filters": {
+      "allTypes": "Todos los tipos",
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "transfer": "Transferencia",
+      "account": "Cuenta",
+      "allAccounts": "Todas las cuentas",
+      "category": "Categoría",
+      "allCategories": "Todas las categorías",
+      "member": "Miembro",
+      "allMembers": "Todos los miembros",
+      "startDate": "Fecha de inicio",
+      "endDate": "Fecha final"
+    },
+    "summary": {
+      "count": "Cantidad",
+      "inflow": "Entradas",
+      "outflow": "Salidas",
+      "net": "Neto"
+    },
+    "accountDetail": {
+      "neverUpdated": "Saldo nunca actualizado"
+    },
     "form": {
       "title": "Nuevo movimiento",
       "editTitle": "Editar movimiento",
@@ -56,7 +84,9 @@
       "notes": "Notas",
       "save": "Guardar",
       "saving": "Guardando…",
+      "duplicate": "Duplicar",
       "delete": "Eliminar",
+      "confirmDelete": "¿Eliminar “{description}”? Esta acción no se puede deshacer.",
       "errors": {
         "amount": "Ingresa un monto distinto de cero.",
         "description": "Ingresa una descripción de 1 a 200 caracteres.",
