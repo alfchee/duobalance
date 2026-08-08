@@ -42,6 +42,54 @@ begin
     drop constraint if exists categories_household_id_parent_id_name_key cascade;
 end $$;
 
+-- The old constraint was case-SENSITIVE, so two rows differing only by case
+-- (e.g. 'Otros' and 'otros') were legal siblings before this migration. The
+-- new case-insensitive index below would fail to create outright on any
+-- database carrying such a pair. Merge each duplicate group onto the
+-- earliest-created row first, repointing every FK reference (and any
+-- children's parent_id) before dropping the extras.
+do $$
+declare
+  grp     record;
+  keep_id uuid;
+  dup_id  uuid;
+begin
+  for grp in
+    select household_id,
+           coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid) as parent_key,
+           kind,
+           lower(name) as lname
+    from public.categories
+    group by household_id, parent_key, kind, lname
+    having count(*) > 1
+  loop
+    select id into keep_id
+      from public.categories
+      where household_id = grp.household_id
+        and coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid) = grp.parent_key
+        and kind = grp.kind
+        and lower(name) = grp.lname
+      order by created_at asc, id asc
+      limit 1;
+
+    for dup_id in
+      select id from public.categories
+      where household_id = grp.household_id
+        and coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid) = grp.parent_key
+        and kind = grp.kind
+        and lower(name) = grp.lname
+        and id <> keep_id
+    loop
+      update public.categorization_rules set category_id = keep_id where category_id = dup_id;
+      update public.transactions       set category_id = keep_id where category_id = dup_id;
+      update public.budgets            set category_id = keep_id where category_id = dup_id;
+      update public.bills              set category_id = keep_id where category_id = dup_id;
+      update public.categories         set parent_id   = keep_id where parent_id   = dup_id;
+      delete from public.categories where id = dup_id;
+    end loop;
+  end loop;
+end $$;
+
 -- Case-insensitive + kind-aware uniqueness. ILIKE-based B-tree via `lower(name)`
 -- means 'Comida' and 'comida' collide under the same (household, parent, kind).
 -- parent_id is coalesced to a sentinel nil-UUID so that two root-level rows
@@ -105,17 +153,36 @@ create trigger categorization_rules_set_updated_at
 --    point at rows of the SAME household as the referencing row.
 -- ============================================================================
 
-create or replace function public.tg_categories_containment()
-returns trigger
+-- Shared "same household" assertion. The lookups that produce
+-- p_actual_household_id must run SECURITY DEFINER (see below) — under the
+-- caller's own RLS, a lookup of a row in ANOTHER household returns no rows
+-- (NULL) rather than a mismatched household_id, which would make the plain
+-- `<>` comparison silently pass instead of raising.
+create or replace function public.assert_same_household(
+  p_actual_household_id uuid, p_expected_household_id uuid, p_error_msg text
+) returns void
 language plpgsql
 as $$
 begin
+  if p_actual_household_id is null or p_actual_household_id <> p_expected_household_id then
+    raise exception '%', p_error_msg using errcode = 'check_violation';
+  end if;
+end;
+$$;
+
+create or replace function public.tg_categories_containment()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
   if new.parent_id is not null then
-    if (select household_id from public.categories where id = new.parent_id)
-       <> new.household_id then
-      raise exception 'categories.parent_id must belong to the same household'
-        using errcode = 'check_violation';
-    end if;
+    perform public.assert_same_household(
+      (select household_id from public.categories where id = new.parent_id),
+      new.household_id,
+      'categories.parent_id must belong to the same household'
+    );
   end if;
   return new;
 end;
@@ -128,21 +195,23 @@ create trigger categories_containment
 create or replace function public.tg_categorization_rules_containment()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 begin
-  if (select household_id from public.categories where id = new.category_id)
-     <> new.household_id then
-    raise exception 'categorization_rules.category_id must belong to the same household'
-      using errcode = 'check_violation';
-  end if;
+  perform public.assert_same_household(
+    (select household_id from public.categories where id = new.category_id),
+    new.household_id,
+    'categorization_rules.category_id must belong to the same household'
+  );
 
   -- account_id, if set, must also be same-household.
   if new.account_id is not null then
-    if (select household_id from public.accounts where id = new.account_id)
-       <> new.household_id then
-      raise exception 'categorization_rules.account_id must belong to the same household'
-        using errcode = 'check_violation';
-    end if;
+    perform public.assert_same_household(
+      (select household_id from public.accounts where id = new.account_id),
+      new.household_id,
+      'categorization_rules.account_id must belong to the same household'
+    );
   end if;
 
   return new;
@@ -166,6 +235,13 @@ returns trigger
 language plpgsql
 as $$
 begin
+  -- A category cannot be its own parent (would defeat the max-depth check
+  -- below, since a self-referencing leaf has no parent_id/children yet).
+  if new.parent_id is not null and new.parent_id = new.id then
+    raise exception 'a category cannot be its own parent'
+      using errcode = 'check_violation';
+  end if;
+
   -- Setting parent_id to a row that already has a parent_id -> reject.
   if new.parent_id is not null then
     if exists (
@@ -197,10 +273,12 @@ create trigger categories_max_depth
   for each row execute function public.tg_categories_max_depth();
 
 -- ============================================================================
--- 6. Deleting a category in use by transactions: do NOT cascade-delete
---    transactions and do NOT silently NULL them either. Reassign references
---    to the household's "Otros"/"Others"/"Outros" fallback category of the
---    matching kind, and raise a clear error if no such fallback exists.
+-- 6. Deleting a category in use: do NOT cascade-delete or silently NULL
+--    dependents. Budgets/bills block the delete outright (no sensible
+--    fallback). Transactions get reassigned to the household's fallback
+--    category of the matching kind ("Otros"/"Others"/"Outros"/"Other" for
+--    expense, "Otros Ingresos"/"Other Income"/"Outras Receitas" for income),
+--    and a clear error is raised if no such fallback exists.
 --
 --    Categorization rules that point at the deleted category are dropped
 --    (on delete cascade already covers this), but we surface a NOTICE so
@@ -226,16 +304,43 @@ begin
       old.name, rules_dropped;
   end if;
 
+  -- Budgets and bills don't have a sensible "reassign to fallback" story (a
+  -- budget/bill IS FOR its category, unlike a transaction which merely
+  -- happens to be tagged with it) — block the delete instead of letting the
+  -- pre-existing FK actions (CASCADE on budgets, SET NULL on bills) fire
+  -- silently.
+  if exists (select 1 from public.budgets b where b.category_id = old.id) then
+    raise exception
+      'cannot delete category "%" — it is referenced by one or more budgets; delete or reassign those budgets first',
+      old.name
+      using errcode = 'dependent_objects_still_exist';
+  end if;
+
+  if exists (select 1 from public.bills bl where bl.category_id = old.id) then
+    raise exception
+      'cannot delete category "%" — it is referenced by one or more bills; delete or reassign those bills first',
+      old.name
+      using errcode = 'dependent_objects_still_exist';
+  end if;
+
   -- Transactions referencing this category: reassign to "Otros" (or locale
   -- equivalent) of the same kind. If no fallback exists, raise.
   if exists (
     select 1 from public.transactions t where t.category_id = old.id
   ) then
+    -- Excludes old.id itself: without this, deleting the fallback category
+    -- while IT still has transactions would resolve fallback_id to old.id,
+    -- making the reassignment UPDATE below a no-op and letting the FK's own
+    -- ON DELETE SET NULL silently null the transactions out instead.
     select c.id into fallback_id
       from public.categories c
       where c.household_id = old.household_id
         and c.kind = old.kind
-        and lower(c.name) in ('otros', 'others', 'outros')
+        and c.id <> old.id
+        and lower(c.name) in (
+          'otros', 'others', 'outros', 'other',
+          'otros ingresos', 'other income', 'outras receitas'
+        )
       order by c.is_default desc, c.display_order asc, c.id asc
       limit 1;
 
@@ -269,23 +374,20 @@ create trigger categories_delete_in_use
 --    Locales supported today: es, en, pt-BR (same set as households.locale check).
 -- ============================================================================
 
-create or replace function public.seed_default_categories(p_household_id uuid, p_locale text)
+-- Split into expense/income halves (instead of one seed-everything function)
+-- so the backfill below can top up income defaults alone for households
+-- that pre-date this migration and already have expense-only categories.
+create or replace function public.seed_expense_categories(p_household_id uuid, p_locale text)
 returns void
 language plpgsql
 set search_path = public
 as $$
 declare
-  -- expense defaults, order is display_order ascending.
   expense_names_es    text[] := array['Comida y Bebida','Supermercado','Hogar y Servicios','Transporte','Salud','Educación','Ropa','Entretenimiento','Restaurantes','Cuidado Personal','Regalos','Mascotas','Otros'];
   expense_names_en    text[] := array['Food & Drink','Groceries','Home & Utilities','Transportation','Healthcare','Education','Clothing','Entertainment','Restaurants','Personal Care','Gifts','Pets','Other'];
   expense_names_ptbr  text[] := array['Alimentação','Supermercado','Casa e Serviços','Transporte','Saúde','Educação','Roupas','Entretenimento','Restaurantes','Cuidados Pessoais','Presentes','Animais de Estimação','Outros'];
 
-  income_names_es     text[] := array['Salario','Freelance','Regalos Recibidos','Otros Ingresos'];
-  income_names_en     text[] := array['Salary','Freelance','Gifts Received','Other Income'];
-  income_names_ptbr   text[] := array['Salário','Freelance','Presentes Recebidos','Outras Receitas'];
-
   names               text[];
-  k                   text;
   i                   int;
   nm                  text;
   dflt_colors         text[] := array[
@@ -293,37 +395,64 @@ declare
     '#14B8A6','#6366F1','#84CC16','#06B6D4','#D946EF','#64748B'
   ];
 begin
-  -- Expense categories -----------------------------------------------
   case p_locale
     when 'pt-BR' then names := expense_names_ptbr;
     when 'en'    then names := expense_names_en;
     else                names := expense_names_es;
   end case;
 
-  k := 'expense';
   for i in 1 .. array_upper(names, 1) loop
     nm := names[i];
     insert into public.categories
       (household_id, name, kind, is_default, display_order, color_hex)
     values
-      (p_household_id, nm, k, true, (i - 1)::smallint, dflt_colors[(i - 1) % array_upper(dflt_colors, 1) + 1]);
+      (p_household_id, nm, 'expense', true, (i - 1)::smallint, dflt_colors[(i - 1) % array_upper(dflt_colors, 1) + 1]);
   end loop;
+end;
+$$;
 
-  -- Income categories ------------------------------------------------
+create or replace function public.seed_income_categories(p_household_id uuid, p_locale text)
+returns void
+language plpgsql
+set search_path = public
+as $$
+declare
+  income_names_es     text[] := array['Salario','Freelance','Regalos Recibidos','Otros Ingresos'];
+  income_names_en     text[] := array['Salary','Freelance','Gifts Received','Other Income'];
+  income_names_ptbr   text[] := array['Salário','Freelance','Presentes Recebidos','Outras Receitas'];
+
+  names               text[];
+  i                   int;
+  nm                  text;
+  dflt_colors         text[] := array[
+    '#F59E0B','#10B981','#3B82F6','#8B5CF6','#EF4444','#F97316','#EC4899',
+    '#14B8A6','#6366F1','#84CC16','#06B6D4','#D946EF','#64748B'
+  ];
+begin
   case p_locale
     when 'pt-BR' then names := income_names_ptbr;
     when 'en'    then names := income_names_en;
     else                names := income_names_es;
   end case;
 
-  k := 'income';
   for i in 1 .. array_upper(names, 1) loop
     nm := names[i];
     insert into public.categories
       (household_id, name, kind, is_default, display_order, color_hex)
     values
-      (p_household_id, nm, k, true, (i - 1)::smallint, dflt_colors[i % array_upper(dflt_colors, 1) + 1]);
+      (p_household_id, nm, 'income', true, (i - 1)::smallint, dflt_colors[(i - 1) % array_upper(dflt_colors, 1) + 1]);
   end loop;
+end;
+$$;
+
+create or replace function public.seed_default_categories(p_household_id uuid, p_locale text)
+returns void
+language plpgsql
+set search_path = public
+as $$
+begin
+  perform public.seed_expense_categories(p_household_id, p_locale);
+  perform public.seed_income_categories(p_household_id, p_locale);
 end;
 $$;
 
@@ -343,9 +472,12 @@ create trigger household_seed_categories
   for each row execute function public.tg_household_seed_categories();
 
 -- Backfill: households created before this migration get their default
--- categories seeded now. Only households that currently have ZERO categories
--- get seeded — if someone already added custom rows we don't want to
--- double-insert (the unique index would fail anyway, but skipping is cleaner).
+-- categories seeded now.
+--   * Households with ZERO categories get the full expense + income set.
+--   * Households that already have (expense-only, pre-#22) categories keep
+--     those rows as-is, but still get the income half of the seed set —
+--     otherwise they'd have nowhere for income transactions to land and
+--     would never surface in any income-vs-expense split.
 do $$
 declare
   h record;
@@ -353,6 +485,10 @@ begin
   for h in select hh.id, hh.locale from public.households hh loop
     if not exists (select 1 from public.categories c where c.household_id = h.id) then
       perform public.seed_default_categories(h.id, h.locale);
+    elsif not exists (
+      select 1 from public.categories c where c.household_id = h.id and c.kind = 'income'
+    ) then
+      perform public.seed_income_categories(h.id, h.locale);
     end if;
   end loop;
 end $$;

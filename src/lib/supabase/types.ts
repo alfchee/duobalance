@@ -1136,6 +1136,14 @@ export type Database = {
       _temptypes: { Args: { "": string }; Returns: string }
       _todo: { Args: never; Returns: string }
       accept_invite: { Args: { p_token: string }; Returns: string }
+      assert_same_household: {
+        Args: {
+          p_actual_household_id: string
+          p_error_msg: string
+          p_expected_household_id: string
+        }
+        Returns: undefined
+      }
       check_member_in_household: {
         Args: { p_household_id: string; p_member_id: string }
         Returns: undefined
@@ -1263,6 +1271,14 @@ export type Database = {
         | { Args: never; Returns: string[] }
         | { Args: { "": string }; Returns: string[] }
       seed_default_categories: {
+        Args: { p_household_id: string; p_locale: string }
+        Returns: undefined
+      }
+      seed_expense_categories: {
+        Args: { p_household_id: string; p_locale: string }
+        Returns: undefined
+      }
+      seed_income_categories: {
         Args: { p_household_id: string; p_locale: string }
         Returns: undefined
       }
