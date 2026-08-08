@@ -13,8 +13,18 @@ export type CategoryKind = "expense" | "income";
 
 export function ilikePatternToRegExp(pattern: string): RegExp {
   let source = "^";
-  for (const character of pattern) {
-    if (character === "%") {
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index];
+    if (character === undefined) continue;
+    if (character === "\\") {
+      const nextCharacter = pattern[index + 1];
+      if (nextCharacter !== undefined) {
+        source += nextCharacter.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+        index += 1;
+      } else {
+        source += "\\\\";
+      }
+    } else if (character === "%") {
       source += ".*";
     } else if (character === "_") {
       source += ".";
@@ -56,9 +66,12 @@ export function matchingRule(
 export function categoryTree(categories: readonly Category[], kind: CategoryKind): Category[] {
   const matching = categories.filter((category) => category.kind === kind && !category.is_archived);
   const roots = matching.filter((category) => category.parent_id === null);
-  const children = matching.filter((category) => category.parent_id !== null);
-  return roots.flatMap((root) => [
-    root,
-    ...children.filter((child) => child.parent_id === root.id),
-  ]);
+  const childrenByParent = new Map<string, Category[]>();
+  for (const category of matching) {
+    if (category.parent_id === null) continue;
+    const children = childrenByParent.get(category.parent_id);
+    if (children) children.push(category);
+    else childrenByParent.set(category.parent_id, [category]);
+  }
+  return roots.flatMap((root) => [root, ...(childrenByParent.get(root.id) ?? [])]);
 }

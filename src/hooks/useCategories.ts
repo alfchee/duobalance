@@ -166,7 +166,9 @@ export function useRuleApplicationPreview(
       for (const transaction of data) {
         const rule = matchingRule(transaction.description, rules);
         if (!rule || rule.category_id === transaction.category_id) continue;
-        grouped.set(rule.category_id, [...(grouped.get(rule.category_id) ?? []), transaction.id]);
+        const transactionIds = grouped.get(rule.category_id);
+        if (transactionIds) transactionIds.push(transaction.id);
+        else grouped.set(rule.category_id, [transaction.id]);
       }
       return [...grouped.entries()].map(([categoryId, transactionIds]) => ({
         categoryId,

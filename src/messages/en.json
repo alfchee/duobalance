@@ -330,7 +330,8 @@
       "category": "Category",
       "categoryPlaceholder": "Choose a category",
       "priority": "Priority",
-      "invalid": "Enter a pattern and choose a category. A pattern cannot contain only wildcards."
+      "invalid": "Enter a pattern and choose a category. A pattern cannot contain only wildcards.",
+      "invalidPriority": "Enter a whole-number priority."
     },
     "tester": {
       "label": "Live tester",

@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories, useCategoryMutations, useCategorizationRules } from "@/hooks/useCategories";
 import { useHousehold } from "@/hooks/useHousehold";
 import { categoryTree, type Category, type CategoryKind } from "@/lib/categories";
+import { cn } from "@/lib/utils";
 
 const ICONS = ["🏠", "🛒", "🚗", "🍽️", "❤️", "🎓", "🎬", "💼", "💰", "📦"];
 
@@ -192,7 +193,7 @@ function CategoryList({
           {categories.map((category) => (
             <li
               key={category.id}
-              className={`flex items-center gap-3 px-3 py-2 ${category.parent_id ? "pl-8" : ""}`}
+              className={cn("flex items-center gap-3 px-3 py-2", category.parent_id && "pl-8")}
             >
               <span
                 aria-hidden

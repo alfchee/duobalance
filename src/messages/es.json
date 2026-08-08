@@ -330,7 +330,8 @@
       "category": "Categoría",
       "categoryPlaceholder": "Elige una categoría",
       "priority": "Prioridad",
-      "invalid": "Ingresa un patrón y elige una categoría. Un patrón no puede contener solo comodines."
+      "invalid": "Ingresa un patrón y elige una categoría. Un patrón no puede contener solo comodines.",
+      "invalidPriority": "Ingresa una prioridad como número entero."
     },
     "tester": {
       "label": "Probador en vivo",

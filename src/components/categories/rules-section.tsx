@@ -34,13 +34,13 @@ import {
 import { useHousehold } from "@/hooks/useHousehold";
 import { matchingRule, type CategorizationRule } from "@/lib/categories";
 
-type Draft = { matchPattern: string; categoryId: string; priority: number };
+type Draft = { matchPattern: string; categoryId: string; priority: string };
 
 function toDraft(rule: CategorizationRule | null): Draft {
   return {
     matchPattern: rule?.match_pattern ?? "%",
     categoryId: rule?.category_id ?? "",
-    priority: rule?.priority ?? 100,
+    priority: String(rule?.priority ?? 100),
   };
 }
 
@@ -223,13 +223,13 @@ export function RulesSection({ standalone = false }: { standalone?: boolean }) {
               id: editing.id,
               match_pattern: draft.matchPattern,
               category_id: draft.categoryId,
-              priority: draft.priority,
+              priority: Number(draft.priority),
             });
           else
             await create.mutateAsync({
               match_pattern: draft.matchPattern,
               category_id: draft.categoryId,
-              priority: draft.priority,
+              priority: Number(draft.priority),
               is_active: true,
               account_id: null,
             });
@@ -337,6 +337,13 @@ function RuleForm({
     event.preventDefault();
     if (!draft.categoryId || !draft.matchPattern.trim() || !/[^%_\s]/.test(draft.matchPattern))
       return setError(t("form.invalid"));
+    if (
+      !/^-?\d+$/.test(draft.priority) ||
+      !Number.isSafeInteger(Number(draft.priority)) ||
+      Number(draft.priority) < -32768 ||
+      Number(draft.priority) > 32767
+    )
+      return setError(t("form.invalidPriority"));
     setError(null);
     try {
       await onSave({ ...draft, matchPattern: draft.matchPattern.trim() });
@@ -389,7 +396,7 @@ function RuleForm({
               type="number"
               value={draft.priority}
               onChange={(event) =>
-                setDraft((value) => ({ ...value, priority: Number(event.target.value) }))
+                setDraft((value) => ({ ...value, priority: event.target.value }))
               }
             />
           </div>
