@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatMoneyInput,
   formatMoney,
   formatSignedMoney,
   maskMoneyInput,
@@ -30,6 +31,12 @@ describe("formatMoney", () => {
 });
 
 describe("parseMoneyInput", () => {
+  it("round-trips decimal amounts using the active locale", () => {
+    const amount = 12.34;
+    expect(parseMoneyInput(formatMoneyInput(amount, "es"), "es")).toBe(amount);
+    expect(parseMoneyInput(formatMoneyInput(amount, "en"), "en")).toBe(amount);
+  });
+
   it("parses comma-decimal es input (1.234,56)", () => {
     expect(parseMoneyInput("1.234,56", "es")).toBe(1234.56);
   });

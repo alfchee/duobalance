@@ -8,6 +8,7 @@ import { useHousehold } from "@/hooks/useHousehold";
 import { HouseholdPicker } from "@/components/household/household-picker";
 import { HouseholdOnboarding } from "@/components/household/household-onboarding";
 import { BottomNav } from "@/components/nav/bottom-nav";
+import { TransactionEntrySheet } from "@/components/transactions/transaction-entry-sheet";
 import { FullPageSpinner } from "@/components/full-page-spinner";
 
 // AC (#14): auth guarding happens client-side here, never in middleware.ts —
@@ -43,6 +44,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <div className="pb-16">{children}</div>
+      <TransactionEntrySheet />
       <BottomNav />
     </>
   );

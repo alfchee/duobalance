@@ -15,9 +15,57 @@
   "nav": {
     "balances": "Saldos",
     "transactions": "Movimientos",
+    "addTransaction": "Agregar",
     "budget": "Presupuesto",
     "bills": "Cuentas",
     "more": "Más"
+  },
+  "transactions": {
+    "loading": "Cargando movimientos…",
+    "loadError": "No se pudieron cargar los movimientos.",
+    "retry": "Reintentar",
+    "new": "Nuevo movimiento",
+    "empty": "Aún no hay movimientos. Registra el primero en pocos toques.",
+    "edit": "Editar {description}",
+    "form": {
+      "title": "Nuevo movimiento",
+      "editTitle": "Editar movimiento",
+      "description": "Agrega un gasto o ingreso sin salir de esta pantalla.",
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "amount": "Monto",
+      "backspace": "Borrar último dígito",
+      "decimal": ",",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "p. ej. Café",
+      "account": "Cuenta",
+      "accountPlaceholder": "Elige una cuenta",
+      "currency": "Moneda",
+      "category": "Categoría",
+      "categoryPlaceholder": "Elige una categoría",
+      "noCategory": "Sin categoría",
+      "date": "Fecha",
+      "spentBy": "Gastado por",
+      "joint": "Conjunto",
+      "fxRate": "Tipo de cambio",
+      "rateLoading": "Buscando la tasa para esta fecha…",
+      "rateSource": "Tasa de {source} del {date}",
+      "rateSources": { "override": "ajuste manual", "feed": "ExchangeRate-API" },
+      "more": "Más opciones",
+      "less": "Menos opciones",
+      "notes": "Notas",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "delete": "Eliminar",
+      "errors": {
+        "amount": "Ingresa un monto distinto de cero.",
+        "description": "Ingresa una descripción de 1 a 200 caracteres.",
+        "account": "Elige una cuenta.",
+        "date": "Elige hoy o una fecha de hasta un día en el futuro.",
+        "rate": "Ingresa un tipo de cambio válido.",
+        "generic": "No se pudo guardar el movimiento. Tus cambios se revirtieron."
+      }
+    }
   },
   "auth": {
     "login": {

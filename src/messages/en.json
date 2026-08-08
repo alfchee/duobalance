@@ -15,9 +15,57 @@
   "nav": {
     "balances": "Balances",
     "transactions": "Transactions",
+    "addTransaction": "Add",
     "budget": "Budget",
     "bills": "Bills",
     "more": "More"
+  },
+  "transactions": {
+    "loading": "Loading transactions…",
+    "loadError": "Couldn't load transactions.",
+    "retry": "Retry",
+    "new": "New transaction",
+    "empty": "No transactions yet. Record the first one in a few taps.",
+    "edit": "Edit {description}",
+    "form": {
+      "title": "New transaction",
+      "editTitle": "Edit transaction",
+      "description": "Add an expense or income without leaving this screen.",
+      "expense": "Expense",
+      "income": "Income",
+      "amount": "Amount",
+      "backspace": "Delete last digit",
+      "decimal": ".",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "e.g. Coffee",
+      "account": "Account",
+      "accountPlaceholder": "Choose an account",
+      "currency": "Currency",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "noCategory": "No category",
+      "date": "Date",
+      "spentBy": "Spent by",
+      "joint": "Joint",
+      "fxRate": "Exchange rate",
+      "rateLoading": "Looking up the rate for this date…",
+      "rateSource": "{source} rate from {date}",
+      "rateSources": { "override": "Manual override", "feed": "ExchangeRate-API" },
+      "more": "More options",
+      "less": "Fewer options",
+      "notes": "Notes",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete",
+      "errors": {
+        "amount": "Enter an amount other than zero.",
+        "description": "Enter a description between 1 and 200 characters.",
+        "account": "Choose an account.",
+        "date": "Choose today or a date no more than one day in the future.",
+        "rate": "Enter a valid exchange rate.",
+        "generic": "Couldn't save the transaction. Your changes were rolled back."
+      }
+    }
   },
   "auth": {
     "login": {
