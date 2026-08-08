@@ -117,7 +117,7 @@ begin
 end
 $$;
 
-select plan(32);
+select plan(36);
 
 -- ============================================================================
 -- 1. budget_status view — Carol (household B, no budgets of her own) must
@@ -178,6 +178,52 @@ select results_eq(
      where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
   $$ values (20000::numeric, 4.00::numeric) $$,
   'budget_status regression (#3): positive refund row does NOT reduce spent or pct_used (amount<0 filter holds)'
+);
+
+select results_eq(
+  $$ insert into public.transactions
+       (id, household_id, account_id, category_id, amount, fx_rate, currency,
+        occurred_on, description, entered_by)
+     values (
+       'a6000000-0000-0000-0000-000000000098',
+       'a0000000-0000-0000-0000-00000000000a',
+       'a3000000-0000-0000-0000-000000000001',
+       'a4000000-0000-0000-0000-000000000001',
+       -100, 1000, 'USD', current_date,
+       'USD expense converted to CLP budget currency',
+       'a2000000-0000-0000-0000-000000000001'
+     ) returning base_amount $$,
+  $$ values (-100000::numeric) $$,
+  'foreign-currency expense stores its converted base_amount'
+);
+
+select results_eq(
+  $$ select spent::numeric, remaining::numeric, pct_used::numeric
+     from public.budget_status
+     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (120000::numeric, 380000::numeric, 24.00::numeric) $$,
+  'budget_status aggregates converted base_amount for a foreign-currency expense'
+);
+
+select throws_ok(
+  $$ insert into public.budgets
+       (id, household_id, period, amount, currency, starts_on)
+     values (
+       'a5000000-0000-0000-0000-000000000099',
+       'a0000000-0000-0000-0000-00000000000a',
+       'monthly', 100, 'USD', current_date
+     ) $$,
+  '23514',
+  'budgets.currency must match households.base_currency',
+  'budget currency must match the household base currency'
+);
+
+select throws_ok(
+  $$ update public.households set base_currency = 'USD'
+     where id = 'a0000000-0000-0000-0000-00000000000a'::uuid $$,
+  '23514',
+  'households.base_currency must match existing budgets.currency',
+  'household base currency cannot diverge from existing budget currencies'
 );
 
 -- ============================================================================

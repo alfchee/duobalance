@@ -58,7 +58,7 @@ begin
 end
 $$;
 
-select plan(10);
+select plan(11);
 
 -- ============================================================================
 -- 1. base_amount = round(amount * fx_rate, 4), always — never editable
@@ -93,6 +93,20 @@ select results_eq(
      returning fx_rate, base_amount $$,
   $$ values (1::numeric(20,10), -750.0000::numeric(18,4)) $$,
   'fx_rate defaults to 1 and base_amount matches amount when currency == base'
+);
+
+select results_eq(
+  $$ insert into public.transactions
+       (household_id, account_id, category_id, amount, fx_rate, currency,
+        occurred_on, description, entered_by)
+     values (
+       'c0000000-0000-0000-0000-00000000000a', 'c3000000-0000-0000-0000-000000000001',
+       'c4000000-0000-0000-0000-000000000001', -99999999999999.9999, 1.1, 'CLP', current_date,
+       'maximum supported generated base amount', 'c2000000-0000-0000-0000-000000000001'
+     )
+     returning base_amount $$,
+  $$ values (-109999999999999.9999::numeric(38,4)) $$,
+  'base_amount supports every valid amount × fx_rate product'
 );
 
 -- ============================================================================

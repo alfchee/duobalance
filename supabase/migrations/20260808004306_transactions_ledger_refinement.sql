@@ -35,7 +35,7 @@ alter table public.transactions
   add constraint transactions_amount_nonzero_check check (amount <> 0);
 
 comment on column public.transactions.amount is
-  'Signed, in `currency`. Negative = money out. Report on base_amount, never this column, once more than one currency is in play. numeric(18,4) per #23 spec — do not widen without also widening base_amount.';
+  'Signed, in `currency`. Negative = money out. Report on base_amount, never this column, once more than one currency is in play.';
 
 -- ============================================================================
 -- 2. fx_rate: snapshot rate from `currency` to the household's base_currency
@@ -58,7 +58,7 @@ comment on column public.transactions.fx_rate is
 -- ============================================================================
 
 alter table public.transactions
-  add column base_amount numeric(18,4)
+  add column base_amount numeric(38,4)
     generated always as (round(amount * fx_rate, 4)) stored;
 
 -- ============================================================================
@@ -240,6 +240,60 @@ create policy transactions_delete on public.transactions
 --     from step 1 both need to be reflected here or "spent" silently breaks.
 -- ============================================================================
 
+do $$
+begin
+  if exists (
+    select 1
+    from public.budgets b
+    join public.households h on h.id = b.household_id
+    where b.currency <> h.base_currency
+  ) then
+    raise exception 'budgets.currency must match households.base_currency before transactions ledger refinement'
+      using errcode = 'check_violation';
+  end if;
+end $$;
+
+create or replace function public.tg_budgets_match_household_base_currency()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.currency <> (select base_currency from public.households where id = new.household_id) then
+    raise exception 'budgets.currency must match households.base_currency'
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger budgets_match_household_base_currency
+  before insert or update of household_id, currency on public.budgets
+  for each row execute function public.tg_budgets_match_household_base_currency();
+
+create or replace function public.tg_households_preserve_budget_currency()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (
+    select 1 from public.budgets
+    where household_id = new.id and currency <> new.base_currency
+  ) then
+    raise exception 'households.base_currency must match existing budgets.currency'
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger households_preserve_budget_currency
+  before update of base_currency on public.households
+  for each row execute function public.tg_households_preserve_budget_currency();
+
 create or replace view public.budget_status
 with (security_invoker = true) as
 select
@@ -249,11 +303,11 @@ select
   b.period,
   b.amount                                    as budgeted,
   b.currency,
-  coalesce(-sum(t.amount), 0)                 as spent,
-  b.amount - coalesce(-sum(t.amount), 0)      as remaining,
+  coalesce(-sum(t.base_amount), 0)            as spent,
+  b.amount - coalesce(-sum(t.base_amount), 0) as remaining,
   case
     when b.amount = 0 then 0
-    else round((coalesce(-sum(t.amount), 0) / b.amount * 100)::numeric, 2)
+    else round((coalesce(-sum(t.base_amount), 0) / b.amount * 100)::numeric, 2)
   end                                         as pct_used
 from public.budgets b
 left join public.transactions t
@@ -270,6 +324,6 @@ where b.is_active
 group by b.id, b.household_id, b.category_id, b.period, b.amount, b.currency, b.starts_on;
 
 comment on view public.budget_status is
-  'Active budgets with spent/remaining for the current period. Recomputed on read. Spent = -sum(amount) WHERE amount < 0 (only money-out rows contribute); does not yet convert cross-currency transactions into the budget''s own currency.';
+  'Active budgets in household base currency with spent/remaining for the current period. Recomputed on read. Spent = -sum(base_amount) WHERE amount < 0 (only money-out rows contribute).';
 
 grant select on public.budget_status to anon, authenticated;
