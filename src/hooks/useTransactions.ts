@@ -43,8 +43,12 @@ export function useTransactions(householdId: string | null, filters: Transaction
       if (filters.accountIds.length) query = query.in("account_id", filters.accountIds);
       if (filters.categoryIds.length) query = query.in("category_id", filters.categoryIds);
       if (filters.memberId) query = query.eq("spent_by", filters.memberId);
-      if (filters.type === "expense") query = query.lt("amount", 0);
-      if (filters.type === "income") query = query.gt("amount", 0);
+      if (filters.type === "expense") {
+        query = query.lt("amount", 0).is("transfer_group_id", null);
+      }
+      if (filters.type === "income") {
+        query = query.gt("amount", 0).is("transfer_group_id", null);
+      }
       if (filters.type === "transfer") query = query.not("transfer_group_id", "is", null);
       const search = filters.query.trim().replace(/[(),]/g, " ");
       if (search) query = query.or(`description.ilike.%${search}%,notes.ilike.%${search}%`);
@@ -80,8 +84,12 @@ export function useTransactionSummary(householdId: string | null, filters: Trans
       if (filters.accountIds.length) query = query.in("account_id", filters.accountIds);
       if (filters.categoryIds.length) query = query.in("category_id", filters.categoryIds);
       if (filters.memberId) query = query.eq("spent_by", filters.memberId);
-      if (filters.type === "expense") query = query.lt("amount", 0);
-      if (filters.type === "income") query = query.gt("amount", 0);
+      if (filters.type === "expense") {
+        query = query.lt("amount", 0).is("transfer_group_id", null);
+      }
+      if (filters.type === "income") {
+        query = query.gt("amount", 0).is("transfer_group_id", null);
+      }
       if (filters.type === "transfer") query = query.not("transfer_group_id", "is", null);
       const search = filters.query.trim().replace(/[(),]/g, " ");
       if (search) query = query.or(`description.ilike.%${search}%,notes.ilike.%${search}%`);

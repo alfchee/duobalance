@@ -53,7 +53,9 @@
       "net": "Net"
     },
     "accountDetail": {
-      "neverUpdated": "Balance never updated"
+      "neverUpdated": "Balance never updated",
+      "edit": "Edit account",
+      "updateBalance": "Update balance"
     },
     "form": {
       "title": "New transaction",

@@ -53,7 +53,9 @@
       "net": "Neto"
     },
     "accountDetail": {
-      "neverUpdated": "Saldo nunca actualizado"
+      "neverUpdated": "Saldo nunca actualizado",
+      "edit": "Editar cuenta",
+      "updateBalance": "Actualizar saldo"
     },
     "form": {
       "title": "Nuevo movimiento",

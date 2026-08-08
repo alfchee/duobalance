@@ -15,6 +15,7 @@ import {
 } from "@/hooks/useTransactions";
 import { formatMoney, formatSignedMoney } from "@/lib/money";
 import { displayBalance } from "@/lib/accounts";
+import { useAccountsUiStore } from "@/store/accounts";
 import { useTransactionsUiStore } from "@/store/transactions";
 
 const FILTER_SEPARATOR = ",";
@@ -55,15 +56,17 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
   const { data: members = [] } = useHouseholdMembers(householdId);
   const openCreate = useTransactionsUiStore((state) => state.openCreate);
   const openEdit = useTransactionsUiStore((state) => state.openEdit);
+  const openAccountEdit = useAccountsUiStore((state) => state.openEdit);
+  const openManualBalance = useAccountsUiStore((state) => state.openManualBalance);
   const detailAccount = accounts.find((account) => account.id === accountDetailId);
 
   const summary = summaryTransactions.reduce(
     (totals, transaction) => {
+      totals.count += 1;
       if (transaction.transfer_group_id) return totals;
       const amount = transaction.base_amount ?? 0;
       if (amount < 0) totals.outflow += Math.abs(amount);
       else totals.inflow += amount;
-      totals.count += 1;
       return totals;
     },
     { count: 0, inflow: 0, outflow: 0 },
@@ -115,6 +118,26 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
           <p className="text-xs text-muted-foreground">
             {detailAccount.balance_updated_at ?? t("accountDetail.neverUpdated")}
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => openAccountEdit(detailAccount)}
+            >
+              {t("accountDetail.edit")}
+            </Button>
+            {detailAccount.balance_mode === "manual" ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openManualBalance(detailAccount)}
+              >
+                {t("accountDetail.updateBalance")}
+              </Button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       <div className="flex flex-wrap gap-2">
