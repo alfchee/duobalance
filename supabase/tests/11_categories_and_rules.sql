@@ -440,11 +440,11 @@ begin
     where household_id = hh and name = 'Otros';
 
   insert into public.transactions
-    (id, household_id, account_id, category_id, direction, amount,
-     currency, occurred_at, description, created_by)
+    (id, household_id, account_id, category_id, amount,
+     currency, occurred_on, description, entered_by)
   values
     ('a9f6d5a5-4e6e-4d78-b2b1-7d2f9c4e6a9b',
-     hh, acc, comida, 'debit', 500, 'NIO', current_date, 'lunch', memb);
+     hh, acc, comida, -500, 'NIO', current_date, 'lunch', memb);
 end $$;
 
 select pass('delete-in-use fixture: transaction referencing Comida y Bebida created');
@@ -491,11 +491,11 @@ begin
     where household_id = hh and name = 'Comida y Bebida';
 
   insert into public.transactions
-    (id, household_id, account_id, category_id, direction, amount,
-     currency, occurred_at, description, created_by)
+    (id, household_id, account_id, category_id, amount,
+     currency, occurred_on, description, entered_by)
   values
     ('e1f6d5a5-4e6e-4d78-b2b1-7d2f9c4e6a9b',
-     hh, acc, comida, 'debit', 200, 'MXN', current_date, 'no-fallback tx', memb);
+     hh, acc, comida, -200, 'MXN', current_date, 'no-fallback tx', memb);
 end $$;
 
 update public.categories set name = 'Renamed Otros No Longer Matches'
