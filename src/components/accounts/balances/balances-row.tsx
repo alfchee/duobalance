@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, Wallet } from "lucide-react";
 import { displayBalance, type Account } from "@/lib/accounts";
 import { formatUpdatedAgo, isStaleBalance } from "@/lib/balances";
@@ -23,7 +24,8 @@ export function BalancesRow({ account, now }: { account: Account; now: Date }) {
   const t = useTranslations("balances");
   const tModes = useTranslations("accounts.balanceModes");
   const locale = useLocale();
-  const { openEdit, openManualBalance } = useAccountsUiStore();
+  const router = useRouter();
+  const { openManualBalance } = useAccountsUiStore();
 
   const isManual = account.balance_mode === "manual";
   const balance = displayBalance(account);
@@ -39,7 +41,7 @@ export function BalancesRow({ account, now }: { account: Account; now: Date }) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => openEdit(account)}
+              onClick={() => router.push(`/transactions?accountDetail=${account.id}`)}
               className="min-w-0 truncate text-left text-sm font-medium hover:underline"
             >
               {account.name}

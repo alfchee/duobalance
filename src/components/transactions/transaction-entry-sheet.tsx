@@ -253,8 +253,43 @@ function TransactionEntryContent({
   async function handleDelete() {
     if (!transaction) return;
     setError(null);
+    if (!window.confirm(t("form.confirmDelete", { description: transaction.description }))) return;
     try {
       await remove.mutateAsync(transaction.id);
+      onClose();
+    } catch {
+      setError("generic");
+    }
+  }
+
+  async function handleDuplicate() {
+    if (!transaction) return;
+    setError(null);
+    const amount = parseMoneyInput(draft.amount, locale);
+    const fxRate = Number(draft.fxRate);
+    if (
+      amount == null ||
+      amount === 0 ||
+      !draft.accountId ||
+      !draft.currency ||
+      !Number.isFinite(fxRate)
+    ) {
+      return setError("generic");
+    }
+    try {
+      await create.mutateAsync({
+        account_id: draft.accountId,
+        amount: draft.isExpense
+          ? -roundToMinorUnit(amount, minorUnit)
+          : roundToMinorUnit(amount, minorUnit),
+        category_id: draft.categoryId,
+        currency: draft.currency,
+        description: draft.description.trim(),
+        fx_rate: fxRate,
+        notes: draft.notes.trim() || null,
+        occurred_on: draft.occurredOn,
+        spent_by: draft.spentBy,
+      });
       onClose();
     } catch {
       setError("generic");
@@ -482,9 +517,14 @@ function TransactionEntryContent({
             {pending ? t("form.saving") : t("form.save")}
           </Button>
           {transaction ? (
-            <Button type="button" variant="destructive" onClick={handleDelete} disabled={pending}>
-              {t("form.delete")}
-            </Button>
+            <>
+              <Button type="button" variant="outline" onClick={handleDuplicate} disabled={pending}>
+                {t("form.duplicate")}
+              </Button>
+              <Button type="button" variant="destructive" onClick={handleDelete} disabled={pending}>
+                {t("form.delete")}
+              </Button>
+            </>
           ) : null}
         </div>
       </form>
