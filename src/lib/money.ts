@@ -78,6 +78,18 @@ export function maskMoneyInput(raw: string, locale: string, minorUnit: number): 
   return out;
 }
 
+export function appendMoneyPadInput(
+  value: string,
+  key: string,
+  locale: string,
+  minorUnit: number,
+): string {
+  const { decimal } = separatorsFor(locale);
+  if (key === "backspace") return value.slice(0, -1);
+  if (key === "." || key === ",") return maskMoneyInput(`${value}${decimal}`, locale, minorUnit);
+  return maskMoneyInput(`${value}${key}`, locale, minorUnit);
+}
+
 export function roundToMinorUnit(amount: number, minorUnit: number): number {
   const f = 10 ** minorUnit;
   // Number.EPSILON nudges binary float error (1.005 * 100 = 100.49999…)
