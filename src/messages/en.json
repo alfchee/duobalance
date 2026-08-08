@@ -54,8 +54,10 @@
     },
     "accountDetail": {
       "neverUpdated": "Balance never updated",
+      "updated": "Updated {when}",
       "edit": "Edit account",
-      "updateBalance": "Update balance"
+      "updateBalance": "Update balance",
+      "allTransactions": "All transactions"
     },
     "form": {
       "title": "New transaction",

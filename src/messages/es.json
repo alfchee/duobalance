@@ -54,8 +54,10 @@
     },
     "accountDetail": {
       "neverUpdated": "Saldo nunca actualizado",
+      "updated": "Actualizado {when}",
       "edit": "Editar cuenta",
-      "updateBalance": "Actualizar saldo"
+      "updateBalance": "Actualizar saldo",
+      "allTransactions": "Todos los movimientos"
     },
     "form": {
       "title": "Nuevo movimiento",

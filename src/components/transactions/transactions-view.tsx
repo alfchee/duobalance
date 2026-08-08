@@ -13,15 +13,29 @@ import {
   useTransactions,
   type TransactionFilters,
 } from "@/hooks/useTransactions";
-import { formatMoney, formatSignedMoney } from "@/lib/money";
 import { displayBalance } from "@/lib/accounts";
+import { formatUpdatedAgo } from "@/lib/balances";
+import { formatMoney, formatSignedMoney } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 import { useTransactionsUiStore } from "@/store/transactions";
 
 const FILTER_SEPARATOR = ",";
+const TRANSACTION_TYPES = ["all", "expense", "income", "transfer"] as const;
+
+type TransactionType = (typeof TRANSACTION_TYPES)[number];
 
 function valuesFromSearch(value: string | null): string[] {
   return value?.split(FILTER_SEPARATOR).filter(Boolean) ?? [];
+}
+
+function transactionTypeFromSearch(value: string | null): TransactionType {
+  return (TRANSACTION_TYPES as readonly string[]).includes(value ?? "")
+    ? (value as TransactionType)
+    : "all";
+}
+
+function selectedValues(event: React.ChangeEvent<HTMLSelectElement>): string[] {
+  return Array.from(event.currentTarget.selectedOptions, (option) => option.value);
 }
 
 function dateLabel(date: string, locale: string): string {
@@ -46,7 +60,7 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
     memberId: searchParams.get("member"),
     query: searchParams.get("q") ?? "",
     startDate: searchParams.get("start"),
-    type: (searchParams.get("type") as TransactionFilters["type"] | null) ?? "all",
+    type: transactionTypeFromSearch(searchParams.get("type")),
   };
   const transactionsQuery = useTransactions(householdId, filters);
   const transactions = transactionsQuery.data?.pages.flat() ?? [];
@@ -59,6 +73,11 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
   const openAccountEdit = useAccountsUiStore((state) => state.openEdit);
   const openManualBalance = useAccountsUiStore((state) => state.openManualBalance);
   const detailAccount = accounts.find((account) => account.id === accountDetailId);
+  const balanceUpdated = formatUpdatedAgo(
+    detailAccount?.balance_updated_at ?? null,
+    new Date(),
+    locale,
+  );
 
   const summary = summaryTransactions.reduce(
     (totals, transaction) => {
@@ -116,7 +135,9 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
             {formatMoney(displayBalance(detailAccount), detailAccount.currency, locale)}
           </p>
           <p className="text-xs text-muted-foreground">
-            {detailAccount.balance_updated_at ?? t("accountDetail.neverUpdated")}
+            {balanceUpdated.never
+              ? t("accountDetail.neverUpdated")
+              : t("accountDetail.updated", { when: balanceUpdated.text })}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
@@ -137,6 +158,14 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
                 {t("accountDetail.updateBalance")}
               </Button>
             ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => updateFilters({ accountDetail: null })}
+            >
+              {t("accountDetail.allTransactions")}
+            </Button>
           </div>
         </div>
       ) : null}
@@ -151,6 +180,7 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
             onClick={() =>
               updateFilters({
                 accounts: null,
+                accountDetail: null,
                 categories: null,
                 end: null,
                 member: null,
@@ -192,11 +222,14 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
         <select
           aria-label={t("filters.account")}
           className="rounded-md border bg-transparent px-2 py-1 text-sm"
-          value={filters.accountIds[0] ?? ""}
-          disabled={accountId !== undefined}
-          onChange={(event) => updateFilters({ accounts: event.target.value || null })}
+          value={filters.accountIds}
+          multiple
+          disabled={accountDetailId !== null}
+          onChange={(event) => {
+            const accountIds = selectedValues(event);
+            updateFilters({ accounts: accountIds.join(FILTER_SEPARATOR) || null });
+          }}
         >
-          <option value="">{t("filters.allAccounts")}</option>
           {accounts.map((account) => (
             <option key={account.id} value={account.id}>
               {account.name}
@@ -206,10 +239,13 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
         <select
           aria-label={t("filters.category")}
           className="rounded-md border bg-transparent px-2 py-1 text-sm"
-          value={filters.categoryIds[0] ?? ""}
-          onChange={(event) => updateFilters({ categories: event.target.value || null })}
+          value={filters.categoryIds}
+          multiple
+          onChange={(event) => {
+            const categoryIds = selectedValues(event);
+            updateFilters({ categories: categoryIds.join(FILTER_SEPARATOR) || null });
+          }}
         >
-          <option value="">{t("filters.allCategories")}</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
