@@ -6,12 +6,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useHousehold } from "@/hooks/useHousehold";
+import { useSession } from "@/hooks/useSession";
 import {
   getQueuedTransactionWrites,
   queueTransactionWrite,
@@ -41,21 +43,23 @@ function isDuplicateError(error: { code?: string } | null) {
 
 export function RealtimeStatus({ children }: { children: ReactNode }) {
   const { householdId, memberId } = useHousehold();
+  const { user } = useSession();
   const queryClient = useQueryClient();
   const t = useTranslations("connectivity");
   const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
   const [queuedWrites, setQueuedWrites] = useState<QueuedTransactionWrite[]>([]);
   const [partnerUpdated, setPartnerUpdated] = useState(false);
+  const realtimeSubscribed = useRef(false);
 
   const refreshQueue = useCallback(async () => {
-    if (typeof window === "undefined") return;
-    setQueuedWrites(await getQueuedTransactionWrites());
-  }, []);
+    if (typeof window === "undefined" || !householdId || !user) return;
+    setQueuedWrites(await getQueuedTransactionWrites({ householdId, ownerUserId: user.id }));
+  }, [householdId, user]);
 
   const flushQueue = useCallback(async () => {
     const supabase = createSupabaseBrowser();
-    if (!supabase || !householdId || !navigator.onLine) return;
-    const writes = await getQueuedTransactionWrites();
+    if (!supabase || !householdId || !user || !navigator.onLine) return;
+    const writes = await getQueuedTransactionWrites({ householdId, ownerUserId: user.id });
     for (const write of writes) {
       if (write.attempts >= MAX_ATTEMPTS) continue;
       const { error } = await supabase.from("transactions").insert(write.payload);
@@ -72,7 +76,7 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
     await refreshQueue();
     void queryClient.invalidateQueries({ queryKey: ["transactions", householdId] });
     void queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
-  }, [householdId, queryClient, refreshQueue]);
+  }, [householdId, queryClient, refreshQueue, user]);
 
   useEffect(() => {
     void refreshQueue();
@@ -118,15 +122,18 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
       )
       .subscribe((status) => {
         if (disposed) return;
-        if (status === "SUBSCRIBED") setConnectionState(navigator.onLine ? "online" : "offline");
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setConnectionState("offline");
+        if (status === "SUBSCRIBED") {
+          realtimeSubscribed.current = true;
+          setConnectionState(navigator.onLine ? "online" : "offline");
+          void flushQueue();
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          realtimeSubscribed.current = false;
+          setConnectionState("offline");
+        }
       });
 
-    const handleOnline = () => {
-      setConnectionState("online");
-      void flushQueue();
-      invalidateTransactions();
-    };
+    const handleOnline = () => void heartbeat();
     const handleOffline = () => setConnectionState("offline");
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && navigator.onLine) handleOnline();
@@ -137,8 +144,10 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
         .from("households")
         .select("id", { head: true })
         .eq("id", householdId);
-      if (error) handleOffline();
-      else setConnectionState("online");
+      if (disposed || error) return handleOffline();
+      if (realtimeSubscribed.current) setConnectionState("online");
+      void flushQueue();
+      invalidateTransactions();
     };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -148,6 +157,7 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
 
     return () => {
       disposed = true;
+      realtimeSubscribed.current = false;
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       document.removeEventListener("visibilitychange", handleVisibility);
@@ -164,10 +174,11 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
 
   const queueTransaction = useCallback(
     async (payload: OfflineTransactionInsert) => {
-      await queueTransactionWrite(payload);
+      if (!householdId || !user) throw new Error("no active household or user");
+      await queueTransactionWrite(payload, { householdId, ownerUserId: user.id });
       await refreshQueue();
     },
-    [refreshQueue],
+    [householdId, refreshQueue, user],
   );
   const discardWrite = useCallback(
     async (id: string) => {

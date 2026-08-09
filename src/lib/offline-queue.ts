@@ -2,6 +2,8 @@ import type { TransactionInsert } from "@/lib/transactions";
 
 export type QueuedTransactionWrite = {
   id: string;
+  householdId: string;
+  ownerUserId: string;
   payload: OfflineTransactionInsert;
   createdAt: string;
   attempts: number;
@@ -9,6 +11,11 @@ export type QueuedTransactionWrite = {
 };
 
 export type OfflineTransactionInsert = TransactionInsert & { id: string };
+
+export type QueueScope = {
+  householdId: string;
+  ownerUserId: string;
+};
 
 type QueuedTransactionWriteRecord = Omit<QueuedTransactionWrite, "payload"> & {
   payload: OfflineTransactionInsert;
@@ -50,16 +57,22 @@ async function withStore<T>(
   });
 }
 
-export async function getQueuedTransactionWrites(): Promise<QueuedTransactionWrite[]> {
+export async function getQueuedTransactionWrites({
+  householdId,
+  ownerUserId,
+}: QueueScope): Promise<QueuedTransactionWrite[]> {
   const writes = await withStore<QueuedTransactionWriteRecord[]>("readonly", (store) =>
     store.getAll(),
   );
-  return writes.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  return writes
+    .filter((write) => write.householdId === householdId && write.ownerUserId === ownerUserId)
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
 }
 
-export function queueTransactionWrite(payload: OfflineTransactionInsert) {
+export function queueTransactionWrite(payload: OfflineTransactionInsert, scope: QueueScope) {
   const write: QueuedTransactionWrite = {
     id: payload.id,
+    ...scope,
     payload,
     createdAt: new Date().toISOString(),
     attempts: 0,
