@@ -6,13 +6,13 @@ import { GripVertical, Pencil, Wallet } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useHousehold } from "@/hooks/useHousehold";
-import { displayBalance, type Account } from "@/lib/accounts";
+import { displayBalance, type AccountWithBalance } from "@/lib/accounts";
 import { formatMoney } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 import { cn } from "@/lib/utils";
 import { KindIcon } from "./kind-icon";
 
-export function AccountRow({ account }: { account: Account }) {
+export function AccountRow({ account }: { account: AccountWithBalance }) {
   const t = useTranslations("accounts.row");
   const tModes = useTranslations("accounts.balanceModes");
   const locale = useLocale();

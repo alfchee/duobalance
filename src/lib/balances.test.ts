@@ -10,12 +10,13 @@ import {
   sumBalances,
   type RatesByCode,
 } from "./balances";
-import { displayBalance, type Account } from "./accounts";
+import { displayBalance, type AccountWithBalance } from "./accounts";
 import type { EffectiveRate } from "@/hooks/useFxOverrides";
 
-function account(overrides: Partial<Account>): Account {
+function account(overrides: Partial<AccountWithBalance>): AccountWithBalance {
   return {
     id: "a1",
+    account_id: "a1",
     household_id: "h1",
     name: "Checking",
     kind: "checking",
@@ -32,6 +33,8 @@ function account(overrides: Partial<Account>): Account {
     balance_updated_at: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
+    balance: 0,
+    last_transaction_at: null,
     ...overrides,
   };
 }
@@ -274,9 +277,9 @@ describe("sumBalances", () => {
     ]);
     const total = sumBalances(
       [
-        account({ id: "c", currency: "CLP", opening_balance: 1000 }),
-        account({ id: "n", currency: "NIO", opening_balance: 36 }), // -> 1 USD -> 900 CLP
-        account({ id: "d", kind: "credit_card", currency: "USD", opening_balance: 0.5 }), // -0.5 USD -> -450 CLP
+        account({ id: "c", currency: "CLP", balance: 1000 }),
+        account({ id: "n", currency: "NIO", balance: 36 }), // -> 1 USD -> 900 CLP
+        account({ id: "d", kind: "credit_card", currency: "USD", balance: 0.5 }), // -0.5 USD -> -450 CLP
       ],
       "CLP",
       r,

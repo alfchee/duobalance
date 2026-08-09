@@ -232,6 +232,20 @@ export type Database = {
             foreignKeyName: "bills_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -321,34 +335,46 @@ export type Database = {
       }
       categories: {
         Row: {
-          color: string | null
+          color_hex: string | null
           created_at: string
+          display_order: number
           household_id: string
           icon: string | null
           id: string
           is_archived: boolean
+          is_default: boolean
+          kind: string
           name: string
           parent_id: string | null
+          updated_at: string
         }
         Insert: {
-          color?: string | null
+          color_hex?: string | null
           created_at?: string
+          display_order?: number
           household_id: string
           icon?: string | null
           id?: string
           is_archived?: boolean
+          is_default?: boolean
+          kind?: string
           name: string
           parent_id?: string | null
+          updated_at?: string
         }
         Update: {
-          color?: string | null
+          color_hex?: string | null
           created_at?: string
+          display_order?: number
           household_id?: string
           icon?: string | null
           id?: string
           is_archived?: boolean
+          is_default?: boolean
+          kind?: string
           name?: string
           parent_id?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -375,8 +401,9 @@ export type Database = {
           household_id: string
           id: string
           is_active: boolean
-          pattern: string
+          match_pattern: string
           priority: number
+          updated_at: string
         }
         Insert: {
           account_id?: string | null
@@ -385,8 +412,9 @@ export type Database = {
           household_id: string
           id?: string
           is_active?: boolean
-          pattern: string
+          match_pattern: string
           priority?: number
+          updated_at?: string
         }
         Update: {
           account_id?: string | null
@@ -395,10 +423,25 @@ export type Database = {
           household_id?: string
           id?: string
           is_active?: boolean
-          pattern?: string
+          match_pattern?: string
           priority?: number
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "categorization_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "categorization_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "categorization_rules_account_id_fkey"
             columns: ["account_id"]
@@ -826,6 +869,20 @@ export type Database = {
             foreignKeyName: "import_profiles_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "import_profiles_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_profiles_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
@@ -860,67 +917,90 @@ export type Database = {
         Row: {
           account_id: string
           amount: number
+          base_amount: number | null
           category_id: string | null
           created_at: string
-          created_by: string
           currency: string
           description: string
-          direction: Database["public"]["Enums"]["transaction_direction"]
-          fx_rate: number | null
+          entered_by: string
+          fx_rate: number
           household_id: string
           id: string
           import_batch_id: string | null
+          import_hash: string | null
           is_cleared: boolean
           is_pending_review: boolean
           merchant: string | null
           notes: string | null
-          occurred_at: string
-          transfer_pair_id: string | null
+          occurred_on: string
+          receipt_url: string | null
+          spent_by: string | null
+          transfer_group_id: string | null
           updated_at: string
         }
         Insert: {
           account_id: string
           amount: number
+          base_amount?: number | null
           category_id?: string | null
           created_at?: string
-          created_by: string
           currency: string
           description: string
-          direction: Database["public"]["Enums"]["transaction_direction"]
-          fx_rate?: number | null
+          entered_by: string
+          fx_rate?: number
           household_id: string
           id?: string
           import_batch_id?: string | null
+          import_hash?: string | null
           is_cleared?: boolean
           is_pending_review?: boolean
           merchant?: string | null
           notes?: string | null
-          occurred_at: string
-          transfer_pair_id?: string | null
+          occurred_on: string
+          receipt_url?: string | null
+          spent_by?: string | null
+          transfer_group_id?: string | null
           updated_at?: string
         }
         Update: {
           account_id?: string
           amount?: number
+          base_amount?: number | null
           category_id?: string | null
           created_at?: string
-          created_by?: string
           currency?: string
           description?: string
-          direction?: Database["public"]["Enums"]["transaction_direction"]
-          fx_rate?: number | null
+          entered_by?: string
+          fx_rate?: number
           household_id?: string
           id?: string
           import_batch_id?: string | null
+          import_hash?: string | null
           is_cleared?: boolean
           is_pending_review?: boolean
           merchant?: string | null
           notes?: string | null
-          occurred_at?: string
-          transfer_pair_id?: string | null
+          occurred_on?: string
+          receipt_url?: string | null
+          spent_by?: string | null
+          transfer_group_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_account_id_fkey"
             columns: ["account_id"]
@@ -936,18 +1016,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "household_members"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "transactions_currency_fkey"
             columns: ["currency"]
             isOneToOne: false
             referencedRelation: "currencies"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "transactions_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "transactions_household_id_fkey"
@@ -964,16 +1044,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_transfer_pair_id_fkey"
-            columns: ["transfer_pair_id"]
+            foreignKeyName: "transactions_spent_by_fkey"
+            columns: ["spent_by"]
             isOneToOne: false
-            referencedRelation: "transactions"
+            referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
         ]
       }
     }
     Views: {
+      account_balances: {
+        Row: {
+          account_id: string | null
+          balance: number | null
+          balance_mode: string | null
+          balance_updated_at: string | null
+          created_at: string | null
+          credit_limit: number | null
+          currency: string | null
+          display_order: number | null
+          household_id: string | null
+          id: string | null
+          institution: string | null
+          is_archived: boolean | null
+          is_shared: boolean | null
+          kind: string | null
+          last_transaction_at: string | null
+          manual_balance: number | null
+          name: string | null
+          opening_balance: number | null
+          owner_member_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "accounts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_owner_member_id_fkey"
+            columns: ["owner_member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bill_instances_view: {
         Row: {
           account_id: string | null
@@ -995,6 +1122,20 @@ export type Database = {
             columns: ["paid_transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account_balances"
             referencedColumns: ["id"]
           },
           {
@@ -1066,6 +1207,14 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      assert_same_household: {
+        Args: {
+          p_actual_household_id: string
+          p_error_msg: string
+          p_expected_household_id: string
+        }
+        Returns: undefined
+      }
       check_member_in_household: {
         Args: { p_household_id: string; p_member_id: string }
         Returns: undefined
@@ -1078,6 +1227,20 @@ export type Database = {
           p_locale?: string
           p_name: string
           p_timezone?: string
+        }
+        Returns: string
+      }
+      create_transfer: {
+        Args: {
+          p_description: string
+          p_from_account: string
+          p_from_amount: number
+          p_from_fx_rate: number
+          p_household: string
+          p_occurred_on: string
+          p_to_account: string
+          p_to_amount: number
+          p_to_fx_rate: number
         }
         Returns: string
       }
@@ -1101,6 +1264,10 @@ export type Database = {
         }
       }
       current_member_id: { Args: { household: string }; Returns: string }
+      delete_transfer: {
+        Args: { p_transaction_id: string }
+        Returns: undefined
+      }
       fx_rate_on: {
         Args: {
           p_date: string
@@ -1116,6 +1283,18 @@ export type Database = {
       }
       is_member: { Args: { household: string }; Returns: boolean }
       is_owner: { Args: { household: string }; Returns: boolean }
+      seed_default_categories: {
+        Args: { p_household_id: string; p_locale: string }
+        Returns: undefined
+      }
+      seed_expense_categories: {
+        Args: { p_household_id: string; p_locale: string }
+        Returns: undefined
+      }
+      seed_income_categories: {
+        Args: { p_household_id: string; p_locale: string }
+        Returns: undefined
+      }
     }
     Enums: {
       bill_frequency: "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly"
@@ -1123,7 +1302,6 @@ export type Database = {
       household_member_role: "owner" | "partner"
       import_batch_status: "pending" | "imported" | "failed" | "cancelled"
       import_file_format: "csv" | "ofx" | "qif"
-      transaction_direction: "debit" | "credit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1259,8 +1437,6 @@ export const Constants = {
       household_member_role: ["owner", "partner"],
       import_batch_status: ["pending", "imported", "failed", "cancelled"],
       import_file_format: ["csv", "ofx", "qif"],
-      transaction_direction: ["debit", "credit"],
     },
   },
 } as const
-

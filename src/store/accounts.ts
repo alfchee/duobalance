@@ -1,19 +1,19 @@
 "use client";
 
 import { create } from "zustand";
-import type { Account } from "@/lib/accounts";
+import type { AccountWithBalance } from "@/lib/accounts";
 
 // Ephemeral UI state only — accounts data lives in React Query (see store
 // README). Which sheet/dialog is open, and whether archived accounts show.
 type AccountsUiState = {
   formOpen: boolean;
-  editingAccount: Account | null;
-  manualBalanceAccount: Account | null;
+  editingAccount: AccountWithBalance | null;
+  manualBalanceAccount: AccountWithBalance | null;
   showArchived: boolean;
   openCreate: () => void;
-  openEdit: (account: Account) => void;
+  openEdit: (account: AccountWithBalance) => void;
   closeForm: () => void;
-  openManualBalance: (account: Account) => void;
+  openManualBalance: (account: AccountWithBalance) => void;
   closeManualBalance: () => void;
   setShowArchived: (show: boolean) => void;
 };

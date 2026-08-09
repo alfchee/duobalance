@@ -7,12 +7,13 @@ import {
   isPrivateNeedsOwnerError,
   nextDisplayOrder,
   reorderAccounts,
-  type Account,
+  type AccountWithBalance,
 } from "./accounts";
 
-function account(overrides: Partial<Account>): Account {
+function account(overrides: Partial<AccountWithBalance>): AccountWithBalance {
   return {
     id: "a1",
+    account_id: "a1",
     household_id: "h1",
     name: "Checking",
     kind: "checking",
@@ -29,6 +30,8 @@ function account(overrides: Partial<Account>): Account {
     balance_updated_at: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
+    balance: 1000,
+    last_transaction_at: null,
     ...overrides,
   };
 }
@@ -54,26 +57,32 @@ describe("isDebtKind", () => {
 
 describe("accountBalance", () => {
   it("returns manual_balance for manual accounts", () => {
-    expect(accountBalance(account({ balance_mode: "manual", manual_balance: 500 }))).toBe(500);
+    expect(
+      accountBalance(account({ balance_mode: "manual", manual_balance: 500, balance: 500 })),
+    ).toBe(500);
   });
 
   it("returns 0 when manual_balance is null", () => {
-    expect(accountBalance(account({ balance_mode: "manual", manual_balance: null }))).toBe(0);
+    expect(
+      accountBalance(account({ balance_mode: "manual", manual_balance: null, balance: 0 })),
+    ).toBe(0);
   });
 
-  it("returns opening_balance for ledger accounts", () => {
-    expect(accountBalance(account({ balance_mode: "ledger", opening_balance: 2500 }))).toBe(2500);
+  it("returns the derived balance for ledger accounts", () => {
+    expect(
+      accountBalance(account({ balance_mode: "ledger", opening_balance: 2500, balance: 2750 })),
+    ).toBe(2750);
   });
 });
 
 describe("displayBalance", () => {
   it("renders debt kinds as a negative obligation", () => {
-    expect(displayBalance(account({ kind: "credit_card", opening_balance: 300 }))).toBe(-300);
-    expect(displayBalance(account({ kind: "loan", opening_balance: -50 }))).toBe(-50);
+    expect(displayBalance(account({ kind: "credit_card", balance: 300 }))).toBe(-300);
+    expect(displayBalance(account({ kind: "loan", balance: -50 }))).toBe(-50);
   });
 
   it("keeps asset kinds positive", () => {
-    expect(displayBalance(account({ kind: "checking", opening_balance: 900 }))).toBe(900);
+    expect(displayBalance(account({ kind: "checking", balance: 900 }))).toBe(900);
   });
 });
 

@@ -4,6 +4,10 @@ export function formatMoney(amount: number, currency: string, locale = "es"): st
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount);
 }
 
+export function formatMoneyInput(amount: number, locale = "es"): string {
+  return new Intl.NumberFormat(locale).format(amount);
+}
+
 // Derive the locale's decimal/grouping separators. A 7-digit sample forces
 // grouping to appear even in trimmed ICU builds (Node), where 4-digit samples
 // may render without a group separator. Cached — keypads call this per keystroke.
@@ -76,6 +80,18 @@ export function maskMoneyInput(raw: string, locale: string, minorUnit: number): 
     out += `${decimal}${fraction}`;
   }
   return out;
+}
+
+export function appendMoneyPadInput(
+  value: string,
+  key: string,
+  locale: string,
+  minorUnit: number,
+): string {
+  const { decimal } = separatorsFor(locale);
+  if (key === "backspace") return value.slice(0, -1);
+  if (key === "." || key === ",") return maskMoneyInput(`${value}${decimal}`, locale, minorUnit);
+  return maskMoneyInput(`${value}${key}`, locale, minorUnit);
 }
 
 export function roundToMinorUnit(amount: number, minorUnit: number): number {

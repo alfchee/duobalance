@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Wallet, ArrowLeftRight, PieChart, Receipt, MoreHorizontal } from "lucide-react";
+import { Wallet, ArrowLeftRight, PieChart, Receipt, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTransactionsUiStore } from "@/store/transactions";
 
 const ITEMS = [
   { href: "/balances", labelKey: "balances", Icon: Wallet },
@@ -17,6 +18,7 @@ const ITEMS = [
 export function BottomNav() {
   const pathname = usePathname();
   const t = useTranslations("nav");
+  const openCreate = useTransactionsUiStore((state) => state.openCreate);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background">
@@ -39,6 +41,14 @@ export function BottomNav() {
           );
         })}
       </ul>
+      <button
+        type="button"
+        aria-label={t("addTransaction")}
+        onClick={() => openCreate()}
+        className="absolute right-4 bottom-16 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        <Plus className="size-6" />
+      </button>
     </nav>
   );
 }
