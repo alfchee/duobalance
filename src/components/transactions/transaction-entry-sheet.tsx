@@ -43,6 +43,7 @@ import {
 import type { Transaction } from "@/lib/transactions";
 import type { AccountWithBalance } from "@/lib/accounts";
 import { useTransactionsUiStore } from "@/store/transactions";
+import { useOfflineQueue } from "@/components/realtime-status";
 
 const LAST_ACCOUNT_STORAGE_KEY = "duobalance:lastTransactionAccountId";
 const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"] as const;
@@ -135,6 +136,7 @@ function TransferEntryContent({
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: currencies = [] } = useCurrencies();
   const { createTransfer } = useTransactionMutations(householdId, memberId);
+  const { connectionState } = useOfflineQueue();
   const [fromAccountId, setFromAccountId] = useState(lastAccountId ?? "");
   const [toAccountId, setToAccountId] = useState("");
   const [fromAmount, setFromAmount] = useState("");
@@ -214,6 +216,7 @@ function TransferEntryContent({
       currencies.find((currency) => currency.code === fromAccount?.currency)?.minor_unit ?? 2;
     const toMinorUnit =
       currencies.find((currency) => currency.code === toAccount?.currency)?.minor_unit ?? 2;
+    if (connectionState === "offline") return setError("offlineTransfer");
     try {
       await createTransfer.mutateAsync({
         description: description.trim() || t("form.transferDefaultDescription"),
@@ -424,6 +427,7 @@ function TransactionEntryContent({
     isForeignCurrency,
   );
   const { create, update, remove } = useTransactionMutations(householdId, memberId);
+  const { connectionState, queueTransaction } = useOfflineQueue();
   const pending = create.isPending || update.isPending || remove.isPending;
   const categoryKind = draft.isExpense ? "expense" : "income";
   const usableAccounts = accounts.filter((account) => !account.is_archived);
@@ -516,7 +520,15 @@ function TransactionEntryContent({
 
     try {
       if (transaction) await update.mutateAsync({ id: transaction.id, ...input });
-      else await create.mutateAsync(input);
+      else if (connectionState === "offline") {
+        if (!householdId || !memberId) return setError("generic");
+        await queueTransaction({
+          ...input,
+          id: crypto.randomUUID(),
+          household_id: householdId,
+          entered_by: memberId,
+        });
+      } else await create.mutateAsync(input);
       localStorage.setItem(LAST_ACCOUNT_STORAGE_KEY, draft.accountId);
       onClose();
     } catch {

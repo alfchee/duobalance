@@ -109,9 +109,18 @@
         "transferReadOnly": "Transfers can only be deleted and recreated.",
         "date": "Choose today or a date no more than one day in the future.",
         "rate": "Enter a valid exchange rate.",
-        "generic": "Couldn't save the transaction. Your changes were rolled back."
+        "generic": "Couldn't save the transaction. Your changes were rolled back.",
+        "offlineTransfer": "Transfers require a connection and were not saved."
       }
     }
+  },
+  "connectivity": {
+    "offline": "You’re offline. New transactions will be sent when you reconnect.",
+    "pending": "{count, plural, one {# transaction pending} other {# transactions pending}}",
+    "failed": "A queued transaction could not be sent.",
+    "retry": "Retry",
+    "discard": "Discard",
+    "partnerUpdated": "Updated by your partner"
   },
   "auth": {
     "login": {
