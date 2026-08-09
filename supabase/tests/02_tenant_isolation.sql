@@ -37,7 +37,7 @@ begin
     (hh_a, usr_a, 'owner',   'Alice'),
     (hh_b, usr_b, 'owner',   'Bob');
 
-  insert into public.accounts (id, household_id, name, type, currency) values
+  insert into public.accounts (id, household_id, name, kind, currency) values
     (acct_a, hh_a, 'Alice checking', 'checking', 'CLP'),
     (acct_b, hh_b, 'Bob checking',   'checking', 'BRL');
 
@@ -46,11 +46,11 @@ begin
     (cat_b, hh_b, 'Groceries');
 
   insert into public.transactions
-    (id, household_id, account_id, category_id, direction, amount, currency, occurred_at, description, created_by)
+    (id, household_id, account_id, category_id, amount, currency, occurred_on, description, entered_by)
   values
-    (tx_a, hh_a, acct_a, cat_a, 'debit',  1000,  'CLP', current_date, 'Alice groceries',
+    (tx_a, hh_a, acct_a, cat_a, -1000,  'CLP', current_date, 'Alice groceries',
        (select id from public.household_members where user_id = usr_a)),
-    (tx_b, hh_b, acct_b, cat_b, 'debit',  50,    'BRL', current_date, 'Bob groceries',
+    (tx_b, hh_b, acct_b, cat_b, -50,    'BRL', current_date, 'Bob groceries',
        (select id from public.household_members where user_id = usr_b));
 end
 $$;
@@ -90,15 +90,18 @@ select is_empty(
   'Alice cannot SELECT Bob transaction by id'
 );
 
--- 5. Alice cannot insert a transaction into Bob's household
+-- 5. Alice cannot insert a transaction into Bob's household. entered_by is
+--    Bob's own member id (not Alice's) so the failure is isolated to the
+--    RLS WITH CHECK — a mismatched entered_by would instead be rejected by
+--    the transactions_containment trigger before RLS is ever reached.
 select throws_ok(
   $$ insert into public.transactions
-       (household_id, account_id, direction, amount, currency, occurred_at, description, created_by)
+       (household_id, account_id, amount, currency, occurred_on, description, entered_by)
      values (
        '22222222-2222-2222-2222-222222222222',
        'b2222222-2222-2222-2222-222222222222',
-       'debit', 100, 'BRL', current_date, 'sneak',
-       (select id from public.household_members where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+       -100, 'BRL', current_date, 'sneak',
+       (select id from public.household_members where user_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
      ) $$,
   '42501',
   null,

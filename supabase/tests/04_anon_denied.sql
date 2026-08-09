@@ -23,7 +23,7 @@ begin
   insert into public.household_members (household_id, user_id, role, display_name) values
     (hh_id, usr_id, 'owner', 'Member');
 
-  insert into public.accounts (id, household_id, name, type, currency) values
+  insert into public.accounts (id, household_id, name, kind, currency) values
     (acct_id, hh_id, 'Hidden', 'checking', 'CLP');
 
   insert into public.categories (id, household_id, name) values
@@ -76,7 +76,7 @@ select is_empty(
 
 -- 7. Anon cannot insert an account
 select throws_ok(
-  $$ insert into public.accounts (household_id, name, type, currency)
+  $$ insert into public.accounts (household_id, name, kind, currency)
      values ('44444444-4444-4444-4444-444444444444', 'pwn', 'checking', 'CLP') $$,
   '42501',
   null,

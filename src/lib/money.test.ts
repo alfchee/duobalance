@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, formatSignedMoney, parseMoneyInput, roundToMinorUnit } from "./money";
+import {
+  formatMoneyInput,
+  formatMoney,
+  formatSignedMoney,
+  maskMoneyInput,
+  parseMoneyInput,
+  roundToMinorUnit,
+} from "./money";
 
 // The AC is about decimal count and separator, not grouping or symbol —
 // the CLP symbol renders "$" in browsers/full-icu and "CLP" in a trimmed
@@ -24,6 +31,12 @@ describe("formatMoney", () => {
 });
 
 describe("parseMoneyInput", () => {
+  it("round-trips decimal amounts using the active locale", () => {
+    const amount = 12.34;
+    expect(parseMoneyInput(formatMoneyInput(amount, "es"), "es")).toBe(amount);
+    expect(parseMoneyInput(formatMoneyInput(amount, "en"), "en")).toBe(amount);
+  });
+
   it("parses comma-decimal es input (1.234,56)", () => {
     expect(parseMoneyInput("1.234,56", "es")).toBe(1234.56);
   });
@@ -68,6 +81,39 @@ describe("parseMoneyInput", () => {
     expect(parseMoneyInput("abc", "es")).toBeNull();
     expect(parseMoneyInput(".", "en")).toBeNull();
     expect(parseMoneyInput("-", "es")).toBeNull();
+  });
+});
+
+describe("maskMoneyInput", () => {
+  it("strips non-numeric characters", () => {
+    expect(maskMoneyInput("ab12cd34", "es", 2)).toBe("1234");
+  });
+
+  it("keeps one leading minus (U+2212 normalized to hyphen)", () => {
+    expect(maskMoneyInput("−500", "es", 0)).toBe("-500");
+    // en uses "," for grouping, "." for decimals — the mask keeps the leading
+    // minus and the group separator verbatim for parseMoneyInput.
+    expect(maskMoneyInput("-1,000", "en", 2)).toBe("-1,000");
+  });
+
+  it("keeps grouping separators (they survive to parseMoneyInput)", () => {
+    expect(maskMoneyInput("12.345", "es", 0)).toBe("12.345");
+    expect(maskMoneyInput("1,234", "en", 2)).toBe("1,234");
+  });
+
+  it("caps the fraction at minorUnit places (CLP accepts no decimals)", () => {
+    expect(maskMoneyInput("12,345678", "es", 2)).toBe("12,34");
+    expect(maskMoneyInput("12,345", "es", 0)).toBe("12345");
+  });
+
+  it("drops a trailing separator for minorUnit = 0", () => {
+    expect(maskMoneyInput("123.", "es", 0)).toBe("123");
+    expect(maskMoneyInput("123,", "es", 0)).toBe("123");
+  });
+
+  it("returns empty for non-numeric input", () => {
+    expect(maskMoneyInput("", "es", 2)).toBe("");
+    expect(maskMoneyInput("abc", "en", 2)).toBe("");
   });
 });
 

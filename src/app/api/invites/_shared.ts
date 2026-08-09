@@ -3,28 +3,16 @@
 // must never be imported from client code. The service role bypasses RLS, so
 // authorization is explicit here: every handler verifies the caller's JWT
 // via getUser() and then checks ownership directly.
+//
+// The generic helpers (HttpError, getAuthedUser, createRouteContext) live in
+// app/api/_shared.ts and are re-exported here so invite routes keep importing
+// from a single local module.
 
-import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { createRouteContext, getAuthedUser, HttpError } from "../_shared";
 
-export class HttpError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-
-export async function getAuthedUser(supabase: SupabaseClient<Database>) {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) throw new HttpError(401, "authentication required");
-  return user;
-}
+export { createRouteContext, getAuthedUser, HttpError };
 
 // Verifies the caller is the owner of `householdId` and returns their member
 // row (id + display_name) plus the household name/locale for the email.
@@ -58,8 +46,4 @@ export async function recordInviteSend(supabase: SupabaseClient<Database>, userI
     }
     throw error;
   }
-}
-
-export async function createRouteContext() {
-  return createSupabaseRouteHandler();
 }

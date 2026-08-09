@@ -4,6 +4,10 @@ export function formatMoney(amount: number, currency: string, locale = "es"): st
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount);
 }
 
+export function formatMoneyInput(amount: number, locale = "es"): string {
+  return new Intl.NumberFormat(locale).format(amount);
+}
+
 // Derive the locale's decimal/grouping separators. A 7-digit sample forces
 // grouping to appear even in trimmed ICU builds (Node), where 4-digit samples
 // may render without a group separator. Cached — keypads call this per keystroke.
@@ -38,6 +42,56 @@ export function parseMoneyInput(raw: string, locale = "es"): number | null {
   const amount = Number(normalized);
   if (!Number.isFinite(amount)) return null;
   return amount === 0 ? 0 : amount; // collapse -0, which Object.is treats as distinct
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Live mask for an amount input, enforced per keystroke: only digits, one
+// leading minus, and the locale's decimal/group separators survive, and the
+// fraction never exceeds minorUnit places (CLP accepts no decimals). The
+// value is still a string — parse with parseMoneyInput on submit.
+export function maskMoneyInput(raw: string, locale: string, minorUnit: number): string {
+  const { decimal, group } = separatorsFor(locale);
+  const filtered = raw
+    .replace(new RegExp(`[^0-9${escapeRegExp(decimal)}${escapeRegExp(group)}−-]`, "g"), "")
+    .replace(/−/g, "-");
+
+  const hasMinus = filtered.startsWith("-");
+  let unsigned = (hasMinus ? filtered.slice(1) : filtered).replace(/-/g, "");
+
+  // No fraction for whole-unit currencies: the decimal separator would read as
+  // a decimal to parseMoneyInput (es "12,345" -> 12.345), so treat it as a
+  // group separator and drop it.
+  if (minorUnit === 0) {
+    unsigned = unsigned
+      .split(decimal)
+      .join("")
+      .replace(new RegExp(`${escapeRegExp(group)}$`), "");
+    return (hasMinus ? "-" : "") + unsigned;
+  }
+
+  // Only the first decimal separator survives; anything after it is a fraction.
+  const [intPart, ...fractionParts] = unsigned.split(decimal);
+  let out = (hasMinus ? "-" : "") + intPart;
+  if (fractionParts.length > 0) {
+    const fraction = fractionParts.join("").slice(0, minorUnit);
+    out += `${decimal}${fraction}`;
+  }
+  return out;
+}
+
+export function appendMoneyPadInput(
+  value: string,
+  key: string,
+  locale: string,
+  minorUnit: number,
+): string {
+  const { decimal } = separatorsFor(locale);
+  if (key === "backspace") return value.slice(0, -1);
+  if (key === "." || key === ",") return maskMoneyInput(`${value}${decimal}`, locale, minorUnit);
+  return maskMoneyInput(`${value}${key}`, locale, minorUnit);
 }
 
 export function roundToMinorUnit(amount: number, minorUnit: number): number {

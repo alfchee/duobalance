@@ -15,9 +15,112 @@
   "nav": {
     "balances": "Balances",
     "transactions": "Transactions",
+    "addTransaction": "Add",
     "budget": "Budget",
     "bills": "Bills",
     "more": "More"
+  },
+  "transactions": {
+    "loading": "Loading transactions…",
+    "loadError": "Couldn't load transactions.",
+    "retry": "Retry",
+    "new": "New transaction",
+    "newTransfer": "New transfer",
+    "empty": "No transactions yet. Record the first one in a few taps.",
+    "noResults": "No transactions match these filters.",
+    "search": "Search description or notes",
+    "clearFilters": "Clear filters",
+    "loadMore": "Load more",
+    "transfer": "Transfer",
+    "edit": "Edit {description}",
+    "filters": {
+      "allTypes": "All types",
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer",
+      "account": "Account",
+      "allAccounts": "All accounts",
+      "category": "Category",
+      "allCategories": "All categories",
+      "member": "Member",
+      "allMembers": "All members",
+      "startDate": "Start date",
+      "endDate": "End date"
+    },
+    "summary": {
+      "count": "Count",
+      "inflow": "Inflow",
+      "outflow": "Outflow",
+      "net": "Net"
+    },
+    "accountDetail": {
+      "neverUpdated": "Balance never updated",
+      "updated": "Updated {when}",
+      "edit": "Edit account",
+      "updateBalance": "Update balance",
+      "allTransactions": "All transactions"
+    },
+    "form": {
+      "title": "New transaction",
+      "editTitle": "Edit transaction",
+      "description": "Add an expense or income without leaving this screen.",
+      "transferTitle": "New transfer",
+      "transferDescription": "Move money between two accounts without affecting income or spending.",
+      "fromAccount": "From account",
+      "toAccount": "To account",
+      "fromAmount": "Amount sent ({currency})",
+      "toAmount": "Amount received ({currency})",
+      "transferDescriptionPlaceholder": "Optional description",
+      "transferDefaultDescription": "Transfer",
+      "saveTransfer": "Save transfer",
+      "expense": "Expense",
+      "income": "Income",
+      "amount": "Amount",
+      "backspace": "Delete last digit",
+      "decimal": ".",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "e.g. Coffee",
+      "account": "Account",
+      "accountPlaceholder": "Choose an account",
+      "currency": "Currency",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "noCategory": "No category",
+      "date": "Date",
+      "spentBy": "Spent by",
+      "joint": "Joint",
+      "fxRate": "Exchange rate",
+      "rateLoading": "Looking up the rate for this date…",
+      "rateSource": "{source} rate from {date}",
+      "rateSources": { "override": "Manual override", "feed": "ExchangeRate-API" },
+      "more": "More options",
+      "less": "Fewer options",
+      "notes": "Notes",
+      "save": "Save",
+      "saving": "Saving…",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "confirmDelete": "Delete “{description}”? This cannot be undone.",
+      "errors": {
+        "amount": "Enter an amount other than zero.",
+        "description": "Enter a description between 1 and 200 characters.",
+        "account": "Choose an account.",
+        "transferAccounts": "Choose two different accounts.",
+        "transferReadOnly": "Transfers can only be deleted and recreated.",
+        "date": "Choose today or a date no more than one day in the future.",
+        "rate": "Enter a valid exchange rate.",
+        "generic": "Couldn't save the transaction. Your changes were rolled back.",
+        "offlineTransfer": "Transfers require a connection and were not saved."
+      }
+    }
+  },
+  "connectivity": {
+    "offline": "You’re offline. New transactions will be sent when you reconnect.",
+    "pending": "{count, plural, one {# transaction pending} other {# transactions pending}}",
+    "failed": "A queued transaction could not be sent.",
+    "retry": "Retry",
+    "discard": "Discard",
+    "partnerUpdated": "Updated by your partner"
   },
   "auth": {
     "login": {
@@ -110,6 +213,43 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "balances": {
+    "headerAriaLabel": "Household balance summary",
+    "tabsAriaLabel": "Balance scope",
+    "netWorthLabel": "Net worth",
+    "netWorthLoading": "Calculating…",
+    "accountCount": "{count, plural, =0 {No accounts} one {# account} other {# accounts}}",
+    "partnerPlaceholder": "Partner",
+    "partnerAriaLabel": "Partner — {name}",
+    "ownerLoading": "Owner",
+    "jointLabel": "Joint",
+    "tab": {
+      "mine": "Mine",
+      "all": "All",
+      "joint": "Joint"
+    },
+    "tabEmpty": "No accounts in this view yet.",
+    "loadError": "Couldn't load your balances.",
+    "retry": "Retry",
+    "newAccount": "New account",
+    "computedOn": "Exchange rates as of {date}.",
+    "updated": "Updated {when}",
+    "neverUpdated": "Never updated",
+    "stale": "Stale — update the balance",
+    "updateBalance": "Update balance",
+    "section": {
+      "cash": "Cash & Checking",
+      "credit": "Credit Cards",
+      "savings": "Savings & Investments",
+      "loans": "Loans"
+    },
+    "breakdownToggle": "See per-currency breakdown",
+    "breakdownTitle": "Per-currency breakdown",
+    "breakdownBaseRate": "Base rate: {date}",
+    "breakdownEmpty": "All your accounts are in the household's base currency.",
+    "breakdownClose": "Close",
+    "rateUsed": "1 USD = {rate}"
+  },
   "household": {
     "picker": {
       "title": "Choose a household",
@@ -117,7 +257,201 @@
       "select": "Enter"
     },
     "loading": "Loading your household…",
-    "empty": "We couldn't find a household for your account."
+    "empty": "We couldn't find a household for your account.",
+    "onboarding": {
+      "title": "Set up your shared household",
+      "subtitle": "Create a new household for you and a partner, or join one you've been invited to.",
+      "tabCreate": "Create a household",
+      "tabInvite": "I have an invitation",
+      "displayName": "Your name",
+      "displayNamePlaceholder": "e.g. Alex",
+      "householdName": "Household name",
+      "householdNamePlaceholder": "e.g. Alex & Sam's home",
+      "country": "Country",
+      "countryPlaceholder": "Select a country",
+      "baseCurrency": "Base currency",
+      "baseCurrencyPlaceholder": "Select a currency",
+      "createButton": "Create household",
+      "creating": "Creating household…",
+      "inviteToken": "Invitation code",
+      "inviteTokenPlaceholder": "Paste your invitation code",
+      "inviteAccept": "Join household",
+      "inviteAccepting": "Joining household…",
+      "errors": {
+        "displayNameRequired": "Enter your name.",
+        "householdNameRequired": "Enter a household name.",
+        "countryRequired": "Choose a country.",
+        "baseCurrencyRequired": "Choose a base currency.",
+        "tokenRequired": "Paste the invitation code.",
+        "generic": "Something went wrong. Try again."
+      },
+      "errorsInvite": {
+        "expired": "This invitation has expired. Ask your partner to resend it.",
+        "alreadyAccepted": "This invitation was already accepted — refresh the page.",
+        "emailMismatch": "This invitation was sent to a different email. Sign in with the right account.",
+        "invalidToken": "This invitation code isn't valid. Ask your partner for a new one."
+      }
+    }
+  },
+  "accounts": {
+    "subtitle": "Accounts your household tracks.",
+    "newAccount": "New account",
+    "empty": {
+      "title": "No accounts yet",
+      "subtitle": "Start with the common ones — you can add more later.",
+      "defaultCash": "Cash",
+      "defaultChecking": "Checking",
+      "defaultCreditCard": "Credit card",
+      "error": "Couldn't create the account. Try again."
+    },
+    "list": {
+      "showArchived": "Show archived ({count})",
+      "hideArchived": "Hide archived",
+      "archivedSection": "Archived",
+      "loadingError": "Couldn't load accounts.",
+      "retry": "Retry"
+    },
+    "kinds": {
+      "cash": "Cash",
+      "checking": "Checking",
+      "savings": "Savings",
+      "credit_card": "Credit card",
+      "loan": "Loan",
+      "investment": "Investment"
+    },
+    "balanceModes": {
+      "label": "How is the balance set?",
+      "ledger": "From transactions",
+      "ledgerDescription": "The balance is calculated from every transaction you record. Best when you log each purchase.",
+      "manual": "Manual",
+      "manualDescription": "You type in the balance yourself. Best for loans, investments, or accounts you check monthly."
+    },
+    "row": {
+      "private": "Private",
+      "archived": "Archived",
+      "dragHandle": "Reorder",
+      "edit": "Edit",
+      "updateBalance": "Update balance"
+    },
+    "form": {
+      "titleCreate": "New account",
+      "titleEdit": "Edit account",
+      "name": "Name",
+      "namePlaceholder": "e.g. Everyday account",
+      "kind": "Type",
+      "kindPlaceholder": "Select a type",
+      "currency": "Currency",
+      "currencyPlaceholder": "Select a currency",
+      "currencySearch": "Search currencies…",
+      "currencyNoResults": "No currencies match.",
+      "openingBalance": "Opening balance",
+      "openingBalanceHint": "Starting balance before transactions.",
+      "manualBalance": "Current balance",
+      "creditLimit": "Credit limit",
+      "creditLimitHint": "Optional — shown on the account.",
+      "share": "Share with partner",
+      "shareHint": "Your partner sees and can update this account.",
+      "privateNote": "A private account is visible only to you, so it must belong to you.",
+      "ownership": "Owner",
+      "joint": "Joint",
+      "mine": "Mine",
+      "archive": "Archive account",
+      "restore": "Restore account",
+      "save": "Save",
+      "saving": "Saving…",
+      "errors": {
+        "nameRequired": "Enter a name (1–80 characters).",
+        "kindRequired": "Choose an account type.",
+        "currencyRequired": "Choose a currency.",
+        "balanceRequired": "Enter a balance.",
+        "privateNeedsOwner": "A private account must belong to one of you. Set the owner to Mine.",
+        "generic": "Something went wrong saving the account. Try again."
+      }
+    },
+    "manualBalanceSheet": {
+      "title": "Update balance",
+      "subtitle": "Sets the balance to the new value and marks it as updated now.",
+      "current": "Current balance",
+      "newValue": "New balance",
+      "save": "Save",
+      "saving": "Saving…",
+      "error": "Couldn't update the balance. Try again."
+    }
+  },
+  "categories": {
+    "title": "Categories",
+    "subtitle": "Organize income and expenses for your household.",
+    "new": "New category",
+    "kind": {
+      "expense": "Expenses",
+      "income": "Income"
+    },
+    "empty": "No categories in this group.",
+    "ruleCount": "{count, plural, =0 {No rules} one {# rule} other {# rules}}",
+    "edit": "Edit category",
+    "delete": "Delete category",
+    "loadError": "Couldn't load categories.",
+    "retry": "Retry",
+    "deleteError": "Couldn't delete this category. Reassign its budgets or bills first.",
+    "newTitle": "New category",
+    "editTitle": "Edit category",
+    "formDescription": "Categories can have one level of nesting.",
+    "name": "Name",
+    "kindLabel": "Kind",
+    "parent": "Parent category",
+    "root": "No parent",
+    "icon": "Icon",
+    "color": "Color",
+    "nameRequired": "Enter a category name.",
+    "saveError": "Couldn't save the category.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…"
+  },
+  "rules": {
+    "title": "Categorization rules",
+    "subtitle": "Apply a category automatically when a description matches.",
+    "new": "New rule",
+    "bulkApply": "Apply rules to existing transactions",
+    "empty": "No rules yet.",
+    "active": "Rule active",
+    "priority": "Priority {value}",
+    "unknownCategory": "Unknown category",
+    "moveUp": "Move rule up",
+    "moveDown": "Move rule down",
+    "edit": "Edit rule",
+    "delete": "Delete rule",
+    "loadError": "Couldn't load rules.",
+    "retry": "Retry",
+    "saveError": "Couldn't save the rule.",
+    "newTitle": "New rule",
+    "editTitle": "Edit rule",
+    "formDescription": "Lower priority values win when multiple rules match.",
+    "form": {
+      "pattern": "Pattern",
+      "patternHint": "Use % for any number of characters and _ for one character.",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "priority": "Priority",
+      "invalid": "Enter a pattern and choose a category. A pattern cannot contain only wildcards.",
+      "invalidPriority": "Enter a whole-number priority."
+    },
+    "tester": {
+      "label": "Live tester",
+      "placeholder": "Type a transaction description",
+      "winner": "“{pattern}” wins and assigns {category}.",
+      "noMatch": "No active rule matches this description."
+    },
+    "bulkPreview": {
+      "title": "Apply rules to existing transactions",
+      "description": "Review the changes before applying them. Transactions are grouped by their new category.",
+      "empty": "No existing transactions would change.",
+      "count": "{count, plural, one {# transaction} other {# transactions}}",
+      "confirm": "Apply to {count, plural, one {# transaction} other {# transactions}}"
+    },
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…"
   },
   "settings": {
     "title": "Settings",
@@ -155,6 +489,28 @@
     "locale": {
       "title": "Language",
       "subtitle": "Interface language."
+    },
+    "fx": {
+      "title": "Exchange rates",
+      "subtitle": "Daily rates from ExchangeRate-API.",
+      "noData": "No exchange rates loaded yet.",
+      "lastUpdated": "Last updated: {date}.",
+      "stale": "Exchange rates haven't updated in over {days} days. The daily update may be failing.",
+      "refresh": "Refresh now",
+      "refreshing": "Refreshing…",
+      "refreshSuccess": "Updated {inserted} new, {updated} existing, skipped {skipped}.",
+      "refreshError": "Couldn't refresh exchange rates. Try again.",
+      "notSignedIn": "Sign in again to refresh exchange rates."
+    },
+    "overrides": {
+      "title": "Effective exchange rates",
+      "subtitle": "The rate each currency resolves to right now. Manual overrides win over the daily feed.",
+      "noData": "No rates available yet. Refresh exchange rates or add an override.",
+      "loadError": "Couldn't load effective exchange rates.",
+      "source": {
+        "override": "Manual override",
+        "feed": "ExchangeRate-API"
+      }
     },
     "languages": {
       "es": "Español",

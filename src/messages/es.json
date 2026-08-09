@@ -15,9 +15,112 @@
   "nav": {
     "balances": "Saldos",
     "transactions": "Movimientos",
+    "addTransaction": "Agregar",
     "budget": "Presupuesto",
     "bills": "Cuentas",
     "more": "Más"
+  },
+  "transactions": {
+    "loading": "Cargando movimientos…",
+    "loadError": "No se pudieron cargar los movimientos.",
+    "retry": "Reintentar",
+    "new": "Nuevo movimiento",
+    "newTransfer": "Nueva transferencia",
+    "empty": "Aún no hay movimientos. Registra el primero en pocos toques.",
+    "noResults": "Ningún movimiento coincide con estos filtros.",
+    "search": "Buscar en descripción o notas",
+    "clearFilters": "Limpiar filtros",
+    "loadMore": "Cargar más",
+    "transfer": "Transferencia",
+    "edit": "Editar {description}",
+    "filters": {
+      "allTypes": "Todos los tipos",
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "transfer": "Transferencia",
+      "account": "Cuenta",
+      "allAccounts": "Todas las cuentas",
+      "category": "Categoría",
+      "allCategories": "Todas las categorías",
+      "member": "Miembro",
+      "allMembers": "Todos los miembros",
+      "startDate": "Fecha de inicio",
+      "endDate": "Fecha final"
+    },
+    "summary": {
+      "count": "Cantidad",
+      "inflow": "Entradas",
+      "outflow": "Salidas",
+      "net": "Neto"
+    },
+    "accountDetail": {
+      "neverUpdated": "Saldo nunca actualizado",
+      "updated": "Actualizado {when}",
+      "edit": "Editar cuenta",
+      "updateBalance": "Actualizar saldo",
+      "allTransactions": "Todos los movimientos"
+    },
+    "form": {
+      "title": "Nuevo movimiento",
+      "editTitle": "Editar movimiento",
+      "description": "Agrega un gasto o ingreso sin salir de esta pantalla.",
+      "transferTitle": "Nueva transferencia",
+      "transferDescription": "Mueve dinero entre dos cuentas sin afectar los ingresos ni los gastos.",
+      "fromAccount": "Cuenta de origen",
+      "toAccount": "Cuenta de destino",
+      "fromAmount": "Monto enviado ({currency})",
+      "toAmount": "Monto recibido ({currency})",
+      "transferDescriptionPlaceholder": "Descripción opcional",
+      "transferDefaultDescription": "Transferencia",
+      "saveTransfer": "Guardar transferencia",
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "amount": "Monto",
+      "backspace": "Borrar último dígito",
+      "decimal": ",",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "p. ej. Café",
+      "account": "Cuenta",
+      "accountPlaceholder": "Elige una cuenta",
+      "currency": "Moneda",
+      "category": "Categoría",
+      "categoryPlaceholder": "Elige una categoría",
+      "noCategory": "Sin categoría",
+      "date": "Fecha",
+      "spentBy": "Gastado por",
+      "joint": "Conjunto",
+      "fxRate": "Tipo de cambio",
+      "rateLoading": "Buscando la tasa para esta fecha…",
+      "rateSource": "Tasa de {source} del {date}",
+      "rateSources": { "override": "ajuste manual", "feed": "ExchangeRate-API" },
+      "more": "Más opciones",
+      "less": "Menos opciones",
+      "notes": "Notas",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "duplicate": "Duplicar",
+      "delete": "Eliminar",
+      "confirmDelete": "¿Eliminar “{description}”? Esta acción no se puede deshacer.",
+      "errors": {
+        "amount": "Ingresa un monto distinto de cero.",
+        "description": "Ingresa una descripción de 1 a 200 caracteres.",
+        "account": "Elige una cuenta.",
+        "transferAccounts": "Elige dos cuentas diferentes.",
+        "transferReadOnly": "Las transferencias solo pueden eliminarse y crearse de nuevo.",
+        "date": "Elige hoy o una fecha de hasta un día en el futuro.",
+        "rate": "Ingresa un tipo de cambio válido.",
+        "generic": "No se pudo guardar el movimiento. Tus cambios se revirtieron.",
+        "offlineTransfer": "Las transferencias requieren conexión y no se guardaron."
+      }
+    }
+  },
+  "connectivity": {
+    "offline": "No tienes conexión. Los nuevos movimientos se enviarán al reconectarte.",
+    "pending": "{count, plural, one {# movimiento pendiente} other {# movimientos pendientes}}",
+    "failed": "No se pudo enviar un movimiento pendiente.",
+    "retry": "Reintentar",
+    "discard": "Descartar",
+    "partnerUpdated": "Actualizado por tu pareja"
   },
   "auth": {
     "login": {
@@ -110,6 +213,43 @@
       "generic": "Algo salió mal. Intenta de nuevo."
     }
   },
+  "balances": {
+    "headerAriaLabel": "Resumen de saldos del hogar",
+    "tabsAriaLabel": "Alcance del saldo",
+    "netWorthLabel": "Patrimonio",
+    "netWorthLoading": "Calculando…",
+    "accountCount": "{count, plural, =0 {Sin cuentas} one {# cuenta} other {# cuentas}}",
+    "partnerPlaceholder": "Pareja",
+    "partnerAriaLabel": "Pareja — {name}",
+    "ownerLoading": "Titular",
+    "jointLabel": "Conjunta",
+    "tab": {
+      "mine": "Mías",
+      "all": "Todas",
+      "joint": "Conjuntas"
+    },
+    "tabEmpty": "Aún no hay cuentas en esta vista.",
+    "loadError": "No se pudieron cargar tus saldos.",
+    "retry": "Reintentar",
+    "newAccount": "Nueva cuenta",
+    "computedOn": "Tipos de cambio al {date}.",
+    "updated": "Actualizado {when}",
+    "neverUpdated": "Nunca actualizado",
+    "stale": "Desactualizado — actualiza el saldo",
+    "updateBalance": "Actualizar saldo",
+    "section": {
+      "cash": "Efectivo y cuenta corriente",
+      "credit": "Tarjetas de crédito",
+      "savings": "Ahorros e inversiones",
+      "loans": "Préstamos"
+    },
+    "breakdownToggle": "Ver desglose por moneda",
+    "breakdownTitle": "Desglose por moneda",
+    "breakdownBaseRate": "Tasa base: {date}",
+    "breakdownEmpty": "Todas tus cuentas están en la moneda base del hogar.",
+    "breakdownClose": "Cerrar",
+    "rateUsed": "1 USD = {rate}"
+  },
   "household": {
     "picker": {
       "title": "Elige un hogar",
@@ -117,7 +257,201 @@
       "select": "Entrar"
     },
     "loading": "Cargando tu hogar…",
-    "empty": "No encontramos un hogar para tu cuenta."
+    "empty": "No encontramos un hogar para tu cuenta.",
+    "onboarding": {
+      "title": "Configura tu hogar compartido",
+      "subtitle": "Crea un hogar nuevo para ti y tu pareja, o únete a uno al que te hayan invitado.",
+      "tabCreate": "Crear un hogar",
+      "tabInvite": "Tengo una invitación",
+      "displayName": "Tu nombre",
+      "displayNamePlaceholder": "p. ej. Alex",
+      "householdName": "Nombre del hogar",
+      "householdNamePlaceholder": "p. ej. Casa de Alex y Sam",
+      "country": "País",
+      "countryPlaceholder": "Selecciona un país",
+      "baseCurrency": "Moneda base",
+      "baseCurrencyPlaceholder": "Selecciona una moneda",
+      "createButton": "Crear hogar",
+      "creating": "Creando hogar…",
+      "inviteToken": "Código de invitación",
+      "inviteTokenPlaceholder": "Pega el código de invitación",
+      "inviteAccept": "Unirse al hogar",
+      "inviteAccepting": "Uniéndote al hogar…",
+      "errors": {
+        "displayNameRequired": "Ingresa tu nombre.",
+        "householdNameRequired": "Ingresa un nombre para el hogar.",
+        "countryRequired": "Elige un país.",
+        "baseCurrencyRequired": "Elige una moneda base.",
+        "tokenRequired": "Pega el código de invitación.",
+        "generic": "Algo salió mal. Intenta de nuevo."
+      },
+      "errorsInvite": {
+        "expired": "Esta invitación venció. Pídele a tu pareja que la reenvíe.",
+        "alreadyAccepted": "Esta invitación ya fue aceptada — actualiza la página.",
+        "emailMismatch": "Esta invitación fue enviada a otro correo. Inicia sesión con la cuenta correcta.",
+        "invalidToken": "Este código de invitación no es válido. Pídele a tu pareja uno nuevo."
+      }
+    }
+  },
+  "accounts": {
+    "subtitle": "Cuentas que tu hogar registra.",
+    "newAccount": "Nueva cuenta",
+    "empty": {
+      "title": "Aún no hay cuentas",
+      "subtitle": "Empieza con las más comunes; puedes agregar más después.",
+      "defaultCash": "Efectivo",
+      "defaultChecking": "Cuenta corriente",
+      "defaultCreditCard": "Tarjeta de crédito",
+      "error": "No se pudo crear la cuenta. Intenta de nuevo."
+    },
+    "list": {
+      "showArchived": "Mostrar archivadas ({count})",
+      "hideArchived": "Ocultar archivadas",
+      "archivedSection": "Archivadas",
+      "loadingError": "No se pudieron cargar las cuentas.",
+      "retry": "Reintentar"
+    },
+    "kinds": {
+      "cash": "Efectivo",
+      "checking": "Cuenta corriente",
+      "savings": "Ahorro",
+      "credit_card": "Tarjeta de crédito",
+      "loan": "Préstamo",
+      "investment": "Inversión"
+    },
+    "balanceModes": {
+      "label": "¿Cómo se determina el saldo?",
+      "ledger": "Por movimientos",
+      "ledgerDescription": "El saldo se calcula con cada movimiento que registras. Ideal si anotas cada compra.",
+      "manual": "Manual",
+      "manualDescription": "Tú indicas el saldo. Ideal para préstamos, inversiones o cuentas que revisas una vez al mes."
+    },
+    "row": {
+      "private": "Privada",
+      "archived": "Archivada",
+      "dragHandle": "Reordenar",
+      "edit": "Editar",
+      "updateBalance": "Actualizar saldo"
+    },
+    "form": {
+      "titleCreate": "Nueva cuenta",
+      "titleEdit": "Editar cuenta",
+      "name": "Nombre",
+      "namePlaceholder": "p. ej. Cuenta del día a día",
+      "kind": "Tipo",
+      "kindPlaceholder": "Selecciona un tipo",
+      "currency": "Moneda",
+      "currencyPlaceholder": "Selecciona una moneda",
+      "currencySearch": "Buscar monedas…",
+      "currencyNoResults": "Ninguna moneda coincide.",
+      "openingBalance": "Saldo inicial",
+      "openingBalanceHint": "Saldo inicial antes de los movimientos.",
+      "manualBalance": "Saldo actual",
+      "creditLimit": "Límite de crédito",
+      "creditLimitHint": "Opcional — se muestra en la cuenta.",
+      "share": "Compartir con tu pareja",
+      "shareHint": "Tu pareja puede ver y actualizar esta cuenta.",
+      "privateNote": "Una cuenta privada solo es visible para ti, así que debe ser tuya.",
+      "ownership": "Propietario",
+      "joint": "Conjunta",
+      "mine": "Mía",
+      "archive": "Archivar cuenta",
+      "restore": "Restaurar cuenta",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "errors": {
+        "nameRequired": "Ingresa un nombre (de 1 a 80 caracteres).",
+        "kindRequired": "Elige un tipo de cuenta.",
+        "currencyRequired": "Elige una moneda.",
+        "balanceRequired": "Ingresa un saldo.",
+        "privateNeedsOwner": "Una cuenta privada debe pertenecer a uno de ustedes. Establece el propietario en “Mía”.",
+        "generic": "Algo salió mal al guardar la cuenta. Intenta de nuevo."
+      }
+    },
+    "manualBalanceSheet": {
+      "title": "Actualizar saldo",
+      "subtitle": "Establece el saldo al nuevo valor y lo marca como actualizado ahora.",
+      "current": "Saldo actual",
+      "newValue": "Nuevo saldo",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "error": "No se pudo actualizar el saldo. Intenta de nuevo."
+    }
+  },
+  "categories": {
+    "title": "Categorías",
+    "subtitle": "Organiza los ingresos y gastos de tu hogar.",
+    "new": "Nueva categoría",
+    "kind": {
+      "expense": "Gastos",
+      "income": "Ingresos"
+    },
+    "empty": "No hay categorías en este grupo.",
+    "ruleCount": "{count, plural, =0 {Sin reglas} one {# regla} other {# reglas}}",
+    "edit": "Editar categoría",
+    "delete": "Eliminar categoría",
+    "loadError": "No se pudieron cargar las categorías.",
+    "retry": "Reintentar",
+    "deleteError": "No se pudo eliminar esta categoría. Reasigna primero sus presupuestos o cuentas.",
+    "newTitle": "Nueva categoría",
+    "editTitle": "Editar categoría",
+    "formDescription": "Las categorías pueden tener un nivel de anidamiento.",
+    "name": "Nombre",
+    "kindLabel": "Tipo",
+    "parent": "Categoría padre",
+    "root": "Sin categoría padre",
+    "icon": "Icono",
+    "color": "Color",
+    "nameRequired": "Ingresa un nombre para la categoría.",
+    "saveError": "No se pudo guardar la categoría.",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando…"
+  },
+  "rules": {
+    "title": "Reglas de categorización",
+    "subtitle": "Aplica una categoría automáticamente cuando coincida la descripción.",
+    "new": "Nueva regla",
+    "bulkApply": "Aplicar reglas a movimientos existentes",
+    "empty": "Aún no hay reglas.",
+    "active": "Regla activa",
+    "priority": "Prioridad {value}",
+    "unknownCategory": "Categoría desconocida",
+    "moveUp": "Subir regla",
+    "moveDown": "Bajar regla",
+    "edit": "Editar regla",
+    "delete": "Eliminar regla",
+    "loadError": "No se pudieron cargar las reglas.",
+    "retry": "Reintentar",
+    "saveError": "No se pudo guardar la regla.",
+    "newTitle": "Nueva regla",
+    "editTitle": "Editar regla",
+    "formDescription": "Los valores de prioridad más bajos ganan cuando coinciden varias reglas.",
+    "form": {
+      "pattern": "Patrón",
+      "patternHint": "Usa % para cualquier cantidad de caracteres y _ para un carácter.",
+      "category": "Categoría",
+      "categoryPlaceholder": "Elige una categoría",
+      "priority": "Prioridad",
+      "invalid": "Ingresa un patrón y elige una categoría. Un patrón no puede contener solo comodines.",
+      "invalidPriority": "Ingresa una prioridad como número entero."
+    },
+    "tester": {
+      "label": "Probador en vivo",
+      "placeholder": "Escribe una descripción de movimiento",
+      "winner": "“{pattern}” gana y asigna {category}.",
+      "noMatch": "Ninguna regla activa coincide con esta descripción."
+    },
+    "bulkPreview": {
+      "title": "Aplicar reglas a movimientos existentes",
+      "description": "Revisa los cambios antes de aplicarlos. Los movimientos se agrupan por su nueva categoría.",
+      "empty": "Ningún movimiento existente cambiaría.",
+      "count": "{count, plural, one {# movimiento} other {# movimientos}}",
+      "confirm": "Aplicar a {count, plural, one {# movimiento} other {# movimientos}}"
+    },
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando…"
   },
   "settings": {
     "title": "Configuración",
@@ -155,6 +489,28 @@
     "locale": {
       "title": "Idioma",
       "subtitle": "Idioma de la interfaz."
+    },
+    "fx": {
+      "title": "Tipos de cambio",
+      "subtitle": "Tasas diarias desde ExchangeRate-API.",
+      "noData": "Aún no hay tipos de cambio cargados.",
+      "lastUpdated": "Última actualización: {date}.",
+      "stale": "Los tipos de cambio no se actualizan desde hace más de {days} días. La actualización diaria podría estar fallando.",
+      "refresh": "Actualizar ahora",
+      "refreshing": "Actualizando…",
+      "refreshSuccess": "Actualizados: {inserted} nuevos, {updated} existentes, {skipped} omitidos.",
+      "refreshError": "No se pudieron actualizar los tipos de cambio. Intenta de nuevo.",
+      "notSignedIn": "Vuelve a iniciar sesión para actualizar los tipos de cambio."
+    },
+    "overrides": {
+      "title": "Tipos de cambio efectivos",
+      "subtitle": "La tasa a la que cada moneda se resuelve ahora mismo. Los ajustes manuales tienen prioridad sobre la fuente diaria.",
+      "noData": "Aún no hay tasas disponibles. Actualiza los tipos de cambio o añade un ajuste.",
+      "loadError": "No se pudieron cargar los tipos de cambio efectivos.",
+      "source": {
+        "override": "Ajuste manual",
+        "feed": "ExchangeRate-API"
+      }
     },
     "languages": {
       "es": "Español",

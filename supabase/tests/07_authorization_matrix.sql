@@ -11,19 +11,30 @@
 --   Household B — Carol (owner): entirely unrelated, used for every
 --     cross-tenant assertion.
 --
--- Several cases in the issue assume columns/functions that live in OTHER,
--- still-open issues (accounts.is_shared / owner_member_id + split RLS from
--- #19; transactions.spent_by from #23; fx_rate_on()/fx_usd_rate() from #18).
--- Tests 2/3/4/5 gate on `information_schema` at run time via psql's `\if`:
--- the moment the relevant column lands, the branch flips from `skip()` to a
--- real assertion with no edits here. See the issue: "mark them as TODO-skips
--- and enable them in the relevant phase rather than omitting them."
+-- Several cases in the issue originally assumed columns/functions that lived
+-- in OTHER, still-open issues. Tests 3/4 gate on `information_schema` at run
+-- time via psql's `\if`: the moment the relevant column lands, the branch
+-- flips from `skip()` to a real assertion with no edits here — see the issue:
+-- "mark them as TODO-skips and enable them in the relevant phase rather than
+-- omitting them." All of the originally-deferred cases have since landed:
 --
--- Tests 9/11/12 are permanent skips instead, even once their column/function
--- exists: this file doesn't own #18/#19, so hard-failing CI the instant that
--- schema lands (e.g. via a hard `ok(false)`) would break unrelated work on
--- whatever PR happens to introduce it. Whoever implements #18/#19 replaces
--- the skip with the real assertion as part of that work.
+-- #19 (accounts ownership/visibility + split RLS) landed in migration
+-- 20260807000001: tests 2, 5 and 11 are real assertions below, and tests 13/14
+-- cover the #19 AC directly (partner INSERT ownership semantics; the
+-- joint+private CHECK constraint).
+--
+-- Test 9 (fx_rate_on/fx_usd_rate override resolution) became a real assertion
+-- when #18 landed — see test 9 below; the fuller suite lives in
+-- 10_fx_overrides_resolution.sql.
+--
+-- #23 (transactions ledger refinement) landed in migration
+-- 20260808004306: tests 3 and 4 flip live via the `\if` gates above (entered_by
+-- write-once, spent_by independent of entered_by), and test 12 (transaction
+-- visibility inheriting account visibility) is now a real assertion below.
+-- The #23-specific coverage that doesn't fit this file's Household A/B
+-- narrative (base_amount generation, entered_by pinned to the caller's own
+-- member id, cross-household containment, account-delete cascade) lives in
+-- 12_transactions_ledger.sql.
 
 \set ON_ERROR_STOP on
 \i supabase/tests/_lib/helpers.sql
@@ -73,14 +84,13 @@ begin
     (bob_member,   hh_a, bob_user,   'partner', 'Bob'),
     (carol_member, hh_b, carol_user, 'owner',   'Carol');
 
-  insert into public.accounts (id, household_id, name, type, currency) values
-    (acct_joint, hh_a, 'Joint checking',  'checking', 'CLP'),
-    -- Stands in for the "private account" fixture the issue asks for. There
-    -- is no is_shared concept yet (blocked by #19) — tests 2/12 gate on that
-    -- column's existence and skip until it lands; this row just gives them
-    -- something to point at once it does.
-    (acct_alice, hh_a, 'Alice checking',  'checking', 'CLP'),
-    (acct_carol, hh_b, 'Carol checking',  'checking', 'BRL');
+  insert into public.accounts
+    (id, household_id, name, kind, currency, is_shared, owner_member_id) values
+    (acct_joint, hh_a, 'Joint checking', 'checking', 'CLP', true,  null),
+    -- Alice's private account: invisible to Bob (is_shared = false, and
+    -- owned by Alice, not by the joint pool). Test 2 asserts Bob can't see it.
+    (acct_alice, hh_a, 'Alice checking', 'checking', 'CLP', false, alice_member),
+    (acct_carol, hh_b, 'Carol checking', 'checking', 'BRL', true,  carol_member);
 
   insert into public.categories (id, household_id, name) values
     (cat_a, hh_a, 'Groceries'),
@@ -90,19 +100,24 @@ begin
     (budget_a, hh_a, null, 'monthly', 500000, 'CLP', date_trunc('month', current_date)::date);
 
   insert into public.transactions
-    (id, household_id, account_id, category_id, direction, amount, currency, occurred_at, description, created_by)
+    (id, household_id, account_id, category_id, amount, currency, occurred_on, description, entered_by)
   values
-    (tx_a1, hh_a, acct_joint, cat_a, 'debit', 20000, 'CLP', current_date, 'Alice groceries', alice_member);
+    (tx_a1, hh_a, acct_joint, cat_a, -20000, 'CLP', current_date, 'Alice groceries', alice_member);
 
   insert into public.bills (id, household_id, name, amount, currency, account_id, category_id, frequency) values
     (bill_a, hh_a, 'Internet', 15000, 'CLP', acct_joint, cat_a, 'monthly');
 
   insert into public.bill_instances (id, bill_id, household_id, due_on, amount, is_paid) values
     (bill_inst_a, bill_a, hh_a, current_date, 15000, false);
+
+  -- Global CLP rate for test 9's cross-tenant slice: household B (no override)
+  -- must resolve this, while household A's override at value 1 wins over it.
+  insert into public.fx_rates (rate_date, code, usd_rate) values
+    (current_date, 'CLP', 940);
 end
 $$;
 
-select plan(17);
+select plan(36);
 
 -- ============================================================================
 -- 1. budget_status view — Carol (household B, no budgets of her own) must
@@ -119,30 +134,120 @@ select is_empty(
 );
 
 -- ============================================================================
--- 2. Private account visibility — a member-scoped FOR ALL policy must never
---    widen reads past what a dedicated SELECT policy allows. Gated on
---    accounts.is_shared, which doesn't exist yet (blocked by #19: today
---    accounts_all is a single FOR ALL policy with no privacy concept at all).
+-- 1b. budget_status — signed-amount math after #23's convention change.
+--     Fixture (DO block above): budget_a = 500,000 CLP/mo category=null,
+--     tx_a1 = amount -20,000 (signed expense) within current month.
+--     Expected: spent = -(-20000) = 20000, remaining = 480000, pct_used = 4%.
+--     Runs as clear_auth so RLS bypass is not a factor — this is pure math.
 -- ============================================================================
 
-select exists (
-  select 1 from information_schema.columns
-  where table_schema = 'public' and table_name = 'accounts' and column_name = 'is_shared'
-) as has_is_shared \gset
+select tests.clear_auth();
 
-\if :has_is_shared
--- TODO(#19): the fixture's acct_alice row still needs is_shared = false (and
--- owner_member_id = alice_member) set explicitly once those columns exist —
--- is_shared defaults to true per #19's spec, so without that update this row
--- isn't actually private and this assertion would pass for the wrong reason.
+select results_eq(
+  $$ select budgeted::numeric, spent::numeric, remaining::numeric, pct_used::numeric
+     from public.budget_status
+     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (500000::numeric, 20000::numeric, 480000::numeric, 4.00::numeric) $$,
+  'budget_status: signed-amount math correct — spent = 20000, remaining = 480000, pct_used = 4%'
+);
+
+-- ============================================================================
+-- 1c. budget_status — PR #55 issue #3 REGRESSION GUARD: a positive-amount
+--     (income/refund) transaction matching the budget filters MUST NOT
+--     reduce reported spent. Insert +5000 "grocery refund" on same household/
+--     category/date as tx_a1; spent should remain 20000 (pct_used stays 4%),
+--     NOT drop to 15000 (3%). The fix: budget_status filters `t.amount < 0`.
+-- ============================================================================
+
+select results_eq(
+  $$ with refund as (
+       insert into public.transactions
+         (id, household_id, account_id, category_id, amount, currency,
+          occurred_on, description, entered_by)
+         values (
+           'a6000000-0000-0000-0000-000000000099',
+           'a0000000-0000-0000-0000-00000000000a',
+           'a3000000-0000-0000-0000-000000000001',
+           'a4000000-0000-0000-0000-000000000001',
+           5000, 'CLP', current_date,
+           'Grocery refund — must NOT reduce budget spent',
+           'a2000000-0000-0000-0000-000000000001'
+         ) returning 1
+     )
+     select spent::numeric, pct_used::numeric from public.budget_status
+     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (20000::numeric, 4.00::numeric) $$,
+  'budget_status regression (#3): positive refund row does NOT reduce spent or pct_used (amount<0 filter holds)'
+);
+
+select results_eq(
+  $$ insert into public.transactions
+       (id, household_id, account_id, category_id, amount, fx_rate, currency,
+        occurred_on, description, entered_by)
+     values (
+       'a6000000-0000-0000-0000-000000000098',
+       'a0000000-0000-0000-0000-00000000000a',
+       'a3000000-0000-0000-0000-000000000001',
+       'a4000000-0000-0000-0000-000000000001',
+       -100, 1000, 'USD', current_date,
+       'USD expense converted to CLP budget currency',
+       'a2000000-0000-0000-0000-000000000001'
+     ) returning base_amount $$,
+  $$ values (-100000::numeric) $$,
+  'foreign-currency expense stores its converted base_amount'
+);
+
+select results_eq(
+  $$ select spent::numeric, remaining::numeric, pct_used::numeric
+     from public.budget_status
+     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (120000::numeric, 380000::numeric, 24.00::numeric) $$,
+  'budget_status aggregates converted base_amount for a foreign-currency expense'
+);
+
+select throws_ok(
+  $$ insert into public.budgets
+       (id, household_id, period, amount, currency, starts_on)
+     values (
+       'a5000000-0000-0000-0000-000000000099',
+       'a0000000-0000-0000-0000-00000000000a',
+       'monthly', 100, 'USD', current_date
+     ) $$,
+  '23514',
+  'budgets.currency must match households.base_currency',
+  'budget currency must match the household base currency'
+);
+
+select throws_ok(
+  $$ update public.households set base_currency = 'USD'
+     where id = 'a0000000-0000-0000-0000-00000000000a'::uuid $$,
+  '23514',
+  'households.base_currency must match existing budgets.currency',
+  'household base currency cannot diverge from existing budget currencies'
+);
+
+-- ============================================================================
+-- 2. Private account visibility — a member-scoped FOR ALL policy must never
+--    widen reads past what a dedicated SELECT policy allows. The #19 SELECT
+--    policy is one of four; acct_alice is is_shared = false (see fixture), so
+--    Bob must not see it even though he is a member of the same household.
+-- ============================================================================
+
 select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
 select is_empty(
   $$ select * from public.accounts where id = 'a3000000-0000-0000-0000-000000000002'::uuid $$,
   'Bob cannot SELECT Alice''s private account (is_shared = false)'
 );
-\else
-select skip('accounts.is_shared not yet implemented — blocked by #19', 1);
-\endif
+
+-- And the mirror: Alice (its owner) CAN see it. Guards against the inverse
+-- regression — a SELECT policy that drops the owner clause would leave private
+-- accounts invisible to everyone, including their owner.
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000001');
+select results_eq(
+  $$ select count(*)::int from public.accounts where id = 'a3000000-0000-0000-0000-000000000002'::uuid $$,
+  $$ values (1::int) $$,
+  'Alice CAN see her own private account (owner = self)'
+);
 
 -- ============================================================================
 -- 3. entered_by must be write-once — an audit trail a partner can rewrite is
@@ -184,11 +289,11 @@ select exists (
 select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
 select results_eq(
   $$ insert into public.transactions
-       (household_id, account_id, category_id, direction, amount, currency,
-        occurred_at, description, entered_by, spent_by)
+       (household_id, account_id, category_id, amount, currency,
+        occurred_on, description, entered_by, spent_by)
      values (
        'a0000000-0000-0000-0000-00000000000a', 'a3000000-0000-0000-0000-000000000001',
-       'a4000000-0000-0000-0000-000000000001', 'debit', 5000, 'CLP', current_date,
+       'a4000000-0000-0000-0000-000000000001', -5000, 'CLP', current_date,
        'Bob records Alice''s purchase',
        'a2000000-0000-0000-0000-000000000002', 'a2000000-0000-0000-0000-000000000001'
      )
@@ -203,26 +308,39 @@ select skip('transactions.spent_by (attribution independent of entered_by) not y
 -- ============================================================================
 -- 5. Cross-household containment on accounts.owner_member_id — an FK to
 --    household_members proves "is a member", not "is a member of *this*
---    household". Gated on accounts.owner_member_id (blocked by #19).
+--    household". Runs as superuser (RLS bypassed) so the check under test is
+--    the containment trigger itself, not the INSERT policy.
 -- ============================================================================
 
-select exists (
-  select 1 from information_schema.columns
-  where table_schema = 'public' and table_name = 'accounts' and column_name = 'owner_member_id'
-) as has_owner_member_id \gset
+select tests.clear_auth();
 
-\if :has_owner_member_id
-select tests.authenticate_as('a1000000-0000-0000-0000-000000000001');
+select results_eq(
+  $$ insert into public.accounts (household_id, owner_member_id, name, kind, currency)
+     values ('a0000000-0000-0000-0000-00000000000a', 'a2000000-0000-0000-0000-000000000001', 'Alice solo', 'checking', 'CLP')
+     returning 1 $$,
+  $$ values (1) $$,
+  'an owner from the same household is accepted (containment trigger does not over-fire)'
+);
+
 select throws_ok(
-  $$ insert into public.accounts (household_id, owner_member_id, name, type, currency)
+  $$ insert into public.accounts (household_id, owner_member_id, name, kind, currency)
      values ('a0000000-0000-0000-0000-00000000000a', 'b2000000-0000-0000-0000-000000000001', 'Sneaky', 'checking', 'CLP') $$,
   null,
   null,
-  'inserting an account owned by a member of another household is rejected (containment check)'
+  'inserting an account owned by a member of another household is rejected (containment trigger)'
 );
-\else
-select skip('accounts.owner_member_id + cross-household containment trigger not yet implemented — blocked by #19', 1);
-\endif
+
+-- The trigger is before insert OR update; the reassignment path is covered here
+-- too, still as superuser so the check under test is the trigger, not the RLS
+-- UPDATE WITH CHECK.
+select throws_ok(
+  $$ update public.accounts
+       set owner_member_id = 'b2000000-0000-0000-0000-000000000001'::uuid
+       where id = 'a3000000-0000-0000-0000-000000000001'::uuid $$,
+  null,
+  null,
+  'reassigning an account to a member of another household is rejected (containment trigger on UPDATE)'
+);
 
 -- ============================================================================
 -- 6. The invited partner must not be a second-class member: Bob (role =
@@ -233,11 +351,11 @@ select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
 
 select results_eq(
   $$ insert into public.transactions
-       (household_id, account_id, category_id, direction, amount, currency,
-        occurred_at, description, created_by)
+       (household_id, account_id, category_id, amount, currency,
+        occurred_on, description, entered_by)
      values (
        'a0000000-0000-0000-0000-00000000000a', 'a3000000-0000-0000-0000-000000000001',
-       'a4000000-0000-0000-0000-000000000001', 'debit', 3000, 'CLP', current_date,
+       'a4000000-0000-0000-0000-000000000001', -3000, 'CLP', current_date,
        'Bob buys groceries', 'a2000000-0000-0000-0000-000000000002'
      )
      returning 1 $$,
@@ -290,13 +408,30 @@ select results_eq(
 
 -- ============================================================================
 -- 9. fx_rate_on()/fx_usd_rate() must honor a household's manual override
---    over the global rate. Gated on fx_rate_on existing — today's
---    fx_overrides (migration 10) is a different, transaction-keyed design
---    with no such resolution function (blocked by #18).
+--    over the global rate. The full suite lives in 10_fx_overrides_resolution
+--    (#18); this is the cross-tenant slice the matrix owns: household A's
+--    override must win for A, while Carol (household B) still resolves the
+--    global feed rate.
 -- ============================================================================
 
--- Permanent skip (see file header): don't hard-fail CI for whoever lands #18.
-select skip('fx_rate_on()/fx_usd_rate() household-override resolution not yet implemented — blocked by #18', 1);
+select tests.clear_auth();
+
+insert into public.fx_overrides (household_id, rate_date, code, usd_rate, note)
+values ('a0000000-0000-0000-0000-00000000000a', current_date, 'CLP', 1, 'A fix');
+
+select results_eq(
+  $$ select public.fx_rate_on('a0000000-0000-0000-0000-00000000000a', current_date, 'USD', 'CLP') $$,
+  $$ values (1::numeric) $$,
+  'household A override wins over the global CLP rate'
+);
+
+select tests.authenticate_as('b1000000-0000-0000-0000-000000000001');
+
+select isnt(
+  ( select public.fx_rate_on('b0000000-0000-0000-0000-00000000000b', current_date, 'USD', 'CLP') ),
+  1::numeric,
+  'household B resolves the global CLP rate, unaffected by household A override'
+);
 
 -- ============================================================================
 -- 10. Basic cross-tenant isolation for Carol against household A, all four
@@ -310,14 +445,17 @@ select is_empty(
   'Carol SELECT on household A accounts: 0 rows'
 );
 
+-- entered_by is Alice's member id (not Carol's) so the failure is isolated
+-- to the RLS WITH CHECK — a mismatched entered_by would instead be rejected
+-- by the transactions_containment trigger before RLS is ever reached.
 select throws_ok(
   $$ insert into public.transactions
-       (household_id, account_id, category_id, direction, amount, currency,
-        occurred_at, description, created_by)
+       (household_id, account_id, category_id, amount, currency,
+        occurred_on, description, entered_by)
      values (
        'a0000000-0000-0000-0000-00000000000a', 'a3000000-0000-0000-0000-000000000001',
-       'a4000000-0000-0000-0000-000000000001', 'debit', 100, 'CLP', current_date,
-       'sneak', 'b2000000-0000-0000-0000-000000000001'
+       'a4000000-0000-0000-0000-000000000001', -100, 'CLP', current_date,
+       'sneak', 'a2000000-0000-0000-0000-000000000001'
      ) $$,
   '42501',
   null,
@@ -347,22 +485,141 @@ select results_eq(
 );
 
 -- ============================================================================
--- 11. Ownership reassignment: ordinarily-shaped WITH CHECK should permit
---     assigning to the joint pool but block assigning to someone else's
---     membership row. Gated on accounts.owner_member_id (blocked by #19).
+-- 11. Ownership reassignment: the UPDATE policy's WITH CHECK should permit
+--     assigning to the joint pool and to yourself, but block assigning to
+--     someone else's membership row. acct_joint starts as joint (owner null).
 -- ============================================================================
 
--- Permanent skip (see file header): don't hard-fail CI for whoever lands #19.
-select skip('accounts.owner_member_id reassignment WITH CHECK semantics not yet implemented — blocked by #19', 1);
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
+
+select results_eq(
+  $$ with claimed as (
+       update public.accounts
+         set owner_member_id = 'a2000000-0000-0000-0000-000000000002'::uuid
+         where id = 'a3000000-0000-0000-0000-000000000001'::uuid
+         returning 1
+     )
+     select count(*)::int from claimed $$,
+  $$ values (1::int) $$,
+  'Bob can claim a joint account for himself (WITH CHECK: owner = current member)'
+);
+
+select throws_ok(
+  $$ update public.accounts
+       set owner_member_id = 'a2000000-0000-0000-0000-000000000001'::uuid
+       where id = 'a3000000-0000-0000-0000-000000000001'::uuid $$,
+  null,
+  null,
+  'Bob cannot reassign an account to Alice (WITH CHECK blocks partner ownership)'
+);
+
+-- Claiming a joint account is fine (above), but claiming it AND hiding it from
+-- the other partner (is_shared -> false) in the same statement is blocked by the
+-- accounts_check_claim_stays_shared trigger.
+select results_eq(
+  $$ insert into public.accounts (id, household_id, name, kind, currency)
+     values ('a3000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-00000000000a', 'Joint 2', 'checking', 'CLP')
+     returning 1 $$,
+  $$ values (1) $$,
+  'setup: a fresh joint account exists to claim'
+);
+
+select throws_ok(
+  $$ update public.accounts
+       set is_shared = false, owner_member_id = 'a2000000-0000-0000-0000-000000000002'::uuid
+       where id = 'a3000000-0000-0000-0000-000000000003'::uuid $$,
+  null,
+  null,
+  'Bob cannot claim a joint account and make it private in the same statement'
+);
 
 -- ============================================================================
 -- 12. Transaction visibility must inherit account visibility: Bob must not
---     see transactions posted against Alice's private account. Gated on
---     accounts.is_shared (blocked by #19).
+--     see transactions posted against Alice's private account, but Alice
+--     (its owner) must. `account_id in (select id from accounts)` is itself
+--     RLS-filtered by the #19 accounts_select policy, so this falls out of
+--     the #23 transactions_select policy with no separate is_shared check.
 -- ============================================================================
 
--- Permanent skip (see file header): don't hard-fail CI for whoever lands #19.
-select skip('accounts.is_shared / transaction visibility inheritance not yet implemented — blocked by #19', 1);
+select tests.clear_auth();
+
+select results_eq(
+  $$ insert into public.transactions
+       (id, household_id, account_id, category_id, amount, currency,
+        occurred_on, description, entered_by)
+     values (
+       'a6000000-0000-0000-0000-000000000002',
+       'a0000000-0000-0000-0000-00000000000a', 'a3000000-0000-0000-0000-000000000002',
+       'a4000000-0000-0000-0000-000000000001', -4000, 'CLP', current_date,
+       'Alice private spend', 'a2000000-0000-0000-0000-000000000001'
+     )
+     returning 1 $$,
+  $$ values (1) $$,
+  'setup: a transaction exists against Alice''s private account'
+);
+
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
+select is_empty(
+  $$ select * from public.transactions where id = 'a6000000-0000-0000-0000-000000000002'::uuid $$,
+  'Bob cannot see a transaction posted against Alice''s private account'
+);
+
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000001');
+select results_eq(
+  $$ select count(*)::int from public.transactions where id = 'a6000000-0000-0000-0000-000000000002'::uuid $$,
+  $$ values (1::int) $$,
+  'Alice (owner of the private account) CAN see her own transaction'
+);
+
+-- ============================================================================
+-- 13. INSERT ownership semantics (#19 AC): a partner can create a joint
+--     account or their own private account, but not one owned by their spouse.
+-- ============================================================================
+
+select tests.authenticate_as('a1000000-0000-0000-0000-000000000002');
+
+select results_eq(
+  $$ insert into public.accounts (household_id, name, kind, currency)
+     values ('a0000000-0000-0000-0000-00000000000a', 'Bob joint', 'checking', 'CLP')
+     returning 1 $$,
+  $$ values (1) $$,
+  'Bob can create a joint account (owner null)'
+);
+
+select results_eq(
+  $$ insert into public.accounts
+       (household_id, name, kind, currency, is_shared, owner_member_id)
+     values ('a0000000-0000-0000-0000-00000000000a', 'Bob personal', 'checking', 'CLP', false,
+             'a2000000-0000-0000-0000-000000000002')
+     returning 1 $$,
+  $$ values (1) $$,
+  'Bob can create his own private account (owner = self)'
+);
+
+select throws_ok(
+  $$ insert into public.accounts (household_id, name, kind, currency, owner_member_id)
+     values ('a0000000-0000-0000-0000-00000000000a', 'Alice account', 'checking', 'CLP',
+             'a2000000-0000-0000-0000-000000000001') $$,
+  null,
+  null,
+  'Bob cannot create an account owned by Alice (INSERT WITH CHECK)'
+);
+
+-- ============================================================================
+-- 14. accounts_private_needs_owner (#19 AC): a joint (owner null) account that
+--     isn't shared would be visible to nobody, including its creator — reject
+--     it. Runs as superuser so the check under test is the CHECK constraint.
+-- ============================================================================
+
+select tests.clear_auth();
+
+select throws_ok(
+  $$ insert into public.accounts (household_id, name, kind, currency, is_shared)
+     values ('a0000000-0000-0000-0000-00000000000a', 'Joint-private', 'checking', 'CLP', false) $$,
+  '23514',
+  null,
+  'a joint + private account is rejected (accounts_private_needs_owner)'
+);
 
 select * from finish();
 rollback;

@@ -11,7 +11,7 @@ export function useCurrencies(options?: { enabled?: boolean }) {
       if (!supabase) return [];
       const { data, error } = await supabase
         .from("currencies")
-        .select("code, name_en, symbol")
+        .select("code, name_en, symbol, minor_unit")
         .eq("is_enabled", true)
         .order("code");
       if (error) throw error;
