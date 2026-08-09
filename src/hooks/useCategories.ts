@@ -159,12 +159,13 @@ export function useRuleApplicationPreview(
     queryFn: async (): Promise<RuleApplicationPreview[]> => {
       const { data, error } = await requireSupabase()
         .from("transactions")
-        .select("id, description, category_id")
-        .eq("household_id", householdId!);
+        .select("id, account_id, description, category_id")
+        .eq("household_id", householdId!)
+        .is("transfer_group_id", null);
       if (error) throw error;
       const grouped = new Map<string, string[]>();
       for (const transaction of data) {
-        const rule = matchingRule(transaction.description, rules);
+        const rule = matchingRule(transaction.description, rules, transaction.account_id);
         if (!rule || rule.category_id === transaction.category_id) continue;
         const transactionIds = grouped.get(rule.category_id);
         if (transactionIds) transactionIds.push(transaction.id);
@@ -189,7 +190,8 @@ export function useApplyCategorizationRules(householdId: string | null) {
           supabase
             .from("transactions")
             .update({ category_id: categoryId })
-            .in("id", transactionIds),
+            .in("id", transactionIds)
+            .is("transfer_group_id", null),
         ),
       );
       const firstError = results.find((result) => result.error)?.error;

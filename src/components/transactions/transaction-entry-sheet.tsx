@@ -61,6 +61,18 @@ type Draft = {
   isExpense: boolean;
 };
 
+function isTransientWriteError(error: unknown): boolean {
+  if (error instanceof TypeError) return true;
+  if (!error || typeof error !== "object") return false;
+  const { code, message, name } = error as { code?: unknown; message?: unknown; name?: unknown };
+  return (
+    typeof code !== "string" &&
+    (name === "FetchError" ||
+      name === "NetworkError" ||
+      (typeof message === "string" && /network|fetch|offline|timeout/i.test(message)))
+  );
+}
+
 function addDays(date: string, days: number): string {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -448,7 +460,7 @@ function TransactionEntryContent({
 
   useEffect(() => {
     if (!categoryOverridden) {
-      const categoryId = matchCategory(draft.description, rules);
+      const categoryId = matchCategory(draft.description, rules, draft.accountId || null);
       const category = categories.find((item) => item.id === categoryId);
       setDraft((current) => ({
         ...current,
@@ -518,20 +530,39 @@ function TransactionEntryContent({
       spent_by: draft.spentBy,
     };
 
+    const queuedInput =
+      !transaction && householdId && memberId
+        ? {
+            ...input,
+            id: crypto.randomUUID(),
+            household_id: householdId,
+            entered_by: memberId,
+          }
+        : null;
+
     try {
       if (transaction) await update.mutateAsync({ id: transaction.id, ...input });
       else if (connectionState === "offline") {
-        if (!householdId || !memberId) return setError("generic");
-        await queueTransaction({
-          ...input,
-          id: crypto.randomUUID(),
-          household_id: householdId,
-          entered_by: memberId,
-        });
-      } else await create.mutateAsync(input);
+        if (!queuedInput) return setError("generic");
+        await queueTransaction(queuedInput);
+      } else {
+        if (!queuedInput) return setError("generic");
+        await create.mutateAsync(queuedInput);
+      }
       localStorage.setItem(LAST_ACCOUNT_STORAGE_KEY, draft.accountId);
       onClose();
-    } catch {
+    } catch (submitError) {
+      if (!transaction && queuedInput && isTransientWriteError(submitError)) {
+        try {
+          await queueTransaction(queuedInput);
+          localStorage.setItem(LAST_ACCOUNT_STORAGE_KEY, draft.accountId);
+          onClose();
+          return;
+        } catch {
+          setError("generic");
+          return;
+        }
+      }
       setError("generic");
     }
   }

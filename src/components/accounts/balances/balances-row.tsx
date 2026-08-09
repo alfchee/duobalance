@@ -29,7 +29,11 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
 
   const isManual = account.balance_mode === "manual";
   const balance = displayBalance(account);
-  const freshness = formatUpdatedAgo(account.balance_updated_at, now, locale);
+  const freshness = formatUpdatedAgo(
+    isManual ? account.balance_updated_at : account.last_transaction_at,
+    now,
+    locale,
+  );
   const stale = isStaleBalance(account, now);
   const updatedCopy = freshness.never ? t("neverUpdated") : t("updated", { when: freshness.text });
 

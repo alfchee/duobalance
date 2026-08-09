@@ -42,10 +42,13 @@ export function matchesIlike(value: string, pattern: string): boolean {
 export function matchCategory(
   description: string,
   rules: readonly CategorizationRule[],
+  accountId: string | null = null,
 ): string | null {
   return (
     rules
-      .filter((rule) => rule.is_active)
+      .filter(
+        (rule) => rule.is_active && (rule.account_id === null || rule.account_id === accountId),
+      )
       .toSorted((left, right) => left.priority - right.priority || left.id.localeCompare(right.id))
       .find((rule) => matchesIlike(description, rule.match_pattern))?.category_id ?? null
   );
@@ -54,10 +57,13 @@ export function matchCategory(
 export function matchingRule(
   description: string,
   rules: readonly CategorizationRule[],
+  accountId: string | null = null,
 ): CategorizationRule | null {
   return (
     rules
-      .filter((rule) => rule.is_active)
+      .filter(
+        (rule) => rule.is_active && (rule.account_id === null || rule.account_id === accountId),
+      )
       .toSorted((left, right) => left.priority - right.priority || left.id.localeCompare(right.id))
       .find((rule) => matchesIlike(description, rule.match_pattern)) ?? null
   );

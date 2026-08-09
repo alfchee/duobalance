@@ -36,7 +36,7 @@ begin
 end
 $$;
 
-select plan(12);
+select plan(14);
 
 select tests.authenticate_as('e1000000-0000-0000-0000-000000000001');
 
@@ -74,6 +74,30 @@ select results_eq(
   $$ select count(*) from public.transactions where transfer_group_id is not null $$,
   $$ values (2::bigint) $$,
   'both transfer legs exist'
+);
+
+select throws_ok(
+  $$ insert into public.transactions
+       (household_id, account_id, amount, currency, fx_rate, occurred_on, description, entered_by, transfer_group_id)
+     values
+       ('e0000000-0000-0000-0000-00000000000a', 'e3000000-0000-0000-0000-000000000001', -1, 'USD', 1, current_date, 'orphan transfer', 'e2000000-0000-0000-0000-000000000001', gen_random_uuid()) $$,
+  '23514',
+  'transfer_group_id is managed by create_transfer',
+  'members cannot insert orphan transfer legs directly'
+);
+
+insert into public.transactions
+  (household_id, account_id, amount, currency, fx_rate, occurred_on, description, entered_by)
+values
+  ('e0000000-0000-0000-0000-00000000000a', 'e3000000-0000-0000-0000-000000000001', -1, 'USD', 1, current_date, 'regular transaction', 'e2000000-0000-0000-0000-000000000001');
+
+select throws_ok(
+  $$ update public.transactions
+     set transfer_group_id = gen_random_uuid()
+     where description = 'regular transaction' $$,
+  '23514',
+  'transfer_group_id is managed by create_transfer',
+  'members cannot convert a normal transaction into a transfer leg'
 );
 
 select throws_ok(

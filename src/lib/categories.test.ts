@@ -67,6 +67,21 @@ describe("matchCategory", () => {
     ).toBeNull();
   });
 
+  it("applies a scoped rule only to its account", () => {
+    const rules = [
+      rule({ id: "global", category_id: "general", match_pattern: "%coffee%", priority: 20 }),
+      rule({
+        id: "scoped",
+        account_id: "checking",
+        category_id: "checking-coffee",
+        match_pattern: "%coffee%",
+        priority: 10,
+      }),
+    ];
+    expect(matchCategory("Coffee shop", rules, "checking")).toBe("checking-coffee");
+    expect(matchCategory("Coffee shop", rules, "savings")).toBe("general");
+  });
+
   it("escapes regular expression metacharacters", () => {
     expect(ilikePatternToRegExp("%a.b*c%").test("a.b*c")).toBe(true);
     expect(ilikePatternToRegExp("%a.b*c%").test("axbZZc")).toBe(false);
@@ -88,6 +103,16 @@ describe("matchingRule", () => {
   it("returns null without an active matching rule", () => {
     expect(
       matchingRule("Groceries", [rule({ is_active: false, match_pattern: "%grocer%" })]),
+    ).toBeNull();
+  });
+
+  it("does not return a rule scoped to another account", () => {
+    expect(
+      matchingRule(
+        "Groceries",
+        [rule({ account_id: "checking", match_pattern: "%grocer%" })],
+        "savings",
+      ),
     ).toBeNull();
   });
 });
