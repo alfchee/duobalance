@@ -109,9 +109,18 @@
         "transferReadOnly": "Las transferencias solo pueden eliminarse y crearse de nuevo.",
         "date": "Elige hoy o una fecha de hasta un día en el futuro.",
         "rate": "Ingresa un tipo de cambio válido.",
-        "generic": "No se pudo guardar el movimiento. Tus cambios se revirtieron."
+        "generic": "No se pudo guardar el movimiento. Tus cambios se revirtieron.",
+        "offlineTransfer": "Las transferencias requieren conexión y no se guardaron."
       }
     }
+  },
+  "connectivity": {
+    "offline": "No tienes conexión. Los nuevos movimientos se enviarán al reconectarte.",
+    "pending": "{count, plural, one {# movimiento pendiente} other {# movimientos pendientes}}",
+    "failed": "No se pudo enviar un movimiento pendiente.",
+    "retry": "Reintentar",
+    "discard": "Descartar",
+    "partnerUpdated": "Actualizado por tu pareja"
   },
   "auth": {
     "login": {

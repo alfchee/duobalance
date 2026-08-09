@@ -135,6 +135,7 @@ export function useTransactionMutations(householdId: string | null, memberId: st
   const invalidate = () => {
     if (!key) return;
     void queryClient.invalidateQueries({ queryKey: key });
+    void queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
   };
 
   const create = useMutation({
