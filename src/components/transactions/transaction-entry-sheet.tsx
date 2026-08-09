@@ -41,6 +41,7 @@ import {
   roundToMinorUnit,
 } from "@/lib/money";
 import type { Transaction } from "@/lib/transactions";
+import type { AccountWithBalance } from "@/lib/accounts";
 import { useTransactionsUiStore } from "@/store/transactions";
 
 const LAST_ACCOUNT_STORAGE_KEY = "duobalance:lastTransactionAccountId";
@@ -87,7 +88,7 @@ function makeDraft(
 }
 
 export function TransactionEntrySheet() {
-  const { formOpen, editingTransaction, closeForm } = useTransactionsUiStore();
+  const { formOpen, editingTransaction, createMode, closeForm } = useTransactionsUiStore();
   const { timezone, memberId } = useHousehold();
   const today = timezone ? todayInHousehold(timezone) : "";
   const lastAccountId =
@@ -95,15 +96,288 @@ export function TransactionEntrySheet() {
 
   return (
     <Sheet open={formOpen} onOpenChange={(open) => !open && closeForm()}>
-      <TransactionEntryContent
-        key={editingTransaction?.id ?? "create"}
-        transaction={editingTransaction}
-        today={today}
-        lastAccountId={lastAccountId}
-        memberId={memberId}
-        onClose={closeForm}
-      />
+      {createMode === "transfer" && !editingTransaction ? (
+        <TransferEntryContent
+          key="transfer"
+          today={today}
+          lastAccountId={lastAccountId}
+          memberId={memberId}
+          onClose={closeForm}
+        />
+      ) : (
+        <TransactionEntryContent
+          key={editingTransaction?.id ?? "create"}
+          transaction={editingTransaction}
+          today={today}
+          lastAccountId={lastAccountId}
+          memberId={memberId}
+          onClose={closeForm}
+        />
+      )}
     </Sheet>
+  );
+}
+
+function TransferEntryContent({
+  today,
+  lastAccountId,
+  memberId,
+  onClose,
+}: {
+  today: string;
+  lastAccountId: string | null;
+  memberId: string | null;
+  onClose: () => void;
+}) {
+  const locale = useLocale();
+  const t = useTranslations("transactions");
+  const { householdId, baseCurrency } = useHousehold();
+  const { data: accounts = [] } = useAccounts(householdId);
+  const { data: currencies = [] } = useCurrencies();
+  const { createTransfer } = useTransactionMutations(householdId, memberId);
+  const [fromAccountId, setFromAccountId] = useState(lastAccountId ?? "");
+  const [toAccountId, setToAccountId] = useState("");
+  const [fromAmount, setFromAmount] = useState("");
+  const [toAmount, setToAmount] = useState("");
+  const [occurredOn, setOccurredOn] = useState(today);
+  const [description, setDescription] = useState("");
+  const [fromFxRate, setFromFxRate] = useState("1");
+  const [toFxRate, setToFxRate] = useState("1");
+  const [error, setError] = useState<string | null>(null);
+  const usableAccounts = accounts.filter((account) => !account.is_archived);
+  const fromAccount = usableAccounts.find((account) => account.id === fromAccountId) ?? null;
+  const toAccount = usableAccounts.find((account) => account.id === toAccountId) ?? null;
+  const fromRateQuery = useFxRateOn(
+    householdId,
+    occurredOn,
+    fromAccount?.currency ?? null,
+    baseCurrency,
+    !!fromAccount && fromAccount.currency !== baseCurrency,
+  );
+  const toRateQuery = useFxRateOn(
+    householdId,
+    occurredOn,
+    toAccount?.currency ?? null,
+    baseCurrency,
+    !!toAccount && toAccount.currency !== baseCurrency,
+  );
+
+  useEffect(() => {
+    if (!fromAccountId && usableAccounts[0]) setFromAccountId(usableAccounts[0].id);
+  }, [fromAccountId, usableAccounts]);
+
+  useEffect(() => {
+    if (fromAccount?.currency === baseCurrency) setFromFxRate("1");
+    else if (fromRateQuery.data != null) setFromFxRate(String(fromRateQuery.data));
+  }, [baseCurrency, fromAccount?.currency, fromRateQuery.data]);
+
+  useEffect(() => {
+    if (toAccount?.currency === baseCurrency) setToFxRate("1");
+    else if (toRateQuery.data != null) setToFxRate(String(toRateQuery.data));
+  }, [baseCurrency, toAccount?.currency, toRateQuery.data]);
+
+  function setSource(accountId: string) {
+    setFromAccountId(accountId);
+    if (accountId === toAccountId) setToAccountId("");
+  }
+
+  function setDestination(accountId: string) {
+    setToAccountId(accountId);
+    if (accountId === fromAccountId) setFromAccountId("");
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    const parsedFromAmount = parseMoneyInput(fromAmount, locale);
+    const parsedToAmount = parseMoneyInput(toAmount, locale);
+    const parsedFromRate = Number(fromFxRate);
+    const parsedToRate = Number(toFxRate);
+    if (!fromAccountId || !toAccountId || fromAccountId === toAccountId)
+      return setError("transferAccounts");
+    if (
+      parsedFromAmount == null ||
+      parsedFromAmount <= 0 ||
+      parsedToAmount == null ||
+      parsedToAmount <= 0
+    )
+      return setError("amount");
+    if (
+      !Number.isFinite(parsedFromRate) ||
+      parsedFromRate <= 0 ||
+      !Number.isFinite(parsedToRate) ||
+      parsedToRate <= 0
+    )
+      return setError("rate");
+    if (!occurredOn || (today && occurredOn > addDays(today, 1))) return setError("date");
+    const fromMinorUnit =
+      currencies.find((currency) => currency.code === fromAccount?.currency)?.minor_unit ?? 2;
+    const toMinorUnit =
+      currencies.find((currency) => currency.code === toAccount?.currency)?.minor_unit ?? 2;
+    try {
+      await createTransfer.mutateAsync({
+        description: description.trim() || t("form.transferDefaultDescription"),
+        fromAccountId,
+        fromAmount: roundToMinorUnit(parsedFromAmount, fromMinorUnit),
+        fromFxRate: parsedFromRate,
+        occurredOn,
+        toAccountId,
+        toAmount: roundToMinorUnit(parsedToAmount, toMinorUnit),
+        toFxRate: parsedToRate,
+      });
+      localStorage.setItem(LAST_ACCOUNT_STORAGE_KEY, fromAccountId);
+      onClose();
+    } catch {
+      setError("generic");
+    }
+  }
+
+  return (
+    <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto sm:mx-auto sm:max-w-2xl">
+      <SheetHeader>
+        <SheetTitle>{t("form.transferTitle")}</SheetTitle>
+        <SheetDescription>{t("form.transferDescription")}</SheetDescription>
+      </SheetHeader>
+      <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-6">
+        <TransferAccountSelect
+          accounts={usableAccounts}
+          label={t("form.fromAccount")}
+          value={fromAccountId}
+          onChange={setSource}
+          placeholder={t("form.accountPlaceholder")}
+        />
+        <TransferAmountField
+          id="transfer-from-amount"
+          label={t("form.fromAmount", { currency: fromAccount?.currency ?? "" })}
+          value={fromAmount}
+          onChange={setFromAmount}
+        />
+        {fromAccount?.currency !== baseCurrency ? (
+          <TransferRateField value={fromFxRate} onChange={setFromFxRate} label={t("form.fxRate")} />
+        ) : null}
+        <TransferAccountSelect
+          accounts={usableAccounts}
+          label={t("form.toAccount")}
+          value={toAccountId}
+          onChange={setDestination}
+          placeholder={t("form.accountPlaceholder")}
+        />
+        <TransferAmountField
+          id="transfer-to-amount"
+          label={t("form.toAmount", { currency: toAccount?.currency ?? "" })}
+          value={toAmount}
+          onChange={setToAmount}
+        />
+        {toAccount?.currency !== baseCurrency ? (
+          <TransferRateField value={toFxRate} onChange={setToFxRate} label={t("form.fxRate")} />
+        ) : null}
+        <div className="space-y-2">
+          <Label htmlFor="transfer-description">{t("form.descriptionLabel")}</Label>
+          <Input
+            id="transfer-description"
+            value={description}
+            maxLength={200}
+            placeholder={t("form.transferDescriptionPlaceholder")}
+            onChange={(event) => setDescription(event.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="transfer-date">{t("form.date")}</Label>
+          <Input
+            id="transfer-date"
+            type="date"
+            value={occurredOn}
+            max={today ? addDays(today, 1) : undefined}
+            onChange={(event) => setOccurredOn(event.target.value)}
+          />
+        </div>
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t(`form.errors.${error}`)}
+          </p>
+        ) : null}
+        <Button type="submit" className="w-full" disabled={createTransfer.isPending}>
+          {createTransfer.isPending ? t("form.saving") : t("form.saveTransfer")}
+        </Button>
+      </form>
+    </SheetContent>
+  );
+}
+
+function TransferAccountSelect({
+  accounts,
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  accounts: AccountWithBalance[];
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {accounts.map((account) => (
+            <SelectItem key={account.id} value={account.id}>
+              {account.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function TransferAmountField({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        inputMode="decimal"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
+  );
+}
+
+function TransferRateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Input
+        inputMode="decimal"
+        value={value}
+        onChange={(event) => onChange(maskMoneyInput(event.target.value, "en", 8))}
+      />
+    </div>
   );
 }
 
@@ -518,9 +792,16 @@ function TransactionEntryContent({
           </Button>
           {transaction ? (
             <>
-              <Button type="button" variant="outline" onClick={handleDuplicate} disabled={pending}>
-                {t("form.duplicate")}
-              </Button>
+              {transaction.transfer_group_id === null ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDuplicate}
+                  disabled={pending}
+                >
+                  {t("form.duplicate")}
+                </Button>
+              ) : null}
               <Button type="button" variant="destructive" onClick={handleDelete} disabled={pending}>
                 {t("form.delete")}
               </Button>

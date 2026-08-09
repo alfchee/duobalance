@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { nextDisplayOrder, type Account, type AccountKind } from "@/lib/accounts";
+import { nextDisplayOrder, type AccountKind, type AccountWithBalance } from "@/lib/accounts";
 
 export type AccountInput = {
   name: string;
@@ -24,19 +24,19 @@ function accountsKey(householdId: string) {
 // see shared accounts plus their own private ones. display_order is the drag
 // handle's persistence; created_at breaks ties.
 export function useAccounts(householdId: string | null) {
-  return useQuery({
+  return useQuery<AccountWithBalance[]>({
     queryKey: ["accounts", householdId],
     queryFn: async () => {
       const supabase = createSupabaseBrowser();
       if (!supabase) throw new Error("supabase not configured");
       const { data, error } = await supabase
-        .from("accounts")
+        .from("account_balances")
         .select("*")
         .eq("household_id", householdId!)
         .order("display_order", { ascending: true, nullsFirst: true })
         .order("created_at");
       if (error) throw error;
-      return data;
+      return data as unknown as AccountWithBalance[];
     },
     enabled: !!householdId,
   });
@@ -61,7 +61,7 @@ export function useAccountMutations(householdId: string | null) {
       const supabase = requireSupabase();
       // Append new accounts at the end: display_order is queried nullsFirst, so
       // without this a fresh account (null order) would sort to the top.
-      const existing = queryClient.getQueryData<Account[]>(key) ?? [];
+      const existing = queryClient.getQueryData<AccountWithBalance[]>(key) ?? [];
       const { data, error } = await supabase
         .from("accounts")
         .insert({ ...input, household_id: householdId, display_order: nextDisplayOrder(existing) })
@@ -122,7 +122,13 @@ export function useAccountMutations(householdId: string | null) {
     // RLS (accounts_update, #19) lets me edit joint accounts and my own — a
     // partner-owned shared account can't be touched even for display_order, so
     // skip those rows rather than fail the whole batch.
-    mutationFn: async ({ accounts, memberId }: { accounts: Account[]; memberId: string }) => {
+    mutationFn: async ({
+      accounts,
+      memberId,
+    }: {
+      accounts: AccountWithBalance[];
+      memberId: string;
+    }) => {
       const supabase = requireSupabase();
       const results = await Promise.all(
         accounts.map((account) => {
@@ -140,10 +146,10 @@ export function useAccountMutations(householdId: string | null) {
       const firstError = results.find((r) => r.error)?.error;
       if (firstError) throw firstError;
     },
-    onMutate: async ({ accounts }: { accounts: Account[]; memberId: string }) => {
+    onMutate: async ({ accounts }: { accounts: AccountWithBalance[]; memberId: string }) => {
       if (!key) return undefined;
       await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<Account[]>(key);
+      const previous = queryClient.getQueryData<AccountWithBalance[]>(key);
       queryClient.setQueryData(key, accounts);
       return { previous };
     },

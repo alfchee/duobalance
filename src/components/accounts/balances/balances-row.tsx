@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Wallet } from "lucide-react";
-import { displayBalance, type Account } from "@/lib/accounts";
+import { displayBalance, type AccountWithBalance } from "@/lib/accounts";
 import { formatUpdatedAgo, isStaleBalance } from "@/lib/balances";
 import { formatMoney } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
@@ -20,7 +20,7 @@ import { OwnerBadge } from "./owner-badge";
 // hasn't been touched in 14+ days gets a visible "stale" warning. Ledger
 // accounts don't get a stale flag — once #26 lands, transactions implicitly
 // keep them fresh.
-export function BalancesRow({ account, now }: { account: Account; now: Date }) {
+export function BalancesRow({ account, now }: { account: AccountWithBalance; now: Date }) {
   const t = useTranslations("balances");
   const tModes = useTranslations("accounts.balanceModes");
   const locale = useLocale();

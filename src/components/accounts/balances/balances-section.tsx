@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { displayBalance, type Account } from "@/lib/accounts";
+import { displayBalance, type AccountWithBalance } from "@/lib/accounts";
 import { sumBalances, type BalanceSectionId } from "@/lib/balances";
 import { useRatesByCode } from "@/hooks/useRatesByCode";
 import { useHousehold } from "@/hooks/useHousehold";
@@ -21,7 +21,7 @@ export function BalancesSection({
   now,
 }: {
   section: BalanceSectionId;
-  accounts: Account[];
+  accounts: AccountWithBalance[];
   now: Date;
 }) {
   const t = useTranslations("balances");

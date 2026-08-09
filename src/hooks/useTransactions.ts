@@ -5,6 +5,16 @@ import { createSupabaseBrowser } from "@/lib/supabase/client";
 import type { Transaction, TransactionInsert, TransactionUpdate } from "@/lib/transactions";
 
 export type TransactionInput = Omit<TransactionInsert, "household_id" | "entered_by">;
+export type TransferInput = {
+  description: string;
+  fromAccountId: string;
+  fromAmount: number;
+  fromFxRate: number;
+  occurredOn: string;
+  toAccountId: string;
+  toAmount: number;
+  toFxRate: number;
+};
 
 function transactionsKey(householdId: string) {
   return ["transactions", householdId] as const;
@@ -141,6 +151,26 @@ export function useTransactionMutations(householdId: string | null, memberId: st
     onSettled: invalidate,
   });
 
+  const createTransfer = useMutation({
+    mutationFn: async (input: TransferInput) => {
+      if (!householdId) throw new Error("no household");
+      const { data, error } = await requireSupabase().rpc("create_transfer", {
+        p_description: input.description,
+        p_from_account: input.fromAccountId,
+        p_from_amount: input.fromAmount,
+        p_from_fx_rate: input.fromFxRate,
+        p_household: householdId,
+        p_occurred_on: input.occurredOn,
+        p_to_account: input.toAccountId,
+        p_to_amount: input.toAmount,
+        p_to_fx_rate: input.toFxRate,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: invalidate,
+  });
+
   const update = useMutation({
     mutationFn: async ({ id, ...input }: TransactionUpdate & { id: string }) => {
       const { data, error } = await requireSupabase()
@@ -157,13 +187,13 @@ export function useTransactionMutations(householdId: string | null, memberId: st
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await requireSupabase().from("transactions").delete().eq("id", id);
+      const { error } = await requireSupabase().rpc("delete_transfer", { p_transaction_id: id });
       if (error) throw error;
     },
     onSuccess: invalidate,
   });
 
-  return { create, update, remove };
+  return { create, createTransfer, update, remove };
 }
 
 export function useFxRateOn(
