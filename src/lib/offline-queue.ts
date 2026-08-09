@@ -47,12 +47,30 @@ async function withStore<T>(
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, mode);
     const request = action(transaction.objectStore(STORE_NAME));
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    transaction.oncomplete = () => database.close();
-    transaction.onerror = () => {
+    let settled = false;
+    let result: T;
+    const fail = (error: DOMException | null) => {
+      if (settled) return;
+      settled = true;
       database.close();
-      reject(transaction.error);
+      reject(error);
+    };
+    request.onerror = () => fail(request.error);
+    request.onsuccess = () => {
+      result = request.result;
+    };
+    transaction.oncomplete = () => {
+      if (!settled) {
+        settled = true;
+        resolve(result);
+      }
+      database.close();
+    };
+    transaction.onerror = () => {
+      fail(transaction.error);
+    };
+    transaction.onabort = () => {
+      fail(transaction.error);
     };
   });
 }
