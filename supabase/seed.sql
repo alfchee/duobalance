@@ -62,3 +62,44 @@ insert into public.currencies (code, name_en, symbol, minor_unit, is_enabled) va
   ('USD', 'US Dollar',             '$',    2, true),
   ('EUR', 'Euro',                  '€',    2, true)
 on conflict (code) do nothing;
+
+-- Issue #11: sensible timezone/locale defaults per household country. Best
+-- effort — most of these countries span one dominant timezone (capital
+-- city's zone). locale is constrained to {es, en, pt-BR} per
+-- architecture-conventions; countries whose primary language isn't one of
+-- those three get the closest of the three, not a guess outside the set.
+insert into public.country_defaults (country, timezone, locale) values
+  ('US', 'America/New_York',               'en'),
+  ('CA', 'America/Toronto',                'en'),
+  ('MX', 'America/Mexico_City',            'es'),
+  ('GT', 'America/Guatemala',              'es'),
+  ('BZ', 'America/Belize',                 'en'),
+  ('CR', 'America/Costa_Rica',             'es'),
+  ('SV', 'America/El_Salvador',            'es'),
+  ('HN', 'America/Tegucigalpa',            'es'),
+  ('NI', 'America/Managua',                'es'),
+  ('PA', 'America/Panama',                 'es'),
+  ('CU', 'America/Havana',                 'es'),
+  ('DO', 'America/Santo_Domingo',          'es'),
+  ('HT', 'America/Port-au-Prince',         'en'),
+  ('JM', 'America/Jamaica',                'en'),
+  ('TT', 'America/Port_of_Spain',          'en'),
+  ('BB', 'America/Barbados',               'en'),
+  ('BS', 'America/Nassau',                 'en'),
+  ('AW', 'America/Aruba',                  'es'),
+  ('SR', 'America/Paramaribo',             'en'),
+  ('GY', 'America/Guyana',                 'en'),
+  ('CO', 'America/Bogota',                 'es'),
+  ('VE', 'America/Caracas',                'es'),
+  ('BR', 'America/Sao_Paulo',              'pt-BR'),
+  ('PE', 'America/Lima',                   'es'),
+  ('BO', 'America/La_Paz',                 'es'),
+  ('CL', 'America/Santiago',               'es'),
+  ('AR', 'America/Argentina/Buenos_Aires', 'es'),
+  ('PY', 'America/Asuncion',               'es'),
+  ('UY', 'America/Montevideo',             'es'),
+  ('KY', 'America/Cayman',                 'en'),
+  ('BM', 'America/Bermuda',                'en'),
+  ('ES', 'Europe/Madrid',                  'es'),
+  ('GB', 'Europe/London',                  'en')
+on conflict (country) do nothing;
