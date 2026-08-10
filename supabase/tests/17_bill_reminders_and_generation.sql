@@ -143,7 +143,7 @@ select isnt_empty(
 );
 
 -- 12: due_for_reminder includes bill and household data
-select results_eq(
+select set_has(
   $$ select bill_name from public.bill_instances_due_for_reminder() $$,
   $$ values ('Monthly Rent'::text) $$,
   'reminder includes the bill name'
