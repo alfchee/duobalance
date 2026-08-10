@@ -72,16 +72,23 @@ export function computeDueDates(
   const all = rule.between(horizonStart, horizonEnd, true);
 
   return all.filter((d: Date) => {
-    // Must be within [starts_on, ends_on)
-    const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const start = new Date(startsOn.getFullYear(), startsOn.getMonth(), startsOn.getDate());
+    // Normalize to UTC date-only values to avoid timezone shifts
+    // (the rrule library returns Date objects that can drift when the server
+    //  runtime is not UTC — e.g. America/Managua UTC-6).
+    const dt = utcDateOnly(d);
+    const start = utcDateOnly(startsOn);
     if (dt < start) return false;
     if (endsOn) {
-      const end = new Date(endsOn.getFullYear(), endsOn.getMonth(), endsOn.getDate());
+      const end = utcDateOnly(endsOn);
       if (dt > end) return false;
     }
     return true;
   });
+}
+
+/** Convert a Date to midnight-UTC date-only (milliseconds precision). */
+function utcDateOnly(d: Date): number {
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 }
 
 /**
@@ -107,6 +114,23 @@ export async function generateInstancesForBill(
   // manually per instance. Skip automatic generation for those.
   if (bounds.default_amount === null) return 0;
 
+  // Count existing instances in the horizon range so we can return the
+  // true number of newly inserted rows rather than just dueDates.length
+  // (upsert with ignoreDuplicates skips existing rows silently).
+  const horizonStartStr = bounds.horizon_start;
+  const horizonEndStr = bounds.horizon_end;
+
+  const { count: existingCount, error: countError } = await supabase
+    .from("bill_instances")
+    .select("*", { count: "exact", head: true })
+    .eq("bill_id", billId)
+    .gte("due_on", horizonStartStr)
+    .lte("due_on", horizonEndStr);
+
+  if (countError) {
+    throw new BillGenerationError(billId, `count failed: ${countError.message}`);
+  }
+
   const rows = dueDates.map((dueOn) => ({
     bill_id: billId,
     household_id: householdId,
@@ -124,7 +148,15 @@ export async function generateInstancesForBill(
     throw new BillGenerationError(billId, error.message);
   }
 
-  return dueDates.length;
+  // Query the post-insert count and return the delta
+  const { count: newCount } = await supabase
+    .from("bill_instances")
+    .select("*", { count: "exact", head: true })
+    .eq("bill_id", billId)
+    .gte("due_on", horizonStartStr)
+    .lte("due_on", horizonEndStr);
+
+  return (newCount ?? 0) - (existingCount ?? 0);
 }
 
 /**

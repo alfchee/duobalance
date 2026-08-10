@@ -106,20 +106,25 @@ select results_eq(
 -- Test reminded_at on bill_instances
 select tests.authenticate_as('f1000000-0000-0000-0000-000000000001');
 
+-- Insert an instance with a known ID for the reminded_at test.
+-- Use a due_on that does not conflict with existing auto-inserted rows.
+insert into public.bill_instances (id, bill_id, household_id, due_on, amount)
+  values ('f6000000-0000-0000-0000-000000000001', 'f5000000-0000-0000-0000-000000000001',
+          'f0000000-0000-0000-0000-000000000001',
+          (current_date - interval '2 months' + interval '1 day')::date, 1000);
+
 -- 9: reminded_at can be set on an instance
 select lives_ok(
   $$ update public.bill_instances
      set reminded_at = now()
-     where bill_id = 'f5000000-0000-0000-0000-000000000001'
-       and due_on = (current_date - interval '2 months')::date $$,
+     where id = 'f6000000-0000-0000-0000-000000000001' $$,
   'reminded_at can be updated'
 );
 
 -- 10: reminded_at persists
 select results_eq(
   $$ select reminded_at is not null from public.bill_instances
-     where bill_id = 'f5000000-0000-0000-0000-000000000001'
-       and due_on = (current_date - interval '2 months')::date $$,
+     where id = 'f6000000-0000-0000-0000-000000000001' $$,
   $$ values (true) $$,
   'reminded_at value persists after update'
 );

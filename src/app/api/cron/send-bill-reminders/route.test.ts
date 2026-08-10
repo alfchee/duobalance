@@ -21,7 +21,15 @@ function makeClient(
   const members = opts?.memberRows ?? [];
   const users = opts?.userRows ?? [];
   return {
-    rpc: vi.fn(() => Promise.resolve({ data: reminderRows, error: null })),
+    rpc: vi.fn((name: string) => {
+      if (name === "bill_instances_due_for_reminder") {
+        return Promise.resolve({ data: reminderRows, error: null });
+      }
+      if (name === "get_user_emails_batch") {
+        return Promise.resolve({ data: users, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    }),
     from: vi.fn((table: string) => {
       if (table === "household_members") {
         return {
@@ -42,11 +50,6 @@ function makeClient(
       }
       throw new Error(`unexpected table ${table}`);
     }),
-    auth: {
-      admin: {
-        listUsers: vi.fn(() => Promise.resolve({ data: { users }, error: null })),
-      },
-    },
   };
 }
 

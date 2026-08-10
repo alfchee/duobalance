@@ -107,11 +107,33 @@ async function handle(request: Request) {
       }
     }
 
-    // Fetch user emails from auth
-    const { data: authUsers } = await supabase.auth.admin.listUsers();
+    // Fetch user emails from auth via service role. We query only the user IDs
+    // we need rather than calling listUsers() which returns every user.
+    const allUserIds = new Set<string>();
+    for (const m of allMembers ?? []) allUserIds.add(m.user_id);
+    for (const members of householdMemberIds.values()) {
+      for (const m of members) allUserIds.add(m.user_id);
+    }
+    const userIds = Array.from(allUserIds);
+
     const userIdToEmail = new Map<string, string>();
-    for (const u of authUsers?.users ?? []) {
-      userIdToEmail.set(u.id, u.email ?? "");
+    if (userIds.length > 0) {
+      // Fetch emails via a targeted SQL helper instead of listUsers(),
+      // which would return every auth user. The helper is a SECURITY DEFINER
+      // function in the migration; the service role can access auth.users.
+      const rpc = supabase.rpc as unknown as (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: unknown }>;
+
+      const { data: emailRows } = await rpc("get_user_emails_batch", {
+        p_user_ids: userIds,
+      });
+      if (emailRows) {
+        for (const r of emailRows as Array<{ id: string; email: string }>) {
+          if (r.email) userIdToEmail.set(r.id, r.email);
+        }
+      }
     }
 
     // Group by household, then by responsible member

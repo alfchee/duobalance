@@ -88,3 +88,21 @@ as $$
 $$;
 
 comment on function public.bill_instances_due_for_reminder is 'Returns unpaid, un-reminded bill instances whose reminder window has opened. Used by the /api/cron/send-bill-reminders route handler.';
+
+-- Helper: batch-fetch user emails from auth.users given an array of user IDs.
+-- SECURITY DEFINER so the service-role cron handler can read auth.users through
+-- the PostgREST RPC interface without listing every user in the system.
+-- v1.3 – add batch email lookup for reminder delivery
+create or replace function public.get_user_emails_batch(p_user_ids uuid[])
+returns table(id uuid, email text)
+language sql
+stable
+security definer
+set search_path = auth
+as $$
+  select u.id::uuid, u.email::text
+  from auth.users u
+  where u.id = any (p_user_ids);
+$$;
+
+comment on function public.get_user_emails_batch is 'Returns id/email pairs for the given user IDs from auth.users. Used by the send-bill-reminders cron handler.';
