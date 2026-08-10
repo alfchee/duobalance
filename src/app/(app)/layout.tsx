@@ -44,7 +44,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <RealtimeStatus>
-      <div className="pb-16">{children}</div>
+      <div className="pb-[calc(4rem+env(safe-area-inset-bottom))]">{children}</div>
       <TransactionEntrySheet />
       <BottomNav />
     </RealtimeStatus>

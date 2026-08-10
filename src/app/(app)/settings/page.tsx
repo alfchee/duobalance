@@ -13,6 +13,7 @@ import { FxRatesSection } from "./fx-rates-section";
 import { FxOverridesSection } from "./fx-overrides-section";
 import { CategoriesSection } from "@/components/categories/categories-section";
 import { RulesSection } from "@/components/categories/rules-section";
+import { InstallSection } from "@/components/pwa/install-section";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -46,6 +47,8 @@ export default function SettingsPage() {
       </Card>
 
       <LocaleSwitcher />
+
+      <InstallSection />
 
       <MembersSection />
 

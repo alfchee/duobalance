@@ -493,6 +493,37 @@
       "error": "No se pudieron copiar los presupuestos. Intenta de nuevo."
     }
   },
+  "pwa": {
+    "update": {
+      "message": "Hay una nueva versión lista.",
+      "reload": "Recargar"
+    },
+    "install": {
+      "title": "Instala DuoBalance",
+      "description": "Mantén las finanzas compartidas a un toque desde tu pantalla de inicio.",
+      "button": "Instalar app",
+      "iosGuide": "Ver guía para iPhone",
+      "unavailable": "Usa el menú de tu navegador para instalar DuoBalance."
+    },
+    "ios": {
+      "back": "Volver a configuración",
+      "title": "Agrega DuoBalance a tu iPhone",
+      "description": "Instalar DuoBalance lo deja a un toque y permite que los recordatorios de cuentas te lleguen cuando estén disponibles.",
+      "stepOne": {
+        "title": "1. Toca Compartir en Safari",
+        "description": "Abre DuoBalance en Safari y toca el botón Compartir de la barra del navegador."
+      },
+      "stepTwo": {
+        "title": "2. Elige Agregar a pantalla de inicio",
+        "description": "Desplázate por las opciones para compartir hasta encontrar esta fila.",
+        "action": "Agregar a pantalla de inicio"
+      },
+      "stepThree": {
+        "title": "3. Toca Agregar",
+        "description": "Conserva el nombre DuoBalance y toca Agregar. Luego ábrelo desde tu pantalla de inicio."
+      }
+    }
+  },
   "settings": {
     "title": "Configuración",
     "signedInAs": "Sesión iniciada como",

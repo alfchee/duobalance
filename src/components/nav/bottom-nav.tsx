@@ -21,7 +21,7 @@ export function BottomNav() {
   const openCreate = useTransactionsUiStore((state) => state.openCreate);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background">
+    <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto flex max-w-2xl">
         {ITEMS.map(({ href, labelKey, Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -45,7 +45,7 @@ export function BottomNav() {
         type="button"
         aria-label={t("addTransaction")}
         onClick={() => openCreate()}
-        className="absolute right-4 bottom-16 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className="absolute right-4 bottom-[calc(4rem+env(safe-area-inset-bottom))] flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <Plus className="size-6" />
       </button>
