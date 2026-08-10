@@ -235,7 +235,7 @@ export function BudgetView() {
         </select>
       </label>
       <section className="rounded-xl border p-5 text-center">
-        <Donut rows={rows} total={totalSpent} />
+        <Donut rows={rows} total={totalSpent} currency={baseCurrency ?? "USD"} locale={locale} />
         <p className="mt-4 text-sm text-muted-foreground">{t("spentLabel")}</p>
         <p className="text-3xl font-semibold">
           {formatMoney(totalSpent, baseCurrency ?? "USD", locale)}
@@ -294,7 +294,17 @@ export function BudgetView() {
   );
 }
 
-function Donut({ rows, total }: { rows: readonly BudgetRow[]; total: number }) {
+function Donut({
+  rows,
+  total,
+  currency,
+  locale,
+}: {
+  rows: readonly BudgetRow[];
+  total: number;
+  currency: string;
+  locale: string;
+}) {
   const t = useTranslations("budget");
   const spendingRows = rows.filter((row) => row.spent > 0).sort((a, b) => b.spent - a.spent);
   const visibleRows = spendingRows.slice(0, 7);
@@ -319,7 +329,7 @@ function Donut({ rows, total }: { rows: readonly BudgetRow[]; total: number }) {
     <div
       className="mx-auto grid size-44 place-items-center rounded-full"
       style={{ background }}
-      aria-label={`${t("chartAria", { total })}${otherSpent > 0 ? `; ${t("other")}` : ""}`}
+      aria-label={`${t("chartAria", { total: formatMoney(total, currency, locale) })}${otherSpent > 0 ? `; ${t("other")}` : ""}`}
     >
       <div className="grid size-28 place-items-center rounded-full bg-background text-sm text-muted-foreground">
         {t("chartCenter")}
