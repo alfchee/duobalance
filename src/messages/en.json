@@ -493,6 +493,40 @@
       "error": "Couldn't copy the budgets. Try again."
     }
   },
+  "pwa": {
+    "update": {
+      "message": "A new version is ready.",
+      "reload": "Reload"
+    },
+    "install": {
+      "title": "Install DuoBalance",
+      "description": "Keep your shared finances one tap away on your home screen.",
+      "button": "Install app",
+      "iosGuide": "See iPhone install guide",
+      "unavailable": "Use your browser menu to install DuoBalance."
+    },
+    "ios": {
+      "back": "Back to settings",
+      "title": "Add DuoBalance to your iPhone",
+      "description": "Installing keeps DuoBalance one tap away, so bill reminders can reach you when they arrive.",
+      "stepOne": {
+        "title": "1. Tap Share in Safari",
+        "description": "Open DuoBalance in Safari, then tap the Share button in the browser toolbar.",
+        "screenshotAlt": "Safari toolbar with the Share button highlighted"
+      },
+      "stepTwo": {
+        "title": "2. Choose Add to Home Screen",
+        "description": "Scroll through the sharing options until you find this row.",
+        "action": "Add to Home Screen",
+        "screenshotAlt": "Safari Share sheet with Add to Home Screen highlighted"
+      },
+      "stepThree": {
+        "title": "3. Tap Add",
+        "description": "Leave the DuoBalance name as it is, then tap Add. Open it from your home screen afterwards.",
+        "screenshotAlt": "iPhone home screen with the DuoBalance app installed"
+      }
+    }
+  },
   "settings": {
     "title": "Settings",
     "signedInAs": "Signed in as",
