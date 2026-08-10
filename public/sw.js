@@ -1,5 +1,7 @@
-const CACHE_NAME = "duobalance-shell-v1";
-const SHELL = ["/", "/balances", "/offline.html", "/manifest.webmanifest", "/icons/192.svg", "/icons/512.svg"];
+importScripts("/sw-assets.js");
+
+const CACHE_NAME = `duobalance-shell-${self.__DUOBALANCE_PRECACHE_VERSION__}`;
+const SHELL = self.__DUOBALANCE_PRECACHE__;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)));
@@ -7,9 +9,12 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
-    ),
+    Promise.all([
+      caches.keys().then((keys) =>
+        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+      ),
+      self.clients.claim(),
+    ]),
   );
 });
 
@@ -20,9 +25,31 @@ self.addEventListener("message", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
-  if (url.hostname.includes("supabase") || url.pathname.includes("/rest/v1/") || url.pathname.includes("/auth/v1/")) return;
-  if (request.mode !== "navigate") return;
-  event.respondWith(
-    fetch(request).catch(() => caches.match(request).then((response) => response || caches.match("/offline.html"))),
-  );
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.includes("/rest/v1/") || url.pathname.includes("/auth/v1/")) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const documentPaths = [
+          url.pathname,
+          url.pathname === "/" ? "/" : url.pathname.replace(/\/$/, ""),
+          url.pathname.endsWith("/") ? url.pathname : `${url.pathname}/`,
+        ];
+        let cachedDocument;
+        for (const path of documentPaths) {
+          cachedDocument = await caches.match(new URL(path, self.location.origin).href);
+          if (cachedDocument) break;
+        }
+        return cachedDocument || caches.match("/offline.html");
+      }),
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(
+      caches.match(request).then((cachedAsset) => cachedAsset || fetch(request)),
+    );
+  }
 });

@@ -13,12 +13,11 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <LocaleProvider>
-        <SessionProvider>
-          <HouseholdProvider>
-            {children}
-            <PwaManager />
-          </HouseholdProvider>
-        </SessionProvider>
+        <PwaManager>
+          <SessionProvider>
+            <HouseholdProvider>{children}</HouseholdProvider>
+          </SessionProvider>
+        </PwaManager>
       </LocaleProvider>
     </QueryClientProvider>
   );

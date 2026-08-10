@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isIOS, isStandalone } from "./pwa";
+import { isIOS, isStandalone, type BeforeInstallPromptEvent } from "./pwa";
 
 describe("isStandalone", () => {
   afterEach(() => {
@@ -35,5 +35,18 @@ describe("isIOS", () => {
     );
 
     expect(isIOS()).toBe(true);
+  });
+});
+
+describe("BeforeInstallPromptEvent", () => {
+  it("is accepted by the global beforeinstallprompt event map", () => {
+    const event = Object.assign(new Event("beforeinstallprompt"), {
+      prompt: vi.fn(),
+      userChoice: Promise.resolve({ outcome: "dismissed" as const }),
+    }) as BeforeInstallPromptEvent;
+    const listener = (promptEvent: WindowEventMap["beforeinstallprompt"]) =>
+      promptEvent.preventDefault();
+
+    expect(() => listener(event)).not.toThrow();
   });
 });

@@ -511,16 +511,19 @@
       "description": "Installing keeps DuoBalance one tap away, so bill reminders can reach you when they arrive.",
       "stepOne": {
         "title": "1. Tap Share in Safari",
-        "description": "Open DuoBalance in Safari, then tap the Share button in the browser toolbar."
+        "description": "Open DuoBalance in Safari, then tap the Share button in the browser toolbar.",
+        "screenshotAlt": "Safari toolbar with the Share button highlighted"
       },
       "stepTwo": {
         "title": "2. Choose Add to Home Screen",
         "description": "Scroll through the sharing options until you find this row.",
-        "action": "Add to Home Screen"
+        "action": "Add to Home Screen",
+        "screenshotAlt": "Safari Share sheet with Add to Home Screen highlighted"
       },
       "stepThree": {
         "title": "3. Tap Add",
-        "description": "Leave the DuoBalance name as it is, then tap Add. Open it from your home screen afterwards."
+        "description": "Leave the DuoBalance name as it is, then tap Add. Open it from your home screen afterwards.",
+        "screenshotAlt": "iPhone home screen with the DuoBalance app installed"
       }
     }
   },

@@ -1,3 +1,14 @@
+export interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent;
+  }
+}
+
 export function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   return (
@@ -13,8 +24,4 @@ export function isIOS(): boolean {
     /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
   );
-}
-
-export function canInstall(): boolean {
-  return typeof window !== "undefined" && "BeforeInstallPromptEvent" in window;
 }

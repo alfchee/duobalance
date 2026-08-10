@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "DuoBalance",
   },
   icons: {
-    apple: "/icons/192.svg",
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 

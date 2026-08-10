@@ -1,42 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { isIOS, isStandalone } from "@/lib/pwa";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
-declare global {
-  interface WindowEventMap {
-    beforeinstallprompt: BeforeInstallPromptEvent;
-  }
-}
+import { usePwaInstall } from "@/components/pwa/pwa-manager";
+import { isIOS } from "@/lib/pwa";
 
 export function InstallSection() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(isStandalone);
+  const { install, installAvailable, installed } = usePwaInstall();
   const t = useTranslations("pwa.install");
-
-  useEffect(() => {
-    const promptListener = (event: BeforeInstallPromptEvent) => {
-      event.preventDefault();
-      setDeferredPrompt(event);
-    };
-    const installedListener = () => setInstalled(true);
-    window.addEventListener("beforeinstallprompt", promptListener);
-    window.addEventListener("appinstalled", installedListener);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", promptListener);
-      window.removeEventListener("appinstalled", installedListener);
-    };
-  }, []);
 
   if (installed) return null;
 
@@ -52,12 +26,8 @@ export function InstallSection() {
           <Button asChild variant="outline">
             <Link href="/install">{t("iosGuide")}</Link>
           </Button>
-        ) : deferredPrompt ? (
-          <Button
-            onClick={() => {
-              void deferredPrompt.prompt().then(() => setDeferredPrompt(null));
-            }}
-          >
+        ) : installAvailable ? (
+          <Button onClick={() => void install()}>
             <Download />
             {t("button")}
           </Button>

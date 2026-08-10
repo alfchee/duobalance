@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Share } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+const IOS_GUIDE_SCREENSHOTS = {
+  share: "/install/ios-share.png",
+  addToHomeScreen: "/install/ios-add-to-home-screen.png",
+  homeScreen: "/install/ios-home-screen.png",
+} as const;
 
 export default function InstallPage() {
   const t = useTranslations("pwa.ios");
@@ -27,9 +34,14 @@ export default function InstallPage() {
           <CardDescription>{t("stepOne.description")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center rounded-xl border bg-muted/40 p-8">
-            <Share className="size-14 text-primary" aria-label={t("stepOne.title")} />
-          </div>
+          <Image
+            src={IOS_GUIDE_SCREENSHOTS.share}
+            alt={t("stepOne.screenshotAlt")}
+            className="w-full rounded-xl border"
+            width={390}
+            height={260}
+            unoptimized
+          />
         </CardContent>
       </Card>
       <Card>
@@ -38,9 +50,14 @@ export default function InstallPage() {
           <CardDescription>{t("stepTwo.description")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-xl border bg-muted/40 p-5 text-center font-medium">
-            {t("stepTwo.action")}
-          </div>
+          <Image
+            src={IOS_GUIDE_SCREENSHOTS.addToHomeScreen}
+            alt={t("stepTwo.screenshotAlt")}
+            className="w-full rounded-xl border"
+            width={390}
+            height={260}
+            unoptimized
+          />
         </CardContent>
       </Card>
       <Card>
@@ -48,6 +65,16 @@ export default function InstallPage() {
           <CardTitle className="text-base">{t("stepThree.title")}</CardTitle>
           <CardDescription>{t("stepThree.description")}</CardDescription>
         </CardHeader>
+        <CardContent>
+          <Image
+            src={IOS_GUIDE_SCREENSHOTS.homeScreen}
+            alt={t("stepThree.screenshotAlt")}
+            className="w-full rounded-xl border"
+            width={390}
+            height={260}
+            unoptimized
+          />
+        </CardContent>
       </Card>
     </main>
   );

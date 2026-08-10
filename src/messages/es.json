@@ -511,16 +511,19 @@
       "description": "Instalar DuoBalance lo deja a un toque y permite que los recordatorios de cuentas te lleguen cuando estén disponibles.",
       "stepOne": {
         "title": "1. Toca Compartir en Safari",
-        "description": "Abre DuoBalance en Safari y toca el botón Compartir de la barra del navegador."
+        "description": "Abre DuoBalance en Safari y toca el botón Compartir de la barra del navegador.",
+        "screenshotAlt": "Barra de Safari con el botón Compartir resaltado"
       },
       "stepTwo": {
         "title": "2. Elige Agregar a pantalla de inicio",
         "description": "Desplázate por las opciones para compartir hasta encontrar esta fila.",
-        "action": "Agregar a pantalla de inicio"
+        "action": "Agregar a pantalla de inicio",
+        "screenshotAlt": "Menú Compartir de Safari con Agregar a pantalla de inicio resaltado"
       },
       "stepThree": {
         "title": "3. Toca Agregar",
-        "description": "Conserva el nombre DuoBalance y toca Agregar. Luego ábrelo desde tu pantalla de inicio."
+        "description": "Conserva el nombre DuoBalance y toca Agregar. Luego ábrelo desde tu pantalla de inicio.",
+        "screenshotAlt": "Pantalla de inicio de iPhone con DuoBalance instalado"
       }
     }
   },
