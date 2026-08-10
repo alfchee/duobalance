@@ -453,6 +453,46 @@
     "save": "Save",
     "saving": "Saving…"
   },
+  "budget": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "scopeLabel": "Budget scope",
+    "scope": {
+      "household": "Household",
+      "mine": "Mine"
+    },
+    "sortLabel": "Sort by",
+    "sort": {
+      "spent": "Amount spent",
+      "remaining": "Amount remaining",
+      "name": "Category name"
+    },
+    "spentLabel": "We spent",
+    "visibleToYou": "Based on what is visible to you",
+    "chartAria": "Spending composition totaling {total}",
+    "chartCenter": "Spent",
+    "loadError": "Couldn't load your budget.",
+    "retry": "Retry",
+    "copyPrevious": "Copy from {month}",
+    "unknownCategory": "Uncategorized",
+    "other": "Other",
+    "left": "{amount} left",
+    "overBy": "{amount} over",
+    "noBudget": "No budget set",
+    "empty": {
+      "title": "Start your monthly budget",
+      "description": "Set budgets by category to see how your spending is tracking."
+    },
+    "copyDialog": {
+      "title": "Copy last month's budgets",
+      "description": "Review and adjust budgets from {source} before applying them to {target}.",
+      "adjustment": "Adjust all amounts by %",
+      "cancel": "Cancel",
+      "confirm": "Copy budgets",
+      "copying": "Copying…",
+      "error": "Couldn't copy the budgets. Try again."
+    }
+  },
   "settings": {
     "title": "Settings",
     "signedInAs": "Signed in as",

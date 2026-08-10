@@ -453,6 +453,46 @@
     "save": "Guardar",
     "saving": "Guardando…"
   },
+  "budget": {
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "scopeLabel": "Alcance del presupuesto",
+    "scope": {
+      "household": "Hogar",
+      "mine": "Mío"
+    },
+    "sortLabel": "Ordenar por",
+    "sort": {
+      "spent": "Monto gastado",
+      "remaining": "Monto restante",
+      "name": "Nombre de categoría"
+    },
+    "spentLabel": "Gastamos",
+    "visibleToYou": "Según lo que ves",
+    "chartAria": "Composición de gastos por un total de {total}",
+    "chartCenter": "Gastado",
+    "loadError": "No se pudo cargar tu presupuesto.",
+    "retry": "Reintentar",
+    "copyPrevious": "Copiar desde {month}",
+    "unknownCategory": "Sin categoría",
+    "other": "Otros",
+    "left": "Quedan {amount}",
+    "overBy": "Excedido por {amount}",
+    "noBudget": "Sin presupuesto definido",
+    "empty": {
+      "title": "Crea tu presupuesto mensual",
+      "description": "Define presupuestos por categoría para ver cómo avanzan tus gastos."
+    },
+    "copyDialog": {
+      "title": "Copiar presupuestos del mes anterior",
+      "description": "Revisa y ajusta los presupuestos de {source} antes de aplicarlos a {target}.",
+      "adjustment": "Ajustar todos los montos por %",
+      "cancel": "Cancelar",
+      "confirm": "Copiar presupuestos",
+      "copying": "Copiando…",
+      "error": "No se pudieron copiar los presupuestos. Intenta de nuevo."
+    }
+  },
   "settings": {
     "title": "Configuración",
     "signedInAs": "Sesión iniciada como",
