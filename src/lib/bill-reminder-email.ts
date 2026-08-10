@@ -89,13 +89,13 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
-function formatAmount(amount: number, _currency: string, _locale: string): string {
-  // Simple formatting for email — uses fixed 2 decimals for display.
-  // The amounts are already stored in minor-unit-compatible form.
-  return amount.toLocaleString(_locale === "es" ? "es-CL" : "en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+function formatAmount(amount: number, currency: string, locale: string): string {
+  // Use Intl to format with the currency's correct decimal places.
+  // CLP (minor_unit=0) will show no decimals, USD (minor_unit=2) shows 2.
+  return new Intl.NumberFormat(locale === "es" ? "es-CL" : "en-US", {
+    style: "currency",
+    currency,
+  }).format(amount);
 }
 
 export async function sendReminderDigest(params: ReminderDigestParams): Promise<void> {
