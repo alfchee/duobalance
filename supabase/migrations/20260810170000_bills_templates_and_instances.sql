@@ -35,8 +35,7 @@ alter table public.bills
 drop type public.bill_frequency;
 
 drop index if exists public.bills_next_due_idx;
-drop index if exists public.bills_household_idx;
-create index bills_household_active_idx on public.bills (household_id) where is_active;
+alter index public.bills_household_idx rename to bills_household_active_idx;
 
 alter table public.bill_instances
   add column status text,
