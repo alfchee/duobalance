@@ -53,8 +53,7 @@ alter table public.bill_instances
   alter column status set not null,
   add constraint bill_instances_status_check check (status in ('due', 'paid', 'skipped')),
   add constraint bill_instances_paid_fields_match_status check (
-    (status = 'paid' and paid_on is not null and paid_by_member_id is not null)
-    or (status <> 'paid' and paid_on is null and paid_by_member_id is null)
+    status = 'paid' or (paid_on is null and paid_by_member_id is null)
   ),
   drop column is_paid,
   drop column paid_at;

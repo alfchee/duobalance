@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(23);
+select plan(24);
 
 do $$
 declare
@@ -113,6 +113,12 @@ select lives_ok(
              'f5000000-0000-0000-0000-000000000001', current_date - 3, 1000, 'paid', current_date,
              'f2000000-0000-0000-0000-000000000001') $$,
   'paid instance is accepted'
+);
+
+select lives_ok(
+  $$ insert into public.bill_instances (household_id, bill_id, due_on, amount, status)
+     values ('f0000000-0000-0000-0000-000000000001', 'f5000000-0000-0000-0000-000000000001', current_date - 4, 1000, 'paid') $$,
+  'legacy-compatible paid instance without payment attribution is accepted'
 );
 
 select results_eq(
