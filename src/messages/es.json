@@ -475,6 +475,7 @@
     "retry": "Reintentar",
     "copyPrevious": "Copiar desde {month}",
     "unknownCategory": "Sin categoría",
+    "other": "Otros",
     "left": "Quedan {amount}",
     "overBy": "Excedido por {amount}",
     "noBudget": "Sin presupuesto definido",

@@ -114,6 +114,13 @@ export function BudgetView() {
       const category = categories.find((item) => item.id === transaction.category_id);
       const current = rowsByCategory.get(transaction.category_id);
       const merchant = transaction.description.trim();
+      if (current?.id === null) {
+        current.spent += Math.abs(transaction.base_amount ?? 0);
+        current.remaining -= Math.abs(transaction.base_amount ?? 0);
+        if (merchant && !current.merchants.includes(merchant) && current.merchants.length < 2)
+          current.merchants.push(merchant);
+        continue;
+      }
       if (current) {
         if (merchant && !current.merchants.includes(merchant) && current.merchants.length < 2)
           current.merchants.push(merchant);
@@ -127,7 +134,7 @@ export function BudgetView() {
         id: null,
         merchants: merchant ? [merchant] : [],
         name: category?.name ?? t("unknownCategory"),
-        remaining: -(transaction.base_amount ?? 0),
+        remaining: -Math.abs(transaction.base_amount ?? 0),
         spent: Math.abs(transaction.base_amount ?? 0),
       });
     }
@@ -289,7 +296,11 @@ export function BudgetView() {
 
 function Donut({ rows, total }: { rows: readonly BudgetRow[]; total: number }) {
   const t = useTranslations("budget");
-  const slices = rows.filter((row) => row.spent > 0).slice(0, 8);
+  const spendingRows = rows.filter((row) => row.spent > 0).sort((a, b) => b.spent - a.spent);
+  const visibleRows = spendingRows.slice(0, 7);
+  const otherSpent = spendingRows.slice(7).reduce((sum, row) => sum + row.spent, 0);
+  const slices =
+    otherSpent > 0 ? [...visibleRows, { color: "#64748B", spent: otherSpent }] : visibleRows;
   const background = slices.length
     ? `conic-gradient(${slices
         .reduce<{ end: number; parts: string[] }>(
@@ -308,7 +319,7 @@ function Donut({ rows, total }: { rows: readonly BudgetRow[]; total: number }) {
     <div
       className="mx-auto grid size-44 place-items-center rounded-full"
       style={{ background }}
-      aria-label={t("chartAria", { total })}
+      aria-label={`${t("chartAria", { total })}${otherSpent > 0 ? `; ${t("other")}` : ""}`}
     >
       <div className="grid size-28 place-items-center rounded-full bg-background text-sm text-muted-foreground">
         {t("chartCenter")}
@@ -410,6 +421,14 @@ function CopyBudgetsDialog({
   const [drafts, setDrafts] = useState<CopyDraft[]>(() => [...initialDrafts]);
   const [adjustment, setAdjustment] = useState("0");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setDrafts([...initialDrafts]);
+    setAdjustment("0");
+    setError(null);
+  }, [initialDrafts, open]);
+
   const updateAdjustment = (value: string) => {
     setAdjustment(value);
     const adjustmentValue = Number(value);
