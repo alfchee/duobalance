@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "node scripts/generate-pwa-assets.mjs && node scripts/generate-ios-guide-screenshots.mjs && next build --turbopack && node scripts/generate-service-worker.mjs",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",

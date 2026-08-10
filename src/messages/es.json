@@ -453,6 +453,80 @@
     "save": "Guardar",
     "saving": "Guardando…"
   },
+  "budget": {
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "scopeLabel": "Alcance del presupuesto",
+    "scope": {
+      "household": "Hogar",
+      "mine": "Mío"
+    },
+    "sortLabel": "Ordenar por",
+    "sort": {
+      "spent": "Monto gastado",
+      "remaining": "Monto restante",
+      "name": "Nombre de categoría"
+    },
+    "spentLabel": "Gastamos",
+    "visibleToYou": "Según lo que ves",
+    "chartAria": "Composición de gastos por un total de {total}",
+    "chartCenter": "Gastado",
+    "loadError": "No se pudo cargar tu presupuesto.",
+    "retry": "Reintentar",
+    "copyPrevious": "Copiar desde {month}",
+    "unknownCategory": "Sin categoría",
+    "other": "Otros",
+    "left": "Quedan {amount}",
+    "overBy": "Excedido por {amount}",
+    "noBudget": "Sin presupuesto definido",
+    "empty": {
+      "title": "Crea tu presupuesto mensual",
+      "description": "Define presupuestos por categoría para ver cómo avanzan tus gastos."
+    },
+    "copyDialog": {
+      "title": "Copiar presupuestos del mes anterior",
+      "description": "Revisa y ajusta los presupuestos de {source} antes de aplicarlos a {target}.",
+      "adjustment": "Ajustar todos los montos por %",
+      "cancel": "Cancelar",
+      "confirm": "Copiar presupuestos",
+      "copying": "Copiando…",
+      "error": "No se pudieron copiar los presupuestos. Intenta de nuevo."
+    }
+  },
+  "pwa": {
+    "update": {
+      "message": "Hay una nueva versión lista.",
+      "reload": "Recargar"
+    },
+    "install": {
+      "title": "Instala DuoBalance",
+      "description": "Mantén las finanzas compartidas a un toque desde tu pantalla de inicio.",
+      "button": "Instalar app",
+      "iosGuide": "Ver guía para iPhone",
+      "unavailable": "Usa el menú de tu navegador para instalar DuoBalance."
+    },
+    "ios": {
+      "back": "Volver a configuración",
+      "title": "Agrega DuoBalance a tu iPhone",
+      "description": "Instalar DuoBalance lo deja a un toque y permite que los recordatorios de cuentas te lleguen cuando estén disponibles.",
+      "stepOne": {
+        "title": "1. Toca Compartir en Safari",
+        "description": "Abre DuoBalance en Safari y toca el botón Compartir de la barra del navegador.",
+        "screenshotAlt": "Barra de Safari con el botón Compartir resaltado"
+      },
+      "stepTwo": {
+        "title": "2. Elige Agregar a pantalla de inicio",
+        "description": "Desplázate por las opciones para compartir hasta encontrar esta fila.",
+        "action": "Agregar a pantalla de inicio",
+        "screenshotAlt": "Menú Compartir de Safari con Agregar a pantalla de inicio resaltado"
+      },
+      "stepThree": {
+        "title": "3. Toca Agregar",
+        "description": "Conserva el nombre DuoBalance y toca Agregar. Luego ábrelo desde tu pantalla de inicio.",
+        "screenshotAlt": "Pantalla de inicio de iPhone con DuoBalance instalado"
+      }
+    }
+  },
   "settings": {
     "title": "Configuración",
     "signedInAs": "Sesión iniciada como",
