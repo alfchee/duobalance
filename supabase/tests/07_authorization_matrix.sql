@@ -96,8 +96,8 @@ begin
     (cat_a, hh_a, 'Groceries'),
     (cat_b, hh_b, 'Groceries');
 
-  insert into public.budgets (id, household_id, category_id, period, amount, currency, starts_on) values
-    (budget_a, hh_a, null, 'monthly', 500000, 'CLP', date_trunc('month', current_date)::date);
+  insert into public.budgets (id, household_id, category_id, period_month, amount) values
+    (budget_a, hh_a, cat_a, date_trunc('month', current_date)::date, 500000);
 
   insert into public.transactions
     (id, household_id, account_id, category_id, amount, currency, occurred_on, description, entered_by)
@@ -117,13 +117,13 @@ begin
 end
 $$;
 
-select plan(36);
+select plan(34);
 
 -- ============================================================================
 -- 1. budget_status view — Carol (household B, no budgets of her own) must
 --    see 0 rows even though household A has an active budget. The view
---    already declares `security_invoker = true` (migration 6); this is the
---    regression guard that keeps it that way.
+--    declares `security_invoker = on` (issue #29); this is the regression
+--    guard that keeps it that way.
 -- ============================================================================
 
 select tests.authenticate_as('b1000000-0000-0000-0000-000000000001');
@@ -134,29 +134,28 @@ select is_empty(
 );
 
 -- ============================================================================
--- 1b. budget_status — signed-amount math after #23's convention change.
---     Fixture (DO block above): budget_a = 500,000 CLP/mo category=null,
+-- 1b. budget_status — issue #29 math: budget_a = 500,000 CLP/mo,
 --     tx_a1 = amount -20,000 (signed expense) within current month.
---     Expected: spent = -(-20000) = 20000, remaining = 480000, pct_used = 4%.
+--     Expected: spent = 20000, remaining = 480000.
 --     Runs as clear_auth so RLS bypass is not a factor — this is pure math.
 -- ============================================================================
 
 select tests.clear_auth();
 
 select results_eq(
-  $$ select budgeted::numeric, spent::numeric, remaining::numeric, pct_used::numeric
+  $$ select amount::numeric, spent::numeric, remaining::numeric
      from public.budget_status
-     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
-  $$ values (500000::numeric, 20000::numeric, 480000::numeric, 4.00::numeric) $$,
-  'budget_status: signed-amount math correct — spent = 20000, remaining = 480000, pct_used = 4%'
+     where id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (500000::numeric, 20000::numeric, 480000::numeric) $$,
+  'budget_status: math correct — amount = 500000, spent = 20000, remaining = 480000'
 );
 
 -- ============================================================================
 -- 1c. budget_status — PR #55 issue #3 REGRESSION GUARD: a positive-amount
 --     (income/refund) transaction matching the budget filters MUST NOT
 --     reduce reported spent. Insert +5000 "grocery refund" on same household/
---     category/date as tx_a1; spent should remain 20000 (pct_used stays 4%),
---     NOT drop to 15000 (3%). The fix: budget_status filters `t.amount < 0`.
+--     category/month as tx_a1; spent should remain 20000, NOT drop to 15000.
+--     The fix: budget_status filters `t.amount < 0`.
 -- ============================================================================
 
 select results_eq(
@@ -174,10 +173,10 @@ select results_eq(
            'a2000000-0000-0000-0000-000000000001'
          ) returning 1
      )
-     select spent::numeric, pct_used::numeric from public.budget_status
-     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
-  $$ values (20000::numeric, 4.00::numeric) $$,
-  'budget_status regression (#3): positive refund row does NOT reduce spent or pct_used (amount<0 filter holds)'
+     select spent::numeric from public.budget_status
+     where id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (20000::numeric) $$,
+  'budget_status regression (#3): positive refund row does NOT reduce spent (amount<0 filter holds)'
 );
 
 select results_eq(
@@ -198,32 +197,11 @@ select results_eq(
 );
 
 select results_eq(
-  $$ select spent::numeric, remaining::numeric, pct_used::numeric
+  $$ select spent::numeric, remaining::numeric
      from public.budget_status
-     where budget_id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
-  $$ values (120000::numeric, 380000::numeric, 24.00::numeric) $$,
+     where id = 'a5000000-0000-0000-0000-000000000001'::uuid $$,
+  $$ values (120000::numeric, 380000::numeric) $$,
   'budget_status aggregates converted base_amount for a foreign-currency expense'
-);
-
-select throws_ok(
-  $$ insert into public.budgets
-       (id, household_id, period, amount, currency, starts_on)
-     values (
-       'a5000000-0000-0000-0000-000000000099',
-       'a0000000-0000-0000-0000-00000000000a',
-       'monthly', 100, 'USD', current_date
-     ) $$,
-  '23514',
-  'budgets.currency must match households.base_currency',
-  'budget currency must match the household base currency'
-);
-
-select throws_ok(
-  $$ update public.households set base_currency = 'USD'
-     where id = 'a0000000-0000-0000-0000-00000000000a'::uuid $$,
-  '23514',
-  'households.base_currency must match existing budgets.currency',
-  'household base currency cannot diverge from existing budget currencies'
 );
 
 -- ============================================================================
