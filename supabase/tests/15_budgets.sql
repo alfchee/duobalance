@@ -413,7 +413,7 @@ select lives_ok(
        values ('eeeeeeee-0000-0000-0000-000000000001',
                'e4000000-0000-0000-0000-000000000004',
                '2026-09-01', 1000) $$,
-  'budget for any household is accepted (no cross-currency guard needed — amount is always in household base_currency)'
+  'budget for a different household with a matching category is accepted (FK check only; runs as superuser, not RLS)'
 );
 
 select throws_ok(

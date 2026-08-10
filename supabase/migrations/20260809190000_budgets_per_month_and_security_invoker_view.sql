@@ -153,7 +153,8 @@ from public.budgets b
 left join public.transactions t
   on  t.household_id  = b.household_id
   and t.category_id   = b.category_id
-  and date_trunc('month', t.occurred_on)::date = b.period_month
+  and t.occurred_on >= b.period_month
+  and t.occurred_on < b.period_month + interval '1 month'
   and t.transfer_group_id is null           -- exclude transfers
   and t.amount < 0                          -- expenses only
   and (b.owner_member_id is null
