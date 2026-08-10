@@ -15,7 +15,7 @@
 
 begin;
 
-select plan(25);
+select plan(28);
 
 -- ============================================================================
 -- Fixtures: two households (CLP, USD), two members each (owner + partner).
@@ -414,6 +414,35 @@ select lives_ok(
                'e4000000-0000-0000-0000-000000000004',
                '2026-09-01', 1000) $$,
   'budget for any household is accepted (no cross-currency guard needed — amount is always in household base_currency)'
+);
+
+select throws_ok(
+  $$ insert into public.budgets (household_id, category_id, period_month, amount)
+       values ('e0000000-0000-0000-0000-000000000001',
+               'e4000000-0000-0000-0000-000000000004',
+               '2026-12-01', 1000) $$,
+  '23514',
+  null,
+  'budget category must belong to the same household'
+);
+
+select throws_ok(
+  $$ insert into public.budgets (household_id, category_id, period_month, amount, owner_member_id)
+       values ('e0000000-0000-0000-0000-000000000001',
+               'e4000000-0000-0000-0000-000000000001',
+               '2026-12-01', 1000, 'e2000000-0000-0000-0000-000000000003') $$,
+  null,
+  null,
+  'budget owner must belong to the same household'
+);
+
+select throws_ok(
+  $$ update public.budgets
+       set category_id = 'e4000000-0000-0000-0000-000000000001'
+       where household_id = 'eeeeeeee-0000-0000-0000-000000000001'::uuid $$,
+  '23514',
+  null,
+  'budget category cannot be reassigned across households'
 );
 
 select * from finish();

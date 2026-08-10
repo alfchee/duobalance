@@ -27,6 +27,39 @@ drop trigger if exists households_preserve_budget_currency on public.households;
 drop function if exists public.tg_budgets_match_household_base_currency;
 drop function if exists public.tg_households_preserve_budget_currency;
 
+do $$
+begin
+  if exists (
+    select 1
+    from public.budgets
+    where period <> 'monthly'
+       or category_id is null
+       or not is_active
+  ) then
+    raise exception 'legacy budgets must be active, monthly, and category-scoped before migrating'
+      using errcode = 'check_violation';
+  end if;
+
+  if exists (
+    select 1
+    from public.budgets
+    group by household_id, category_id, date_trunc('month', starts_on)::date
+    having count(*) > 1
+  ) then
+    raise exception 'legacy budgets contain duplicate household/category/month rows'
+      using errcode = 'unique_violation';
+  end if;
+end $$;
+
+create temporary table legacy_budgets on commit drop as
+select
+  id,
+  household_id,
+  category_id,
+  date_trunc('month', starts_on)::date as period_month,
+  amount
+from public.budgets;
+
 drop table if exists public.budgets;
 
 drop type if exists public.budget_period;
@@ -72,6 +105,31 @@ comment on index public.budgets_household_uniq is
   'One household budget per category+month (owner_member_id IS NULL)';
 comment on index public.budgets_member_uniq is
   'One personal budget per member+category+month';
+
+create or replace function public.tg_budgets_containment()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.assert_same_household(
+    (select household_id from public.categories where id = new.category_id),
+    new.household_id,
+    'budgets.category_id must belong to the same household'
+  );
+  perform public.check_member_in_household(new.owner_member_id, new.household_id);
+  return new;
+end;
+$$;
+
+create trigger budgets_containment
+  before insert or update of household_id, category_id, owner_member_id on public.budgets
+  for each row execute function public.tg_budgets_containment();
+
+insert into public.budgets (id, household_id, category_id, period_month, amount)
+select id, household_id, category_id, period_month, amount
+from legacy_budgets;
 
 -- ============================================================================
 -- 3. budget_status view — security_invoker is mandatory (see issue #29 body
