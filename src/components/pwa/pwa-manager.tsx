@@ -62,7 +62,8 @@ export function PwaManager({ children }: { children: ReactNode }) {
               setUpdateAvailable(true);
           });
         });
-      } catch {
+      } catch (err) {
+        console.error("service worker registration failed", err);
         setRegistration(null);
       }
     };
@@ -75,9 +76,16 @@ export function PwaManager({ children }: { children: ReactNode }) {
 
   const install = useCallback(async () => {
     if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
+    try {
+      await deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+    } catch (err) {
+      console.error("install prompt failed", err);
+    } finally {
+      // The prompt is one-shot regardless of outcome — clear it either way
+      // so a failure doesn't leave the button offering a dead prompt.
+      setDeferredPrompt(null);
+    }
   }, [deferredPrompt]);
 
   return (

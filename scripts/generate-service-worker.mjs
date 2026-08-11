@@ -34,12 +34,14 @@ const buildAssets = (await listFiles(nextStaticDirectory)).map(
 );
 const documents = (await listFiles(appDirectory))
   .filter((file) => file.endsWith(".html"))
-  .map((file) => {
-    const path = relative(appDirectory, file).split(sep).join("/");
-    if (path === "index.html") return "/";
-    if (path === "_not-found.html") return "/404";
-    return `/${path.replace(/\.html$/, "")}`;
-  });
+  .map((file) => relative(appDirectory, file).split(sep).join("/"))
+  // _not-found.html has no matching route — the App Router serves it inline
+  // with a 404 status rather than at a fetchable "/404" URL, so precaching
+  // it as "/404" made cache.addAll() reject the response and fail the whole
+  // install. __placeholder__ segments are generateStaticParams build
+  // scaffolding, not real pages.
+  .filter((path) => path !== "_not-found.html" && !path.includes("__placeholder__"))
+  .map((path) => (path === "index.html" ? "/" : `/${path.replace(/\.html$/, "")}`));
 const assets = [...new Set([...baseAssets, ...buildAssets, ...documents])].sort();
 const version = createHash("sha256").update(assets.join("\n")).digest("hex").slice(0, 12);
 const content = `self.__DUOBALANCE_PRECACHE_VERSION__ = "${version}";\nself.__DUOBALANCE_PRECACHE__ = ${JSON.stringify(assets)};\n`;

@@ -4,7 +4,18 @@ const CACHE_NAME = `duobalance-shell-${self.__DUOBALANCE_PRECACHE_VERSION__}`;
 const SHELL = self.__DUOBALANCE_PRECACHE__;
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)));
+  // cache.addAll() rejects the whole install if a single asset 404s or
+  // errors. Cache each asset independently so one bad entry in SHELL
+  // doesn't leave the service worker permanently uninstalled.
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(
+        SHELL.map((url) =>
+          cache.add(url).catch((err) => console.error(`sw: failed to precache ${url}`, err)),
+        ),
+      ),
+    ),
+  );
 });
 
 self.addEventListener("activate", (event) => {

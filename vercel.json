@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/fx-refresh",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/generate-bill-instances",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/send-bill-reminders",
+      "schedule": "0 12 * * *"
     }
   ]
 }

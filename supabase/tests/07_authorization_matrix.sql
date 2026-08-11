@@ -104,11 +104,11 @@ begin
   values
     (tx_a1, hh_a, acct_joint, cat_a, -20000, 'CLP', current_date, 'Alice groceries', alice_member);
 
-  insert into public.bills (id, household_id, name, amount, currency, account_id, category_id, frequency) values
-    (bill_a, hh_a, 'Internet', 15000, 'CLP', acct_joint, cat_a, 'monthly');
+  insert into public.bills (id, household_id, name, default_amount, currency, account_id, category_id, rrule, starts_on) values
+    (bill_a, hh_a, 'Internet', 15000, 'CLP', acct_joint, cat_a, 'FREQ=MONTHLY', current_date);
 
-  insert into public.bill_instances (id, bill_id, household_id, due_on, amount, is_paid) values
-    (bill_inst_a, bill_a, hh_a, current_date, 15000, false);
+  insert into public.bill_instances (id, bill_id, household_id, due_on, amount) values
+    (bill_inst_a, bill_a, hh_a, current_date, 15000);
 
   -- Global CLP rate for test 9's cross-tenant slice: household B (no override)
   -- must resolve this, while household A's override at value 1 wins over it.
@@ -343,7 +343,8 @@ select results_eq(
 
 select results_eq(
   $$ with updated as (
-       update public.bill_instances set is_paid = true, paid_at = now()
+       update public.bill_instances
+       set status = 'paid', paid_on = current_date, paid_by_member_id = 'a2000000-0000-0000-0000-000000000002'
          where id = 'a7000000-0000-0000-0000-000000000002'::uuid
          returning 1
      )
