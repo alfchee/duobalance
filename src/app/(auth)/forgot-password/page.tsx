@@ -14,12 +14,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { getAuthErrorKey } from "@/lib/supabase/auth-errors";
+import { useAuthCommands } from "@/hooks/useAuthCommands";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth.forgotPassword");
   const tErrors = useTranslations("auth.errors");
+  const { requestReset } = useAuthCommands();
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -28,27 +28,14 @@ export default function ForgotPasswordPage() {
     setError(null);
     setPending(true);
 
-    const email = String(formData.get("email") ?? "")
-      .trim()
-      .toLowerCase();
-
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setError("generic");
-      setPending(false);
-      return;
-    }
-
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+    const result = await requestReset({
+      email: String(formData.get("email") ?? ""),
+      origin: window.location.origin,
     });
 
     setPending(false);
-
-    // Don't surface "user not found" distinctly — that would let a caller
-    // enumerate which emails have accounts.
-    if (resetError && resetError.code !== "user_not_found") {
-      setError(getAuthErrorKey(resetError));
+    if (!result.ok) {
+      setError(result.errorKey);
       return;
     }
 

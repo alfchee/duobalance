@@ -14,15 +14,15 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { getAuthErrorKey } from "@/lib/supabase/auth-errors";
 import { useSession } from "@/hooks/useSession";
+import { useAuthCommands } from "@/hooks/useAuthCommands";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const { session, loading } = useSession();
   const t = useTranslations("auth.resetPassword");
   const tErrors = useTranslations("auth.errors");
+  const { completePasswordReset } = useAuthCommands();
 
   // A recovery link lands on /reset-password?code=… (PKCE). The code is present
   // when the page mounts and is stripped only after the async code exchange, so
@@ -45,31 +45,13 @@ export default function ResetPasswordPage() {
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-    if (password !== confirmPassword) {
-      setError("mismatch");
-      return;
-    }
-
     setPending(true);
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setError("generic");
+    const result = await completePasswordReset({ password, confirmPassword });
+    if (!result.ok) {
       setPending(false);
+      setError(result.errorKey);
       return;
     }
-
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-
-    if (updateError) {
-      setPending(false);
-      setError(getAuthErrorKey(updateError));
-      return;
-    }
-
-    // The recovery-link session exists only to authorize this one update —
-    // sign out so the user re-enters the app with a normal login, matching
-    // the "you can now log in" copy below.
-    await supabase.auth.signOut();
     setPending(false);
     setDone(true);
   }

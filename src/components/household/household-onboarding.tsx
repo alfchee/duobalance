@@ -3,11 +3,10 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/hooks/useSession";
 import { useCountries } from "@/hooks/useCountries";
 import { useCurrencies } from "@/hooks/useCurrencies";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,15 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const ACTIVE_HOUSEHOLD_STORAGE_KEY = "duobalance:activeHouseholdId";
-
-const INVITE_RPC_ERROR_MAP: Record<string, string> = {
-  "invite expired": "expired",
-  "invite already accepted": "alreadyAccepted",
-  "invite email does not match authenticated user": "emailMismatch",
-  "invite not found": "invalidToken",
-};
 
 // Shown instead of a dead-end "We couldn't find a household for your account"
 // paragraph when:
@@ -47,8 +37,8 @@ export function HouseholdOnboarding() {
   const tInviteErrors = useTranslations("household.onboarding.errorsInvite");
   const locale = useLocale();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { session } = useSession();
+  const { create: createHousehold, accept: acceptInvite } = useHouseholdCommands();
 
   const countries = useCountries({ enabled: !!session });
   const currencies = useCurrencies({ enabled: !!session });
@@ -88,28 +78,19 @@ export function HouseholdOnboarding() {
       return;
     }
 
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setCreateError("generic");
-      return;
-    }
-
     setCreatePending(true);
-    const { error } = await supabase.rpc("create_household", {
-      p_name: householdNameTrim,
-      p_country: country,
-      p_base_currency: baseCurrency,
-      p_display_name: displayNameTrim,
+    const result = await createHousehold({
+      name: householdNameTrim,
+      country,
+      baseCurrency,
+      displayName: displayNameTrim,
     });
     setCreatePending(false);
 
-    if (error) {
-      console.error(error);
-      setCreateError("generic");
+    if (!result.ok) {
+      setCreateError(result.errorKey);
       return;
     }
-
-    await queryClient.invalidateQueries({ queryKey: ["households", "memberships"] });
     router.replace("/balances");
   }
 
@@ -122,28 +103,16 @@ export function HouseholdOnboarding() {
       return;
     }
 
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setInviteError("generic");
-      return;
-    }
-
     setInvitePending(true);
-    const { data: householdId, error } = await supabase.rpc("accept_invite", {
-      p_token: token,
-    });
+    const result = await acceptInvite(token);
     setInvitePending(false);
 
-    if (error) {
-      const key = INVITE_RPC_ERROR_MAP[error.message];
-      setInviteError(key ? tInviteErrors(key) : tErrors("generic"));
+    if (!result.ok) {
+      setInviteError(
+        result.errorKey === "generic" ? tErrors("generic") : tInviteErrors(result.errorKey),
+      );
       return;
     }
-
-    if (householdId) {
-      localStorage.setItem(ACTIVE_HOUSEHOLD_STORAGE_KEY, String(householdId));
-    }
-    await queryClient.invalidateQueries({ queryKey: ["households", "memberships"] });
     router.replace("/balances");
   }
 

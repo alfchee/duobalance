@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -23,31 +22,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { getAuthErrorKey } from "@/lib/supabase/auth-errors";
 import { pendingInvitePath } from "@/lib/pending-invite";
 import { useSession } from "@/hooks/useSession";
 import { useCountries } from "@/hooks/useCountries";
 import { useCurrencies } from "@/hooks/useCurrencies";
+import { getPasswordStrength } from "@/lib/auth/flows";
+import { useAuthCommands } from "@/hooks/useAuthCommands";
+import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
 
 type Step = "credentials" | "household" | "check-email";
 
-function passwordStrength(password: string): "weak" | "fair" | "strong" | null {
-  if (password.length === 0) return null;
-  if (password.length < 8) return "weak";
-  const varietyScore = [/[a-z]/, /[A-Z]/, /\d/, /[^a-zA-Z0-9]/].filter((re) =>
-    re.test(password),
-  ).length;
-  if (password.length >= 12 && varietyScore >= 3) return "strong";
-  if (varietyScore >= 2) return "fair";
-  return "weak";
-}
-
 export default function SignupPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const locale = useLocale();
   const { session, loading } = useSession();
+  const { signup } = useAuthCommands();
+  const { create: createHousehold } = useHouseholdCommands();
   const t = useTranslations("auth.signup");
   const tErrors = useTranslations("auth.errors");
 
@@ -77,53 +67,22 @@ export default function SignupPage() {
     setCredentialsError(null);
     setCredentialsPending(true);
 
-    const name = String(formData.get("displayName") ?? "").trim();
-    const email = String(formData.get("email") ?? "")
-      .trim()
-      .toLowerCase();
+    const name = String(formData.get("displayName") ?? "");
+    const email = String(formData.get("email") ?? "");
     const pw = String(formData.get("password") ?? "");
-
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setCredentialsError("generic");
-      setCredentialsPending(false);
-      return;
-    }
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password: pw,
-      options: { data: { display_name: name } },
-    });
+    const result = await signup({ displayName: name, email, password: pw });
 
     setCredentialsPending(false);
-
-    if (error) {
-      setCredentialsError(getAuthErrorKey(error));
+    if (!result.ok) {
+      setCredentialsError(result.errorKey);
       return;
     }
-
-    // Preserve an invite flow: coming from /accept-invite/{token}, the token
-    // travels via sessionStorage (never the URL). The account is created but
-    // no household — the invite's accept_invite RPC attaches the user to the
-    // inviter's household. Only skip household setup when we actually have a
-    // session; with email confirmation pending the user falls through to
-    // check-email and picks the invite back up from the accept page's login
-    // link after confirming.
-    if (data.session) {
-      const path = pendingInvitePath();
-      if (path) {
-        router.replace(path);
-        return;
-      }
+    if (result.value.redirectTo) {
+      router.replace(result.value.redirectTo);
+      return;
     }
-
-    // Treat every successful response identically so the flow can't reveal
-    // whether an email is already registered: existing emails return no
-    // session, so they fall through to the same check-email step a brand-new
-    // user sees. (Matches the neutral forgot-password flow.)
-    setDisplayName(name);
-    setStep(data.session ? "household" : "check-email");
+    setDisplayName(name.trim());
+    setStep(result.value.nextStep);
   }
 
   async function handleHouseholdSubmit(formData: FormData) {
@@ -134,29 +93,18 @@ export default function SignupPage() {
     const country = String(formData.get("country") ?? "");
     const baseCurrency = String(formData.get("baseCurrency") ?? "");
 
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setHouseholdError("generic");
-      setHouseholdPending(false);
-      return;
-    }
-
-    const { error } = await supabase.rpc("create_household", {
-      p_name: name,
-      p_country: country,
-      p_base_currency: baseCurrency,
-      p_display_name: displayName,
+    const result = await createHousehold({
+      name,
+      country,
+      baseCurrency,
+      displayName,
     });
 
     setHouseholdPending(false);
-
-    if (error) {
-      console.error(error);
-      setHouseholdError("generic");
+    if (!result.ok) {
+      setHouseholdError(result.errorKey);
       return;
     }
-
-    await queryClient.invalidateQueries({ queryKey: ["households", "memberships"] });
     router.replace("/balances");
   }
 
@@ -249,7 +197,7 @@ export default function SignupPage() {
     );
   }
 
-  const strength = passwordStrength(password);
+  const strength = getPasswordStrength(password);
 
   return (
     <Card className="w-full rounded-[2rem] border-0 shadow-raised">

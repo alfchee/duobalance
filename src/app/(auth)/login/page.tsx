@@ -15,10 +15,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { getAuthErrorKey } from "@/lib/supabase/auth-errors";
 import { pendingInvitePath } from "@/lib/pending-invite";
 import { useSession } from "@/hooks/useSession";
+import { useAuthCommands } from "@/hooks/useAuthCommands";
 
 type FormState = { errorKey: string | null };
 const initialState: FormState = { errorKey: null };
@@ -26,6 +25,7 @@ const initialState: FormState = { errorKey: null };
 export default function LoginPage() {
   const router = useRouter();
   const { session, loading } = useSession();
+  const { login: submitLogin } = useAuthCommands();
   const t = useTranslations("auth.login");
   const tErrors = useTranslations("auth.errors");
 
@@ -39,23 +39,12 @@ export default function LoginPage() {
   }, [loading, session, router]);
 
   async function login(_prev: FormState, formData: FormData): Promise<FormState> {
-    const email = String(formData.get("email") ?? "")
-      .trim()
-      .toLowerCase();
+    const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
-
-    const supabase = createSupabaseBrowser();
-    if (!supabase) return { errorKey: "generic" };
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { errorKey: getAuthErrorKey(error) };
-
-    // Preserve an invite flow: coming from /accept-invite/{token}, the token
-    // traveled via sessionStorage (never the URL). Peek, don't consume — the
-    // accept page clears it on resolution, and consuming here would race the
-    // session-change effect above.
-    router.replace(pendingInvitePath() ?? "/balances");
-    return { errorKey: null };
+    const result = await submitLogin({ email, password });
+    if (!result.ok) return { errorKey: result.errorKey };
+    router.replace(result.value.redirectTo);
+    return initialState;
   }
 
   const [state, formAction, pending] = useActionState(login, initialState);
