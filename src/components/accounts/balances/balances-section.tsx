@@ -3,9 +3,8 @@
 import { useLocale, useTranslations } from "next-intl";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { displayBalance, type AccountWithBalance } from "@/lib/accounts";
-import { sumBalances, type BalanceSectionId, type RatesByCode } from "@/lib/balances";
-import { useHousehold } from "@/hooks/useHousehold";
+import type { AccountWithBalance } from "@/lib/accounts";
+import type { BalanceSectionId } from "@/lib/balances";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/money";
 import { BalancesRow } from "./balances-row";
@@ -19,24 +18,21 @@ const SECTION_IDS: BalanceSectionId[] = ["cash", "credit", "savings", "loans"];
 export function BalancesSection({
   section,
   accounts,
+  baseCurrency,
   now,
-  ratesByCode,
+  subtotal,
   onReorder,
 }: {
   section: BalanceSectionId;
   accounts: AccountWithBalance[];
+  baseCurrency: string | null;
   now: Date;
-  ratesByCode: RatesByCode;
+  subtotal: number | null;
   onReorder: (accounts: AccountWithBalance[]) => void;
 }) {
   const t = useTranslations("balances");
   const locale = useLocale();
-  const { baseCurrency } = useHousehold();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
-
-  const subtotal = baseCurrency
-    ? sumBalances(accounts, baseCurrency, ratesByCode, displayBalance)
-    : null;
 
   if (accounts.length === 0) return null;
 

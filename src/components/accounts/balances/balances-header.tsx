@@ -6,13 +6,8 @@ import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
-import { displayBalance, type AccountWithBalance } from "@/lib/accounts";
-import {
-  buildCurrencyBreakdown,
-  sumBalances,
-  type CurrencyLine,
-  type RatesByCode,
-} from "@/lib/balances";
+import type { AccountWithBalance } from "@/lib/accounts";
+import { type CurrencyLine } from "@/lib/balances";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/money";
 
@@ -26,10 +21,14 @@ const SOURCE_LABELS = {
 // breakdown popover (#21 AC: "transparently show the conversion used").
 export function BalancesHeader({
   accounts,
-  ratesByCode,
+  baseRateDate,
+  breakdown,
+  netWorth,
 }: {
   accounts: AccountWithBalance[];
-  ratesByCode: RatesByCode;
+  baseRateDate: string | null;
+  breakdown: CurrencyLine[];
+  netWorth: number | null;
 }) {
   const t = useTranslations("balances");
   const tSettings = useTranslations("settings.overrides");
@@ -37,13 +36,6 @@ export function BalancesHeader({
   const { householdId, baseCurrency, memberId } = useHousehold();
   const { data: members } = useHouseholdMembers(householdId);
   const [open, setOpen] = useState(false);
-
-  const netWorth = baseCurrency
-    ? sumBalances(accounts, baseCurrency, ratesByCode, displayBalance)
-    : null;
-  const breakdown = baseCurrency
-    ? buildCurrencyBreakdown(accounts, baseCurrency, ratesByCode, displayBalance)
-    : [];
 
   const activeMembers = (members ?? []).filter((m) => m.role === "owner" || m.role === "partner");
   const partner = activeMembers.find((m) => m.id !== memberId);
@@ -100,9 +92,9 @@ export function BalancesHeader({
         <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
           <CurrencyBreakdown
             base={baseCurrency ?? "USD"}
+            baseRateDate={baseRateDate}
             breakdown={breakdown}
             netWorth={netWorth}
-            rates={ratesByCode}
             sourceLabelOverride={tSettings}
             locale={locale}
             onClose={() => setOpen(false)}
@@ -149,24 +141,22 @@ function MemberAvatar({
 
 function CurrencyBreakdown({
   base,
+  baseRateDate,
   breakdown,
   netWorth,
-  rates,
   sourceLabelOverride,
   locale,
   onClose,
 }: {
   base: string;
+  baseRateDate: string | null;
   breakdown: CurrencyLine[];
   netWorth: number | null;
-  rates: RatesByCode;
   sourceLabelOverride: (key: string) => string;
   locale: string;
   onClose: () => void;
 }) {
   const t = useTranslations("balances");
-  const baseRate = rates.get(base);
-  const baseRateDate = baseRate?.rateDate;
   return (
     <div className="space-y-3 p-4">
       <div>
