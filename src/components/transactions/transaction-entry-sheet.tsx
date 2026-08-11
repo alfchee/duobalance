@@ -49,7 +49,7 @@ import { useOfflineQueue } from "@/components/realtime-status";
 const LAST_ACCOUNT_STORAGE_KEY = "duobalance:lastTransactionAccountId";
 const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"] as const;
 const ENTRY_SHEET_CLASS_NAME =
-  "max-h-[92dvh] overflow-y-auto rounded-t-[2rem] sm:top-1/2 sm:bottom-auto sm:w-full sm:max-w-xl sm:-translate-y-1/2 sm:rounded-[2rem]";
+  "max-h-[92dvh] overflow-y-auto rounded-t-[2rem] sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[2rem]";
 
 type Draft = {
   amount: string;
