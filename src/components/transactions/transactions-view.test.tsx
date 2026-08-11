@@ -101,4 +101,18 @@ describe("TransactionsView", () => {
     expect(screen.getByText(/Checking · Food/)).toBeTruthy();
     expect(openEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "transaction-1" }));
   });
+
+  it("keeps advanced filters collapsed until the user requests them", () => {
+    render(<TransactionsView />);
+
+    const toggle = screen.getByRole("button", { name: "showFilters" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByLabelText("filters.member").closest("div[hidden]")).toBeTruthy();
+
+    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "hideFilters" }).getAttribute("aria-expanded")).toBe(
+      "true",
+    );
+    expect(screen.getByLabelText("filters.member").closest("div[hidden]")).toBeNull();
+  });
 });

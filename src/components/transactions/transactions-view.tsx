@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeftRight,
   CalendarDays,
+  ChevronDown,
   Filter,
   Pencil,
   Plus,
@@ -64,6 +65,7 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
   const openAccountEdit = useAccountsUiStore((state) => state.openEdit);
   const openManualBalance = useAccountsUiStore((state) => state.openManualBalance);
   const [searchInput, setSearchInput] = useState(filters.query);
+  const [filtersOpen, setFiltersOpen] = useState(hasActivityFilters(filters));
   const detailAccount = accounts.find((account) => account.id === accountDetailId);
   const balanceUpdated = formatUpdatedAgo(
     detailAccount?.balance_updated_at ?? null,
@@ -199,7 +201,32 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
             <X />
           </Button>
         </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            aria-controls="activity-filters"
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            <Filter />
+            {filtersOpen ? t("hideFilters") : t("showFilters")}
+            <ChevronDown
+              className={filtersOpen ? "rotate-180 transition-transform" : "transition-transform"}
+            />
+          </Button>
+          {hasFilters ? (
+            <span className="text-xs font-semibold text-muted-foreground">
+              {t("filtersActive")}
+            </span>
+          ) : null}
+        </div>
+        <div
+          id="activity-filters"
+          hidden={!filtersOpen}
+          className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+        >
           <label className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-semibold">
             <Filter className="size-4 shrink-0" />
             <select
