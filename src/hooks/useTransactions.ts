@@ -2,6 +2,11 @@
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import {
+  applyActivityFilters,
+  type ActivityFilterOperations,
+} from "@/lib/transactions/activity-query";
+import type { ActivityFilters } from "@/lib/transactions/activity-filters";
 import type { Transaction, TransactionInsert, TransactionUpdate } from "@/lib/transactions";
 
 export type TransactionInput = Omit<TransactionInsert, "household_id" | "entered_by">;
@@ -26,15 +31,7 @@ function requireSupabase() {
   return supabase;
 }
 
-export type TransactionFilters = {
-  accountIds: readonly string[];
-  categoryIds: readonly string[];
-  endDate: string | null;
-  memberId: string | null;
-  query: string;
-  startDate: string | null;
-  type: "all" | "expense" | "income" | "transfer";
-};
+export type TransactionFilters = ActivityFilters;
 
 type Cursor = Pick<Transaction, "occurred_on" | "id">;
 
@@ -48,20 +45,13 @@ export function useTransactions(householdId: string | null, filters: Transaction
           "id, account_id, amount, base_amount, category_id, currency, description, entered_by, fx_rate, household_id, notes, occurred_on, spent_by, transfer_group_id, created_at, updated_at, import_batch_id, import_hash, is_cleared, is_pending_review, merchant, receipt_url",
         )
         .eq("household_id", householdId!);
-      if (filters.startDate) query = query.gte("occurred_on", filters.startDate);
-      if (filters.endDate) query = query.lte("occurred_on", filters.endDate);
-      if (filters.accountIds.length) query = query.in("account_id", filters.accountIds);
-      if (filters.categoryIds.length) query = query.in("category_id", filters.categoryIds);
-      if (filters.memberId) query = query.eq("spent_by", filters.memberId);
-      if (filters.type === "expense") {
-        query = query.lt("amount", 0).is("transfer_group_id", null);
-      }
-      if (filters.type === "income") {
-        query = query.gt("amount", 0).is("transfer_group_id", null);
-      }
-      if (filters.type === "transfer") query = query.not("transfer_group_id", "is", null);
-      const search = filters.query.trim().replace(/[(),]/g, " ");
-      if (search) query = query.or(`description.ilike.%${search}%,notes.ilike.%${search}%`);
+      applyActivityFilters(
+        filters,
+        createFilterOperations(
+          () => query,
+          (next) => (query = next),
+        ),
+      );
       const cursor = pageParam as Cursor | null;
       if (cursor)
         query = query.or(
@@ -89,26 +79,45 @@ export function useTransactionSummary(householdId: string | null, filters: Trans
         .from("transactions")
         .select("amount, base_amount, transfer_group_id")
         .eq("household_id", householdId!);
-      if (filters.startDate) query = query.gte("occurred_on", filters.startDate);
-      if (filters.endDate) query = query.lte("occurred_on", filters.endDate);
-      if (filters.accountIds.length) query = query.in("account_id", filters.accountIds);
-      if (filters.categoryIds.length) query = query.in("category_id", filters.categoryIds);
-      if (filters.memberId) query = query.eq("spent_by", filters.memberId);
-      if (filters.type === "expense") {
-        query = query.lt("amount", 0).is("transfer_group_id", null);
-      }
-      if (filters.type === "income") {
-        query = query.gt("amount", 0).is("transfer_group_id", null);
-      }
-      if (filters.type === "transfer") query = query.not("transfer_group_id", "is", null);
-      const search = filters.query.trim().replace(/[(),]/g, " ");
-      if (search) query = query.or(`description.ilike.%${search}%,notes.ilike.%${search}%`);
+      applyActivityFilters(
+        filters,
+        createFilterOperations(
+          () => query,
+          (next) => (query = next),
+        ),
+      );
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
     enabled: householdId !== null,
   });
+}
+
+function createFilterOperations<
+  T extends {
+    eq: (column: string, value: string) => T;
+    gte: (column: string, value: string) => T;
+    gt: (column: string, value: number) => T;
+    in: (column: string, values: readonly string[]) => T;
+    is: (column: string, value: null) => T;
+    lte: (column: string, value: string) => T;
+    lt: (column: string, value: number) => T;
+    not: (column: string, operator: string, value: null) => T;
+    or: (filters: string) => T;
+  },
+>(get: () => T, set: (query: T) => void): ActivityFilterOperations {
+  return {
+    accountIds: (ids) => set(get().in("account_id", ids)),
+    categoryIds: (ids) => set(get().in("category_id", ids)),
+    endDate: (date) => set(get().lte("occurred_on", date)),
+    expense: () => set(get().lt("amount", 0).is("transfer_group_id", null)),
+    income: () => set(get().gt("amount", 0).is("transfer_group_id", null)),
+    memberId: (id) => set(get().eq("spent_by", id)),
+    search: (term) => set(get().or(`description.ilike.%${term}%,notes.ilike.%${term}%`)),
+    startDate: (date) => set(get().gte("occurred_on", date)),
+    transfer: () => set(get().not("transfer_group_id", "is", null)),
+  };
 }
 
 export function useTransactionDescriptions(householdId: string | null) {

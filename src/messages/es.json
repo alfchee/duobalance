@@ -22,6 +22,7 @@
     "logout": "Cerrar sesión"
   },
   "transactions": {
+    "title": "Actividad",
     "loading": "Cargando movimientos…",
     "loadError": "No se pudieron cargar los movimientos.",
     "retry": "Reintentar",
@@ -31,6 +32,9 @@
     "noResults": "Ningún movimiento coincide con estos filtros.",
     "search": "Buscar en descripción o notas",
     "clearFilters": "Limpiar filtros",
+    "showFilters": "Mostrar filtros",
+    "hideFilters": "Ocultar filtros",
+    "filtersActive": "Filtros activos",
     "loadMore": "Cargar más",
     "transfer": "Transferencia",
     "edit": "Editar {description}",

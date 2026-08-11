@@ -22,6 +22,7 @@
     "logout": "Log out"
   },
   "transactions": {
+    "title": "Activity",
     "loading": "Loading transactions…",
     "loadError": "Couldn't load transactions.",
     "retry": "Retry",
@@ -31,6 +32,9 @@
     "noResults": "No transactions match these filters.",
     "search": "Search description or notes",
     "clearFilters": "Clear filters",
+    "showFilters": "Show filters",
+    "hideFilters": "Hide filters",
+    "filtersActive": "Filters active",
     "loadMore": "Load more",
     "transfer": "Transfer",
     "edit": "Edit {description}",
