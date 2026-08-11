@@ -61,7 +61,7 @@ function dateFromYmd(value: string): Date {
 }
 
 function moveMonth(value: string, offset: number): string {
-  const date = dateFromYmd(value);
+  const date = dateFromYmd(`${value}-01`);
   date.setUTCMonth(date.getUTCMonth() + offset);
   return date.toISOString().slice(0, 7);
 }
@@ -169,6 +169,18 @@ function statusTone(status: string | null): string {
   return "bg-blue-100 text-blue-800";
 }
 
+function weeklyTotals(items: readonly SelectedInstance[], locale: string): string {
+  const totals = new Map<string, number>();
+  for (const { bill, instance } of items) {
+    if (instance.effective_status === "skipped") continue;
+    totals.set(bill.currency, (totals.get(bill.currency) ?? 0) + (instance.amount ?? 0));
+  }
+  return [...totals.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([currency, amount]) => formatMoney(amount, currency, locale))
+    .join(" · ");
+}
+
 export function BillsView() {
   const locale = useLocale();
   const t = useTranslations("bills");
@@ -185,7 +197,8 @@ export function BillsView() {
   const [createTransaction, setCreateTransaction] = useState(true);
   const [skipReason, setSkipReason] = useState("");
   const [instanceAmount, setInstanceAmount] = useState("");
-  const billsQuery = useBills(householdId);
+  const bounds = monthBounds(month);
+  const billsQuery = useBills(householdId, bounds);
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: categories = [] } = useCategories(householdId);
   const { data: currencies = [] } = useCurrencies();
@@ -201,7 +214,6 @@ export function BillsView() {
       setDraft((current) => ({ ...current, currency: current.currency || baseCurrency }));
   }, [baseCurrency]);
 
-  const bounds = monthBounds(month);
   const bills = useMemo(() => billsQuery.data ?? [], [billsQuery.data]);
   const monthInstances = useMemo(
     () =>
@@ -286,7 +298,6 @@ export function BillsView() {
     const parsedAmount = parseMoneyInput(amount, locale);
     if (parsedAmount === null) return;
     await pay.mutateAsync({
-      bill: selected.bill,
       input: {
         amount: roundToMinorUnit(parsedAmount, minorUnit),
         createTransaction,
@@ -440,15 +451,7 @@ export function BillsView() {
                     locale,
                   )}
                 </span>
-                <span>
-                  {formatMoney(
-                    items
-                      .filter(({ instance }) => instance.effective_status !== "skipped")
-                      .reduce((sum, { instance }) => sum + (instance.amount ?? 0), 0),
-                    baseCurrency ?? "USD",
-                    locale,
-                  )}
-                </span>
+                <span>{weeklyTotals(items, locale)}</span>
               </div>
               <Card>
                 <CardContent className="divide-y p-0">
@@ -744,13 +747,14 @@ export function BillsView() {
                     void unmarkPaid
                       .mutateAsync({
                         id: selected.instance.id!,
-                        transactionId: selected.instance.paid_transaction_id,
                       })
                       .then(() => setSelected(null));
                   }}
                 >
                   {t("actions.unmarkPaid")}
                 </Button>
+              ) : selected.instance.effective_status === "skipped" ? (
+                <p className="text-sm text-muted-foreground">{t("actions.skippedInstance")}</p>
               ) : (
                 <>
                   <Button className="w-full" onClick={openPay}>

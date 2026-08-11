@@ -557,6 +557,7 @@
       "unmarkPaid": "Unmark as paid",
       "unmarkPaidConfirm": "This will delete the transaction created for this payment. Continue?",
       "skip": "Skip this bill",
+      "skippedInstance": "This bill instance was skipped and cannot be paid.",
       "skipReason": "Optional reason for skipping",
       "instanceAmount": "This instance amount",
       "saveAmount": "Save amount",

@@ -21,6 +21,11 @@ export type PayBillInput = {
   paidOn: string;
 };
 
+type BillWindow = {
+  end: string;
+  start: string;
+};
+
 function billsKey(householdId: string) {
   return ["bills", householdId] as const;
 }
@@ -31,9 +36,9 @@ function requireSupabase() {
   return supabase;
 }
 
-export function useBills(householdId: string | null) {
+export function useBills(householdId: string | null, window: BillWindow) {
   return useQuery({
-    queryKey: ["bills", householdId],
+    queryKey: ["bills", householdId, window.start, window.end],
     queryFn: async (): Promise<BillWithInstances[]> => {
       const supabase = requireSupabase();
       const [{ data: bills, error: billsError }, { data: instances, error: instancesError }] =
@@ -43,6 +48,8 @@ export function useBills(householdId: string | null) {
             .from("bill_instances_view")
             .select("*")
             .eq("household_id", householdId!)
+            .gte("due_on", window.start)
+            .lte("due_on", window.end)
             .order("due_on"),
         ]);
       if (billsError) throw billsError;
@@ -98,53 +105,17 @@ export function useBillMutations(householdId: string | null, memberId: string | 
   });
 
   const pay = useMutation({
-    mutationFn: async ({
-      instance,
-      bill,
-      input,
-    }: {
-      instance: BillInstance;
-      bill: Bill;
-      input: PayBillInput;
-    }) => {
+    mutationFn: async ({ instance, input }: { instance: BillInstance; input: PayBillInput }) => {
       if (!householdId || !memberId || !instance.id) throw new Error("missing bill instance");
-      const supabase = requireSupabase();
-      let transactionId: string | null = null;
-
-      if (input.createTransaction) {
-        if (!bill.account_id) throw new Error("bill needs an account to create a transaction");
-        const { data, error } = await supabase
-          .from("transactions")
-          .insert({
-            account_id: bill.account_id,
-            amount: -input.amount,
-            category_id: bill.category_id,
-            currency: bill.currency,
-            description: bill.name,
-            entered_by: memberId,
-            household_id: householdId,
-            occurred_on: input.paidOn,
-            spent_by: input.paidByMemberId,
-          })
-          .select("id")
-          .single();
-        if (error) throw error;
-        transactionId = data.id;
-      }
-
-      const { error } = await supabase
-        .from("bill_instances")
-        .update({
-          amount: input.amount,
-          paid_by_member_id: input.paidByMemberId,
-          paid_on: input.paidOn,
-          paid_transaction_id: transactionId,
-          status: "paid",
-        })
-        .eq("id", instance.id);
+      const { error } = await requireSupabase().rpc("pay_bill_instance", {
+        p_amount: input.amount,
+        p_create_transaction: input.createTransaction,
+        p_instance_id: instance.id,
+        p_paid_by_member_id: input.paidByMemberId,
+        p_paid_on: input.paidOn,
+      });
       if (error) {
-        if (transactionId) await supabase.from("transactions").delete().eq("id", transactionId);
-        throw error;
+        throw new Error(error.message);
       }
     },
     onSuccess: invalidate,
@@ -154,7 +125,7 @@ export function useBillMutations(householdId: string | null, memberId: string | 
     mutationFn: async ({ id, reason }: { id: string; reason: string | null }) => {
       const { error } = await requireSupabase()
         .from("bill_instances")
-        .update({ skip_reason: reason, status: "skipped" } as never)
+        .update({ skip_reason: reason, status: "skipped" })
         .eq("id", id);
       if (error) throw error;
     },
@@ -173,25 +144,11 @@ export function useBillMutations(householdId: string | null, memberId: string | 
   });
 
   const unmarkPaid = useMutation({
-    mutationFn: async ({ id, transactionId }: { id: string; transactionId: string | null }) => {
-      const supabase = requireSupabase();
-      if (transactionId) {
-        const { error: transactionError } = await supabase
-          .from("transactions")
-          .delete()
-          .eq("id", transactionId);
-        if (transactionError) throw transactionError;
-      }
-      const { error } = await supabase
-        .from("bill_instances")
-        .update({
-          paid_by_member_id: null,
-          paid_on: null,
-          paid_transaction_id: null,
-          status: "due",
-        })
-        .eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id }: { id: string }) => {
+      const { error } = await requireSupabase().rpc("unmark_bill_instance_paid", {
+        p_instance_id: id,
+      });
+      if (error) throw new Error(error.message);
     },
     onSuccess: invalidate,
   });

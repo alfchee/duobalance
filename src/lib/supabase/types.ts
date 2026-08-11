@@ -127,6 +127,8 @@ export type Database = {
           paid_by_member_id: string | null
           paid_on: string | null
           paid_transaction_id: string | null
+          reminded_at: string | null
+          skip_reason: string | null
           status: string
         }
         Insert: {
@@ -139,6 +141,8 @@ export type Database = {
           paid_by_member_id?: string | null
           paid_on?: string | null
           paid_transaction_id?: string | null
+          reminded_at?: string | null
+          skip_reason?: string | null
           status?: string
         }
         Update: {
@@ -151,6 +155,8 @@ export type Database = {
           paid_by_member_id?: string | null
           paid_on?: string | null
           paid_transaction_id?: string | null
+          reminded_at?: string | null
+          skip_reason?: string | null
           status?: string
         }
         Relationships: [
@@ -1200,6 +1206,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      bill_instance_generation_bounds: {
+        Args: { p_bill_id: string }
+        Returns: {
+          default_amount: number
+          ends_on: string
+          horizon_end: string
+          horizon_start: string
+          rrule: string
+          starts_on: string
+        }[]
+      }
+      bill_instances_due_for_reminder: {
+        Args: never
+        Returns: {
+          amount: number
+          bill_id: string
+          bill_name: string
+          currency: string
+          due_on: string
+          household_id: string
+          household_locale: string
+          household_name: string
+          household_timezone: string
+          instance_id: string
+          responsible_member_id: string
+        }[]
+      }
       check_member_in_household: {
         Args: { p_household_id: string; p_member_id: string }
         Returns: undefined
@@ -1266,8 +1299,25 @@ export type Database = {
         Args: { p_code: string; p_date: string; p_household: string }
         Returns: number
       }
+      get_user_emails_batch: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          email: string
+          id: string
+        }[]
+      }
       is_member: { Args: { household: string }; Returns: boolean }
       is_owner: { Args: { household: string }; Returns: boolean }
+      pay_bill_instance: {
+        Args: {
+          p_amount: number
+          p_create_transaction?: boolean
+          p_instance_id: string
+          p_paid_by_member_id: string
+          p_paid_on: string
+        }
+        Returns: undefined
+      }
       seed_default_categories: {
         Args: { p_household_id: string; p_locale: string }
         Returns: undefined
@@ -1278,6 +1328,10 @@ export type Database = {
       }
       seed_income_categories: {
         Args: { p_household_id: string; p_locale: string }
+        Returns: undefined
+      }
+      unmark_bill_instance_paid: {
+        Args: { p_instance_id: string }
         Returns: undefined
       }
     }
