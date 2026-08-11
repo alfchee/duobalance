@@ -8,6 +8,7 @@ import { useHousehold } from "@/hooks/useHousehold";
 import { HouseholdPicker } from "@/components/household/household-picker";
 import { HouseholdOnboarding } from "@/components/household/household-onboarding";
 import { BottomNav } from "@/components/nav/bottom-nav";
+import { AppSidebar } from "@/components/nav/app-sidebar";
 import { TransactionEntrySheet } from "@/components/transactions/transaction-entry-sheet";
 import { FullPageSpinner } from "@/components/full-page-spinner";
 import { RealtimeStatus } from "@/components/realtime-status";
@@ -43,10 +44,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <RealtimeStatus>
-      <div className="pb-[calc(4rem+env(safe-area-inset-bottom))]">{children}</div>
-      <TransactionEntrySheet />
-      <BottomNav />
-    </RealtimeStatus>
+    <div className="flex min-h-dvh">
+      <AppSidebar />
+      <div className="min-w-0 flex-1">
+        <RealtimeStatus>
+          <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">{children}</div>
+          <TransactionEntrySheet />
+          <BottomNav />
+        </RealtimeStatus>
+      </div>
+    </div>
   );
 }

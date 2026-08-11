@@ -18,7 +18,8 @@
     "addTransaction": "Add",
     "budget": "Budget",
     "bills": "Bills",
-    "more": "More"
+    "more": "More",
+    "logout": "Log out"
   },
   "transactions": {
     "loading": "Loading transactions…",
