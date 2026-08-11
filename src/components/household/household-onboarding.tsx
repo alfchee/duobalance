@@ -99,7 +99,7 @@ export function HouseholdOnboarding() {
     setInviteError(null);
     const token = inviteToken.trim();
     if (!token) {
-      setInviteError("tokenRequired");
+      setInviteError(tInviteErrors("tokenRequired"));
       return;
     }
 
