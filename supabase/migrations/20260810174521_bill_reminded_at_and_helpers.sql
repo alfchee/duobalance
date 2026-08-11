@@ -106,3 +106,11 @@ as $$
 $$;
 
 comment on function public.get_user_emails_batch is 'Returns id/email pairs for the given user IDs from auth.users. Used by the send-bill-reminders cron handler.';
+
+-- Postgres grants EXECUTE on new functions to PUBLIC by default. This function
+-- is SECURITY DEFINER and reads auth.users directly, bypassing RLS entirely —
+-- left at the default grant, any anon/authenticated client could call the
+-- PostgREST RPC with arbitrary user IDs and harvest emails for the whole
+-- system. Only the service-role cron handler should ever reach it.
+revoke all on function public.get_user_emails_batch(uuid[]) from public;
+grant execute on function public.get_user_emails_batch(uuid[]) to service_role;

@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(24);
+select plan(25);
 
 do $$
 declare
@@ -81,10 +81,16 @@ select throws_ok(
   '23505', null, 'duplicate bill instance due date is rejected'
 );
 
-select throws_ok(
+select lives_ok(
   $$ insert into public.bill_instances (household_id, bill_id, due_on, amount)
      values ('f0000000-0000-0000-0000-000000000001', 'f5000000-0000-0000-0000-000000000001', current_date + 1, 0) $$,
-  '23514', null, 'non-positive bill instance amount is rejected'
+  'a 0 amount is accepted (variable-amount bills generate instances awaiting a real amount)'
+);
+
+select throws_ok(
+  $$ insert into public.bill_instances (household_id, bill_id, due_on, amount)
+     values ('f0000000-0000-0000-0000-000000000001', 'f5000000-0000-0000-0000-000000000001', current_date + 5, -1) $$,
+  '23514', null, 'negative bill instance amount is rejected'
 );
 
 select throws_ok(

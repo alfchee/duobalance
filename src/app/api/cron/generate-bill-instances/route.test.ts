@@ -57,7 +57,7 @@ describe("/api/cron/generate-bill-instances", () => {
 
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
-      inserted: 2,
+      inserted: 4,
       failed: 0,
       details: { "bill-1": 3, "bill-2": 1 },
     });
@@ -77,7 +77,7 @@ describe("/api/cron/generate-bill-instances", () => {
 
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
-      inserted: 1,
+      inserted: 3,
       failed: 1,
       details: { "bill-1": 3, "bill-2": -1 },
     });
@@ -108,7 +108,7 @@ describe("/api/cron/generate-bill-instances", () => {
     await expect(res.json()).resolves.toEqual({ error: "instance generation failed" });
   });
 
-  it("falls back to vercel-cron user agent when no CRON_SECRET configured", async () => {
+  it("rejects a vercel-cron user agent when no CRON_SECRET is configured", async () => {
     delete process.env.CRON_SECRET;
     vi.mocked(generateAllInstances).mockResolvedValue({});
     vi.mocked(createSupabaseRouteHandler).mockResolvedValue({} as never);
@@ -119,6 +119,6 @@ describe("/api/cron/generate-bill-instances", () => {
       }),
     );
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
   });
 });

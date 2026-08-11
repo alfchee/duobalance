@@ -503,6 +503,7 @@
     "retry": "Retry",
     "saving": "Saving…",
     "save": "Save bill",
+    "error": "Something went wrong. Try again.",
     "emptyMonth": "No bills are due this month.",
     "empty": {
       "title": "Start tracking bills",
@@ -535,6 +536,7 @@
       "endsOn": "Ends on",
       "reminderDays": "Reminder days before due",
       "preview": "Next 6 due dates",
+      "invalidRecurrence": "This recurrence rule is invalid.",
       "recurrences": {
         "monthlyDay": "Monthly on this day",
         "monthlyLast": "Monthly on the last day",

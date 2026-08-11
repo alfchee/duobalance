@@ -244,7 +244,7 @@ describe("/api/cron/send-bill-reminders", () => {
     // Only the successful instance should be marked as reminded
   });
 
-  it("falls back to vercel-cron user agent when no CRON_SECRET configured", async () => {
+  it("rejects a vercel-cron user agent when no CRON_SECRET is configured", async () => {
     delete process.env.CRON_SECRET;
     const client = makeClient([]);
     vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client as never);
@@ -255,6 +255,91 @@ describe("/api/cron/send-bill-reminders", () => {
       }),
     );
 
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 502 and does not send anything when the member lookup fails", async () => {
+    const client = {
+      rpc: vi.fn((name: string) => {
+        if (name === "bill_instances_due_for_reminder") {
+          return Promise.resolve({
+            data: [
+              {
+                instance_id: "i-1",
+                bill_id: "b-1",
+                household_id: "h-1",
+                due_on: "2026-08-15",
+                amount: 1000,
+                bill_name: "Rent",
+                currency: "USD",
+                responsible_member_id: "m-1",
+                household_name: "Test Home",
+                household_timezone: "America/New_York",
+                household_locale: "en",
+              },
+            ],
+            error: null,
+          });
+        }
+        return Promise.resolve({ data: null, error: null });
+      }),
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          in: vi.fn(() => Promise.resolve({ data: null, error: { message: "connection reset" } })),
+        })),
+      })),
+    };
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client as never);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/send-bill-reminders"));
+
+    expect(res.status).toBe(502);
+    expect(sendReminderDigest).not.toHaveBeenCalled();
+  });
+
+  it("continues attempting every recipient in a joint digest even if an earlier one fails", async () => {
+    vi.mocked(sendReminderDigest)
+      .mockRejectedValueOnce(new Error("resend error")) // Alice fails
+      .mockResolvedValueOnce(undefined); // Bob must still be attempted
+
+    const client = makeClient(
+      [
+        {
+          instance_id: "i-2",
+          bill_id: "b-2",
+          household_id: "h-1",
+          due_on: "2026-08-20",
+          amount: 500,
+          bill_name: "Groceries",
+          currency: "USD",
+          responsible_member_id: null,
+          household_name: "Test Home",
+          household_timezone: "America/New_York",
+          household_locale: "en",
+        },
+      ],
+      {
+        memberRows: [
+          { id: "m-1", user_id: "u-1", display_name: "Alice", household_id: "h-1" },
+          { id: "m-2", user_id: "u-2", display_name: "Bob", household_id: "h-1" },
+        ],
+        userRows: [
+          { id: "u-1", email: "alice@test.local" },
+          { id: "u-2", email: "bob@test.local" },
+        ],
+      },
+    );
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client as never);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/send-bill-reminders"));
+
     expect(res.status).toBe(200);
+    // Bob must still get an attempt even though Alice's send failed first.
+    expect(sendReminderDigest).toHaveBeenCalledTimes(2);
+    expect(sendReminderDigest).toHaveBeenCalledWith(
+      expect.objectContaining({ to: ["bob@test.local"] }),
+    );
+    // The group isn't marked reminded because not every recipient succeeded.
+    await expect(res.json()).resolves.toEqual({ sent: 0, instances: 0 });
   });
 });

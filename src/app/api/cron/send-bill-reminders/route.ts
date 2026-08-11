@@ -74,37 +74,46 @@ async function handle(request: Request) {
     }
 
     // Fetch all relevant members in one query
-    const { data: allMembers } = await supabase
+    const { data: allMembers, error: allMembersError } = await supabase
       .from("household_members")
       .select("id, user_id, display_name, household_id")
       .in("id", Array.from(responsibleMemberIds));
 
+    if (allMembersError) {
+      console.error("send-bill-reminders: member lookup failed", allMembersError);
+      throw new Error(`member lookup failed: ${String(allMembersError)}`);
+    }
+
     const memberToUserId = new Map<string, string>();
     const memberToDisplayName = new Map<string, string>();
-    if (allMembers) {
-      for (const m of allMembers) {
-        memberToUserId.set(m.id, m.user_id);
-        memberToDisplayName.set(m.id, m.display_name);
-      }
+    for (const m of allMembers ?? []) {
+      memberToUserId.set(m.id, m.user_id);
+      memberToDisplayName.set(m.id, m.display_name);
     }
 
     // Fetch all household memberships for households with joint bills in one query
     const allHouseholdIds = Array.from(householdIds);
-    const { data: allHouseholdMembers } = await supabase
+    const { data: allHouseholdMembers, error: allHouseholdMembersError } = await supabase
       .from("household_members")
       .select("id, user_id, display_name, household_id")
       .in("household_id", allHouseholdIds);
+
+    if (allHouseholdMembersError) {
+      console.error(
+        "send-bill-reminders: household member lookup failed",
+        allHouseholdMembersError,
+      );
+      throw new Error(`household member lookup failed: ${String(allHouseholdMembersError)}`);
+    }
 
     const householdMemberIds = new Map<
       string,
       { id: string; display_name: string; user_id: string }[]
     >();
-    if (allHouseholdMembers) {
-      for (const m of allHouseholdMembers) {
-        const list = householdMemberIds.get(m.household_id) ?? [];
-        list.push({ id: m.id, display_name: m.display_name, user_id: m.user_id });
-        householdMemberIds.set(m.household_id, list);
-      }
+    for (const m of allHouseholdMembers ?? []) {
+      const list = householdMemberIds.get(m.household_id) ?? [];
+      list.push({ id: m.id, display_name: m.display_name, user_id: m.user_id });
+      householdMemberIds.set(m.household_id, list);
     }
 
     // Fetch user emails from auth via service role. We query only the user IDs
@@ -126,13 +135,17 @@ async function handle(request: Request) {
         args: Record<string, unknown>,
       ) => Promise<{ data: unknown; error: unknown }>;
 
-      const { data: emailRows } = await rpc("get_user_emails_batch", {
+      const { data: emailRows, error: emailRowsError } = await rpc("get_user_emails_batch", {
         p_user_ids: userIds,
       });
-      if (emailRows) {
-        for (const r of emailRows as Array<{ id: string; email: string }>) {
-          if (r.email) userIdToEmail.set(r.id, r.email);
-        }
+
+      if (emailRowsError) {
+        console.error("send-bill-reminders: email lookup failed", emailRowsError);
+        throw new Error(`email lookup failed: ${String(emailRowsError)}`);
+      }
+
+      for (const r of (emailRows ?? []) as Array<{ id: string; email: string }>) {
+        if (r.email) userIdToEmail.set(r.id, r.email);
       }
     }
 
@@ -203,9 +216,17 @@ async function handle(request: Request) {
 
         if (toEmails.length === 0) continue;
 
-        try {
-          // Send individually per recipient rather than exposing all in To
-          for (const email of toEmails) {
+        // Send individually per recipient, catching each send on its own so
+        // one recipient's failure doesn't stop the rest of the group from
+        // being attempted (a shared try/catch around the whole loop would
+        // silently skip every recipient after the first failure). Only mark
+        // this group's instances as reminded once every recipient succeeds —
+        // bill_instances.reminded_at is per-instance, not per-recipient, so
+        // there's no way to dedup a retry for just the recipient who already
+        // got it; a partial failure means the whole group is retried next run.
+        let allSucceeded = true;
+        for (const email of toEmails) {
+          try {
             await sendReminderDigest({
               to: [email],
               memberName: entry.displayName,
@@ -213,15 +234,18 @@ async function handle(request: Request) {
               items: entry.items,
               locale: hh.locale,
             });
+          } catch (err) {
+            allSucceeded = false;
+            console.error(
+              `send-bill-reminders: failed to send digest for household=${hhId} member=${key} to=${email}`,
+              err,
+            );
           }
+        }
+
+        if (allSucceeded) {
           succeededInstanceIds.push(...memberInstanceIds);
           totalSent++;
-        } catch (err) {
-          console.error(
-            `send-bill-reminders: failed to send digest for household=${hhId} member=${key}`,
-            err,
-          );
-          // Continue with other digests; do not mark these instances as reminded
         }
       }
     }
@@ -256,8 +280,6 @@ async function handle(request: Request) {
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    return request.headers.get("authorization") === `Bearer ${secret}`;
-  }
-  return request.headers.get("user-agent") === "vercel-cron/1.0";
+  if (!secret) return false;
+  return request.headers.get("authorization") === `Bearer ${secret}`;
 }

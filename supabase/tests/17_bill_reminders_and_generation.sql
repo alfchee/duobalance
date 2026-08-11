@@ -6,7 +6,7 @@
 
 begin;
 
-select plan(14);
+select plan(16);
 
 do $$
 declare
@@ -172,6 +172,33 @@ $$;
 select is_empty(
   $$ select * from public.bill_instance_generation_bounds('f5000000-0000-0000-0000-000000000002') $$,
   'generation bounds returns nothing for inactive bill'
+);
+
+-- ============================================================================
+-- get_user_emails_batch is SECURITY DEFINER over auth.users — it must be
+-- unreachable by anon/authenticated (which would let any client harvest
+-- arbitrary users' emails) and reachable only by service_role, which is
+-- what the send-bill-reminders cron handler authenticates as.
+-- ============================================================================
+
+select tests.authenticate_as('f1000000-0000-0000-0000-000000000001');
+
+-- 15: authenticated has no EXECUTE grant on get_user_emails_batch
+select throws_ok(
+  $$ select * from public.get_user_emails_batch(array['f1000000-0000-0000-0000-000000000001'::uuid]) $$,
+  '42501',
+  null,
+  'authenticated cannot call get_user_emails_batch'
+);
+
+select tests.authenticate_anon();
+
+-- 16: anon has no EXECUTE grant on get_user_emails_batch
+select throws_ok(
+  $$ select * from public.get_user_emails_batch(array['f1000000-0000-0000-0000-000000000001'::uuid]) $$,
+  '42501',
+  null,
+  'anon cannot call get_user_emails_batch'
 );
 
 select * from finish();

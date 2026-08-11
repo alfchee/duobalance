@@ -3,6 +3,7 @@
 // Pattern matches invite-email.ts.
 
 import { Resend } from "resend";
+import { formatMoney } from "@/lib/money";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.RESEND_FROM ?? "duobalance <reminders@resend.dev>";
@@ -40,7 +41,7 @@ const DIGEST_BODY: Record<
     const lines = items
       .map(
         (i) =>
-          `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${escapeHtml(i.billName)}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${escapeHtml(i.currency)} ${formatAmount(i.amount, i.currency, "es")}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${i.dueOn}</td></tr>`,
+          `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${escapeHtml(i.billName)}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${escapeHtml(formatMoney(i.amount, i.currency, "es"))}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${i.dueOn}</td></tr>`,
       )
       .join("\n");
     return {
@@ -54,14 +55,14 @@ const DIGEST_BODY: Record<
   </table>
   <p style="color: #666; font-size: 14px;">Paga desde la aplicación para mantener tus finanzas al día.</p>
 </div>`,
-      text: `Hola, ${memberName}\n\nTienes las siguientes facturas por pagar en ${householdName}:\n${items.map((i) => `- ${i.billName}: ${i.currency} ${i.amount} (vence ${i.dueOn})`).join("\n")}\n\nPaga desde la aplicación para mantener tus finanzas al día.`,
+      text: `Hola, ${memberName}\n\nTienes las siguientes facturas por pagar en ${householdName}:\n${items.map((i) => `- ${i.billName}: ${formatMoney(i.amount, i.currency, "es")} (vence ${i.dueOn})`).join("\n")}\n\nPaga desde la aplicación para mantener tus finanzas al día.`,
     };
   },
   en: ({ memberName, householdName, items }) => {
     const lines = items
       .map(
         (i) =>
-          `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${escapeHtml(i.billName)}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${escapeHtml(i.currency)} ${formatAmount(i.amount, i.currency, "en")}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${i.dueOn}</td></tr>`,
+          `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${escapeHtml(i.billName)}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${escapeHtml(formatMoney(i.amount, i.currency, "en"))}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${i.dueOn}</td></tr>`,
       )
       .join("\n");
     return {
@@ -75,7 +76,7 @@ const DIGEST_BODY: Record<
   </table>
   <p style="color: #666; font-size: 14px;">Pay from the app to keep your finances on track.</p>
 </div>`,
-      text: `Hi, ${memberName}\n\nYou have the following bills due in ${householdName}:\n${items.map((i) => `- ${i.billName}: ${i.currency} ${i.amount} (due ${i.dueOn})`).join("\n")}\n\nPay from the app to keep your finances on track.`,
+      text: `Hi, ${memberName}\n\nYou have the following bills due in ${householdName}:\n${items.map((i) => `- ${i.billName}: ${formatMoney(i.amount, i.currency, "en")} (due ${i.dueOn})`).join("\n")}\n\nPay from the app to keep your finances on track.`,
     };
   },
 };
@@ -87,15 +88,6 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
-
-function formatAmount(amount: number, currency: string, locale: string): string {
-  // Use Intl to format with the currency's correct decimal places.
-  // CLP (minor_unit=0) will show no decimals, USD (minor_unit=2) shows 2.
-  return new Intl.NumberFormat(locale === "es" ? "es-CL" : "en-US", {
-    style: "currency",
-    currency,
-  }).format(amount);
 }
 
 export async function sendReminderDigest(params: ReminderDigestParams): Promise<void> {

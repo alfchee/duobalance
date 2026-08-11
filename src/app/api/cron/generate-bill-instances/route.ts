@@ -25,18 +25,17 @@ async function handle(request: Request) {
   const supabase = await createSupabaseRouteHandler();
   try {
     const results = await generateAllInstances(supabase);
-    const inserted = Object.values(results).filter((c) => c > 0).length;
+    const inserted = Object.values(results).reduce((sum, c) => (c > 0 ? sum + c : sum), 0);
     const failed = Object.values(results).filter((c) => c < 0).length;
     return Response.json({ inserted, failed, details: results });
-  } catch {
+  } catch (err) {
+    console.error("generate-bill-instances: handler failed", err);
     return Response.json({ error: "instance generation failed" }, { status: 502 });
   }
 }
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    return request.headers.get("authorization") === `Bearer ${secret}`;
-  }
-  return request.headers.get("user-agent") === "vercel-cron/1.0";
+  if (!secret) return false;
+  return request.headers.get("authorization") === `Bearer ${secret}`;
 }

@@ -503,6 +503,7 @@
     "retry": "Reintentar",
     "saving": "Guardando…",
     "save": "Guardar cuenta",
+    "error": "Algo salió mal. Inténtalo de nuevo.",
     "emptyMonth": "No vencen cuentas este mes.",
     "empty": {
       "title": "Comienza a controlar tus cuentas",
@@ -535,6 +536,7 @@
       "endsOn": "Termina el",
       "reminderDays": "Días de recordatorio antes del vencimiento",
       "preview": "Próximas 6 fechas de vencimiento",
+      "invalidRecurrence": "Esta regla de recurrencia no es válida.",
       "recurrences": {
         "monthlyDay": "Cada mes este día",
         "monthlyLast": "Cada mes el último día",

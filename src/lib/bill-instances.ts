@@ -42,9 +42,9 @@ export class BillGenerationError extends Error {
 
 /**
  * Parse an RRULE string and return due dates for a bill within the
- * given bounds. Skips dates before starts_on, after ends_on, and
- * on or before horizon_start (which is the day after the last
- * existing instance).
+ * given bounds. Skips dates before starts_on and after ends_on; includes
+ * horizon_start itself (it's already the day after the last existing
+ * instance, so nothing at horizon_start could be a duplicate).
  */
 export function computeDueDates(
   rrule: string,
@@ -110,9 +110,11 @@ export async function generateInstancesForBill(
 
   if (dueDates.length === 0) return 0;
 
-  // Bills without a fixed default_amount are "variable" — the amount is set
-  // manually per instance. Skip automatic generation for those.
-  if (bounds.default_amount === null) return 0;
+  // Bills without a fixed default_amount are "variable" — instances still
+  // need to materialize (so they show up on the calendar and can be paid),
+  // just with a 0 placeholder amount that the per-instance amount editor
+  // fills in before payment.
+  const instanceAmount = bounds.default_amount ?? 0;
 
   // Count existing instances in the horizon range so we can return the
   // true number of newly inserted rows rather than just dueDates.length
@@ -135,7 +137,7 @@ export async function generateInstancesForBill(
     bill_id: billId,
     household_id: householdId,
     due_on: dueOn.toISOString().slice(0, 10),
-    amount: bounds.default_amount!,
+    amount: instanceAmount,
   }));
 
   // Batch insert with ON CONFLICT DO NOTHING (unique on bill_id, due_on)
@@ -177,31 +179,33 @@ export async function generateAllInstances(
   const results: Record<string, number> = {};
 
   for (const bill of bills) {
-    const { data: boundsRaw } = await (
-      supabase.rpc as unknown as (
-        name: string,
-        args: Record<string, unknown>,
-      ) => {
-        maybeSingle: () => Promise<{ data: GenerationBounds | null; error: unknown }>;
-      }
-    )("bill_instance_generation_bounds", { p_bill_id: bill.id }).maybeSingle();
-
-    if (!boundsRaw) {
-      // Skip bills whose bounds helper returns nothing (e.g. inactive at RPC time)
-      continue;
-    }
-    const bounds = boundsRaw;
-
     try {
-      const count = await generateInstancesForBill(supabase, bounds, bill.id, bill.household_id);
+      const { data: boundsRaw, error: boundsError } = await (
+        supabase.rpc as unknown as (
+          name: string,
+          args: Record<string, unknown>,
+        ) => {
+          maybeSingle: () => Promise<{ data: GenerationBounds | null; error: unknown }>;
+        }
+      )("bill_instance_generation_bounds", { p_bill_id: bill.id }).maybeSingle();
+
+      if (boundsError) {
+        throw new BillGenerationError(bill.id, `bounds fetch failed: ${String(boundsError)}`);
+      }
+
+      if (!boundsRaw) {
+        // Bounds helper legitimately returns nothing for an inactive bill —
+        // not a failure, so the bill is simply omitted from the results.
+        continue;
+      }
+
+      const count = await generateInstancesForBill(supabase, boundsRaw, bill.id, bill.household_id);
       if (count > 0) {
         results[bill.id] = count;
       }
     } catch (err) {
-      // Log but continue with other bills
-      if (err instanceof BillGenerationError) {
-        results[bill.id] = -1; // signal failure
-      }
+      console.error(`generateAllInstances: bill ${bill.id} failed`, err);
+      results[bill.id] = -1; // signal failure so the cron reports it, regardless of error type
     }
   }
 

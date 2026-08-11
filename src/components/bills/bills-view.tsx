@@ -89,19 +89,25 @@ function createRrule(draft: BillEditorState): string {
   return `FREQ=MONTHLY;BYMONTHDAY=${start.getUTCDate()}`;
 }
 
-function previewDates(draft: BillEditorState): string[] {
-  if (!draft.startsOn) return [];
+type PreviewResult = { dates: string[]; valid: boolean };
+
+// Returns valid: false when the recurrence itself can't be parsed, so the UI
+// can tell "invalid rule" apart from "valid rule, nothing due in range" —
+// both previously rendered as the same empty list.
+function previewDates(draft: BillEditorState): PreviewResult {
+  if (!draft.startsOn) return { dates: [], valid: true };
   try {
     const parsed = rrulestr(createRrule(draft)) as RRule;
     const rule = new RRule({ ...parsed.origOptions, dtstart: dateFromYmd(draft.startsOn) });
     const start = dateFromYmd(draft.startsOn);
     const end = dateFromYmd(draft.endsOn || "2099-12-31");
-    return rule
+    const dates = rule
       .between(start, end, true)
       .slice(0, 6)
       .map((date) => date.toISOString().slice(0, 10));
+    return { dates, valid: true };
   } catch {
-    return [];
+    return { dates: [], valid: false };
   }
 }
 
@@ -129,7 +135,7 @@ function draftFromBill(bill: BillWithInstances): BillEditorState {
     categoryId: bill.category_id ?? "none",
     currency: bill.currency,
     endsOn: bill.ends_on ?? "",
-    interval: "1",
+    interval: bill.rrule.match(/INTERVAL=(\d+)/)?.[1] ?? "1",
     name: bill.name,
     recurrence: bill.rrule.includes("BYMONTHDAY=-1")
       ? "monthly-last"
@@ -197,6 +203,7 @@ export function BillsView() {
   const [createTransaction, setCreateTransaction] = useState(true);
   const [skipReason, setSkipReason] = useState("");
   const [instanceAmount, setInstanceAmount] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
   const bounds = monthBounds(month);
   const billsQuery = useBills(householdId, bounds);
   const { data: accounts = [] } = useAccounts(householdId);
@@ -246,23 +253,28 @@ export function BillsView() {
   const firstDay = dateFromYmd(bounds.start).getUTCDay();
   const calendarStartOffset = (firstDay + 6) % 7;
   const dayCount = Number(bounds.end.slice(-2));
-  const minorUnit =
-    currencies.find((currency) => currency.code === draft.currency)?.minor_unit ?? 2;
-  const previews = previewDates(draft);
+  const minorUnitFor = (currency: string) =>
+    currencies.find((c) => c.code === currency)?.minor_unit ?? 2;
+  const minorUnit = minorUnitFor(draft.currency);
+  const preview = previewDates(draft);
+  const previews = preview.dates;
 
   const openCreate = () => {
     setEditingBill(null);
     setDraft(defaultDraft(today, baseCurrency ?? "USD"));
+    setActionError(null);
     setEditorOpen(true);
   };
   const openEdit = (bill: BillWithInstances) => {
     setEditingBill(bill);
     setDraft(draftFromBill(bill));
+    setActionError(null);
     setEditorOpen(true);
   };
   const openInstance = (value: SelectedInstance) => {
     setSkipReason("");
     setInstanceAmount(value.instance.amount?.toString() ?? "");
+    setActionError(null);
     setSelected(value);
   };
   const openPay = () => {
@@ -271,6 +283,7 @@ export function BillsView() {
     setPaidOn(today);
     setPaidByMemberId(memberId ?? "");
     setCreateTransaction(true);
+    setActionError(null);
     setPayOpen(true);
   };
   const saveBill = async () => {
@@ -289,35 +302,47 @@ export function BillsView() {
       rrule: createRrule(draft),
       starts_on: draft.startsOn,
     };
-    if (editingBill) await update.mutateAsync({ id: editingBill.id, input: payload });
-    else await create.mutateAsync(payload);
-    setEditorOpen(false);
+    try {
+      if (editingBill) await update.mutateAsync({ id: editingBill.id, input: payload });
+      else await create.mutateAsync(payload);
+      setEditorOpen(false);
+    } catch {
+      setActionError(t("error"));
+    }
   };
   const confirmPay = async () => {
     if (!selected || !paidByMemberId) return;
     const parsedAmount = parseMoneyInput(amount, locale);
     if (parsedAmount === null) return;
-    await pay.mutateAsync({
-      input: {
-        amount: roundToMinorUnit(parsedAmount, minorUnit),
-        createTransaction,
-        paidByMemberId,
-        paidOn,
-      },
-      instance: selected.instance,
-    });
-    setPayOpen(false);
-    setSelected(null);
+    try {
+      await pay.mutateAsync({
+        input: {
+          amount: roundToMinorUnit(parsedAmount, minorUnitFor(selected.bill.currency)),
+          createTransaction,
+          paidByMemberId,
+          paidOn,
+        },
+        instance: selected.instance,
+      });
+      setPayOpen(false);
+      setSelected(null);
+    } catch {
+      setActionError(t("error"));
+    }
   };
   const saveInstanceAmount = async () => {
     if (!selected?.instance.id) return;
     const parsedAmount = parseMoneyInput(instanceAmount, locale);
     if (parsedAmount === null) return;
-    await updateInstanceAmount.mutateAsync({
-      amount: roundToMinorUnit(parsedAmount, minorUnit),
-      id: selected.instance.id,
-    });
-    setSelected(null);
+    try {
+      await updateInstanceAmount.mutateAsync({
+        amount: roundToMinorUnit(parsedAmount, minorUnitFor(selected.bill.currency)),
+        id: selected.instance.id,
+      });
+      setSelected(null);
+    } catch {
+      setActionError(t("error"));
+    }
   };
 
   if (billsQuery.isPending) {
@@ -682,12 +707,21 @@ export function BillsView() {
             </Field>
             <div className="rounded-lg bg-muted p-3">
               <p className="text-sm font-medium">{t("editor.preview")}</p>
-              <ul className="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
-                {previews.map((date) => (
-                  <li key={date}>{displayDate(date, locale)}</li>
-                ))}
-              </ul>
+              {preview.valid ? (
+                <ul className="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
+                  {previews.map((date) => (
+                    <li key={date}>{displayDate(date, locale)}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-destructive">{t("editor.invalidRecurrence")}</p>
+              )}
             </div>
+            {actionError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {actionError}
+              </p>
+            ) : null}
           </div>
           <SheetFooter>
             <Button
@@ -748,7 +782,8 @@ export function BillsView() {
                       .mutateAsync({
                         id: selected.instance.id!,
                       })
-                      .then(() => setSelected(null));
+                      .then(() => setSelected(null))
+                      .catch(() => setActionError(t("error")));
                   }}
                 >
                   {t("actions.unmarkPaid")}
@@ -775,12 +810,18 @@ export function BillsView() {
                           reason: skipReason.trim() || null,
                         })
                         .then(() => setSelected(null))
+                        .catch(() => setActionError(t("error")))
                     }
                   >
                     {t("actions.skip")}
                   </Button>
                 </>
               )}
+              {actionError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {actionError}
+                </p>
+              ) : null}
               <Button
                 variant="ghost"
                 className="w-full"
@@ -840,6 +881,11 @@ export function BillsView() {
               />
               {t("pay.createTransaction")}
             </label>
+            {actionError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {actionError}
+              </p>
+            ) : null}
           </div>
           <SheetFooter>
             <Button disabled={pay.isPending || !paidByMemberId} onClick={() => void confirmPay()}>
