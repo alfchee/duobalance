@@ -2,7 +2,10 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Wallet } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { AlertTriangle, GripVertical, Pencil, Wallet } from "lucide-react";
+import { useHousehold } from "@/hooks/useHousehold";
 import { displayBalance, type AccountWithBalance } from "@/lib/accounts";
 import { formatUpdatedAgo, isStaleBalance } from "@/lib/balances";
 import { formatMoney } from "@/lib/money";
@@ -25,7 +28,8 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
   const tModes = useTranslations("accounts.balanceModes");
   const locale = useLocale();
   const router = useRouter();
-  const { openManualBalance } = useAccountsUiStore();
+  const { memberId } = useHousehold();
+  const { openEdit, openManualBalance } = useAccountsUiStore();
 
   const isManual = account.balance_mode === "manual";
   const balance = displayBalance(account);
@@ -36,10 +40,31 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
   );
   const stale = isStaleBalance(account, now);
   const updatedCopy = freshness.never ? t("neverUpdated") : t("updated", { when: freshness.text });
+  const canManage =
+    memberId !== null && (account.owner_member_id === null || account.owner_member_id === memberId);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: account.id,
+    disabled: !canManage,
+  });
 
   return (
-    <li className="border-b last:border-b-0">
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn("border-b last:border-b-0", isDragging && "opacity-40")}
+    >
       <div className="flex items-center gap-3 p-3">
+        {canManage ? (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            aria-label={t("reorder")}
+            className="touch-none text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <GripVertical className="size-4" />
+          </button>
+        ) : null}
         <KindIcon kind={account.kind} className="size-5 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -66,7 +91,7 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
         >
           {formatMoney(balance, account.currency, locale)}
         </p>
-        {isManual ? (
+        {isManual && canManage ? (
           <button
             type="button"
             onClick={() => openManualBalance(account)}
@@ -74,6 +99,16 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
             className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <Wallet className="size-4" />
+          </button>
+        ) : null}
+        {canManage ? (
+          <button
+            type="button"
+            onClick={() => openEdit(account)}
+            aria-label={t("edit")}
+            className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Pencil className="size-4" />
           </button>
         ) : null}
       </div>

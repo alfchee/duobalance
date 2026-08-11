@@ -233,11 +233,13 @@
     "loadError": "No se pudieron cargar tus saldos.",
     "retry": "Reintentar",
     "newAccount": "Nueva cuenta",
-    "computedOn": "Tipos de cambio al {date}.",
+    "computedOn": "Saldos calculados el {date}.",
     "updated": "Actualizado {when}",
     "neverUpdated": "Nunca actualizado",
     "stale": "Desactualizado — actualiza el saldo",
     "updateBalance": "Actualizar saldo",
+    "edit": "Editar cuenta",
+    "reorder": "Reordenar cuenta",
     "section": {
       "cash": "Efectivo y cuenta corriente",
       "credit": "Tarjetas de crédito",
@@ -249,7 +251,7 @@
     "breakdownBaseRate": "Tasa base: {date}",
     "breakdownEmpty": "Todas tus cuentas están en la moneda base del hogar.",
     "breakdownClose": "Cerrar",
-    "rateUsed": "1 USD = {rate}"
+    "rateUsed": "1 USD = {rate} · {date}"
   },
   "household": {
     "picker": {

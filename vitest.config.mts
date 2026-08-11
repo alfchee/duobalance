@@ -14,6 +14,21 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["./vitest.setup.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "lcov"],
+      include: [
+        "src/lib/accounts.ts",
+        "src/lib/balances.ts",
+        "src/lib/balance-screen.ts",
+        "src/store/balances.ts",
+      ],
+      thresholds: {
+        functions: 95,
+        lines: 95,
+        statements: 95,
+      },
+    },
   },
   resolve: {
     alias: {

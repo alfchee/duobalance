@@ -233,11 +233,13 @@
     "loadError": "Couldn't load your balances.",
     "retry": "Retry",
     "newAccount": "New account",
-    "computedOn": "Exchange rates as of {date}.",
+    "computedOn": "Balances calculated on {date}.",
     "updated": "Updated {when}",
     "neverUpdated": "Never updated",
     "stale": "Stale — update the balance",
     "updateBalance": "Update balance",
+    "edit": "Edit account",
+    "reorder": "Reorder account",
     "section": {
       "cash": "Cash & Checking",
       "credit": "Credit Cards",
@@ -249,7 +251,7 @@
     "breakdownBaseRate": "Base rate: {date}",
     "breakdownEmpty": "All your accounts are in the household's base currency.",
     "breakdownClose": "Close",
-    "rateUsed": "1 USD = {rate}"
+    "rateUsed": "1 USD = {rate} · {date}"
   },
   "household": {
     "picker": {
