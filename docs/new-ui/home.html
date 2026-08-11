@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>duobalance - Prototype Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+  <style>
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Tokens & Component CSS - Wise Design System
+     * ─────────────────────────────────────────────────────────────────── */
+    :root {
+      /* Surface */
+      --bg: #ffffff;
+      --surface: #e8ebe6;
+      --surface-warm: var(--surface);
+
+      /* Foreground */
+      --fg: #0e0f0c;
+      --fg-2: var(--fg);
+      --muted: #868685;
+      --meta: var(--muted);
+
+      /* Border */
+      --border: rgba(14, 15, 12, 0.12);
+      --border-soft: var(--border);
+
+      /* Accent */
+      --accent: #9fe870;
+      --accent-on: #163300;
+      --accent-hover: #cdffad;
+      --accent-active: color-mix(in oklab, var(--accent), black 12%);
+
+      /* Semantic */
+      --success: #054d28;
+      --warn: #ffd11a;
+      --danger: #d03238;
+
+      /* Typography */
+      --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+      --font-body: "Inter", Helvetica, Arial, ui-sans-serif, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Monaco, monospace;
+
+      --text-xs: 12px;
+      --text-sm: 14px;
+      --text-base: 18px;
+      --text-lg: 22px;
+      --text-xl: 26px;
+      --text-2xl: 40px;
+      --text-3xl: 64px;
+      --text-4xl: 96px;
+
+      --leading-body: 1.44;
+      --leading-tight: 0.85;
+      --tracking-display: normal;
+
+      /* Spacing */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-12: 48px;
+
+      /* Radius */
+      --radius-sm: 16px;
+      --radius-md: 30px;
+      --radius-lg: 40px;
+      --radius-pill: 9999px;
+
+      /* Elevation */
+      --elev-flat: none;
+      --elev-ring: 0 0 0 1px var(--border);
+      --elev-raised: 0 0 0 1px var(--border), 0 2px 8px rgba(14, 15, 12, 0.04);
+      --focus-ring: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 60%);
+
+      /* Motion */
+      --motion-fast: 150ms;
+      --motion-base: 200ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* Reset & Base */
+    * { 
+      box-sizing: border-box; 
+      font-feature-settings: "calt" 1; 
+      margin: 0; 
+      padding: 0; 
+    }
+    
+    body {
+      font-family: var(--font-body);
+      color: var(--fg);
+      background-color: var(--bg);
+      line-height: var(--leading-body);
+      font-size: var(--text-base);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Typography */
+    .heading-display {
+      font-family: var(--font-display);
+      font-size: var(--text-4xl);
+      font-weight: 900;
+      line-height: var(--leading-tight);
+      letter-spacing: var(--tracking-display);
+    }
+    .heading-section {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 900;
+      line-height: var(--leading-tight);
+    }
+    .heading-card {
+      font-family: var(--font-body);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .body-semi {
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+    .text-sm {
+      font-size: var(--text-sm);
+      letter-spacing: 0.01em;
+    }
+    .text-xs {
+      font-size: var(--text-xs);
+      letter-spacing: 0.02em;
+    }
+    .text-caps {
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+    .tnum {
+      font-feature-settings: "calt" 1, "tnum" 1;
+    }
+    
+    /* Colors */
+    .color-muted { color: var(--muted); }
+    .color-danger { color: var(--danger); }
+    .color-success { color: var(--success); }
+    .color-warn { color: #b39200; /* Darkened warning for contrast */ }
+
+    /* Layout */
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+    }
+    
+    /* Desktop Sidebar (hidden on mobile) */
+    .sidebar {
+      display: none;
+      width: 260px;
+      border-right: 1px solid var(--border);
+      padding: var(--space-6) var(--space-4);
+      flex-direction: column;
+      gap: var(--space-8);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: var(--bg);
+    }
+    .sidebar-logo {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: var(--text-xl);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .sidebar-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-on);
+    }
+    
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      flex: 1;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-pill);
+      color: var(--fg);
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color var(--motion-fast) var(--ease-standard);
+      font-size: var(--text-base);
+    }
+    .nav-item:hover, .nav-item:focus-visible {
+      background-color: var(--surface);
+      outline: none;
+    }
+    .nav-item:focus-visible {
+      box-shadow: var(--focus-ring);
+    }
+    .nav-item.active {
+      background-color: rgba(211,242,192,0.4); /* Green tinted hover/active */
+      color: var(--accent-on);
+    }
+    .nav-item.active svg {
+      color: var(--success);
+    }
+    
+    .sidebar-bottom {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      padding-bottom: 96px; /* Space for bottom nav + fab on mobile */
+      max-width: 720px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-8);
+      padding-top: var(--space-6);
+      padding-left: var(--space-4);
+      padding-right: var(--space-4);
+    }
+
+    /* Mobile Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(64px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 40;
+    }
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: var(--space-2);
+      flex: 1;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+    .bottom-nav-item:focus-visible {
+      outline: none;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--focus-ring);
+    }
+    .bottom-nav-item.active {
+      color: var(--fg);
+    }
+    .bottom-nav-item .icon-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-pill);
+      transition: background-color var(--motion-fast) var(--ease-standard);
+      color: var(--muted);
+    }
+    .bottom-nav-item.active .icon-wrapper {
+      background-color: var(--accent);
+      color: var(--accent-on);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      border-radius: var(--radius-pill);
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: var(--text-base);
+      cursor: pointer;
+      transition: transform var(--motion-fast) var(--ease-standard), 
+                  background-color var(--motion-fast) var(--ease-standard);
+      text-decoration: none;
+      border: none;
+      outline: none;
+      padding: 5px 16px;
+      min-height: 44px;
+    }
+    .btn:focus-visible {
+      box-shadow: var(--focus-ring);
+    }
+    .btn:hover {
+      transform: scale(1.05);
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-primary {
+      background-color: var(--accent);
+      color: var(--accent-on);
+    }
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+    
+    .btn-secondary {
+      background-color: rgba(22, 51, 0, 0.08);
+      color: var(--fg);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      color: var(--fg);
+      box-shadow: var(--elev-ring);
+    }
+    .btn-outline:hover {
+      background-color: var(--surface);
+    }
+    
+    .btn-icon {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--fg);
+    }
+    .btn-icon:hover {
+      background-color: var(--surface);
+    }
+    
+    /* FAB */
+    .fab {
+      position: fixed;
+      bottom: calc(80px + env(safe-area-inset-bottom));
+      right: var(--space-4);
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      color: var(--accent-on);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--elev-raised);
+      z-index: 50;
+      border: none;
+      cursor: pointer;
+      transition: transform var(--motion-fast) var(--ease-standard);
+    }
+    .fab:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+    .fab:hover {
+      transform: scale(1.05);
+      background-color: var(--accent-hover);
+    }
+    .fab:active {
+      transform: scale(0.95);
+    }
+    .fab svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Segmented Control */
+    .segmented-control {
+      display: flex;
+      background: var(--surface);
+      border-radius: var(--radius-pill);
+      padding: 4px;
+      gap: 4px;
+    }
+    .segment-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-weight: 600;
+      font-family: var(--font-body);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all var(--motion-fast) var(--ease-standard);
+      font-size: var(--text-sm);
+      outline: none;
+    }
+    .segment-btn:focus-visible {
+      box-shadow: var(--focus-ring);
+    }
+    .segment-btn:hover:not(.active) {
+      color: var(--fg);
+    }
+    .segment-btn.active {
+      background: var(--bg);
+      color: var(--fg);
+      box-shadow: var(--elev-ring);
+    }
+
+    /* Header Components */
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+    .avatars {
+      display: flex;
+      align-items: center;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: 0 0 0 2px var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: var(--text-sm);
+      color: var(--fg);
+      position: relative;
+    }
+    .avatar:not(:first-child) {
+      margin-left: -12px;
+      z-index: 1;
+    }
+    .avatar.partner {
+      box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+      background: var(--bg);
+      color: var(--accent-on);
+      z-index: 2;
+    }
+    
+    .net-worth-card {
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      cursor: pointer;
+      transition: transform var(--motion-fast) var(--ease-standard);
+      box-shadow: var(--elev-ring);
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      outline: none;
+    }
+    .net-worth-card:focus-visible {
+      box-shadow: var(--focus-ring);
+    }
+    .net-worth-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--elev-raised);
+    }
+    .net-worth-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-2);
+    }
+    .net-worth-value {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 900;
+      line-height: var(--leading-tight);
+      letter-spacing: -0.02em;
+    }
+
+    /* Account Groups */
+    .account-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .account-card {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      text-decoration: none;
+      color: inherit;
+      box-shadow: var(--elev-ring);
+      transition: transform var(--motion-fast) var(--ease-standard);
+      outline: none;
+    }
+    .account-card:focus-visible {
+      box-shadow: var(--focus-ring);
+    }
+    .account-card:hover {
+      transform: scale(1.02);
+      box-shadow: var(--elev-raised);
+    }
+    
+    .account-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg);
+      flex-shrink: 0;
+    }
+    
+    .account-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .account-title-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .account-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 600;
+      font-size: var(--text-base);
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .badge-outline {
+      box-shadow: var(--elev-ring);
+      color: var(--muted);
+    }
+    .badge-partner {
+      background: var(--surface);
+      color: var(--fg);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    
+    .account-subtitle {
+      font-size: var(--text-sm);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .stale-warning {
+      color: var(--warn);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+    }
+    
+    .account-balance-area {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .account-balance {
+      font-weight: 600;
+      font-size: var(--text-lg);
+    }
+    
+    /* Footer */
+    .page-footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-4);
+      margin-top: var(--space-6);
+      text-align: center;
+    }
+    
+    /* Media Queries */
+    @media (min-width: 768px) {
+      .bottom-nav { display: none; }
+      .fab { display: none; }
+      .sidebar { display: flex; }
+      .main-content {
+        padding-bottom: var(--space-12);
+        padding-top: var(--space-8);
+      }
+    }
+  </style>
+  <style>
+    body {
+      background-color: var(--surface);
+      padding: var(--space-8) var(--space-4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .launcher-card {
+      background: var(--bg);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      max-width: 600px;
+      width: 100%;
+      box-shadow: var(--elev-raised);
+    }
+    .launcher-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: var(--text-3xl);
+      margin-bottom: var(--space-2);
+      color: var(--fg);
+    }
+    .launcher-links {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+    }
+    .launcher-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4);
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      color: var(--fg);
+      font-weight: 600;
+      transition: transform var(--motion-fast);
+      border: 1px solid var(--border);
+    }
+    .launcher-link:hover {
+      transform: scale(1.02);
+      border-color: var(--accent);
+    }
+    .launcher-link svg {
+      color: var(--muted);
+    }
+    .launcher-link:hover svg {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="launcher-card">
+    <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);">
+      <div style="width: 48px; height: 48px; background: var(--accent); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--accent-on);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <h1 class="launcher-title" style="margin: 0; font-size: var(--text-2xl);">duobalance</h1>
+    </div>
+    <p class="text-base color-muted">Prototype screens based on the Wise design system. Pick a screen below to view it.</p>
+    
+    <div class="launcher-links">
+      <a href="duobalance-auth.html" class="launcher-link">
+        <span>1. Auth Flow (Login)</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </a>
+      <a href="duobalance-app.html" class="launcher-link">
+        <span>2. Balances (Home)</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </a>
+      <a href="duobalance-transactions.html" class="launcher-link">
+        <span>3. Activity & Transactions</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </a>
+      <a href="duobalance-new-transaction.html" class="launcher-link">
+        <span>3.1. New Transaction Entry</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </a>
+      <a href="duobalance-budget.html" class="launcher-link">
+        <span>4. Budget</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </a>
+      <a href="duobalance-bills.html" class="launcher-link">
+        <span>5. Bills</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </a>
+      <a href="duobalance-settings.html" class="launcher-link">
+        <span>6. Settings</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

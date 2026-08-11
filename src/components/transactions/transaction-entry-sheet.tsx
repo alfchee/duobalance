@@ -36,6 +36,7 @@ import { todayInHousehold } from "@/lib/dates";
 import {
   appendMoneyPadInput,
   formatMoneyInput,
+  formatSignedMoney,
   maskMoneyInput,
   parseMoneyInput,
   roundToMinorUnit,
@@ -47,6 +48,8 @@ import { useOfflineQueue } from "@/components/realtime-status";
 
 const LAST_ACCOUNT_STORAGE_KEY = "duobalance:lastTransactionAccountId";
 const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"] as const;
+const ENTRY_SHEET_CLASS_NAME =
+  "max-h-[92dvh] overflow-y-auto rounded-t-[2rem] sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[2rem]";
 
 type Draft = {
   amount: string;
@@ -248,12 +251,14 @@ function TransferEntryContent({
   }
 
   return (
-    <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto sm:mx-auto sm:max-w-2xl">
-      <SheetHeader>
-        <SheetTitle>{t("form.transferTitle")}</SheetTitle>
+    <SheetContent side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
+      <SheetHeader className="border-b px-6 pb-5 pt-6">
+        <SheetTitle className="text-2xl font-black tracking-tight">
+          {t("form.transferTitle")}
+        </SheetTitle>
         <SheetDescription>{t("form.transferDescription")}</SheetDescription>
       </SheetHeader>
-      <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-6">
+      <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-8 pt-2">
         <TransferAccountSelect
           accounts={usableAccounts}
           label={t("form.fromAccount")}
@@ -265,6 +270,10 @@ function TransferEntryContent({
           id="transfer-from-amount"
           label={t("form.fromAmount", { currency: fromAccount?.currency ?? "" })}
           value={fromAmount}
+          locale={locale}
+          minorUnit={
+            currencies.find((currency) => currency.code === fromAccount?.currency)?.minor_unit ?? 2
+          }
           onChange={setFromAmount}
         />
         {fromAccount?.currency !== baseCurrency ? (
@@ -281,6 +290,10 @@ function TransferEntryContent({
           id="transfer-to-amount"
           label={t("form.toAmount", { currency: toAccount?.currency ?? "" })}
           value={toAmount}
+          locale={locale}
+          minorUnit={
+            currencies.find((currency) => currency.code === toAccount?.currency)?.minor_unit ?? 2
+          }
           onChange={setToAmount}
         />
         {toAccount?.currency !== baseCurrency ? (
@@ -354,11 +367,15 @@ function TransferAccountSelect({
 function TransferAmountField({
   id,
   label,
+  locale,
+  minorUnit,
   value,
   onChange,
 }: {
   id: string;
   label: string;
+  locale: string;
+  minorUnit: number;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -369,7 +386,7 @@ function TransferAmountField({
         id={id}
         inputMode="decimal"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => onChange(maskMoneyInput(event.target.value, locale, minorUnit))}
       />
     </div>
   );
@@ -447,6 +464,7 @@ function TransactionEntryContent({
     (category) => !category.is_archived && category.kind === categoryKind,
   );
   const effectiveRate = effectiveRates.find((rate) => rate.code === draft.currency);
+  const isTransfer = transaction?.transfer_group_id != null;
 
   useEffect(() => {
     if (!draft.accountId && usableAccounts[0]) {
@@ -621,17 +639,65 @@ function TransactionEntryContent({
     }
   }
 
-  return (
-    <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto sm:mx-auto sm:max-w-2xl">
-      <SheetHeader>
-        <SheetTitle>{transaction ? t("form.editTitle") : t("form.title")}</SheetTitle>
-        <SheetDescription>{t("form.description")}</SheetDescription>
-      </SheetHeader>
-      <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-6">
-        <div className="grid grid-cols-2 gap-2">
+  if (isTransfer && transaction) {
+    return (
+      <SheetContent side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
+        <SheetHeader className="border-b px-6 pb-5 pt-6">
+          <SheetTitle className="text-2xl font-black tracking-tight">
+            {t("form.transferTitle")}
+          </SheetTitle>
+          <SheetDescription>{t("form.errors.transferReadOnly")}</SheetDescription>
+        </SheetHeader>
+        <div className="space-y-5 px-6 pb-8 pt-2">
+          <div className="rounded-2xl bg-secondary p-4">
+            <p className="text-sm text-muted-foreground">{t("form.descriptionLabel")}</p>
+            <p className="mt-1 font-semibold">{transaction.description}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border p-4">
+              <p className="text-sm text-muted-foreground">{t("form.account")}</p>
+              <p className="mt-1 font-semibold">{selectedAccount?.name}</p>
+            </div>
+            <div className="rounded-2xl border p-4 text-right">
+              <p className="text-sm text-muted-foreground">{t("form.amount")}</p>
+              <p className="mt-1 font-semibold tabular-nums">
+                {formatSignedMoney(transaction.amount, transaction.currency, locale)}
+              </p>
+            </div>
+          </div>
+          {error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t(`form.errors.${error}`)}
+            </p>
+          ) : null}
           <Button
             type="button"
-            variant={draft.isExpense ? "default" : "outline"}
+            variant="destructive"
+            className="w-full"
+            onClick={handleDelete}
+            disabled={pending}
+          >
+            {pending ? t("form.saving") : t("form.delete")}
+          </Button>
+        </div>
+      </SheetContent>
+    );
+  }
+
+  return (
+    <SheetContent side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
+      <SheetHeader className="border-b px-6 pb-5 pt-6">
+        <SheetTitle className="text-2xl font-black tracking-tight">
+          {transaction ? t("form.editTitle") : t("form.title")}
+        </SheetTitle>
+        <SheetDescription>{t("form.description")}</SheetDescription>
+      </SheetHeader>
+      <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-8 pt-2">
+        <div className="grid grid-cols-2 rounded-full bg-secondary p-1">
+          <Button
+            type="button"
+            variant={draft.isExpense ? "default" : "ghost"}
+            className="rounded-full"
             onClick={() =>
               setDraft((current) => ({ ...current, isExpense: true, categoryId: null }))
             }
@@ -640,7 +706,8 @@ function TransactionEntryContent({
           </Button>
           <Button
             type="button"
-            variant={!draft.isExpense ? "default" : "outline"}
+            variant={!draft.isExpense ? "default" : "ghost"}
+            className="rounded-full"
             onClick={() =>
               setDraft((current) => ({ ...current, isExpense: false, categoryId: null }))
             }
@@ -657,15 +724,15 @@ function TransactionEntryContent({
             value={draft.amount}
             readOnly
             inputMode="none"
-            className="h-14 text-2xl"
+            className="h-16 rounded-2xl border-0 bg-secondary px-5 text-right text-4xl font-black tabular-nums shadow-none"
           />
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 rounded-2xl bg-secondary p-2">
             {PAD_KEYS.map((key) => (
               <Button
                 key={key}
                 type="button"
-                variant="outline"
-                className="h-12 text-lg"
+                variant="ghost"
+                className="h-12 rounded-xl text-lg hover:bg-background"
                 aria-label={key === "backspace" ? t("form.backspace") : key}
                 onClick={() =>
                   setDraft((current) => ({
