@@ -40,7 +40,8 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
   );
   const stale = isStaleBalance(account, now);
   const updatedCopy = freshness.never ? t("neverUpdated") : t("updated", { when: freshness.text });
-  const canManage = account.owner_member_id === null || account.owner_member_id === memberId;
+  const canManage =
+    memberId !== null && (account.owner_member_id === null || account.owner_member_id === memberId);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: account.id,
     disabled: !canManage,

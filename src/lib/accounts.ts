@@ -80,6 +80,12 @@ export function reorderAccounts<T extends Account>(
     if (account.is_archived) return account;
     return newActives[ai++] ?? account;
   });
+  const reservedOrders = new Set(
+    ordered
+      .filter((account) => lockedIds.has(account.id))
+      .map((account) => account.display_order)
+      .filter((displayOrder): displayOrder is number => displayOrder !== null),
+  );
   let cursor = -Infinity;
   return ordered.map((account) => {
     if (lockedIds.has(account.id)) {
@@ -87,6 +93,7 @@ export function reorderAccounts<T extends Account>(
       return account;
     }
     cursor = cursor < 0 ? 0 : cursor + 1;
+    while (reservedOrders.has(cursor)) cursor += 1;
     return { ...account, display_order: cursor };
   });
 }

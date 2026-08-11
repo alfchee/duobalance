@@ -9,6 +9,7 @@ import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
 import type { AccountWithBalance } from "@/lib/accounts";
 import { type CurrencyLine } from "@/lib/balances";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 
 const SOURCE_LABELS = {
@@ -169,9 +170,7 @@ function CurrencyBreakdown({
         {baseRateDate ? (
           <p className="text-xs text-muted-foreground">
             {t("breakdownBaseRate", {
-              date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
-                new Date(baseRateDate),
-              ),
+              date: formatRateDate(baseRateDate, locale),
             })}
           </p>
         ) : null}
@@ -191,9 +190,7 @@ function CurrencyBreakdown({
                     rate: new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(
                       line.usdRate,
                     ),
-                    date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
-                      new Date(line.rateDate),
-                    ),
+                    date: formatRateDate(line.rateDate, locale),
                   })}
                   {" · "}
                   {sourceLabelOverride(SOURCE_LABELS[line.source])}
@@ -225,4 +222,8 @@ function CurrencyBreakdown({
       </div>
     </div>
   );
+}
+
+function formatRateDate(rateDate: string, locale: string): string {
+  return formatDate(new Date(`${rateDate}T00:00:00Z`), locale, "UTC");
 }

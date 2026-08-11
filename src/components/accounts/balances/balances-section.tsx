@@ -1,8 +1,20 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import type { AccountWithBalance } from "@/lib/accounts";
 import type { BalanceSectionId } from "@/lib/balances";
 import { cn } from "@/lib/utils";
@@ -32,7 +44,10 @@ export function BalancesSection({
 }) {
   const t = useTranslations("balances");
   const locale = useLocale();
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   if (accounts.length === 0) return null;
 
