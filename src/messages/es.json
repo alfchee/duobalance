@@ -493,6 +493,85 @@
       "error": "No se pudieron copiar los presupuestos. Intenta de nuevo."
     }
   },
+  "bills": {
+    "title": "Cuentas",
+    "subtitle": "Mantén los pagos del hogar en un solo lugar.",
+    "new": "Nueva cuenta",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "loadError": "No se pudieron cargar tus cuentas.",
+    "retry": "Reintentar",
+    "saving": "Guardando…",
+    "save": "Guardar cuenta",
+    "emptyMonth": "No vencen cuentas este mes.",
+    "empty": {
+      "title": "Comienza a controlar tus cuentas",
+      "description": "Agrega alquiler, servicios, internet o cualquier pago recurrente del hogar.",
+      "action": "Agregar cuenta"
+    },
+    "status": {
+      "due": "Pendiente",
+      "overdue": "Vencida",
+      "paid": "Pagada",
+      "skipped": "Omitida"
+    },
+    "editor": {
+      "title": "Nueva cuenta",
+      "editTitle": "Editar cuenta",
+      "description": "Configura el pago recurrente y sus recordatorios.",
+      "name": "Nombre de la cuenta",
+      "amount": "Monto predeterminado",
+      "variableAmount": "Déjalo vacío para un monto variable",
+      "currency": "Moneda",
+      "category": "Categoría",
+      "account": "Cuenta de pago",
+      "responsible": "Miembro responsable",
+      "joint": "Conjunta",
+      "none": "Ninguna",
+      "recurrence": "Recurrencia",
+      "interval": "¿Cada cuántos períodos?",
+      "weekday": "Día de la semana",
+      "startsOn": "Comienza el",
+      "endsOn": "Termina el",
+      "reminderDays": "Días de recordatorio antes del vencimiento",
+      "preview": "Próximas 6 fechas de vencimiento",
+      "recurrences": {
+        "monthlyDay": "Cada mes este día",
+        "monthlyLast": "Cada mes el último día",
+        "weekly": "Cada N semanas",
+        "yearly": "Anual",
+        "monthlyInterval": "Cada N meses"
+      },
+      "weekdays": {
+        "monday": "Lunes",
+        "tuesday": "Martes",
+        "wednesday": "Miércoles",
+        "thursday": "Jueves",
+        "friday": "Viernes",
+        "saturday": "Sábado",
+        "sunday": "Domingo"
+      }
+    },
+    "actions": {
+      "markPaid": "Marcar como pagada",
+      "unmarkPaid": "Desmarcar como pagada",
+      "unmarkPaidConfirm": "Esto eliminará el movimiento creado para este pago. ¿Deseas continuar?",
+      "skip": "Omitir esta cuenta",
+      "skipReason": "Motivo opcional para omitirla",
+      "instanceAmount": "Monto de esta cuenta",
+      "saveAmount": "Guardar monto",
+      "editBill": "Editar cuenta completa"
+    },
+    "pay": {
+      "title": "Marcar cuenta como pagada",
+      "description": "Confirma el monto final y quién la pagó.",
+      "amount": "Monto pagado",
+      "paidOn": "Fecha de pago",
+      "paidBy": "Pagada por",
+      "createTransaction": "También crear un movimiento",
+      "confirm": "Confirmar pago"
+    }
+  },
   "pwa": {
     "update": {
       "message": "Hay una nueva versión lista.",
