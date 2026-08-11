@@ -22,6 +22,7 @@
     "logout": "Log out"
   },
   "transactions": {
+    "title": "Activity",
     "loading": "Loading transactions…",
     "loadError": "Couldn't load transactions.",
     "retry": "Retry",

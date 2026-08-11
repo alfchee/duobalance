@@ -1,6 +1,16 @@
 "use client";
 
-import { Filter, Pencil, Plus, Search, ArrowLeftRight } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ArrowLeftRight,
+  CalendarDays,
+  Filter,
+  Pencil,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -72,6 +82,7 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
   const openEdit = useTransactionsUiStore((state) => state.openEdit);
   const openAccountEdit = useAccountsUiStore((state) => state.openEdit);
   const openManualBalance = useAccountsUiStore((state) => state.openManualBalance);
+  const [searchInput, setSearchInput] = useState(filters.query);
   const detailAccount = accounts.find((account) => account.id === accountDetailId);
   const balanceUpdated = formatUpdatedAgo(
     detailAccount?.balance_updated_at ?? null,
@@ -100,23 +111,43 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
     filters.type !== "all",
   );
 
-  function updateFilters(updates: Record<string, string | null>) {
-    const next = new URLSearchParams(searchParams.toString());
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value) next.set(key, value);
-      else next.delete(key);
-    });
-    router.replace(
-      `${accountId ? `/accounts/${accountId}` : "/transactions"}${next.size ? `?${next.toString()}` : ""}`,
-    );
-  }
+  const updateFilters = useCallback(
+    (updates: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      });
+      router.replace(
+        `${accountId ? `/accounts/${accountId}` : "/transactions"}${next.size ? `?${next.toString()}` : ""}`,
+      );
+    },
+    [accountId, router, searchParams],
+  );
+
+  useEffect(() => {
+    setSearchInput(filters.query);
+  }, [filters.query]);
+
+  useEffect(() => {
+    if (searchInput === filters.query) return;
+    const timeout = window.setTimeout(() => updateFilters({ q: searchInput || null }), 300);
+    return () => window.clearTimeout(timeout);
+  }, [filters.query, searchInput, updateFilters]);
 
   if (transactionsQuery.isLoading)
-    return <p className="text-sm text-muted-foreground">{t("loading")}</p>;
+    return (
+      <div className="space-y-3" aria-busy="true">
+        <div className="h-28 animate-pulse rounded-4xl bg-muted" />
+        <div className="h-16 animate-pulse rounded-2xl bg-muted" />
+        <div className="h-40 animate-pulse rounded-3xl bg-muted" />
+        <span className="sr-only">{t("loading")}</span>
+      </div>
+    );
   if (transactionsQuery.isError)
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-destructive">{t("loadError")}</p>
+      <div className="rounded-4xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+        <p className="font-semibold text-destructive">{t("loadError")}</p>
         <Button variant="outline" onClick={() => void transactionsQuery.refetch()}>
           {t("retry")}
         </Button>
@@ -124,14 +155,14 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
     );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {detailAccount ? (
-        <div className="rounded-lg border p-4">
-          <p className="font-semibold">{detailAccount.name}</p>
-          <p className="text-sm text-muted-foreground">
+        <div className="rounded-4xl border bg-background p-5 shadow-ring sm:p-6">
+          <p className="text-xl font-black tracking-tight">{detailAccount.name}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
             {[detailAccount.institution, detailAccount.currency].filter(Boolean).join(" · ")}
           </p>
-          <p className="mt-2 text-lg font-medium">
+          <p className="mt-5 text-3xl font-black tracking-tight tabular-nums">
             {formatMoney(displayBalance(detailAccount), detailAccount.currency, locale)}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -139,7 +170,7 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
               ? t("accountDetail.neverUpdated")
               : t("accountDetail.updated", { when: balanceUpdated.text })}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
@@ -169,18 +200,44 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
           </div>
         </div>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        <Button className="sm:w-auto" onClick={() => openCreate()}>
-          <Plus />
-          {t("new")}
-        </Button>
-        <Button className="sm:w-auto" variant="outline" onClick={() => openCreate("transfer")}>
-          <ArrowLeftRight />
-          {t("newTransfer")}
-        </Button>
-        {hasFilters ? (
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("summary.count")}
+          </p>
+          <h2 className="mt-1 text-3xl font-black tracking-tight">{t("title")}</h2>
+        </div>
+        <div className="flex shrink-0 gap-2">
           <Button
             variant="outline"
+            size="icon"
+            aria-label={t("newTransfer")}
+            onClick={() => openCreate("transfer")}
+          >
+            <ArrowLeftRight />
+          </Button>
+          <Button onClick={() => openCreate()}>
+            <Plus />
+            {t("new")}
+          </Button>
+        </div>
+      </div>
+      <div className="rounded-4xl border bg-background p-3 shadow-ring sm:p-4">
+        <div className="flex gap-2">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full bg-secondary px-4 py-3 text-sm">
+            <Search className="size-4" />
+            <input
+              className="min-w-0 flex-1 bg-transparent outline-none"
+              value={searchInput}
+              placeholder={t("search")}
+              onChange={(event) => setSearchInput(event.target.value)}
+            />
+          </label>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t("clearFilters")}
+            disabled={!hasFilters}
             onClick={() =>
               updateFilters({
                 accounts: null,
@@ -194,110 +251,116 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
               })
             }
           >
-            {t("clearFilters")}
+            <X />
           </Button>
-        ) : null}
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-semibold">
+            <Filter className="size-4 shrink-0" />
+            <select
+              className="min-w-0 flex-1 bg-transparent"
+              value={filters.type}
+              onChange={(event) =>
+                updateFilters({ type: event.target.value === "all" ? null : event.target.value })
+              }
+            >
+              <option value="all">{t("filters.allTypes")}</option>
+              <option value="expense">{t("filters.expense")}</option>
+              <option value="income">{t("filters.income")}</option>
+              <option value="transfer">{t("filters.transfer")}</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-semibold">
+            <SlidersHorizontal className="size-4 shrink-0" />
+            <select
+              aria-label={t("filters.account")}
+              className="min-w-0 flex-1 bg-transparent"
+              value={filters.accountIds}
+              multiple
+              disabled={accountDetailId !== null}
+              onChange={(event) => {
+                const accountIds = selectedValues(event);
+                updateFilters({ accounts: accountIds.join(FILTER_SEPARATOR) || null });
+              }}
+            >
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-semibold">
+            <SlidersHorizontal className="size-4 shrink-0" />
+            <select
+              aria-label={t("filters.category")}
+              className="min-w-0 flex-1 bg-transparent"
+              value={filters.categoryIds}
+              multiple
+              onChange={(event) => {
+                const categoryIds = selectedValues(event);
+                updateFilters({ categories: categoryIds.join(FILTER_SEPARATOR) || null });
+              }}
+            >
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-semibold">
+            <SlidersHorizontal className="size-4 shrink-0" />
+            <select
+              aria-label={t("filters.member")}
+              className="min-w-0 flex-1 bg-transparent"
+              value={filters.memberId ?? ""}
+              onChange={(event) => updateFilters({ member: event.target.value || null })}
+            >
+              <option value="">{t("filters.allMembers")}</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.display_name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-semibold">
+            <CalendarDays className="size-4 shrink-0" />
+            <input
+              aria-label={t("filters.startDate")}
+              className="min-w-0 flex-1 bg-transparent"
+              type="date"
+              value={filters.startDate ?? ""}
+              onChange={(event) => updateFilters({ start: event.target.value || null })}
+            />
+          </label>
+          <label className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-semibold">
+            <CalendarDays className="size-4 shrink-0" />
+            <input
+              aria-label={t("filters.endDate")}
+              className="min-w-0 flex-1 bg-transparent"
+              type="date"
+              value={filters.endDate ?? ""}
+              onChange={(event) => updateFilters({ end: event.target.value || null })}
+            />
+          </label>
+        </div>
       </div>
-      <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
-        <label className="flex items-center gap-2 text-sm">
-          <Search className="size-4" />
-          <input
-            className="min-w-0 flex-1 bg-transparent outline-none"
-            value={filters.query}
-            placeholder={t("search")}
-            onChange={(event) => updateFilters({ q: event.target.value || null })}
-          />
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <Filter className="size-4" />
-          <select
-            className="min-w-0 flex-1 bg-transparent"
-            value={filters.type}
-            onChange={(event) =>
-              updateFilters({ type: event.target.value === "all" ? null : event.target.value })
-            }
-          >
-            <option value="all">{t("filters.allTypes")}</option>
-            <option value="expense">{t("filters.expense")}</option>
-            <option value="income">{t("filters.income")}</option>
-            <option value="transfer">{t("filters.transfer")}</option>
-          </select>
-        </label>
-        <select
-          aria-label={t("filters.account")}
-          className="rounded-md border bg-transparent px-2 py-1 text-sm"
-          value={filters.accountIds}
-          multiple
-          disabled={accountDetailId !== null}
-          onChange={(event) => {
-            const accountIds = selectedValues(event);
-            updateFilters({ accounts: accountIds.join(FILTER_SEPARATOR) || null });
-          }}
-        >
-          {accounts.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label={t("filters.category")}
-          className="rounded-md border bg-transparent px-2 py-1 text-sm"
-          value={filters.categoryIds}
-          multiple
-          onChange={(event) => {
-            const categoryIds = selectedValues(event);
-            updateFilters({ categories: categoryIds.join(FILTER_SEPARATOR) || null });
-          }}
-        >
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label={t("filters.member")}
-          className="rounded-md border bg-transparent px-2 py-1 text-sm"
-          value={filters.memberId ?? ""}
-          onChange={(event) => updateFilters({ member: event.target.value || null })}
-        >
-          <option value="">{t("filters.allMembers")}</option>
-          {members.map((member) => (
-            <option key={member.id} value={member.id}>
-              {member.display_name}
-            </option>
-          ))}
-        </select>
-        <input
-          aria-label={t("filters.startDate")}
-          className="rounded-md border bg-transparent px-2 py-1 text-sm"
-          type="date"
-          value={filters.startDate ?? ""}
-          onChange={(event) => updateFilters({ start: event.target.value || null })}
-        />
-        <input
-          aria-label={t("filters.endDate")}
-          className="rounded-md border bg-transparent px-2 py-1 text-sm"
-          type="date"
-          value={filters.endDate ?? ""}
-          onChange={(event) => updateFilters({ end: event.target.value || null })}
-        />
-      </div>
-      <div className="grid grid-cols-4 gap-2 rounded-lg bg-muted p-3 text-center text-xs">
-        <div>
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-4xl bg-border sm:grid-cols-4">
+        <div className="bg-secondary p-4 text-center">
           <p>{t("summary.count")}</p>
           <strong>{summary.count}</strong>
         </div>
-        <div>
+        <div className="bg-secondary p-4 text-center">
           <p>{t("summary.inflow")}</p>
           <strong>{formatMoney(summary.inflow, baseCurrency ?? "USD", locale)}</strong>
         </div>
-        <div>
+        <div className="bg-secondary p-4 text-center">
           <p>{t("summary.outflow")}</p>
           <strong>{formatMoney(summary.outflow, baseCurrency ?? "USD", locale)}</strong>
         </div>
-        <div>
+        <div className="bg-secondary p-4 text-center">
           <p>{t("summary.net")}</p>
           <strong>
             {formatSignedMoney(summary.inflow - summary.outflow, baseCurrency ?? "USD", locale)}
@@ -305,11 +368,11 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
         </div>
       </div>
       {transactions.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-4xl border border-dashed p-10 text-center text-sm text-muted-foreground">
           {hasFilters ? t("noResults") : t("empty")}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {Object.entries(
             Object.groupBy(transactions, (transaction) => transaction.occurred_on),
           ).map(([date, dayTransactions]) => {
@@ -320,8 +383,11 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
               0,
             );
             return (
-              <section key={date} className="overflow-hidden rounded-lg border">
-                <header className="flex justify-between bg-muted px-3 py-2 text-xs font-medium">
+              <section
+                key={date}
+                className="overflow-hidden rounded-4xl border bg-background shadow-ring"
+              >
+                <header className="flex justify-between bg-secondary px-5 py-3 text-xs font-bold uppercase tracking-wider">
                   <span>{dateLabel(date, locale)}</span>
                   <span>{formatSignedMoney(daySubtotal, baseCurrency ?? "USD", locale)}</span>
                 </header>
@@ -331,16 +397,18 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
                     const category = categories.find((item) => item.id === transaction.category_id);
                     const transfer = transaction.transfer_group_id !== null;
                     return (
-                      <li key={transaction.id} className="flex items-center gap-3 p-3">
+                      <li key={transaction.id} className="flex items-center gap-3 p-4 sm:px-5">
                         {transfer ? (
-                          <ArrowLeftRight className="size-4 shrink-0 text-muted-foreground" />
+                          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
+                            <ArrowLeftRight className="size-4 text-muted-foreground" />
+                          </span>
                         ) : null}
                         <button
                           type="button"
                           className="min-w-0 flex-1 text-left"
                           onClick={() => openEdit(transaction)}
                         >
-                          <p className="truncate font-medium">
+                          <p className="truncate font-semibold">
                             {transfer ? t("transfer") : transaction.description}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
@@ -350,11 +418,11 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
                           </p>
                         </button>
                         <p
-                          className={
+                          className={`shrink-0 text-right tabular-nums ${
                             transaction.amount < 0
-                              ? "font-medium text-destructive"
-                              : "font-medium text-primary"
-                          }
+                              ? "font-semibold text-destructive"
+                              : "font-semibold text-success"
+                          }`}
                         >
                           {formatSignedMoney(transaction.amount, transaction.currency, locale)}
                           {transaction.currency !== baseCurrency &&
