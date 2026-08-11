@@ -35,8 +35,8 @@ import { matchCategory } from "@/lib/categories";
 import { todayInHousehold } from "@/lib/dates";
 import {
   appendMoneyPadInput,
-  formatMoney,
   formatMoneyInput,
+  formatSignedMoney,
   maskMoneyInput,
   parseMoneyInput,
   roundToMinorUnit,
@@ -464,7 +464,7 @@ function TransactionEntryContent({
     (category) => !category.is_archived && category.kind === categoryKind,
   );
   const effectiveRate = effectiveRates.find((rate) => rate.code === draft.currency);
-  const isTransfer = transaction?.transfer_group_id !== null;
+  const isTransfer = transaction?.transfer_group_id != null;
 
   useEffect(() => {
     if (!draft.accountId && usableAccounts[0]) {
@@ -661,7 +661,7 @@ function TransactionEntryContent({
             <div className="rounded-2xl border p-4 text-right">
               <p className="text-sm text-muted-foreground">{t("form.amount")}</p>
               <p className="mt-1 font-semibold tabular-nums">
-                {formatMoney(transaction.amount, transaction.currency, locale)}
+                {formatSignedMoney(transaction.amount, transaction.currency, locale)}
               </p>
             </div>
           </div>

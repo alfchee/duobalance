@@ -89,6 +89,7 @@ describe("TransactionEntrySheet", () => {
 
     expect(screen.getByText("form.errors.transferReadOnly")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "form.save" })).toBeNull();
+    expect(screen.getByText("−$25.00")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "form.delete" }));
     expect(window.confirm).toHaveBeenCalledWith("form.confirmDelete");
