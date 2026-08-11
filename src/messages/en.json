@@ -493,6 +493,86 @@
       "error": "Couldn't copy the budgets. Try again."
     }
   },
+  "bills": {
+    "title": "Bills",
+    "subtitle": "Keep upcoming household payments in one place.",
+    "new": "New bill",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "loadError": "Couldn't load your bills.",
+    "retry": "Retry",
+    "saving": "Saving…",
+    "save": "Save bill",
+    "emptyMonth": "No bills are due this month.",
+    "empty": {
+      "title": "Start tracking bills",
+      "description": "Add rent, utilities, internet, or any regular household payment.",
+      "action": "Add a bill"
+    },
+    "status": {
+      "due": "Due",
+      "overdue": "Overdue",
+      "paid": "Paid",
+      "skipped": "Skipped"
+    },
+    "editor": {
+      "title": "New bill",
+      "editTitle": "Edit bill",
+      "description": "Set the recurring payment details and reminders.",
+      "name": "Bill name",
+      "amount": "Default amount",
+      "variableAmount": "Leave empty for a variable amount",
+      "currency": "Currency",
+      "category": "Category",
+      "account": "Payment account",
+      "responsible": "Responsible member",
+      "joint": "Joint",
+      "none": "None",
+      "recurrence": "Recurrence",
+      "interval": "Every how many periods?",
+      "weekday": "Weekday",
+      "startsOn": "Starts on",
+      "endsOn": "Ends on",
+      "reminderDays": "Reminder days before due",
+      "preview": "Next 6 due dates",
+      "recurrences": {
+        "monthlyDay": "Monthly on this day",
+        "monthlyLast": "Monthly on the last day",
+        "weekly": "Every N weeks",
+        "yearly": "Yearly",
+        "monthlyInterval": "Every N months"
+      },
+      "weekdays": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      }
+    },
+    "actions": {
+      "markPaid": "Mark as paid",
+      "unmarkPaid": "Unmark as paid",
+      "unmarkPaidConfirm": "This will delete the transaction created for this payment. Continue?",
+      "skip": "Skip this bill",
+      "skippedInstance": "This bill instance was skipped and cannot be paid.",
+      "skipReason": "Optional reason for skipping",
+      "instanceAmount": "This instance amount",
+      "saveAmount": "Save amount",
+      "editBill": "Edit whole bill"
+    },
+    "pay": {
+      "title": "Mark bill as paid",
+      "description": "Confirm the final amount and who paid it.",
+      "amount": "Amount paid",
+      "paidOn": "Paid on",
+      "paidBy": "Paid by",
+      "createTransaction": "Also create a transaction",
+      "confirm": "Confirm payment"
+    }
+  },
   "pwa": {
     "update": {
       "message": "A new version is ready.",

@@ -462,13 +462,21 @@ function TransactionEntryContent({
     if (!categoryOverridden) {
       const categoryId = matchCategory(draft.description, rules, draft.accountId || null);
       const category = categories.find((item) => item.id === categoryId);
-      setDraft((current) => ({
-        ...current,
-        categoryId:
-          category?.kind === (current.isExpense ? "expense" : "income") ? categoryId : null,
-      }));
+      const nextCategoryId =
+        category?.kind === (draft.isExpense ? "expense" : "income") ? categoryId : null;
+      if (draft.categoryId !== nextCategoryId) {
+        setDraft((current) => ({ ...current, categoryId: nextCategoryId }));
+      }
     }
-  }, [categories, categoryOverridden, draft.description, rules]);
+  }, [
+    categories,
+    categoryOverridden,
+    draft.accountId,
+    draft.categoryId,
+    draft.description,
+    draft.isExpense,
+    rules,
+  ]);
 
   useEffect(() => {
     if (isForeignCurrency && !fxRateOverridden && rateQuery.data != null) {
