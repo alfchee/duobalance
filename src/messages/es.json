@@ -18,7 +18,8 @@
     "addTransaction": "Agregar",
     "budget": "Presupuesto",
     "bills": "Cuentas",
-    "more": "Más"
+    "more": "Más",
+    "logout": "Cerrar sesión"
   },
   "transactions": {
     "loading": "Cargando movimientos…",

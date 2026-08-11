@@ -4,26 +4,31 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.15 0 0);
+  --background: #ffffff;
+  --foreground: #0e0f0c;
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0 0);
+  --card-foreground: #0e0f0c;
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.55 0.18 250);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.2 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.2 0 0);
-  --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.92 0 0);
-  --ring: oklch(0.55 0.18 250);
-  --radius: 0.5rem;
+  --popover-foreground: #0e0f0c;
+  --primary: #9fe870;
+  --primary-foreground: #163300;
+  --secondary: #e8ebe6;
+  --secondary-foreground: #0e0f0c;
+  --muted: #e8ebe6;
+  --muted-foreground: #686966;
+  --accent: #e8ebe6;
+  --accent-foreground: #0e0f0c;
+  --destructive: #d03238;
+  --destructive-foreground: #ffffff;
+  --border: rgb(14 15 12 / 12%);
+  --input: rgb(14 15 12 / 12%);
+  --ring: #9fe870;
+  --success: #054d28;
+  --warning: #b39200;
+  --radius: 1rem;
+  --radius-pill: 9999px;
+  --shadow-ring: 0 0 0 1px var(--border);
+  --shadow-raised: 0 0 0 1px var(--border), 0 2px 8px rgb(14 15 12 / 4%);
 }
 
 .dark {
@@ -33,8 +38,8 @@
   --card-foreground: oklch(0.98 0 0);
   --popover: oklch(0.16 0 0);
   --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.7 0.18 250);
-  --primary-foreground: oklch(0.12 0 0);
+  --primary: #9fe870;
+  --primary-foreground: #163300;
   --secondary: oklch(0.22 0 0);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.22 0 0);
@@ -45,7 +50,7 @@
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.28 0 0);
   --input: oklch(0.28 0 0);
-  --ring: oklch(0.7 0.18 250);
+  --ring: #9fe870;
 }
 
 @theme inline {
@@ -68,10 +73,15 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-pill: var(--radius-pill);
+  --shadow-ring: var(--shadow-ring);
+  --shadow-raised: var(--shadow-raised);
 }
 
 @layer base {
@@ -80,5 +90,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: Arial, Helvetica, ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "calt" 1;
   }
 }
