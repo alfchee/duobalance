@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { useHousehold } from "@/hooks/useHousehold";
+import { useAuthCommands } from "@/hooks/useAuthCommands";
 import { LocaleSwitcher } from "./locale-switcher";
 import { MembersSection } from "./members-section";
 import { FxRatesSection } from "./fx-rates-section";
@@ -20,10 +20,10 @@ export default function SettingsPage() {
   const t = useTranslations("settings");
   const { user } = useSession();
   const { householdName, role } = useHousehold();
+  const { logout } = useAuthCommands();
 
   async function handleLogout() {
-    const supabase = createSupabaseBrowser();
-    await supabase?.auth.signOut();
+    await logout();
     router.replace("/login");
   }
 

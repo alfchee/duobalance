@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowLeftRight, LogOut, MoreHorizontal, PieChart, Receipt, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { useAuthCommands } from "@/hooks/useAuthCommands";
 
 const ITEMS = [
   { href: "/balances", labelKey: "balances", Icon: Wallet },
@@ -19,10 +19,10 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("nav");
+  const { logout } = useAuthCommands();
 
   async function handleLogout() {
-    const supabase = createSupabaseBrowser();
-    await supabase?.auth.signOut();
+    await logout();
     router.replace("/login");
   }
 
