@@ -148,20 +148,22 @@ export function HouseholdOnboarding() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center p-6">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("subtitle")}</CardDescription>
+    <main className="flex min-h-dvh w-full items-center justify-center bg-secondary/70 px-4 py-8 sm:p-8">
+      <Card className="w-full max-w-md rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("title")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">{t("subtitle")}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 pt-0 sm:px-8 sm:pb-8">
           <Tabs defaultValue="create" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="create">{t("tabCreate")}</TabsTrigger>
               <TabsTrigger value="invite">{t("tabInvite")}</TabsTrigger>
             </TabsList>
             <TabsContent value="create">
-              <form onSubmit={handleCreate} className="mt-4 flex flex-col gap-4">
+              <form onSubmit={handleCreate} className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="onboarding-displayName">{t("displayName")}</Label>
                   <Input
@@ -228,13 +230,13 @@ export function HouseholdOnboarding() {
                     {tErrors(createError)}
                   </p>
                 ) : null}
-                <Button type="submit" disabled={createPending}>
+                <Button type="submit" size="lg" className="mt-1 w-full" disabled={createPending}>
                   {createPending ? t("creating") : t("createButton")}
                 </Button>
               </form>
             </TabsContent>
             <TabsContent value="invite">
-              <form onSubmit={handleInvite} className="mt-4 flex flex-col gap-4">
+              <form onSubmit={handleInvite} className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="onboarding-inviteToken">{t("inviteToken")}</Label>
                   <Input
@@ -251,7 +253,7 @@ export function HouseholdOnboarding() {
                     {inviteError}
                   </p>
                 ) : null}
-                <Button type="submit" disabled={invitePending}>
+                <Button type="submit" size="lg" className="mt-1 w-full" disabled={invitePending}>
                   {invitePending ? t("inviteAccepting") : t("inviteAccept")}
                 </Button>
               </form>

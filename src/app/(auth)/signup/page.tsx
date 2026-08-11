@@ -162,13 +162,20 @@ export default function SignupPage() {
 
   if (step === "check-email") {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t("checkEmailTitle")}</CardTitle>
-          <CardDescription>{t("checkEmailBody")}</CardDescription>
+      <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 sm:p-8">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("checkEmailTitle")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">
+            {t("checkEmailBody")}
+          </CardDescription>
         </CardHeader>
-        <CardFooter>
-          <Link href="/login" className="text-sm text-primary hover:underline">
+        <CardFooter className="px-6 pb-6 pt-0 sm:px-8 sm:pb-8">
+          <Link
+            href="/login"
+            className="text-sm font-semibold text-foreground underline-offset-4 hover:underline"
+          >
             {t("loginLink")}
           </Link>
         </CardFooter>
@@ -178,13 +185,17 @@ export default function SignupPage() {
 
   if (step === "household") {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("subtitleHousehold")}</CardDescription>
+      <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("title")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">
+            {t("subtitleHousehold")}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form action={handleHouseholdSubmit} className="flex flex-col gap-4">
+        <CardContent className="p-6 pt-0 sm:px-8">
+          <form action={handleHouseholdSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
               <Label htmlFor="householdName">{t("householdName")}</Label>
               <Input
@@ -229,7 +240,7 @@ export default function SignupPage() {
                 {tErrors(householdError)}
               </p>
             ) : null}
-            <Button type="submit" disabled={householdPending}>
+            <Button type="submit" size="lg" className="mt-1 w-full" disabled={householdPending}>
               {householdPending ? t("creatingHousehold") : t("createHousehold")}
             </Button>
           </form>
@@ -241,13 +252,17 @@ export default function SignupPage() {
   const strength = passwordStrength(password);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("subtitleCredentials")}</CardDescription>
+    <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+      <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+        <CardTitle className="text-3xl font-black leading-none tracking-tight">
+          {t("title")}
+        </CardTitle>
+        <CardDescription className="text-base leading-relaxed">
+          {t("subtitleCredentials")}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form action={handleCredentialsSubmit} className="flex flex-col gap-4">
+      <CardContent className="p-6 pt-0 sm:px-8">
+        <form action={handleCredentialsSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <Label htmlFor="displayName">{t("displayName")}</Label>
             <Input id="displayName" name="displayName" required autoComplete="name" />
@@ -277,14 +292,17 @@ export default function SignupPage() {
               {tErrors(credentialsError)}
             </p>
           ) : null}
-          <Button type="submit" disabled={credentialsPending}>
+          <Button type="submit" size="lg" className="mt-1 w-full" disabled={credentialsPending}>
             {credentialsPending ? t("submitting") : t("continue")}
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="text-sm text-muted-foreground">
+      <CardFooter className="p-6 pt-0 text-sm text-muted-foreground sm:px-8 sm:pb-8">
         {t("haveAccount")}{" "}
-        <Link href="/login" className="text-primary hover:underline">
+        <Link
+          href="/login"
+          className="font-semibold text-foreground underline-offset-4 hover:underline"
+        >
           {t("loginLink")}
         </Link>
       </CardFooter>

@@ -94,16 +94,20 @@ export function AcceptInviteClient({ token }: { token: string }) {
 
   if (!session) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t("notAuthenticatedTitle")}</CardTitle>
-          <CardDescription>{t("notAuthenticatedBody")}</CardDescription>
+      <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("notAuthenticatedTitle")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">
+            {t("notAuthenticatedBody")}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <Button asChild>
+        <CardContent className="flex flex-col gap-3 p-6 pt-0 sm:px-8 sm:pb-8">
+          <Button asChild size="lg" className="w-full">
             <Link href="/signup">{t("signupLink")}</Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild size="lg" className="w-full">
             <Link href="/login">{t("loginLink")}</Link>
           </Button>
         </CardContent>
@@ -112,12 +116,14 @@ export function AcceptInviteClient({ token }: { token: string }) {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("subtitle")}</CardDescription>
+    <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+      <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+        <CardTitle className="text-3xl font-black leading-none tracking-tight">
+          {t("title")}
+        </CardTitle>
+        <CardDescription className="text-base leading-relaxed">{t("subtitle")}</CardDescription>
       </CardHeader>
-      <CardContent className="text-sm">
+      <CardContent className="p-6 pt-0 text-sm sm:px-8 sm:pb-8">
         {state === "accepting" ? (
           <p className="text-muted-foreground">{t("accepting")}</p>
         ) : state === "error" && errorKey ? (
