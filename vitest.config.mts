@@ -22,6 +22,9 @@ export default defineConfig({
         "src/lib/balances.ts",
         "src/lib/balance-screen.ts",
         "src/store/balances.ts",
+        "src/lib/transactions/activity-filters.ts",
+        "src/lib/transactions/activity-model.ts",
+        "src/lib/transactions/activity-query.ts",
       ],
       thresholds: {
         functions: 95,
