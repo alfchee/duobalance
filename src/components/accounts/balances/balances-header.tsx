@@ -4,10 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useFxOverrides } from "@/hooks/useFxOverrides";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
-import { useRatesByCode } from "@/hooks/useRatesByCode";
 import { displayBalance, type AccountWithBalance } from "@/lib/accounts";
 import {
   buildCurrencyBreakdown,
@@ -26,14 +24,18 @@ const SOURCE_LABELS = {
 // Top of the Balances screen: member avatars, account count, household net
 // worth in the base currency. Tapping the net worth opens the per-currency
 // breakdown popover (#21 AC: "transparently show the conversion used").
-export function BalancesHeader({ accounts }: { accounts: AccountWithBalance[] }) {
+export function BalancesHeader({
+  accounts,
+  ratesByCode,
+}: {
+  accounts: AccountWithBalance[];
+  ratesByCode: RatesByCode;
+}) {
   const t = useTranslations("balances");
   const tSettings = useTranslations("settings.overrides");
   const locale = useLocale();
   const { householdId, baseCurrency, memberId } = useHousehold();
   const { data: members } = useHouseholdMembers(householdId);
-  const { isLoading: ratesLoading } = useFxOverrides();
-  const ratesByCode = useRatesByCode();
   const [open, setOpen] = useState(false);
 
   const netWorth = baseCurrency
@@ -72,7 +74,7 @@ export function BalancesHeader({ accounts }: { accounts: AccountWithBalance[] })
             type="button"
             className="group flex w-full flex-col items-start gap-1 rounded-lg border bg-card p-4 text-left transition-colors hover:bg-accent/40"
             aria-expanded={open}
-            disabled={!baseCurrency || ratesLoading}
+            disabled={!baseCurrency}
           >
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t("netWorthLabel")}
@@ -198,6 +200,9 @@ function CurrencyBreakdown({
                   {t("rateUsed", {
                     rate: new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(
                       line.usdRate,
+                    ),
+                    date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
+                      new Date(line.rateDate),
                     ),
                   })}
                   {" · "}

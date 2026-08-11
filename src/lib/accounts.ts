@@ -65,11 +65,11 @@ export function isPrivateNeedsOwnerError(error: unknown): boolean {
 // around those fixed anchors. Without this, the reorder would renumber locked
 // rows too and the mutation would skip them — leaving duplicate display_order
 // values and a persisted order that diverges from the UI after refetch.
-export function reorderAccounts(
-  all: Account[],
-  visible: Account[],
+export function reorderAccounts<T extends Account>(
+  all: T[],
+  visible: T[],
   options: { lockedIds?: ReadonlySet<string> } = {},
-): Account[] {
+): T[] {
   const lockedIds = options.lockedIds ?? new Set<string>();
   const actives = all.filter((a) => !a.is_archived);
   const visibleIds = new Set(visible.map((a) => a.id));
