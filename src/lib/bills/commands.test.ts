@@ -21,4 +21,17 @@ describe("bill commands", () => {
     });
     expect(parseBillAmount("not-money", "en", 2)).toBeNull();
   });
+
+  it("rejects a missing start date and constrains reminder days to the supported range", () => {
+    const draft = { ...createDefaultBillDraft("2026-08-15", "USD"), name: "Internet" };
+    expect(createBillWriteInput({ ...draft, startsOn: "" }, "en", 2)).toEqual({ ok: false });
+    expect(createBillWriteInput({ ...draft, reminderDays: "-3" }, "en", 2)).toMatchObject({
+      ok: true,
+      value: { reminder_days_before: 0 },
+    });
+    expect(createBillWriteInput({ ...draft, reminderDays: "31" }, "en", 2)).toMatchObject({
+      ok: true,
+      value: { reminder_days_before: 30 },
+    });
+  });
 });

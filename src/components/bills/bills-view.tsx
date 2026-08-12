@@ -109,6 +109,7 @@ export function BillsView() {
     openInstance: selectInstance,
     openPay: openPaymentSheet,
     payOpen,
+    reset,
     selectedInstanceId,
   } = useBillsUiStore();
   const [amount, setAmount] = useState("");
@@ -134,6 +135,8 @@ export function BillsView() {
     if (baseCurrency)
       setDraft((current) => ({ ...current, currency: current.currency || baseCurrency }));
   }, [baseCurrency]);
+
+  useEffect(() => reset, [householdId, reset]);
 
   const bills = useMemo(() => billsQuery.data ?? [], [billsQuery.data]);
   const monthInstances = useMemo(
@@ -178,13 +181,14 @@ export function BillsView() {
     openEdit(bill.id);
   };
   const beginInstance = (value: SelectedBillInstance) => {
+    if (!value.instance.id) return;
     setSkipReason("");
     setInstanceAmount(value.instance.amount?.toString() ?? "");
     setActionError(null);
-    selectInstance(value.instance.id!);
+    selectInstance(value.instance.id);
   };
   const beginPay = () => {
-    if (!selected?.instance.amount) return;
+    if (selected?.instance.amount === null || selected?.instance.amount === undefined) return;
     setAmount(selected.instance.amount.toString());
     setPaidOn(today);
     setPaidByMemberId(memberId ?? "");

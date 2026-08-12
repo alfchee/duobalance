@@ -33,4 +33,18 @@ describe("bills UI store", () => {
     useBillsUiStore.getState().closePay();
     expect(useBillsUiStore.getState()).toMatchObject({ editorOpen: false, payOpen: false });
   });
+
+  it("resets all sheet identifiers and visibility", () => {
+    const store = useBillsUiStore.getState();
+    store.openEdit("bill-1");
+    store.openInstance("instance-1");
+    store.openPay();
+    useBillsUiStore.getState().reset();
+    expect(useBillsUiStore.getState()).toMatchObject({
+      editorBillId: null,
+      editorOpen: false,
+      payOpen: false,
+      selectedInstanceId: null,
+    });
+  });
 });

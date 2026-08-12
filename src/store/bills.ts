@@ -10,6 +10,7 @@ type BillsUiState = {
   closeEditor: () => void;
   closeInstance: () => void;
   closePay: () => void;
+  reset: () => void;
   openCreate: () => void;
   openEdit: (billId: string) => void;
   openInstance: (instanceId: string) => void;
@@ -28,4 +29,6 @@ export const useBillsUiStore = create<BillsUiState>((set) => ({
   openEdit: (editorBillId) => set({ editorBillId, editorOpen: true, selectedInstanceId: null }),
   openInstance: (selectedInstanceId) => set({ selectedInstanceId }),
   openPay: () => set({ payOpen: true }),
+  reset: () =>
+    set({ editorBillId: null, editorOpen: false, payOpen: false, selectedInstanceId: null }),
 }));

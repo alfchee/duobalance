@@ -11,7 +11,10 @@ export function createBillWriteInput(
   minorUnit: number,
 ): ValidationResult<BillWriteInput> {
   const parsedAmount = draft.amount ? parseMoneyInput(draft.amount, locale) : null;
-  if (!draft.name.trim() || (draft.amount && parsedAmount === null)) return { ok: false };
+  const reminderDays = Number(draft.reminderDays);
+  if (!draft.name.trim() || !draft.startsOn || (draft.amount && parsedAmount === null)) {
+    return { ok: false };
+  }
   return {
     ok: true,
     value: {
@@ -21,7 +24,10 @@ export function createBillWriteInput(
       default_amount: parsedAmount === null ? null : roundToMinorUnit(parsedAmount, minorUnit),
       ends_on: draft.endsOn || null,
       name: draft.name.trim(),
-      reminder_days_before: Number(draft.reminderDays) || 0,
+      reminder_days_before: Math.min(
+        30,
+        Math.max(0, Number.isFinite(reminderDays) ? reminderDays : 0),
+      ),
       responsible_member_id:
         draft.responsibleMemberId === "joint" ? null : draft.responsibleMemberId,
       rrule: serializeBillRecurrence(draft),

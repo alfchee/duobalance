@@ -31,9 +31,9 @@ export default defineConfig({
         "src/store/bills.ts",
       ],
       thresholds: {
-        functions: 90,
-        lines: 90,
-        statements: 90,
+        functions: 95,
+        lines: 95,
+        statements: 95,
       },
     },
   },
