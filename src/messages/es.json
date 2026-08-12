@@ -530,8 +530,11 @@
   },
   "bills": {
     "title": "Cuentas",
+    "eyebrow": "Pagos del hogar",
     "subtitle": "Mantén los pagos del hogar en un solo lugar.",
     "new": "Nueva cuenta",
+    "loading": "Cargando cuentas",
+    "calendarLabel": "Calendario de cuentas",
     "previousMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
     "loadError": "No se pudieron cargar tus cuentas.",
@@ -550,6 +553,11 @@
       "overdue": "Vencida",
       "paid": "Pagada",
       "skipped": "Omitida"
+    },
+    "summary": {
+      "paid": "Pagadas",
+      "upcoming": "Pendientes",
+      "overdue": "Vencidas"
     },
     "editor": {
       "title": "Nueva cuenta",

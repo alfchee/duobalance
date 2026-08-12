@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, ReceiptText } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  Clock3,
+  Plus,
+  ReceiptText,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { RRule, rrulestr } from "rrule";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -55,6 +63,8 @@ type SelectedInstance = {
   bill: BillWithInstances;
   instance: BillWithInstances["instances"][number];
 };
+
+type BillStatus = "due" | "overdue" | "paid" | "skipped";
 
 function dateFromYmd(value: string): Date {
   return new Date(`${value}T00:00:00Z`);
@@ -169,10 +179,10 @@ function displayDate(date: string, locale: string): string {
 }
 
 function statusTone(status: string | null): string {
-  if (status === "paid") return "bg-emerald-100 text-emerald-800";
-  if (status === "overdue") return "bg-red-100 text-red-700";
+  if (status === "paid") return "bg-success/10 text-success";
+  if (status === "overdue") return "bg-destructive/10 text-destructive";
   if (status === "skipped") return "bg-muted text-muted-foreground";
-  return "bg-blue-100 text-blue-800";
+  return "bg-primary/30 text-primary-foreground";
 }
 
 function weeklyTotals(items: readonly SelectedInstance[], locale: string): string {
@@ -250,6 +260,18 @@ export function BillsView() {
     }
     return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [monthInstances]);
+  const statusCounts = useMemo(
+    () =>
+      monthInstances.reduce(
+        (counts, { instance }) => {
+          const status = (instance.effective_status ?? "due") as BillStatus;
+          counts[status] += 1;
+          return counts;
+        },
+        { due: 0, overdue: 0, paid: 0, skipped: 0 } as Record<BillStatus, number>,
+      ),
+    [monthInstances],
+  );
   const firstDay = dateFromYmd(bounds.start).getUTCDay();
   const calendarStartOffset = (firstDay + 6) % 7;
   const dayCount = Number(bounds.end.slice(-2));
@@ -347,56 +369,67 @@ export function BillsView() {
 
   if (billsQuery.isPending) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-72" />
-        <Skeleton className="h-36" />
+      <div className="space-y-6" aria-busy="true">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-24" />
+          <Skeleton className="h-9 w-28 rounded-full" />
+        </div>
+        <Skeleton className="h-52 rounded-2xl" />
+        <Skeleton className="h-32 rounded-2xl" />
+        <span className="sr-only">{t("loading")}</span>
       </div>
     );
   }
   if (billsQuery.isError) {
     return (
-      <Card>
-        <CardContent className="space-y-3 p-6">
-          <p>{t("loadError")}</p>
-          <Button onClick={() => void billsQuery.refetch()}>{t("retry")}</Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-4xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+        <CircleAlert className="mx-auto size-7 text-destructive" />
+        <p className="mt-3 font-semibold text-destructive">{t("loadError")}</p>
+        <Button className="mt-4" variant="outline" onClick={() => void billsQuery.refetch()}>
+          {t("retry")}
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-7">
+      <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("eyebrow")}
+          </p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight">{t("title")}</h1>
         </div>
-        <Button size="sm" onClick={openCreate}>
+        <Button className="shrink-0" size="sm" onClick={openCreate}>
           <Plus />
           {t("new")}
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("previousMonth")}
-              onClick={() => setMonth(moveMonth(month, -1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <p className="font-semibold uppercase">
+      <section className="rounded-2xl bg-secondary p-4 sm:p-5" aria-label={t("calendarLabel")}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="font-black tracking-tight">
               {new Intl.DateTimeFormat(locale, {
                 month: "long",
                 year: "numeric",
                 timeZone: "UTC",
               }).format(dateFromYmd(`${month}-01`))}
             </p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+          </div>
+          <div className="flex gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
+              size="icon"
+              aria-label={t("previousMonth")}
+              onClick={() => setMonth(moveMonth(month, -1))}
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
               size="icon"
               aria-label={t("nextMonth")}
               onClick={() => setMonth(moveMonth(month, 1))}
@@ -404,12 +437,36 @@ export function BillsView() {
               <ChevronRight />
             </Button>
           </div>
-          <div className="grid grid-cols-7 text-center text-xs text-muted-foreground">
+        </div>
+        <div className="mt-5 grid grid-cols-3 divide-x divide-border text-center">
+          <div className="px-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("summary.paid")}
+            </p>
+            <p className="mt-1 text-lg font-black tabular-nums text-success">{statusCounts.paid}</p>
+          </div>
+          <div className="px-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("summary.upcoming")}
+            </p>
+            <p className="mt-1 text-lg font-black tabular-nums">{statusCounts.due}</p>
+          </div>
+          <div className="px-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("summary.overdue")}
+            </p>
+            <p className="mt-1 text-lg font-black tabular-nums text-destructive">
+              {statusCounts.overdue}
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="grid grid-cols-7 text-center text-[10px] font-semibold tracking-wider text-muted-foreground">
             {["MO", "TU", "WE", "TH", "FR", "SA", "SU"].map((day) => (
               <span key={day}>{day}</span>
             ))}
           </div>
-          <div className="mt-2 grid grid-cols-7 gap-y-2">
+          <div className="mt-2 grid grid-cols-7 gap-y-1">
             {Array.from({ length: calendarStartOffset }, (_, index) => (
               <span key={`blank-${index}`} />
             ))}
@@ -423,9 +480,9 @@ export function BillsView() {
                   type="button"
                   onClick={() => due[0] && openInstance(due[0])}
                   className={cn(
-                    "flex min-h-11 flex-col items-center rounded-md pt-1 text-sm",
+                    "flex min-h-10 flex-col items-center rounded-xl pt-1 text-sm transition-colors",
                     value === today && "bg-primary font-semibold text-primary-foreground",
-                    due.length > 0 && value !== today && "hover:bg-muted",
+                    due.length > 0 && value !== today && "hover:bg-background",
                   )}
                 >
                   <span>{day}</span>
@@ -435,9 +492,12 @@ export function BillsView() {
                         key={instance.id}
                         className="size-1.5 rounded-full"
                         style={{
-                          backgroundColor:
-                            members.find((member) => member.id === bill.responsible_member_id)
-                              ?.color_hex ?? "var(--color-primary)",
+                          backgroundColor: statusTone(instance.effective_status).includes(
+                            "destructive",
+                          )
+                            ? "var(--destructive)"
+                            : (members.find((member) => member.id === bill.responsible_member_id)
+                                ?.color_hex ?? "var(--primary)"),
                         }}
                       />
                     ))}
@@ -446,30 +506,29 @@ export function BillsView() {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {bills.length === 0 ? (
-        <Card>
-          <CardContent className="space-y-3 p-6 text-center">
-            <ReceiptText className="mx-auto size-8 text-muted-foreground" />
-            <h2 className="font-semibold">{t("empty.title")}</h2>
-            <p className="text-sm text-muted-foreground">{t("empty.description")}</p>
-            <Button onClick={openCreate}>{t("empty.action")}</Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-4xl border border-dashed p-8 text-center">
+          <ReceiptText className="mx-auto size-9 text-muted-foreground" />
+          <h2 className="mt-4 font-black tracking-tight">{t("empty.title")}</h2>
+          <p className="text-sm text-muted-foreground">{t("empty.description")}</p>
+          <Button className="mt-5" onClick={openCreate}>
+            {t("empty.action")}
+          </Button>
+        </div>
       ) : weeks.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center text-sm text-muted-foreground">
-            {t("emptyMonth")}
-          </CardContent>
-        </Card>
+        <div className="rounded-4xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+          <CalendarDays className="mx-auto mb-3 size-8" />
+          {t("emptyMonth")}
+        </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-7">
           {weeks.map(([week, items]) => (
             <section key={week}>
-              <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                <span>
+              <div className="mb-3 flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <span className="truncate">
                   {displayDate(week, locale)} –{" "}
                   {displayDate(
                     new Date(dateFromYmd(week).getTime() + 6 * 86400000).toISOString().slice(0, 10),
@@ -478,10 +537,11 @@ export function BillsView() {
                 </span>
                 <span>{weeklyTotals(items, locale)}</span>
               </div>
-              <Card>
-                <CardContent className="divide-y p-0">
+              <div className="overflow-hidden rounded-2xl border bg-background shadow-ring">
+                <div className="divide-y">
                   {items.map(({ bill, instance }) => {
                     const category = categories.find((item) => item.id === bill.category_id);
+                    const account = accounts.find((item) => item.id === bill.account_id);
                     const paidBy = members.find(
                       (member) => member.id === instance.paid_by_member_id,
                     );
@@ -490,16 +550,40 @@ export function BillsView() {
                         key={instance.id}
                         type="button"
                         onClick={() => openInstance({ bill, instance })}
-                        className="flex w-full items-center gap-3 p-4 text-left hover:bg-muted/50"
+                        className={cn(
+                          "flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-secondary/60",
+                          instance.effective_status === "overdue" && "bg-destructive/5",
+                        )}
                       >
-                        <span className="grid size-9 place-items-center rounded-full bg-muted">
-                          {category?.icon ?? "•"}
+                        <span
+                          className={cn(
+                            "grid size-10 shrink-0 place-items-center rounded-2xl bg-secondary text-lg",
+                            instance.effective_status === "overdue" &&
+                              "bg-destructive/10 text-destructive",
+                          )}
+                        >
+                          {instance.effective_status === "paid" ? (
+                            <Check className="size-5" />
+                          ) : (
+                            (category?.icon ?? "•")
+                          )}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium">{bill.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {displayDate(instance.due_on!, locale)}
-                            {paidBy ? ` · ${paidBy.display_name}` : ""}
+                          <span className="flex items-center gap-2">
+                            <span className="truncate font-semibold">{bill.name}</span>
+                            <span
+                              className={cn(
+                                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                                statusTone(instance.effective_status),
+                              )}
+                            >
+                              {t(`status.${instance.effective_status ?? "due"}`)}
+                            </span>
+                          </span>
+                          <span className="mt-1 block truncate text-xs text-muted-foreground">
+                            {[category?.name, account?.name, paidBy?.display_name]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </span>
                         </span>
                         <span className="text-right">
@@ -513,20 +597,16 @@ export function BillsView() {
                           >
                             {formatMoney(instance.amount ?? 0, bill.currency, locale)}
                           </span>
-                          <span
-                            className={cn(
-                              "mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
-                              statusTone(instance.effective_status),
-                            )}
-                          >
-                            {t(`status.${instance.effective_status ?? "due"}`)}
+                          <span className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                            <Clock3 className="size-3" />
+                            {displayDate(instance.due_on!, locale)}
                           </span>
                         </span>
                       </button>
                     );
                   })}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </section>
           ))}
         </div>

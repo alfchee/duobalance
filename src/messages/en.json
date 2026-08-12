@@ -530,8 +530,11 @@
   },
   "bills": {
     "title": "Bills",
+    "eyebrow": "Household payments",
     "subtitle": "Keep upcoming household payments in one place.",
     "new": "New bill",
+    "loading": "Loading bills",
+    "calendarLabel": "Bill calendar",
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
     "loadError": "Couldn't load your bills.",
@@ -550,6 +553,11 @@
       "overdue": "Overdue",
       "paid": "Paid",
       "skipped": "Skipped"
+    },
+    "summary": {
+      "paid": "Paid",
+      "upcoming": "Upcoming",
+      "overdue": "Overdue"
     },
     "editor": {
       "title": "New bill",
