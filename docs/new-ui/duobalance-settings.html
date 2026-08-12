@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>duobalance - Prototype Overview</title>
+  <title>Settings - duobalance</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
@@ -634,100 +634,126 @@
       }
     }
   </style>
-  <style>
-    body {
-      background-color: var(--surface);
-      padding: var(--space-8) var(--space-4);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .launcher-card {
-      background: var(--bg);
-      border-radius: var(--radius-lg);
-      padding: var(--space-8);
-      max-width: 600px;
-      width: 100%;
-      box-shadow: var(--elev-raised);
-    }
-    .launcher-title {
-      font-family: var(--font-display);
-      font-weight: 900;
-      font-size: var(--text-3xl);
-      margin-bottom: var(--space-2);
-      color: var(--fg);
-    }
-    .launcher-links {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-      margin-top: var(--space-6);
-    }
-    .launcher-link {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: var(--space-4);
-      background: var(--surface);
-      border-radius: var(--radius-md);
-      text-decoration: none;
-      color: var(--fg);
-      font-weight: 600;
-      transition: transform var(--motion-fast);
-      border: 1px solid var(--border);
-    }
-    .launcher-link:hover {
-      transform: scale(1.02);
-      border-color: var(--accent);
-    }
-    .launcher-link svg {
-      color: var(--muted);
-    }
-    .launcher-link:hover svg {
-      color: var(--accent);
-    }
-  </style>
 </head>
 <body>
-  <div class="launcher-card">
-    <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);">
-      <div style="width: 48px; height: 48px; background: var(--accent); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--accent-on);">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+
+<div class="app-shell">
+  <!-- Desktop Sidebar -->
+  <nav class="sidebar" aria-label="Main Navigation">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
       </div>
-      <h1 class="launcher-title" style="margin: 0; font-size: var(--text-2xl);">duobalance</h1>
+      duobalance
     </div>
-    <p class="text-base color-muted">Prototype screens based on the Wise design system. Pick a screen below to view it.</p>
     
-    <div class="launcher-links">
-      <a href="duobalance-auth.html" class="launcher-link">
-        <span>1. Auth Flow (Login)</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    <div class="sidebar-nav">
+      <a href="#" class="nav-item" aria-current="page">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"/></svg>
+        Balances
       </a>
-      <a href="duobalance-app.html" class="launcher-link">
-        <span>2. Balances (Home)</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      <a href="#" class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        Transactions
       </a>
-      <a href="duobalance-transactions.html" class="launcher-link">
-        <span>3. Activity & Transactions</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      <a href="#" class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        Budget
       </a>
-      <a href="duobalance-new-transaction.html" class="launcher-link">
-        <span>3.1. New Transaction Entry</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </a>
-      <a href="duobalance-budget.html" class="launcher-link">
-        <span>4. Budget</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </a>
-      <a href="duobalance-bills.html" class="launcher-link">
-        <span>5. Bills</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </a>
-      <a href="duobalance-settings.html" class="launcher-link">
-        <span>6. Settings</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      <a href="#" class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>
+        Bills
       </a>
     </div>
-  </div>
+    
+    <div class="sidebar-bottom">
+      <button class="btn btn-primary" style="width: 100%;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        New Transaction
+      </button>
+      <a href="#" class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+        Settings
+      </a>
+    </div>
+  </nav>
+
+  <main class="main-content" id="content">
+
+    <!-- Top Header -->
+    <header class="header-top">
+      <div>
+        <h1 class="heading-card">Settings</h1>
+      </div>
+      <div class="avatars">
+        <div class="avatar partner" aria-label="Partner">EM</div>
+        <div class="avatar" aria-label="You">AL</div>
+      </div>
+    </header>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+      
+      <!-- Profile & Household -->
+      <section style="display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;">
+        <div style="padding: var(--space-4); background: var(--surface); border-bottom: 1px solid var(--border);">
+          <span class="body-semi">Household</span>
+        </div>
+        <a href="#" style="display: flex; justify-content: space-between; padding: var(--space-4); text-decoration: none; color: var(--fg); border-bottom: 1px solid var(--border); align-items: center; background: var(--bg);">
+          <div style="display: flex; flex-direction: column;">
+            <span class="body-semi">Members</span>
+            <span class="text-xs color-muted">Alex & Elena</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+        <a href="#" style="display: flex; justify-content: space-between; padding: var(--space-4); text-decoration: none; color: var(--fg); align-items: center; background: var(--bg);">
+          <div style="display: flex; flex-direction: column;">
+            <span class="body-semi">Base Currency</span>
+            <span class="text-xs color-muted">USD - US Dollar</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </section>
+
+      <!-- Preferences -->
+      <section style="display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;">
+        <div style="padding: var(--space-4); background: var(--surface); border-bottom: 1px solid var(--border);">
+          <span class="body-semi">Preferences</span>
+        </div>
+        <a href="#" style="display: flex; justify-content: space-between; padding: var(--space-4); text-decoration: none; color: var(--fg); border-bottom: 1px solid var(--border); align-items: center; background: var(--bg);">
+          <div style="display: flex; flex-direction: column;">
+            <span class="body-semi">Categories & Rules</span>
+            <span class="text-xs color-muted">Manage tags and categorization</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+        <a href="#" style="display: flex; justify-content: space-between; padding: var(--space-4); text-decoration: none; color: var(--fg); border-bottom: 1px solid var(--border); align-items: center; background: var(--bg);">
+          <div style="display: flex; flex-direction: column;">
+            <span class="body-semi">FX Rate Overrides</span>
+            <span class="text-xs color-muted">Custom exchange rates</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </section>
+      
+      <button class="btn btn-outline" style="color: var(--danger); border-color: var(--danger); background: var(--bg);">Log Out</button>
+
+    </div>
+
+  </main>
+
+  <!-- Mobile Floating Action Button -->
+  <a href="duobalance-new-transaction.html" class="fab" style="text-decoration: none;" aria-label="Add new transaction">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+  </a>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="bottom-nav" aria-label="Bottom Navigation">
+    <a href="duobalance-settings.html" class="bottom-nav-item active" aria-current="page" ><div class="icon-wrapper"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></div><span>More</span></a>
+  </nav>
+
+</div>
+
 </body>
 </html>
