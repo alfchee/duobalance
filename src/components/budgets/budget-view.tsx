@@ -160,20 +160,29 @@ export function BudgetView() {
     [categories, previousStatusQuery.data, t],
   );
   const totalSpent = rows.reduce((total, row) => total + row.spent, 0);
+  const totalBudget = rows.reduce((total, row) => total + Math.max(row.amount, 0), 0);
   const hasBudgets = (statusQuery.data?.length ?? 0) > 0;
   const loading = statusQuery.isLoading || spendingQuery.isLoading;
   const error = statusQuery.isError || spendingQuery.isError;
 
   if (loading)
     return (
-      <main className="mx-auto w-full max-w-2xl space-y-4 p-6">
-        <Skeleton className="h-72 w-full" />
-        <Skeleton className="h-48 w-full" />
-      </main>
+      <div className="flex flex-col gap-8">
+        <div className="space-y-6">
+          <Skeleton className="h-9 w-24 rounded-full" />
+          <Skeleton className="mx-auto h-11 w-full max-w-md rounded-full" />
+        </div>
+        <Skeleton className="h-[320px] w-full rounded-[24px]" />
+        <div className="space-y-4">
+          <Skeleton className="h-4 w-24 rounded" />
+          <Skeleton className="h-20 w-full rounded" />
+          <Skeleton className="h-20 w-full rounded" />
+        </div>
+      </div>
     );
   if (error)
     return (
-      <main className="mx-auto w-full max-w-2xl space-y-3 p-6">
+      <div className="space-y-3 rounded-[40px] border bg-background p-6 text-center shadow-ring">
         <p role="alert" className="text-sm text-destructive">
           {t("loadError")}
         </p>
@@ -183,91 +192,123 @@ export function BudgetView() {
         >
           {t("retry")}
         </Button>
-      </main>
+      </div>
     );
 
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-4 p-6">
-      <header className="flex items-center justify-between gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t("previousMonth")}
-          onClick={() => setPeriodMonth(moveMonth(periodMonth, -1))}
-        >
-          <ChevronLeft />
-        </Button>
-        <h1 className="text-center text-xl font-semibold capitalize">
-          {monthLabel(periodMonth, locale)}
-        </h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t("nextMonth")}
-          onClick={() => setPeriodMonth(moveMonth(periodMonth, 1))}
-        >
-          <ChevronRight />
-        </Button>
-      </header>
-      <div className="flex rounded-lg border p-1" role="group" aria-label={t("scopeLabel")}>
-        {(["household", "mine"] as const).map((value) => (
+    <div className="flex flex-col gap-8">
+      <header className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
           <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={t("previousMonth")}
+            onClick={() => setPeriodMonth(moveMonth(periodMonth, -1))}
+          >
+            <ChevronLeft />
+          </Button>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-black tracking-tight capitalize sm:text-3xl">Budget</h1>
+            <p className="text-sm font-semibold text-muted-foreground">
+              {monthLabel(periodMonth, locale)}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={t("nextMonth")}
+            onClick={() => setPeriodMonth(moveMonth(periodMonth, 1))}
+          >
+            <ChevronRight />
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="sr-only" htmlFor="budget-sort">
+            {t("sortLabel")}
+          </label>
+          <select
+            id="budget-sort"
+            className="rounded-full border bg-background px-4 py-2 text-sm font-semibold shadow-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={sort}
+            onChange={(event) => setSort(event.target.value as Sort)}
+          >
+            <option value="spent">{t("sort.spent")}</option>
+            <option value="remaining">{t("sort.remaining")}</option>
+            <option value="name">{t("sort.name")}</option>
+          </select>
+        </div>
+      </header>
+      <div
+        className="mx-auto inline-flex w-full max-w-md rounded-full bg-muted p-1 text-sm"
+        role="group"
+        aria-label={t("scopeLabel")}
+      >
+        {(["household", "mine"] as const).map((value) => (
+          <button
             key={value}
-            className="flex-1"
-            size="sm"
-            variant={scope === value ? "default" : "ghost"}
+            type="button"
+            role="tab"
+            aria-selected={scope === value}
             onClick={() => setScope(value)}
+            className={cn(
+              "flex-1 rounded-full px-4 py-2.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              scope === value
+                ? "bg-background text-foreground shadow-ring"
+                : "text-muted-foreground hover:text-foreground",
+            )}
           >
             {t(`scope.${value}`)}
-          </Button>
+          </button>
         ))}
       </div>
-      <label className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm">
-        {t("sortLabel")}
-        <select
-          className="bg-transparent text-right"
-          value={sort}
-          onChange={(event) => setSort(event.target.value as Sort)}
-        >
-          <option value="spent">{t("sort.spent")}</option>
-          <option value="remaining">{t("sort.remaining")}</option>
-          <option value="name">{t("sort.name")}</option>
-        </select>
-      </label>
-      <section className="rounded-xl border p-5 text-center">
-        <Donut rows={rows} total={totalSpent} currency={baseCurrency ?? "USD"} locale={locale} />
-        <p className="mt-4 text-sm text-muted-foreground">{t("spentLabel")}</p>
-        <p className="text-3xl font-semibold">
-          {formatMoney(totalSpent, baseCurrency ?? "USD", locale)}
-        </p>
-        {scope === "household" ? (
-          <p className="mt-2 text-xs text-muted-foreground">{t("visibleToYou")}</p>
-        ) : null}
+      <section className="rounded-[24px] bg-secondary/70 p-10 text-center sm:p-14">
+        <BudgetRing
+          spent={totalSpent}
+          totalBudget={totalBudget}
+          currency={baseCurrency ?? "USD"}
+          locale={locale}
+        />
       </section>
       {!hasBudgets && previousDrafts.length > 0 ? (
-        <Button className="w-full" variant="outline" onClick={() => setCopyOpen(true)}>
-          <Copy />
+        <Button
+          className="w-full rounded-full py-6 text-base"
+          variant="secondary"
+          onClick={() => setCopyOpen(true)}
+        >
+          <Copy className="size-5" />
           {t("copyPrevious", { month: monthLabel(moveMonth(periodMonth, -1), locale) })}
         </Button>
       ) : null}
       {rows.length === 0 ? (
-        <section className="rounded-lg border border-dashed p-8 text-center">
-          <PieChart className="mx-auto size-8 text-muted-foreground" />
-          <h2 className="mt-3 font-medium">{t("empty.title")}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t("empty.description")}</p>
+        <section className="rounded-[40px] border border-dashed bg-background p-10 text-center shadow-ring">
+          <PieChart className="mx-auto size-12 text-muted-foreground" />
+          <h2 className="mt-5 text-xl font-black tracking-tight">{t("empty.title")}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{t("empty.description")}</p>
         </section>
       ) : (
-        <ul className="overflow-hidden rounded-lg border divide-y">
-          {rows.map((row) => (
-            <BudgetCategoryRow
-              key={`${row.categoryId}-${row.id ?? "spend"}`}
-              row={row}
-              periodMonth={periodMonth}
-              currency={baseCurrency ?? "USD"}
-              locale={locale}
-            />
-          ))}
-        </ul>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-end justify-between border-b pb-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Categories
+            </p>
+            {scope === "household" ? (
+              <p className="text-xs text-muted-foreground">{t("visibleToYou")}</p>
+            ) : null}
+          </div>
+          <ul className="flex flex-col divide-y">
+            {rows.map((row) => (
+              <BudgetCategoryRow
+                key={`${row.categoryId}-${row.id ?? "spend"}`}
+                row={row}
+                periodMonth={periodMonth}
+                currency={baseCurrency ?? "USD"}
+                locale={locale}
+              />
+            ))}
+          </ul>
+        </div>
       )}
       <CopyBudgetsDialog
         open={copyOpen}
@@ -290,49 +331,58 @@ export function BudgetView() {
           setCopyOpen(false);
         }}
       />
-    </main>
+    </div>
   );
 }
 
-function Donut({
-  rows,
-  total,
+function BudgetRing({
+  spent,
+  totalBudget,
   currency,
   locale,
 }: {
-  rows: readonly BudgetRow[];
-  total: number;
+  spent: number;
+  totalBudget: number;
   currency: string;
   locale: string;
 }) {
   const t = useTranslations("budget");
-  const spendingRows = rows.filter((row) => row.spent > 0).sort((a, b) => b.spent - a.spent);
-  const visibleRows = spendingRows.slice(0, 7);
-  const otherSpent = spendingRows.slice(7).reduce((sum, row) => sum + row.spent, 0);
-  const slices =
-    otherSpent > 0 ? [...visibleRows, { color: "#64748B", spent: otherSpent }] : visibleRows;
-  const background = slices.length
-    ? `conic-gradient(${slices
-        .reduce<{ end: number; parts: string[] }>(
-          (result, row) => {
-            const start = result.end;
-            const end = start + (row.spent / total) * 100;
-            result.parts.push(`${row.color} ${start}% ${end}%`);
-            result.end = end;
-            return result;
-          },
-          { end: 0, parts: [] },
-        )
-        .parts.join(", ")})`
-    : "conic-gradient(var(--muted) 0 100%)";
+  const overBudget = totalBudget > 0 && spent > totalBudget;
+  const progress = totalBudget > 0 ? Math.min(spent / totalBudget, 1) : 0;
+  const circumference = 2 * Math.PI * 80;
+  const dash = circumference * progress;
+  const remaining = Math.max(totalBudget - spent, 0);
   return (
     <div
-      className="mx-auto grid size-44 place-items-center rounded-full"
-      style={{ background }}
-      aria-label={`${t("chartAria", { total: formatMoney(total, currency, locale) })}${otherSpent > 0 ? `; ${t("other")}` : ""}`}
+      className="relative mx-auto grid size-64 place-items-center"
+      role="img"
+      aria-label={t("chartAria", { total: formatMoney(spent, currency, locale) })}
     >
-      <div className="grid size-28 place-items-center rounded-full bg-background text-sm text-muted-foreground">
-        {t("chartCenter")}
+      <svg viewBox="0 0 200 200" className="absolute inset-0 size-full -rotate-90">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--background)" strokeWidth="18" />
+        <circle
+          cx="100"
+          cy="100"
+          r="80"
+          fill="none"
+          stroke={overBudget ? "var(--destructive)" : "var(--primary)"}
+          strokeWidth="18"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circumference - dash}`}
+        />
+      </svg>
+      <div className="relative z-10 flex flex-col items-center">
+        <p className="text-4xl font-black tracking-tight tabular-nums sm:text-5xl">
+          {formatMoney(spent, currency, locale)}
+        </p>
+        {totalBudget > 0 ? (
+          <p className="mt-1 text-sm font-semibold text-muted-foreground tabular-nums">
+            of {formatMoney(totalBudget, currency, locale)} ·{" "}
+            {formatMoney(remaining, currency, locale)} left
+          </p>
+        ) : (
+          <p className="mt-1 text-sm font-semibold text-muted-foreground">{t("chartCenter")}</p>
+        )}
       </div>
     </div>
   );
@@ -353,54 +403,59 @@ function BudgetCategoryRow({
   const overBudget = row.remaining < 0 || (row.amount === 0 && row.spent > 0);
   const progress =
     row.amount > 0 ? Math.min((row.spent / row.amount) * 100, 100) : row.spent > 0 ? 100 : 0;
+  const percentUsed =
+    row.amount > 0 ? Math.min(Math.round((row.spent / row.amount) * 100), 100) : 0;
   const href = `/transactions?categories=${row.categoryId}&start=${periodMonth}&end=${monthEnd(periodMonth)}&type=expense`;
   return (
     <li>
-      <Link href={href} className="block p-4 transition-colors hover:bg-muted/50">
-        <div className="flex gap-3">
-          <span
-            className="grid size-9 shrink-0 place-items-center rounded-full"
-            style={{ backgroundColor: row.color }}
-            aria-hidden
-          >
-            {row.icon ?? "•"}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate font-medium">{row.name}</p>
-                {row.merchants.length ? (
-                  <p className="truncate text-xs text-muted-foreground">
-                    {row.merchants.join(" · ")}
-                  </p>
-                ) : null}
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="font-medium">{formatMoney(row.spent, currency, locale)}</p>
-                <p
-                  className={cn(
-                    "text-xs",
-                    overBudget ? "text-destructive" : "text-muted-foreground",
-                  )}
-                >
-                  {overBudget
-                    ? t("overBy", {
-                        amount: formatMoney(Math.abs(row.remaining), currency, locale),
-                      })
-                    : t("left", { amount: formatMoney(row.remaining, currency, locale) })}
+      <Link
+        href={href}
+        className="block py-4 transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:py-5"
+      >
+        <div className="min-w-0">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-lg font-semibold">{row.name}</p>
+              {row.merchants.length ? (
+                <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                  {row.merchants.join(" · ")}
                 </p>
-              </div>
+              ) : null}
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className={cn("h-full rounded-full", overBudget ? "bg-destructive" : "bg-primary")}
-                style={{ width: `${progress}%` }}
-              />
+            <div className="flex shrink-0 items-baseline gap-1 text-lg font-semibold tabular-nums">
+              <span className={overBudget ? "text-destructive" : "text-foreground"}>
+                {formatMoney(row.spent, currency, locale)}
+              </span>
+              <span className="text-muted-foreground">/</span>
+              <span className={overBudget ? "text-destructive" : "text-muted-foreground"}>
+                {row.amount > 0
+                  ? formatMoney(row.amount, currency, locale)
+                  : formatMoney(0, currency, locale)}
+              </span>
             </div>
-            {row.amount === 0 ? (
-              <p className="mt-2 text-xs text-destructive">{t("noBudget")}</p>
-            ) : null}
           </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all",
+                overBudget ? "bg-destructive" : "bg-primary",
+              )}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          {overBudget ? (
+            <p className="mt-2 text-xs font-semibold text-destructive">
+              {t("overBy", {
+                amount: formatMoney(Math.abs(row.remaining), currency, locale),
+              })}
+            </p>
+          ) : row.amount === 0 ? (
+            <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-destructive">
+              {t("noBudget")}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">{percentUsed}% used</p>
+          )}
         </div>
       </Link>
     </li>
@@ -452,31 +507,36 @@ function CopyBudgetsDialog({
   };
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="rounded-[30px]">
+        <DialogHeader className="gap-1">
+          <DialogTitle className="text-2xl font-black tracking-tight">{t("title")}</DialogTitle>
+          <DialogDescription className="text-sm">
             {t("description", {
               source: monthLabel(sourceMonth, locale),
               target: monthLabel(periodMonth, locale),
             })}
           </DialogDescription>
         </DialogHeader>
-        <Label>
-          {t("adjustment")}
+        <div className="space-y-1">
+          <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("adjustment")}
+          </Label>
           <Input
-            className="mt-1"
+            className="rounded-full text-base"
             type="number"
             value={adjustment}
             onChange={(event) => updateAdjustment(event.target.value)}
           />
-        </Label>
-        <div className="max-h-72 space-y-3 overflow-y-auto">
+        </div>
+        <div className="max-h-72 space-y-3 overflow-y-auto rounded-[16px] border p-3 shadow-ring sm:p-4">
           {drafts.map((draft) => (
-            <Label key={draft.categoryId} className="flex items-center justify-between gap-3">
-              <span className="min-w-0 truncate">{draft.name}</span>
+            <div
+              key={draft.categoryId}
+              className="flex items-center justify-between gap-3 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 hover:bg-secondary/50"
+            >
+              <span className="min-w-0 truncate font-semibold">{draft.name}</span>
               <Input
-                className="w-32"
+                className="w-36 rounded-full text-base tabular-nums"
                 inputMode="decimal"
                 value={draft.amount}
                 onChange={(event) => {
@@ -491,19 +551,24 @@ function CopyBudgetsDialog({
                   );
                 }}
               />
-            </Label>
+            </div>
           ))}
         </div>
         {error ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-sm font-semibold text-destructive">
             {error}
           </p>
         ) : null}
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            className="rounded-full text-sm font-semibold"
+            variant="outline"
+            onClick={onClose}
+          >
             {t("cancel")}
           </Button>
           <Button
+            className="rounded-full text-sm font-semibold"
             disabled={pending || drafts.length === 0}
             onClick={() => void onCopy(drafts).catch(() => setError(t("error")))}
           >
