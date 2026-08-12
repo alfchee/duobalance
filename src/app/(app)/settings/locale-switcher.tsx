@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocaleContext, type SupportedLocale } from "@/components/locale-provider";
 
 const LOCALES: SupportedLocale[] = ["es", "en"];
@@ -25,30 +24,28 @@ export function LocaleSwitcher() {
   const { locale, setLocale } = useLocaleContext();
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="text-base">{t("title")}</CardTitle>
-        <CardDescription>{t("subtitle")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Select
-          value={locale}
-          onValueChange={(value) => {
-            if (isSupportedLocale(value)) setLocale(value);
-          }}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {LOCALES.map((code) => (
-              <SelectItem key={code} value={code}>
-                {tLanguages(code)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </CardContent>
-    </Card>
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <h3 className="text-sm font-semibold">{t("title")}</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">{t("subtitle")}</p>
+      </div>
+      <Select
+        value={locale}
+        onValueChange={(value) => {
+          if (isSupportedLocale(value)) setLocale(value);
+        }}
+      >
+        <SelectTrigger className="w-32">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {LOCALES.map((code) => (
+            <SelectItem key={code} value={code}>
+              {tLanguages(code)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

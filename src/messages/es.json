@@ -654,6 +654,27 @@
   },
   "settings": {
     "title": "Configuración",
+    "profileAvatar": "Perfil de {email}",
+    "groups": {
+      "household": "Hogar",
+      "preferences": "Preferencias",
+      "configuration": "Categorías y reglas"
+    },
+    "navigation": {
+      "categories": {
+        "title": "Categorías",
+        "description": "Administra tus categorías de ingresos y gastos."
+      },
+      "rules": {
+        "title": "Reglas de categorización",
+        "description": "Crea reglas para categorizar transacciones automáticamente."
+      }
+    },
+    "baseCurrency": {
+      "title": "Moneda base",
+      "value": "{currency}",
+      "unavailable": "Sin configurar"
+    },
     "signedInAs": "Sesión iniciada como",
     "household": "Hogar",
     "role": {

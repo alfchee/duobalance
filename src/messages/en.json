@@ -654,6 +654,27 @@
   },
   "settings": {
     "title": "Settings",
+    "profileAvatar": "Profile for {email}",
+    "groups": {
+      "household": "Household",
+      "preferences": "Preferences",
+      "configuration": "Categories & rules"
+    },
+    "navigation": {
+      "categories": {
+        "title": "Categories",
+        "description": "Manage your income and expense categories."
+      },
+      "rules": {
+        "title": "Categorization rules",
+        "description": "Create rules that automatically categorize transactions."
+      }
+    },
+    "baseCurrency": {
+      "title": "Base currency",
+      "value": "{currency}",
+      "unavailable": "Not configured"
+    },
     "signedInAs": "Signed in as",
     "household": "Household",
     "role": {
