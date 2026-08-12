@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Copy, PieChart } from "lucide-react";
+import { Copy, PieChart, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { BudgetCategoryList } from "@/components/budgets/budget-category-list";
 import { BudgetHeader } from "@/components/budgets/budget-header";
 import { BudgetRing } from "@/components/budgets/budget-ring";
 import { CopyBudgetsDialog } from "@/components/budgets/copy-budgets-dialog";
+import { BudgetEditorDialog, DeleteBudgetDialog } from "@/components/budgets/budget-editor-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBudgetMutations, useBudgetSpending, useBudgetStatus } from "@/hooks/useBudgets";
@@ -29,7 +30,22 @@ export function BudgetView() {
   const t = useTranslations("budget");
   const copyDialogT = useTranslations("budget.copyDialog");
   const { baseCurrency, householdId, memberId, timezone } = useHousehold();
-  const { copyOpen, scope, setCopyOpen, setScope, setSort, sort } = useBudgetUiStore();
+  const {
+    closeEditor,
+    copyOpen,
+    createCategoryId,
+    deleteBudgetId,
+    editingBudgetId,
+    editorOpen,
+    openCreate,
+    openEdit,
+    requestDelete,
+    scope,
+    setCopyOpen,
+    setScope,
+    setSort,
+    sort,
+  } = useBudgetUiStore();
   const [periodMonth, setPeriodMonth] = useState(() => startOfMonthInHousehold(timezone ?? "UTC"));
   const ownerMemberId = scope === "mine" ? memberId : null;
   const statusQuery = useBudgetStatus(householdId, periodMonth, ownerMemberId);
@@ -41,7 +57,7 @@ export function BudgetView() {
   );
   const { data: categories = [] } = useCategories(householdId);
   const { data: currencies = [] } = useCurrencies();
-  const { copy } = useBudgetMutations(householdId);
+  const { copy, create, remove, update } = useBudgetMutations(householdId);
 
   useEffect(() => {
     if (timezone) setPeriodMonth(startOfMonthInHousehold(timezone));
@@ -70,6 +86,7 @@ export function BudgetView() {
   const error = statusQuery.isError || spendingQuery.isError;
   const previousMonth = moveBudgetMonth(periodMonth, -1);
   const monthLabel = getBudgetMonthLabel(periodMonth, locale);
+  const editingBudget = rows.find((row) => row.id === editingBudgetId) ?? null;
 
   if (loading) return <BudgetViewSkeleton />;
   if (error)
@@ -116,6 +133,10 @@ export function BudgetView() {
           totalBudget={totalBudget}
         />
       </section>
+      <Button className="w-full rounded-full py-6 text-base" onClick={() => openCreate()}>
+        <Plus className="size-5" />
+        {t("new")}
+      </Button>
       {rows.length === 0 ? (
         <BudgetEmptyState title={t("empty.title")} description={t("empty.description")} />
       ) : (
@@ -132,6 +153,10 @@ export function BudgetView() {
             percentUsed: (values) => t("percentUsed", values),
             visibleToYou: t("visibleToYou"),
           }}
+          actions={{ create: t("new"), edit: t("edit"), delete: t("delete") }}
+          onEdit={openEdit}
+          onDelete={requestDelete}
+          onCreate={openCreate}
         />
       )}
       {!hasBudgets && previousDrafts.length > 0 ? (
@@ -166,6 +191,69 @@ export function BudgetView() {
           }),
           error: copyDialogT("error"),
           title: copyDialogT("title"),
+        }}
+      />
+      <BudgetEditorDialog
+        categories={categories.filter((category) => category.kind === "expense")}
+        currency={currency}
+        editingBudget={editingBudget}
+        initialCategoryId={createCategoryId}
+        locale={locale}
+        minorUnit={minorUnit}
+        open={editorOpen}
+        pending={create.isPending || update.isPending}
+        onClose={closeEditor}
+        onSave={async (draft) => {
+          if (editingBudget?.id) {
+            await update.mutateAsync({
+              amount: draft.amount,
+              category_id: draft.categoryId,
+              id: editingBudget.id,
+              rollover: draft.rollover,
+            });
+          } else {
+            await create.mutateAsync({
+              amount: draft.amount,
+              category_id: draft.categoryId,
+              owner_member_id: ownerMemberId,
+              period_month: periodMonth,
+              rollover: draft.rollover,
+            });
+          }
+          closeEditor();
+        }}
+        translations={{
+          amount: t("editor.amount"),
+          cancel: copyDialogT("cancel"),
+          category: t("editor.category"),
+          createDescription: t("editor.createDescription"),
+          createTitle: t("editor.createTitle"),
+          editDescription: t("editor.editDescription"),
+          editTitle: t("editor.editTitle"),
+          error: t("editor.error"),
+          rollover: t("editor.rollover"),
+          save: t("editor.save"),
+          saving: t("editor.saving"),
+          selectCategory: t("editor.selectCategory"),
+          validationAmount: t("editor.validationAmount"),
+          validationCategory: t("editor.validationCategory"),
+        }}
+      />
+      <DeleteBudgetDialog
+        open={deleteBudgetId !== null}
+        pending={remove.isPending}
+        onCancel={() => requestDelete(null)}
+        onConfirm={async () => {
+          if (!deleteBudgetId) return;
+          await remove.mutateAsync(deleteBudgetId);
+          requestDelete(null);
+        }}
+        translations={{
+          cancel: copyDialogT("cancel"),
+          confirm: t("deleteDialog.confirm"),
+          description: t("deleteDialog.description"),
+          error: t("deleteDialog.error"),
+          title: t("deleteDialog.title"),
         }}
       />
     </div>

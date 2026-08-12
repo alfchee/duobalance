@@ -29,6 +29,7 @@ export type BudgetRow = {
   merchants: string[];
   name: string;
   remaining: number;
+  rollover: boolean;
   spent: number;
 };
 
@@ -110,6 +111,7 @@ export function createBudgetRows({
       merchants: [],
       name: getCategoryName(categories, budget.category_id, unknownCategory),
       remaining: budget.remaining ?? 0,
+      rollover: budget.rollover ?? false,
       spent: budget.spent ?? 0,
     });
   }
@@ -140,6 +142,7 @@ export function createBudgetRows({
       merchants: addMerchant([], transaction.description),
       name: getCategoryName(categories, transaction.category_id, unknownCategory),
       remaining: -spent,
+      rollover: false,
       spent,
     });
   }

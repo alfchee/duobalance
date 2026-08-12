@@ -50,6 +50,7 @@ describe("budget domain model", () => {
         merchants: ["Restaurant", "Coffee"],
         name: "Dining",
         remaining: -465,
+        rollover: false,
         spent: 465,
       },
       {
@@ -59,6 +60,7 @@ describe("budget domain model", () => {
         merchants: ["Market"],
         name: "Groceries",
         remaining: 300,
+        rollover: false,
         spent: 300,
       },
     ]);

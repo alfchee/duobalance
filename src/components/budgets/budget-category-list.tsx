@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import type { BudgetRow } from "@/lib/budgets/model";
 import { buildBudgetTransactionsHref, getBudgetProgress } from "@/lib/budgets/model";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type BudgetCategoryListProps = {
   currency: string;
@@ -19,6 +21,10 @@ type BudgetCategoryListProps = {
     visibleToYou: string;
   };
   visibleToHousehold: boolean;
+  onEdit: (budgetId: string) => void;
+  onDelete: (budgetId: string) => void;
+  onCreate: (categoryId: string) => void;
+  actions: { create: string; edit: string; delete: string };
 };
 
 export function BudgetCategoryList({
@@ -28,6 +34,10 @@ export function BudgetCategoryList({
   rows,
   translations,
   visibleToHousehold,
+  onDelete,
+  onEdit,
+  onCreate,
+  actions,
 }: BudgetCategoryListProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -48,6 +58,10 @@ export function BudgetCategoryList({
             periodMonth={periodMonth}
             row={row}
             translations={translations}
+            onDelete={onDelete}
+            onEdit={onEdit}
+            onCreate={onCreate}
+            actions={actions}
           />
         ))}
       </ul>
@@ -61,6 +75,10 @@ type BudgetCategoryRowProps = {
   periodMonth: string;
   row: BudgetRow;
   translations: Omit<BudgetCategoryListProps["translations"], "categories" | "visibleToYou">;
+  onEdit: (budgetId: string) => void;
+  onDelete: (budgetId: string) => void;
+  onCreate: (categoryId: string) => void;
+  actions: BudgetCategoryListProps["actions"];
 };
 
 function BudgetCategoryRow({
@@ -69,14 +87,20 @@ function BudgetCategoryRow({
   periodMonth,
   row,
   translations,
+  actions,
+  onDelete,
+  onEdit,
+  onCreate,
 }: BudgetCategoryRowProps) {
   const { overBudget, percentUsed, progress } = getBudgetProgress(row);
   return (
     <li>
-      <Link
-        href={buildBudgetTransactionsHref(row.categoryId, periodMonth)}
-        className="block py-4 transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:py-5"
-      >
+      <div className="group relative py-4 transition-colors hover:bg-secondary/40 sm:py-5">
+        <Link
+          href={buildBudgetTransactionsHref(row.categoryId, periodMonth)}
+          className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={row.name}
+        />
         <div className="min-w-0">
           <div className="flex items-baseline justify-between gap-3">
             <div className="min-w-0">
@@ -96,6 +120,43 @@ function BudgetCategoryRow({
                 {formatMoney(Math.max(row.amount, 0), currency, locale)}
               </span>
             </div>
+            {row.id ? (
+              <div className="relative z-10 ml-2 flex shrink-0 gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                <Button
+                  aria-label={actions.edit}
+                  className="rounded-full"
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => onEdit(row.id!)}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+                  aria-label={actions.delete}
+                  className="rounded-full text-destructive hover:text-destructive"
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => onDelete(row.id!)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="relative z-10 ml-2 shrink-0">
+                <Button
+                  aria-label={actions.create}
+                  className="rounded-full"
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => onCreate(row.categoryId)}
+                >
+                  <Plus className="size-4" />
+                </Button>
+              </div>
+            )}
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
             <div
@@ -122,7 +183,7 @@ function BudgetCategoryRow({
             </p>
           )}
         </div>
-      </Link>
+      </div>
     </li>
   );
 }
