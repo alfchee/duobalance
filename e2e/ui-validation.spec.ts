@@ -60,9 +60,9 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.goto("/login");
     await expect(page.getByRole("main")).toBeVisible();
-    await page.screenshot({
-      path: `test-results/ui-validation/${test.info().project.name}-login-${viewport.name}.png`,
+    await expect(page).toHaveScreenshot(`login-${viewport.name}.png`, {
       fullPage: true,
+      maxDiffPixelRatio: 0.01,
     });
   });
 }
