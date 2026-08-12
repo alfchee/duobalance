@@ -16,7 +16,7 @@ function dateFormatter(locale: string) {
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 }
 
-export function MembersSection() {
+export function MembersSection({ embedded = false }: { embedded?: boolean }) {
   const { householdId, role } = useHousehold();
   const t = useTranslations("settings.members");
   const tErrors = useTranslations("settings.members.errors");
@@ -78,139 +78,143 @@ export function MembersSection() {
     }
   }
 
+  const content = (
+    <div className="space-y-6 p-4">
+      <section aria-label={t("currentMembers")}>
+        <h2 className="mb-2 text-sm font-medium">{t("currentMembers")}</h2>
+        {members.isPending ? (
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
+          </div>
+        ) : (
+          <ul className="divide-y">
+            {(members.data ?? []).map((member) => (
+              <li key={member.id} className="flex items-center justify-between py-2 text-sm">
+                <span className="font-medium">{member.display_name}</span>
+                <span className="flex items-center gap-3 text-muted-foreground">
+                  {member.role === "owner" ? (
+                    <span className="rounded-full border px-2 py-0.5 text-xs">
+                      {t("roles.owner")}
+                    </span>
+                  ) : null}
+                  <time dateTime={member.joined_at}>{fmt.format(new Date(member.joined_at))}</time>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-label={t("pendingInvites")}>
+        <div className="mb-2 flex items-baseline justify-between">
+          <h2 className="text-sm font-medium">{t("pendingInvites")}</h2>
+          {invites.isPending ? (
+            <Skeleton className="h-4 w-16" />
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              {t("count", { count: invites.data?.length ?? 0 })}
+            </span>
+          )}
+        </div>
+
+        {isOwner ? (
+          <form action={handleInviteSubmit} className="mb-4 flex flex-col gap-2">
+            <Label htmlFor="invite-email" className="sr-only">
+              {t("inviteLabel")}
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                id="invite-email"
+                name="email"
+                type="email"
+                required
+                placeholder={t("invitePlaceholder")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Button type="submit" disabled={create.isPending}>
+                {create.isPending ? t("sending") : t("inviteButton")}
+              </Button>
+            </div>
+            {formError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {tErrors(formError)}
+              </p>
+            ) : null}
+          </form>
+        ) : null}
+
+        {actionError ? (
+          <p role="alert" className="mb-3 text-sm text-destructive">
+            {tErrors(actionError)}
+          </p>
+        ) : null}
+
+        {invites.isPending ? (
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+          </div>
+        ) : (invites.data ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("noInvites")}</p>
+        ) : (
+          <ul className="divide-y">
+            {(invites.data ?? []).map((invite) => {
+              const expired = new Date(invite.expires_at) < new Date();
+              return (
+                <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
+                  <div>
+                    <p className="flex items-center gap-2 font-medium">
+                      {invite.email}
+                      {expired ? (
+                        <span className="rounded-full border px-2 py-0.5 text-xs text-destructive">
+                          {t("expired")}
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("expires", { date: fmt.format(new Date(invite.expires_at)) })}
+                    </p>
+                  </div>
+                  {isOwner ? (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResend(invite.id)}
+                        disabled={resend.isPending && resend.variables === invite.id}
+                      >
+                        {t("resend")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleRevoke(invite.id)}
+                        disabled={revoke.isPending && revoke.variables === invite.id}
+                      >
+                        {t("revoke")}
+                      </Button>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+
+  if (embedded) return content;
+
   return (
     <Card className="mt-4">
       <CardHeader>
         <CardTitle className="text-base">{t("title")}</CardTitle>
         <CardDescription>{t("subtitle")}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <section aria-label={t("currentMembers")}>
-          <h2 className="mb-2 text-sm font-medium">{t("currentMembers")}</h2>
-          {members.isPending ? (
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-full" />
-            </div>
-          ) : (
-            <ul className="divide-y">
-              {(members.data ?? []).map((member) => (
-                <li key={member.id} className="flex items-center justify-between py-2 text-sm">
-                  <span className="font-medium">{member.display_name}</span>
-                  <span className="flex items-center gap-3 text-muted-foreground">
-                    {member.role === "owner" ? (
-                      <span className="rounded-full border px-2 py-0.5 text-xs">
-                        {t("roles.owner")}
-                      </span>
-                    ) : null}
-                    <time dateTime={member.joined_at}>
-                      {fmt.format(new Date(member.joined_at))}
-                    </time>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section aria-label={t("pendingInvites")}>
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-medium">{t("pendingInvites")}</h2>
-            {invites.isPending ? (
-              <Skeleton className="h-4 w-16" />
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {t("count", { count: invites.data?.length ?? 0 })}
-              </span>
-            )}
-          </div>
-
-          {isOwner ? (
-            <form action={handleInviteSubmit} className="mb-4 flex flex-col gap-2">
-              <Label htmlFor="invite-email" className="sr-only">
-                {t("inviteLabel")}
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="invite-email"
-                  name="email"
-                  type="email"
-                  required
-                  placeholder={t("invitePlaceholder")}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? t("sending") : t("inviteButton")}
-                </Button>
-              </div>
-              {formError ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {tErrors(formError)}
-                </p>
-              ) : null}
-            </form>
-          ) : null}
-
-          {actionError ? (
-            <p role="alert" className="mb-3 text-sm text-destructive">
-              {tErrors(actionError)}
-            </p>
-          ) : null}
-
-          {invites.isPending ? (
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-full" />
-            </div>
-          ) : (invites.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("noInvites")}</p>
-          ) : (
-            <ul className="divide-y">
-              {(invites.data ?? []).map((invite) => {
-                const expired = new Date(invite.expires_at) < new Date();
-                return (
-                  <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
-                    <div>
-                      <p className="flex items-center gap-2 font-medium">
-                        {invite.email}
-                        {expired ? (
-                          <span className="rounded-full border px-2 py-0.5 text-xs text-destructive">
-                            {t("expired")}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t("expires", { date: fmt.format(new Date(invite.expires_at)) })}
-                      </p>
-                    </div>
-                    {isOwner ? (
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleResend(invite.id)}
-                          disabled={resend.isPending && resend.variables === invite.id}
-                        >
-                          {t("resend")}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleRevoke(invite.id)}
-                          disabled={revoke.isPending && revoke.variables === invite.id}
-                        >
-                          {t("revoke")}
-                        </Button>
-                      </div>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-      </CardContent>
+      <CardContent className="p-0">{content}</CardContent>
     </Card>
   );
 }

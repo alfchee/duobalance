@@ -18,9 +18,13 @@
     "addTransaction": "Add",
     "budget": "Budget",
     "bills": "Bills",
-    "more": "More"
+    "more": "More",
+    "settings": "Settings",
+    "newTransaction": "New transaction",
+    "logout": "Log out"
   },
   "transactions": {
+    "title": "Activity",
     "loading": "Loading transactions…",
     "loadError": "Couldn't load transactions.",
     "retry": "Retry",
@@ -30,6 +34,9 @@
     "noResults": "No transactions match these filters.",
     "search": "Search description or notes",
     "clearFilters": "Clear filters",
+    "showFilters": "Show filters",
+    "hideFilters": "Hide filters",
+    "filtersActive": "Filters active",
     "loadMore": "Load more",
     "transfer": "Transfer",
     "edit": "Edit {description}",
@@ -232,11 +239,13 @@
     "loadError": "Couldn't load your balances.",
     "retry": "Retry",
     "newAccount": "New account",
-    "computedOn": "Exchange rates as of {date}.",
+    "computedOn": "Balances calculated on {date}.",
     "updated": "Updated {when}",
     "neverUpdated": "Never updated",
     "stale": "Stale — update the balance",
     "updateBalance": "Update balance",
+    "edit": "Edit account",
+    "reorder": "Reorder account",
     "section": {
       "cash": "Cash & Checking",
       "credit": "Credit Cards",
@@ -248,7 +257,7 @@
     "breakdownBaseRate": "Base rate: {date}",
     "breakdownEmpty": "All your accounts are in the household's base currency.",
     "breakdownClose": "Close",
-    "rateUsed": "1 USD = {rate}"
+    "rateUsed": "1 USD = {rate} · {date}"
   },
   "household": {
     "picker": {
@@ -454,6 +463,32 @@
     "saving": "Saving…"
   },
   "budget": {
+    "title": "Budget",
+    "categories": "Categories",
+    "new": "Add budget",
+    "edit": "Edit budget",
+    "delete": "Delete budget",
+    "editor": {
+      "createTitle": "Add a budget",
+      "createDescription": "Set a monthly limit for one category.",
+      "editTitle": "Edit budget",
+      "editDescription": "Update this category's monthly limit.",
+      "category": "Category",
+      "selectCategory": "Select a category",
+      "amount": "Monthly limit",
+      "rollover": "Carry any remaining amount into the next month",
+      "validationCategory": "Choose a category.",
+      "validationAmount": "Enter a valid amount of zero or more.",
+      "save": "Save budget",
+      "saving": "Saving…",
+      "error": "Couldn't save the budget. Check your access and try again."
+    },
+    "deleteDialog": {
+      "title": "Delete this budget?",
+      "description": "This removes the monthly limit, not its transactions.",
+      "confirm": "Delete budget",
+      "error": "Couldn't delete the budget. Check your access and try again."
+    },
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
     "scopeLabel": "Budget scope",
@@ -471,6 +506,8 @@
     "visibleToYou": "Based on what is visible to you",
     "chartAria": "Spending composition totaling {total}",
     "chartCenter": "Spent",
+    "ofBudget": "of {amount}",
+    "percentUsed": "{percent}% used",
     "loadError": "Couldn't load your budget.",
     "retry": "Retry",
     "copyPrevious": "Copy from {month}",
@@ -495,8 +532,11 @@
   },
   "bills": {
     "title": "Bills",
+    "eyebrow": "Household payments",
     "subtitle": "Keep upcoming household payments in one place.",
     "new": "New bill",
+    "loading": "Loading bills",
+    "calendarLabel": "Bill calendar",
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
     "loadError": "Couldn't load your bills.",
@@ -515,6 +555,11 @@
       "overdue": "Overdue",
       "paid": "Paid",
       "skipped": "Skipped"
+    },
+    "summary": {
+      "paid": "Paid",
+      "upcoming": "Upcoming",
+      "overdue": "Overdue"
     },
     "editor": {
       "title": "New bill",
@@ -611,6 +656,27 @@
   },
   "settings": {
     "title": "Settings",
+    "profileAvatar": "Profile for {email}",
+    "groups": {
+      "household": "Household",
+      "preferences": "Preferences",
+      "configuration": "Categories & rules"
+    },
+    "navigation": {
+      "categories": {
+        "title": "Categories",
+        "description": "Manage your income and expense categories."
+      },
+      "rules": {
+        "title": "Categorization rules",
+        "description": "Create rules that automatically categorize transactions."
+      }
+    },
+    "baseCurrency": {
+      "title": "Base currency",
+      "value": "{currency}",
+      "unavailable": "Not configured"
+    },
     "signedInAs": "Signed in as",
     "household": "Household",
     "role": {

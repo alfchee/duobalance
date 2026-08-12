@@ -35,7 +35,7 @@ export function filterByTab<T extends Account>(
   const active = accounts.filter((a) => !a.is_archived);
   switch (tab) {
     case "mine":
-      return active.filter((a) => a.owner_member_id === currentMemberId);
+      return currentMemberId ? active.filter((a) => a.owner_member_id === currentMemberId) : [];
     case "joint":
       return active.filter((a) => a.owner_member_id === null);
     case "all":

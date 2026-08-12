@@ -2,32 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FullPageSpinner } from "@/components/full-page-spinner";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { clearPendingInvite, savePendingInvite } from "@/lib/pending-invite";
 import { useSession } from "@/hooks/useSession";
-
-const ACTIVE_HOUSEHOLD_STORAGE_KEY = "duobalance:activeHouseholdId";
-
-// Maps the accept_invite RPC's RAISE messages (#12) to i18n keys. A generic
-// "something went wrong" here would be a support burden — each failure needs
-// to tell the partner exactly what to do next.
-const RPC_MESSAGE_TO_ERROR_KEY: Record<string, string> = {
-  "invite expired": "expired",
-  "invite already accepted": "alreadyAccepted",
-  "invite email does not match authenticated user": "emailMismatch",
-  "invite not found": "invalidToken",
-};
+import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
 
 export function AcceptInviteClient({ token }: { token: string }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { session, loading } = useSession();
+  const { accept: acceptInvite } = useHouseholdCommands();
   const t = useTranslations("auth.acceptInvite");
 
   const [state, setState] = useState<"idle" | "accepting" | "success" | "error">("idle");
@@ -52,14 +39,7 @@ export function AcceptInviteClient({ token }: { token: string }) {
     setState("accepting");
 
     async function accept() {
-      const supabase = createSupabaseBrowser();
-      if (!supabase) {
-        setState("error");
-        setErrorKey("generic");
-        return;
-      }
-
-      const { data: householdId, error } = await supabase.rpc("accept_invite", { p_token: token });
+      const result = await acceptInvite(token);
 
       if (cancelled) return;
 
@@ -67,16 +47,11 @@ export function AcceptInviteClient({ token }: { token: string }) {
       // pending token must not bounce a later /login back to this screen.
       clearPendingInvite();
 
-      if (error) {
+      if (!result.ok) {
         setState("error");
-        setErrorKey(RPC_MESSAGE_TO_ERROR_KEY[error.message] ?? "generic");
+        setErrorKey(result.errorKey);
         return;
       }
-
-      if (householdId) {
-        localStorage.setItem(ACTIVE_HOUSEHOLD_STORAGE_KEY, String(householdId));
-      }
-      await queryClient.invalidateQueries({ queryKey: ["households", "memberships"] });
       if (cancelled) return;
       setState("success");
       router.replace("/balances");
@@ -86,7 +61,7 @@ export function AcceptInviteClient({ token }: { token: string }) {
     return () => {
       cancelled = true;
     };
-  }, [loading, session, state, token, queryClient, router]);
+  }, [acceptInvite, loading, session, state, token, router]);
 
   if (loading) {
     return <FullPageSpinner />;
@@ -94,16 +69,20 @@ export function AcceptInviteClient({ token }: { token: string }) {
 
   if (!session) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t("notAuthenticatedTitle")}</CardTitle>
-          <CardDescription>{t("notAuthenticatedBody")}</CardDescription>
+      <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("notAuthenticatedTitle")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">
+            {t("notAuthenticatedBody")}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <Button asChild>
+        <CardContent className="flex flex-col gap-3 p-6 pt-0 sm:px-8 sm:pb-8">
+          <Button asChild size="lg" className="w-full">
             <Link href="/signup">{t("signupLink")}</Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild size="lg" className="w-full">
             <Link href="/login">{t("loginLink")}</Link>
           </Button>
         </CardContent>
@@ -112,12 +91,14 @@ export function AcceptInviteClient({ token }: { token: string }) {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("subtitle")}</CardDescription>
+    <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+      <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+        <CardTitle className="text-3xl font-black leading-none tracking-tight">
+          {t("title")}
+        </CardTitle>
+        <CardDescription className="text-base leading-relaxed">{t("subtitle")}</CardDescription>
       </CardHeader>
-      <CardContent className="text-sm">
+      <CardContent className="p-6 pt-0 text-sm sm:px-8 sm:pb-8">
         {state === "accepting" ? (
           <p className="text-muted-foreground">{t("accepting")}</p>
         ) : state === "error" && errorKey ? (

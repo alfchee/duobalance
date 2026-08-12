@@ -6,6 +6,7 @@ import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { toSupportedLocale, useLocaleContext } from "@/components/locale-provider";
 import type { Database } from "@/lib/supabase/types";
+import { readActiveHouseholdId, saveActiveHouseholdId } from "@/lib/household/workflows";
 
 type MemberRole = Database["public"]["Enums"]["household_member_role"];
 
@@ -33,8 +34,6 @@ type HouseholdContextValue = {
 };
 
 const HouseholdContext = createContext<HouseholdContextValue | null>(null);
-
-const ACTIVE_HOUSEHOLD_STORAGE_KEY = "duobalance:activeHouseholdId";
 
 async function fetchMemberships(userId: string): Promise<Membership[]> {
   const supabase = createSupabaseBrowser();
@@ -77,7 +76,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setActiveHouseholdId(localStorage.getItem(ACTIVE_HOUSEHOLD_STORAGE_KEY));
+    setActiveHouseholdId(readActiveHouseholdId(localStorage));
     setHydrated(true);
   }, []);
 
@@ -103,7 +102,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   // so a later second household doesn't silently inherit a stale selection.
   useEffect(() => {
     if (list.length === 1 && list[0] && list[0].householdId !== activeHouseholdId) {
-      localStorage.setItem(ACTIVE_HOUSEHOLD_STORAGE_KEY, list[0].householdId);
+      saveActiveHouseholdId(localStorage, list[0].householdId);
       setActiveHouseholdId(list[0].householdId);
     }
   }, [list, activeHouseholdId]);
@@ -118,7 +117,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   }, [active, hasStoredPreference, setLocale]);
 
   function selectHousehold(householdId: string) {
-    localStorage.setItem(ACTIVE_HOUSEHOLD_STORAGE_KEY, householdId);
+    saveActiveHouseholdId(localStorage, householdId);
     setActiveHouseholdId(householdId);
   }
 

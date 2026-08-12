@@ -18,9 +18,13 @@
     "addTransaction": "Agregar",
     "budget": "Presupuesto",
     "bills": "Cuentas",
-    "more": "Más"
+    "more": "Más",
+    "settings": "Configuración",
+    "newTransaction": "Nuevo movimiento",
+    "logout": "Cerrar sesión"
   },
   "transactions": {
+    "title": "Actividad",
     "loading": "Cargando movimientos…",
     "loadError": "No se pudieron cargar los movimientos.",
     "retry": "Reintentar",
@@ -30,6 +34,9 @@
     "noResults": "Ningún movimiento coincide con estos filtros.",
     "search": "Buscar en descripción o notas",
     "clearFilters": "Limpiar filtros",
+    "showFilters": "Mostrar filtros",
+    "hideFilters": "Ocultar filtros",
+    "filtersActive": "Filtros activos",
     "loadMore": "Cargar más",
     "transfer": "Transferencia",
     "edit": "Editar {description}",
@@ -232,11 +239,13 @@
     "loadError": "No se pudieron cargar tus saldos.",
     "retry": "Reintentar",
     "newAccount": "Nueva cuenta",
-    "computedOn": "Tipos de cambio al {date}.",
+    "computedOn": "Saldos calculados el {date}.",
     "updated": "Actualizado {when}",
     "neverUpdated": "Nunca actualizado",
     "stale": "Desactualizado — actualiza el saldo",
     "updateBalance": "Actualizar saldo",
+    "edit": "Editar cuenta",
+    "reorder": "Reordenar cuenta",
     "section": {
       "cash": "Efectivo y cuenta corriente",
       "credit": "Tarjetas de crédito",
@@ -248,7 +257,7 @@
     "breakdownBaseRate": "Tasa base: {date}",
     "breakdownEmpty": "Todas tus cuentas están en la moneda base del hogar.",
     "breakdownClose": "Cerrar",
-    "rateUsed": "1 USD = {rate}"
+    "rateUsed": "1 USD = {rate} · {date}"
   },
   "household": {
     "picker": {
@@ -454,6 +463,32 @@
     "saving": "Guardando…"
   },
   "budget": {
+    "title": "Presupuesto",
+    "categories": "Categorías",
+    "new": "Agregar presupuesto",
+    "edit": "Editar presupuesto",
+    "delete": "Eliminar presupuesto",
+    "editor": {
+      "createTitle": "Agregar un presupuesto",
+      "createDescription": "Define un límite mensual para una categoría.",
+      "editTitle": "Editar presupuesto",
+      "editDescription": "Actualiza el límite mensual de esta categoría.",
+      "category": "Categoría",
+      "selectCategory": "Selecciona una categoría",
+      "amount": "Límite mensual",
+      "rollover": "Acumular el monto restante para el próximo mes",
+      "validationCategory": "Elige una categoría.",
+      "validationAmount": "Ingresa un monto válido de cero o más.",
+      "save": "Guardar presupuesto",
+      "saving": "Guardando…",
+      "error": "No se pudo guardar el presupuesto. Revisa tu acceso e inténtalo nuevamente."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar este presupuesto?",
+      "description": "Esto elimina el límite mensual, no sus transacciones.",
+      "confirm": "Eliminar presupuesto",
+      "error": "No se pudo eliminar el presupuesto. Revisa tu acceso e inténtalo nuevamente."
+    },
     "previousMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
     "scopeLabel": "Alcance del presupuesto",
@@ -471,6 +506,8 @@
     "visibleToYou": "Según lo que ves",
     "chartAria": "Composición de gastos por un total de {total}",
     "chartCenter": "Gastado",
+    "ofBudget": "de {amount}",
+    "percentUsed": "{percent}% usado",
     "loadError": "No se pudo cargar tu presupuesto.",
     "retry": "Reintentar",
     "copyPrevious": "Copiar desde {month}",
@@ -495,8 +532,11 @@
   },
   "bills": {
     "title": "Cuentas",
+    "eyebrow": "Pagos del hogar",
     "subtitle": "Mantén los pagos del hogar en un solo lugar.",
     "new": "Nueva cuenta",
+    "loading": "Cargando cuentas",
+    "calendarLabel": "Calendario de cuentas",
     "previousMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
     "loadError": "No se pudieron cargar tus cuentas.",
@@ -515,6 +555,11 @@
       "overdue": "Vencida",
       "paid": "Pagada",
       "skipped": "Omitida"
+    },
+    "summary": {
+      "paid": "Pagadas",
+      "upcoming": "Pendientes",
+      "overdue": "Vencidas"
     },
     "editor": {
       "title": "Nueva cuenta",
@@ -611,6 +656,27 @@
   },
   "settings": {
     "title": "Configuración",
+    "profileAvatar": "Perfil de {email}",
+    "groups": {
+      "household": "Hogar",
+      "preferences": "Preferencias",
+      "configuration": "Categorías y reglas"
+    },
+    "navigation": {
+      "categories": {
+        "title": "Categorías",
+        "description": "Administra tus categorías de ingresos y gastos."
+      },
+      "rules": {
+        "title": "Reglas de categorización",
+        "description": "Crea reglas para categorizar transacciones automáticamente."
+      }
+    },
+    "baseCurrency": {
+      "title": "Moneda base",
+      "value": "{currency}",
+      "unavailable": "Sin configurar"
+    },
     "signedInAs": "Sesión iniciada como",
     "household": "Hogar",
     "role": {

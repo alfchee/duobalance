@@ -73,13 +73,26 @@ jobs:
         env:
           BUILD_TARGET: web
 
-      # - name: Tauri static export smoke test
-      #   # Verifies the static-export code path still works. A full Tauri
-      #   # build isn't possible without a Tauri toolchain, but the Next export
-      #   # alone is the load-bearing check.
-      #   env:
-      #     BUILD_TARGET: tauri
-      #   run: npm run build
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Browser validation
+        run: npm run test:ui-validation
+
+      - name: Tauri static export smoke test
+        env:
+          BUILD_TARGET: tauri
+        run: npm run build
+
+      - name: Upload browser validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
 
       - name: Stop Supabase local stack
         if: always()
