@@ -12,7 +12,6 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { RRule, rrulestr } from "rrule";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,107 +37,30 @@ import { useCategories } from "@/hooks/useCategories";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
+import { createBillWriteInput, parseBillAmount } from "@/lib/bills/commands";
+import {
+  calculateBillWeekTotal,
+  createBillInstancesByDate,
+  createBillStatusCounts,
+  createBillWeeks,
+  dateFromYmd,
+  formatBillDate,
+  getBillMonthWindow,
+  moveBillMonth,
+  type SelectedBillInstance,
+} from "@/lib/bills/model";
+import {
+  createDefaultBillDraft,
+  previewBillRecurrence,
+  type BillEditorDraft,
+  type RecurrenceKind,
+} from "@/lib/bills/recurrence";
 import { todayInHousehold } from "@/lib/dates";
-import { formatMoney, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useBillsUiStore } from "@/store/bills";
 
-type RecurrenceKind = "monthly-day" | "monthly-last" | "weekly" | "yearly" | "monthly-interval";
-
-type BillEditorState = {
-  accountId: string;
-  amount: string;
-  categoryId: string;
-  currency: string;
-  endsOn: string;
-  interval: string;
-  name: string;
-  reminderDays: string;
-  responsibleMemberId: string;
-  startsOn: string;
-  recurrence: RecurrenceKind;
-  weekday: string;
-};
-
-type SelectedInstance = {
-  bill: BillWithInstances;
-  instance: BillWithInstances["instances"][number];
-};
-
-type BillStatus = "due" | "overdue" | "paid" | "skipped";
-
-function dateFromYmd(value: string): Date {
-  return new Date(`${value}T00:00:00Z`);
-}
-
-function moveMonth(value: string, offset: number): string {
-  const date = dateFromYmd(`${value}-01`);
-  date.setUTCMonth(date.getUTCMonth() + offset);
-  return date.toISOString().slice(0, 7);
-}
-
-function monthBounds(month: string): { start: string; end: string } {
-  const date = dateFromYmd(`${month}-01`);
-  const start = date.toISOString().slice(0, 10);
-  date.setUTCMonth(date.getUTCMonth() + 1);
-  date.setUTCDate(0);
-  return { end: date.toISOString().slice(0, 10), start };
-}
-
-function createRrule(draft: BillEditorState): string {
-  const start = dateFromYmd(draft.startsOn);
-  if (draft.recurrence === "monthly-last") return "FREQ=MONTHLY;BYMONTHDAY=-1";
-  if (draft.recurrence === "weekly") {
-    return `FREQ=WEEKLY;INTERVAL=${Math.max(1, Number(draft.interval) || 1)};BYDAY=${draft.weekday}`;
-  }
-  if (draft.recurrence === "yearly") {
-    return `FREQ=YEARLY;BYMONTH=${start.getUTCMonth() + 1};BYMONTHDAY=${start.getUTCDate()}`;
-  }
-  if (draft.recurrence === "monthly-interval") {
-    return `FREQ=MONTHLY;INTERVAL=${Math.max(1, Number(draft.interval) || 1)};BYMONTHDAY=${start.getUTCDate()}`;
-  }
-  return `FREQ=MONTHLY;BYMONTHDAY=${start.getUTCDate()}`;
-}
-
-type PreviewResult = { dates: string[]; valid: boolean };
-
-// Returns valid: false when the recurrence itself can't be parsed, so the UI
-// can tell "invalid rule" apart from "valid rule, nothing due in range" —
-// both previously rendered as the same empty list.
-function previewDates(draft: BillEditorState): PreviewResult {
-  if (!draft.startsOn) return { dates: [], valid: true };
-  try {
-    const parsed = rrulestr(createRrule(draft)) as RRule;
-    const rule = new RRule({ ...parsed.origOptions, dtstart: dateFromYmd(draft.startsOn) });
-    const start = dateFromYmd(draft.startsOn);
-    const end = dateFromYmd(draft.endsOn || "2099-12-31");
-    const dates = rule
-      .between(start, end, true)
-      .slice(0, 6)
-      .map((date) => date.toISOString().slice(0, 10));
-    return { dates, valid: true };
-  } catch {
-    return { dates: [], valid: false };
-  }
-}
-
-function defaultDraft(today: string, currency: string): BillEditorState {
-  return {
-    accountId: "none",
-    amount: "",
-    categoryId: "none",
-    currency,
-    endsOn: "",
-    interval: "1",
-    name: "",
-    recurrence: "monthly-day",
-    reminderDays: "3",
-    responsibleMemberId: "joint",
-    startsOn: today,
-    weekday: "MO",
-  };
-}
-
-function draftFromBill(bill: BillWithInstances): BillEditorState {
+function draftFromBill(bill: BillWithInstances): BillEditorDraft {
   return {
     accountId: bill.account_id ?? "none",
     amount: bill.default_amount?.toString() ?? "",
@@ -163,38 +85,11 @@ function draftFromBill(bill: BillWithInstances): BillEditorState {
   };
 }
 
-function weekStart(date: string): string {
-  const value = dateFromYmd(date);
-  const weekday = value.getUTCDay();
-  value.setUTCDate(value.getUTCDate() - ((weekday + 6) % 7));
-  return value.toISOString().slice(0, 10);
-}
-
-function displayDate(date: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(dateFromYmd(date));
-}
-
 function statusTone(status: string | null): string {
   if (status === "paid") return "bg-success/10 text-success";
   if (status === "overdue") return "bg-destructive/10 text-destructive";
   if (status === "skipped") return "bg-muted text-muted-foreground";
   return "bg-primary/30 text-primary-foreground";
-}
-
-function weeklyTotals(items: readonly SelectedInstance[], locale: string): string {
-  const totals = new Map<string, number>();
-  for (const { bill, instance } of items) {
-    if (instance.effective_status === "skipped") continue;
-    totals.set(bill.currency, (totals.get(bill.currency) ?? 0) + (instance.amount ?? 0));
-  }
-  return [...totals.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([currency, amount]) => formatMoney(amount, currency, locale))
-    .join(" · ");
 }
 
 export function BillsView() {
@@ -203,10 +98,19 @@ export function BillsView() {
   const { baseCurrency, householdId, memberId, timezone } = useHousehold();
   const today = todayInHousehold(timezone ?? "UTC");
   const [month, setMonth] = useState(today.slice(0, 7));
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingBill, setEditingBill] = useState<BillWithInstances | null>(null);
-  const [selected, setSelected] = useState<SelectedInstance | null>(null);
-  const [payOpen, setPayOpen] = useState(false);
+  const {
+    closeEditor,
+    closeInstance,
+    closePay,
+    editorBillId,
+    editorOpen,
+    openCreate: openCreateEditor,
+    openEdit,
+    openInstance: selectInstance,
+    openPay: openPaymentSheet,
+    payOpen,
+    selectedInstanceId,
+  } = useBillsUiStore();
   const [amount, setAmount] = useState("");
   const [paidOn, setPaidOn] = useState(today);
   const [paidByMemberId, setPaidByMemberId] = useState(memberId ?? "");
@@ -214,7 +118,7 @@ export function BillsView() {
   const [skipReason, setSkipReason] = useState("");
   const [instanceAmount, setInstanceAmount] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
-  const bounds = monthBounds(month);
+  const bounds = getBillMonthWindow(month);
   const billsQuery = useBills(householdId, bounds);
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: categories = [] } = useCategories(householdId);
@@ -224,7 +128,7 @@ export function BillsView() {
     householdId,
     memberId,
   );
-  const [draft, setDraft] = useState(() => defaultDraft(today, baseCurrency ?? "USD"));
+  const [draft, setDraft] = useState(() => createDefaultBillDraft(today, baseCurrency ?? "USD"));
 
   useEffect(() => {
     if (baseCurrency)
@@ -244,33 +148,15 @@ export function BillsView() {
       ),
     [bills, bounds.end, bounds.start],
   );
-  const instancesByDate = useMemo(() => {
-    const result = new Map<string, SelectedInstance[]>();
-    for (const value of monthInstances) {
-      const date = value.instance.due_on!;
-      result.set(date, [...(result.get(date) ?? []), value]);
-    }
-    return result;
-  }, [monthInstances]);
-  const weeks = useMemo(() => {
-    const grouped = new Map<string, SelectedInstance[]>();
-    for (const value of monthInstances) {
-      const key = weekStart(value.instance.due_on!);
-      grouped.set(key, [...(grouped.get(key) ?? []), value]);
-    }
-    return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [monthInstances]);
-  const statusCounts = useMemo(
-    () =>
-      monthInstances.reduce(
-        (counts, { instance }) => {
-          const status = (instance.effective_status ?? "due") as BillStatus;
-          counts[status] += 1;
-          return counts;
-        },
-        { due: 0, overdue: 0, paid: 0, skipped: 0 } as Record<BillStatus, number>,
-      ),
+  const instancesByDate = useMemo(
+    () => createBillInstancesByDate(monthInstances),
     [monthInstances],
+  );
+  const weeks = useMemo(() => createBillWeeks(monthInstances), [monthInstances]);
+  const statusCounts = useMemo(() => createBillStatusCounts(monthInstances), [monthInstances]);
+  const selected = useMemo(
+    () => monthInstances.find(({ instance }) => instance.id === selectedInstanceId) ?? null,
+    [monthInstances, selectedInstanceId],
   );
   const firstDay = dateFromYmd(bounds.start).getUTCDay();
   const calendarStartOffset = (firstDay + 6) % 7;
@@ -278,90 +164,79 @@ export function BillsView() {
   const minorUnitFor = (currency: string) =>
     currencies.find((c) => c.code === currency)?.minor_unit ?? 2;
   const minorUnit = minorUnitFor(draft.currency);
-  const preview = previewDates(draft);
+  const preview = previewBillRecurrence(draft);
   const previews = preview.dates;
 
-  const openCreate = () => {
-    setEditingBill(null);
-    setDraft(defaultDraft(today, baseCurrency ?? "USD"));
+  const beginCreate = () => {
+    setDraft(createDefaultBillDraft(today, baseCurrency ?? "USD"));
     setActionError(null);
-    setEditorOpen(true);
+    openCreateEditor();
   };
-  const openEdit = (bill: BillWithInstances) => {
-    setEditingBill(bill);
+  const beginEdit = (bill: BillWithInstances) => {
     setDraft(draftFromBill(bill));
     setActionError(null);
-    setEditorOpen(true);
+    openEdit(bill.id);
   };
-  const openInstance = (value: SelectedInstance) => {
+  const beginInstance = (value: SelectedBillInstance) => {
     setSkipReason("");
     setInstanceAmount(value.instance.amount?.toString() ?? "");
     setActionError(null);
-    setSelected(value);
+    selectInstance(value.instance.id!);
   };
-  const openPay = () => {
+  const beginPay = () => {
     if (!selected?.instance.amount) return;
     setAmount(selected.instance.amount.toString());
     setPaidOn(today);
     setPaidByMemberId(memberId ?? "");
     setCreateTransaction(true);
     setActionError(null);
-    setPayOpen(true);
+    openPaymentSheet();
   };
   const saveBill = async () => {
-    const parsedAmount = draft.amount ? parseMoneyInput(draft.amount, locale) : null;
-    if (!draft.name.trim() || (draft.amount && parsedAmount === null)) return;
-    const payload = {
-      account_id: draft.accountId === "none" ? null : draft.accountId,
-      category_id: draft.categoryId === "none" ? null : draft.categoryId,
-      currency: draft.currency,
-      default_amount: parsedAmount === null ? null : roundToMinorUnit(parsedAmount, minorUnit),
-      ends_on: draft.endsOn || null,
-      name: draft.name.trim(),
-      reminder_days_before: Number(draft.reminderDays) || 0,
-      responsible_member_id:
-        draft.responsibleMemberId === "joint" ? null : draft.responsibleMemberId,
-      rrule: createRrule(draft),
-      starts_on: draft.startsOn,
-    };
+    const result = createBillWriteInput(draft, locale, minorUnit);
+    if (!result.ok) return;
     try {
-      if (editingBill) await update.mutateAsync({ id: editingBill.id, input: payload });
-      else await create.mutateAsync(payload);
-      setEditorOpen(false);
+      if (editorBillId) await update.mutateAsync({ id: editorBillId, input: result.value });
+      else await create.mutateAsync(result.value);
+      closeEditor();
     } catch {
       setActionError(t("error"));
     }
   };
   const confirmPay = async () => {
     if (!selected || !paidByMemberId) return;
-    const parsedAmount = parseMoneyInput(amount, locale);
+    const parsedAmount = parseBillAmount(amount, locale, minorUnitFor(selected.bill.currency));
     if (parsedAmount === null) return;
     try {
       await pay.mutateAsync({
         input: {
-          amount: roundToMinorUnit(parsedAmount, minorUnitFor(selected.bill.currency)),
+          amount: parsedAmount,
           createTransaction,
           paidByMemberId,
           paidOn,
         },
         instance: selected.instance,
       });
-      setPayOpen(false);
-      setSelected(null);
+      closePay();
+      closeInstance();
     } catch {
       setActionError(t("error"));
     }
   };
   const saveInstanceAmount = async () => {
     if (!selected?.instance.id) return;
-    const parsedAmount = parseMoneyInput(instanceAmount, locale);
+    const parsedAmount = parseBillAmount(
+      instanceAmount,
+      locale,
+      minorUnitFor(selected.bill.currency),
+    );
     if (parsedAmount === null) return;
     try {
       await updateInstanceAmount.mutateAsync({
-        amount: roundToMinorUnit(parsedAmount, minorUnitFor(selected.bill.currency)),
+        amount: parsedAmount,
         id: selected.instance.id,
       });
-      setSelected(null);
+      closeInstance();
     } catch {
       setActionError(t("error"));
     }
@@ -401,7 +276,7 @@ export function BillsView() {
           </p>
           <h1 className="mt-1 text-3xl font-black tracking-tight">{t("title")}</h1>
         </div>
-        <Button className="shrink-0" size="sm" onClick={openCreate}>
+        <Button className="shrink-0" size="sm" onClick={beginCreate}>
           <Plus />
           {t("new")}
         </Button>
@@ -424,7 +299,7 @@ export function BillsView() {
               variant="outline"
               size="icon"
               aria-label={t("previousMonth")}
-              onClick={() => setMonth(moveMonth(month, -1))}
+              onClick={() => setMonth(moveBillMonth(month, -1))}
             >
               <ChevronLeft />
             </Button>
@@ -432,7 +307,7 @@ export function BillsView() {
               variant="outline"
               size="icon"
               aria-label={t("nextMonth")}
-              onClick={() => setMonth(moveMonth(month, 1))}
+              onClick={() => setMonth(moveBillMonth(month, 1))}
             >
               <ChevronRight />
             </Button>
@@ -478,7 +353,7 @@ export function BillsView() {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => due[0] && openInstance(due[0])}
+                  onClick={() => due[0] && beginInstance(due[0])}
                   className={cn(
                     "flex min-h-10 flex-col items-center rounded-xl pt-1 text-sm transition-colors",
                     value === today && "bg-primary font-semibold text-primary-foreground",
@@ -514,7 +389,7 @@ export function BillsView() {
           <ReceiptText className="mx-auto size-9 text-muted-foreground" />
           <h2 className="mt-4 font-black tracking-tight">{t("empty.title")}</h2>
           <p className="text-sm text-muted-foreground">{t("empty.description")}</p>
-          <Button className="mt-5" onClick={openCreate}>
+          <Button className="mt-5" onClick={beginCreate}>
             {t("empty.action")}
           </Button>
         </div>
@@ -529,13 +404,13 @@ export function BillsView() {
             <section key={week}>
               <div className="mb-3 flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 <span className="truncate">
-                  {displayDate(week, locale)} –{" "}
-                  {displayDate(
+                  {formatBillDate(week, locale)} –{" "}
+                  {formatBillDate(
                     new Date(dateFromYmd(week).getTime() + 6 * 86400000).toISOString().slice(0, 10),
                     locale,
                   )}
                 </span>
-                <span>{weeklyTotals(items, locale)}</span>
+                <span>{calculateBillWeekTotal(items, locale)}</span>
               </div>
               <div className="overflow-hidden rounded-2xl border bg-background shadow-ring">
                 <div className="divide-y">
@@ -549,7 +424,7 @@ export function BillsView() {
                       <button
                         key={instance.id}
                         type="button"
-                        onClick={() => openInstance({ bill, instance })}
+                        onClick={() => beginInstance({ bill, instance })}
                         className={cn(
                           "flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-secondary/60",
                           instance.effective_status === "overdue" && "bg-destructive/5",
@@ -599,7 +474,7 @@ export function BillsView() {
                           </span>
                           <span className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
                             <Clock3 className="size-3" />
-                            {displayDate(instance.due_on!, locale)}
+                            {formatBillDate(instance.due_on!, locale)}
                           </span>
                         </span>
                       </button>
@@ -612,10 +487,10 @@ export function BillsView() {
         </div>
       )}
 
-      <Sheet open={editorOpen} onOpenChange={setEditorOpen}>
+      <Sheet open={editorOpen} onOpenChange={(open) => !open && closeEditor()}>
         <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{editingBill ? t("editor.editTitle") : t("editor.title")}</SheetTitle>
+            <SheetTitle>{editorBillId ? t("editor.editTitle") : t("editor.title")}</SheetTitle>
             <SheetDescription>{t("editor.description")}</SheetDescription>
           </SheetHeader>
           <div className="grid gap-4 p-4">
@@ -790,7 +665,7 @@ export function BillsView() {
               {preview.valid ? (
                 <ul className="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
                   {previews.map((date) => (
-                    <li key={date}>{displayDate(date, locale)}</li>
+                    <li key={date}>{formatBillDate(date, locale)}</li>
                   ))}
                 </ul>
               ) : (
@@ -814,12 +689,12 @@ export function BillsView() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+      <Sheet open={selected !== null} onOpenChange={(open) => !open && closeInstance()}>
         <SheetContent side="bottom">
           <SheetHeader>
             <SheetTitle>{selected?.bill.name}</SheetTitle>
             <SheetDescription>
-              {selected?.instance.due_on ? displayDate(selected.instance.due_on, locale) : ""}
+              {selected?.instance.due_on ? formatBillDate(selected.instance.due_on, locale) : ""}
             </SheetDescription>
           </SheetHeader>
           {selected && (
@@ -862,7 +737,7 @@ export function BillsView() {
                       .mutateAsync({
                         id: selected.instance.id!,
                       })
-                      .then(() => setSelected(null))
+                      .then(closeInstance)
                       .catch(() => setActionError(t("error")));
                   }}
                 >
@@ -872,7 +747,7 @@ export function BillsView() {
                 <p className="text-sm text-muted-foreground">{t("actions.skippedInstance")}</p>
               ) : (
                 <>
-                  <Button className="w-full" onClick={openPay}>
+                  <Button className="w-full" onClick={beginPay}>
                     {t("actions.markPaid")}
                   </Button>
                   <Input
@@ -889,7 +764,7 @@ export function BillsView() {
                           id: selected.instance.id!,
                           reason: skipReason.trim() || null,
                         })
-                        .then(() => setSelected(null))
+                        .then(closeInstance)
                         .catch(() => setActionError(t("error")))
                     }
                   >
@@ -907,8 +782,8 @@ export function BillsView() {
                 className="w-full"
                 onClick={() => {
                   const bill = selected.bill;
-                  setSelected(null);
-                  openEdit(bill);
+                  closeInstance();
+                  beginEdit(bill);
                 }}
               >
                 {t("actions.editBill")}
@@ -918,7 +793,7 @@ export function BillsView() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={payOpen} onOpenChange={setPayOpen}>
+      <Sheet open={payOpen} onOpenChange={(open) => !open && closePay()}>
         <SheetContent side="bottom">
           <SheetHeader>
             <SheetTitle>{t("pay.title")}</SheetTitle>

@@ -2,17 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-fetch";
+import type { BillWithInstances, BillWindow } from "@/lib/bills/model";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 
-type Bill = Database["public"]["Tables"]["bills"]["Row"];
 type BillInstance = Database["public"]["Views"]["bill_instances_view"]["Row"];
 type BillInsert = Omit<Database["public"]["Tables"]["bills"]["Insert"], "household_id">;
 type BillUpdate = Database["public"]["Tables"]["bills"]["Update"];
 
-export type BillWithInstances = Bill & {
-  instances: BillInstance[];
-};
+export type { BillWithInstances } from "@/lib/bills/model";
 
 export type PayBillInput = {
   amount: number;
@@ -21,12 +19,7 @@ export type PayBillInput = {
   paidOn: string;
 };
 
-type BillWindow = {
-  end: string;
-  start: string;
-};
-
-function billsKey(householdId: string) {
+export function billsKey(householdId: string) {
   return ["bills", householdId] as const;
 }
 
@@ -55,10 +48,15 @@ export function useBills(householdId: string | null, window: BillWindow) {
       if (billsError) throw billsError;
       if (instancesError) throw instancesError;
 
-      return bills.map((bill) => ({
-        ...bill,
-        instances: (instances ?? []).filter((instance) => instance.bill_id === bill.id),
-      }));
+      const instancesByBillId = new Map<string, BillInstance[]>();
+      for (const instance of instances ?? []) {
+        if (!instance.bill_id) continue;
+        instancesByBillId.set(instance.bill_id, [
+          ...(instancesByBillId.get(instance.bill_id) ?? []),
+          instance,
+        ]);
+      }
+      return bills.map((bill) => ({ ...bill, instances: instancesByBillId.get(bill.id) ?? [] }));
     },
     enabled: householdId !== null,
   });
