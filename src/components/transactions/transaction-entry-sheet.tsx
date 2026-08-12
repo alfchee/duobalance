@@ -64,15 +64,26 @@ type Draft = {
   isExpense: boolean;
 };
 
+function findMinorUnit(
+  currencies: readonly { code: string; minor_unit: number }[],
+  code: string | null,
+): number | null {
+  if (!code) return null;
+  return currencies.find((currency) => currency.code === code)?.minor_unit ?? null;
+}
+
+// Only reroute to the offline queue when the failure genuinely looks like a
+// connectivity problem — a structured API/DB error (it carries a string
+// `code`, e.g. an RLS denial or constraint violation) is never transient,
+// even if its message happens to contain a network-sounding word.
 function isTransientWriteError(error: unknown): boolean {
-  if (error instanceof TypeError) return true;
+  if (typeof navigator !== "undefined" && !navigator.onLine) return true;
   if (!error || typeof error !== "object") return false;
   const { code, message, name } = error as { code?: unknown; message?: unknown; name?: unknown };
+  if (typeof code === "string") return false;
+  if (name === "AbortError") return true;
   return (
-    typeof code !== "string" &&
-    (name === "FetchError" ||
-      name === "NetworkError" ||
-      (typeof message === "string" && /network|fetch|offline|timeout/i.test(message)))
+    typeof message === "string" && /network|failed to fetch|load failed|timeout/i.test(message)
   );
 }
 
@@ -164,6 +175,8 @@ function TransferEntryContent({
   const usableAccounts = accounts.filter((account) => !account.is_archived);
   const fromAccount = usableAccounts.find((account) => account.id === fromAccountId) ?? null;
   const toAccount = usableAccounts.find((account) => account.id === toAccountId) ?? null;
+  const fromMinorUnit = findMinorUnit(currencies, fromAccount?.currency ?? null);
+  const toMinorUnit = findMinorUnit(currencies, toAccount?.currency ?? null);
   const fromRateQuery = useFxRateOn(
     householdId,
     occurredOn,
@@ -227,10 +240,7 @@ function TransferEntryContent({
     )
       return setError("rate");
     if (!occurredOn || (today && occurredOn > addDays(today, 1))) return setError("date");
-    const fromMinorUnit =
-      currencies.find((currency) => currency.code === fromAccount?.currency)?.minor_unit ?? 2;
-    const toMinorUnit =
-      currencies.find((currency) => currency.code === toAccount?.currency)?.minor_unit ?? 2;
+    if (fromMinorUnit == null || toMinorUnit == null) return setError("amount");
     if (connectionState === "offline") return setError("offlineTransfer");
     try {
       await createTransfer.mutateAsync({
@@ -271,9 +281,8 @@ function TransferEntryContent({
           label={t("form.fromAmount", { currency: fromAccount?.currency ?? "" })}
           value={fromAmount}
           locale={locale}
-          minorUnit={
-            currencies.find((currency) => currency.code === fromAccount?.currency)?.minor_unit ?? 2
-          }
+          minorUnit={fromMinorUnit ?? 0}
+          disabled={fromMinorUnit == null}
           onChange={setFromAmount}
         />
         {fromAccount?.currency !== baseCurrency ? (
@@ -291,9 +300,8 @@ function TransferEntryContent({
           label={t("form.toAmount", { currency: toAccount?.currency ?? "" })}
           value={toAmount}
           locale={locale}
-          minorUnit={
-            currencies.find((currency) => currency.code === toAccount?.currency)?.minor_unit ?? 2
-          }
+          minorUnit={toMinorUnit ?? 0}
+          disabled={toMinorUnit == null}
           onChange={setToAmount}
         />
         {toAccount?.currency !== baseCurrency ? (
@@ -324,7 +332,11 @@ function TransferEntryContent({
             {t(`form.errors.${error}`)}
           </p>
         ) : null}
-        <Button type="submit" className="w-full" disabled={createTransfer.isPending}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={createTransfer.isPending || fromMinorUnit == null || toMinorUnit == null}
+        >
           {createTransfer.isPending ? t("form.saving") : t("form.saveTransfer")}
         </Button>
       </form>
@@ -370,6 +382,7 @@ function TransferAmountField({
   locale,
   minorUnit,
   value,
+  disabled,
   onChange,
 }: {
   id: string;
@@ -377,6 +390,7 @@ function TransferAmountField({
   locale: string;
   minorUnit: number;
   value: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -386,6 +400,7 @@ function TransferAmountField({
         id={id}
         inputMode="decimal"
         value={value}
+        disabled={disabled}
         onChange={(event) => onChange(maskMoneyInput(event.target.value, locale, minorUnit))}
       />
     </div>
@@ -445,8 +460,7 @@ function TransactionEntryContent({
   const [fxRateOverridden, setFxRateOverridden] = useState(transaction !== null);
   const amountRef = useRef<HTMLInputElement>(null);
   const selectedAccount = accounts.find((account) => account.id === draft.accountId) ?? null;
-  const minorUnit =
-    currencies.find((currency) => currency.code === draft.currency)?.minor_unit ?? 2;
+  const minorUnit = findMinorUnit(currencies, draft.currency || null);
   const isForeignCurrency = !!draft.currency && !!baseCurrency && draft.currency !== baseCurrency;
   const rateQuery = useFxRateOn(
     householdId,
@@ -539,14 +553,13 @@ function TransactionEntryContent({
     if (!draft.currency || !Number.isFinite(fxRate) || fxRate <= 0) return setError("rate");
     if (!draft.occurredOn || (today && draft.occurredOn > addDays(today, 1)))
       return setError("date");
+    if (minorUnit == null) return setError("amount");
 
-    const inputMinorUnit =
-      currencies.find((currency) => currency.code === draft.currency)?.minor_unit ?? 2;
     const input = {
       account_id: draft.accountId,
       amount: draft.isExpense
-        ? -roundToMinorUnit(amount, inputMinorUnit)
-        : roundToMinorUnit(amount, inputMinorUnit),
+        ? -roundToMinorUnit(amount, minorUnit)
+        : roundToMinorUnit(amount, minorUnit),
       category_id: draft.categoryId,
       currency: draft.currency,
       description,
@@ -615,7 +628,8 @@ function TransactionEntryContent({
       amount === 0 ||
       !draft.accountId ||
       !draft.currency ||
-      !Number.isFinite(fxRate)
+      !Number.isFinite(fxRate) ||
+      minorUnit == null
     ) {
       return setError("generic");
     }
@@ -734,10 +748,11 @@ function TransactionEntryContent({
                 variant="ghost"
                 className="h-12 rounded-xl text-lg hover:bg-background"
                 aria-label={key === "backspace" ? t("form.backspace") : key}
+                disabled={minorUnit == null}
                 onClick={() =>
                   setDraft((current) => ({
                     ...current,
-                    amount: appendMoneyPadInput(current.amount, key, locale, minorUnit),
+                    amount: appendMoneyPadInput(current.amount, key, locale, minorUnit ?? 0),
                   }))
                 }
               >
@@ -905,7 +920,11 @@ function TransactionEntryContent({
           </p>
         ) : null}
         <div className="flex gap-2">
-          <Button type="submit" className="flex-1" disabled={pending || !selectedAccount}>
+          <Button
+            type="submit"
+            className="flex-1"
+            disabled={pending || !selectedAccount || minorUnit == null}
+          >
             {pending ? t("form.saving") : t("form.save")}
           </Button>
           {transaction ? (

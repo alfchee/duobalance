@@ -53,4 +53,34 @@ describe("bill recurrence", () => {
       valid: true,
     });
   });
+
+  it("clamps a day-31 monthly bill to the last day of shorter months instead of skipping them", () => {
+    const draft = {
+      ...createDefaultBillDraft("2026-01-31", "USD"),
+      recurrence: "monthly-day" as const,
+    };
+    expect(serializeBillRecurrence(draft)).toBe("FREQ=MONTHLY;BYMONTHDAY=31,-1;BYSETPOS=1");
+    const dates = previewBillRecurrence({ ...draft, endsOn: "2026-06-30" }, 20).dates;
+    expect(dates).toEqual([
+      "2026-01-31",
+      "2026-02-28",
+      "2026-03-31",
+      "2026-04-30",
+      "2026-05-31",
+      "2026-06-30",
+    ]);
+  });
+
+  it("clamps a day-29 monthly-interval bill for February while keeping day 29 elsewhere", () => {
+    const draft = {
+      ...createDefaultBillDraft("2026-01-29", "USD"),
+      recurrence: "monthly-interval" as const,
+      interval: "1",
+    };
+    expect(serializeBillRecurrence(draft)).toBe(
+      "FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=29,30,31,-1;BYSETPOS=1",
+    );
+    const dates = previewBillRecurrence({ ...draft, endsOn: "2026-03-29" }, 20).dates;
+    expect(dates).toEqual(["2026-01-29", "2026-02-28", "2026-03-29"]);
+  });
 });

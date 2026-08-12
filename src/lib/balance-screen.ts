@@ -89,5 +89,9 @@ export function prepareBalanceReorder({
       .map((account) => account.id),
   );
 
-  return reorderAccounts(accounts, reorderedAccounts, { lockedIds });
+  return reorderAccounts(
+    accounts,
+    reorderedAccounts.filter((account) => !account.is_archived),
+    { lockedIds },
+  );
 }

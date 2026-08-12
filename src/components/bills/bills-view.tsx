@@ -56,14 +56,14 @@ import {
   type RecurrenceKind,
 } from "@/lib/bills/recurrence";
 import { todayInHousehold } from "@/lib/dates";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatMoneyInput } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { useBillsUiStore } from "@/store/bills";
 
-function draftFromBill(bill: BillWithInstances): BillEditorDraft {
+function draftFromBill(bill: BillWithInstances, locale: string): BillEditorDraft {
   return {
     accountId: bill.account_id ?? "none",
-    amount: bill.default_amount?.toString() ?? "",
+    amount: bill.default_amount != null ? formatMoneyInput(bill.default_amount, locale) : "",
     categoryId: bill.category_id ?? "none",
     currency: bill.currency,
     endsOn: bill.ends_on ?? "",
@@ -176,20 +176,22 @@ export function BillsView() {
     openCreateEditor();
   };
   const beginEdit = (bill: BillWithInstances) => {
-    setDraft(draftFromBill(bill));
+    setDraft(draftFromBill(bill, locale));
     setActionError(null);
     openEdit(bill.id);
   };
   const beginInstance = (value: SelectedBillInstance) => {
     if (!value.instance.id) return;
     setSkipReason("");
-    setInstanceAmount(value.instance.amount?.toString() ?? "");
+    setInstanceAmount(
+      value.instance.amount != null ? formatMoneyInput(value.instance.amount, locale) : "",
+    );
     setActionError(null);
     selectInstance(value.instance.id);
   };
   const beginPay = () => {
     if (selected?.instance.amount === null || selected?.instance.amount === undefined) return;
-    setAmount(selected.instance.amount.toString());
+    setAmount(formatMoneyInput(selected.instance.amount, locale));
     setPaidOn(today);
     setPaidByMemberId(memberId ?? "");
     setCreateTransaction(true);

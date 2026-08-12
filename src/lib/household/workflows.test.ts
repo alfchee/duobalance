@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   acceptInvite,
+  clearActiveHouseholdId,
   createHousehold,
   getInviteErrorKey,
   readActiveHouseholdId,
@@ -42,5 +43,11 @@ describe("household workflows", () => {
     expect(readActiveHouseholdId(localStorage)).toBeNull();
     saveActiveHouseholdId(localStorage, "household-1");
     expect(readActiveHouseholdId(localStorage)).toBe("household-1");
+  });
+
+  it("clears the active-household selection on demand", () => {
+    saveActiveHouseholdId(localStorage, "household-1");
+    clearActiveHouseholdId(localStorage);
+    expect(readActiveHouseholdId(localStorage)).toBeNull();
   });
 });

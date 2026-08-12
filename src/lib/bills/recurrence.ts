@@ -38,6 +38,20 @@ export function createDefaultBillDraft(today: string, currency: string): BillEdi
   };
 }
 
+// A plain BYMONTHDAY=29/30/31 makes RRule skip any month too short to have
+// that day (Feb, and Apr/Jun/Sep/Nov for 31) instead of falling back to the
+// month's last day — so a bill due "on the 31st" would fire 7 times a year.
+// Listing every day from `day` through 31 plus -1 (the actual last day) and
+// taking BYSETPOS=1 (earliest match) picks `day` when it exists and clamps to
+// the month's end when it doesn't.
+function monthlyDayRule(day: number): string {
+  if (day < 29) return `BYMONTHDAY=${day}`;
+  const candidates = [];
+  for (let d = day; d <= 31; d++) candidates.push(d);
+  candidates.push(-1);
+  return `BYMONTHDAY=${candidates.join(",")};BYSETPOS=1`;
+}
+
 export function serializeBillRecurrence(draft: BillEditorDraft): string {
   const start = dateFromYmd(draft.startsOn);
   if (draft.recurrence === "monthly-last") return "FREQ=MONTHLY;BYMONTHDAY=-1";
@@ -48,9 +62,9 @@ export function serializeBillRecurrence(draft: BillEditorDraft): string {
     return `FREQ=YEARLY;BYMONTH=${start.getUTCMonth() + 1};BYMONTHDAY=${start.getUTCDate()}`;
   }
   if (draft.recurrence === "monthly-interval") {
-    return `FREQ=MONTHLY;INTERVAL=${Math.max(1, Number(draft.interval) || 1)};BYMONTHDAY=${start.getUTCDate()}`;
+    return `FREQ=MONTHLY;INTERVAL=${Math.max(1, Number(draft.interval) || 1)};${monthlyDayRule(start.getUTCDate())}`;
   }
-  return `FREQ=MONTHLY;BYMONTHDAY=${start.getUTCDate()}`;
+  return `FREQ=MONTHLY;${monthlyDayRule(start.getUTCDate())}`;
 }
 
 export function previewBillRecurrence(draft: BillEditorDraft, limit = 6): RecurrencePreview {

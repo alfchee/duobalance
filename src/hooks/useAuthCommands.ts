@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { pendingInvitePath } from "@/lib/pending-invite";
+import { clearActiveHouseholdId } from "@/lib/household/workflows";
 import {
   requestPasswordReset,
   resetPassword,
@@ -14,6 +16,8 @@ import {
 } from "@/lib/auth/flows";
 
 export function useAuthCommands() {
+  const queryClient = useQueryClient();
+
   const login = useCallback(
     (input: {
       email: string;
@@ -72,7 +76,9 @@ export function useAuthCommands() {
   const logout = useCallback(async () => {
     const supabase = createSupabaseBrowser();
     await supabase?.auth.signOut();
-  }, []);
+    queryClient.clear();
+    if (typeof localStorage !== "undefined") clearActiveHouseholdId(localStorage);
+  }, [queryClient]);
 
   return { login, signup, requestReset, completePasswordReset, logout };
 }

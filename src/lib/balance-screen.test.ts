@@ -130,4 +130,23 @@ describe("prepareBalanceReorder", () => {
 
     expect(result?.map((item) => item.id)).toEqual(["a", "b"]);
   });
+
+  it("keeps an archived account in place without duplicating or dropping visible rows", () => {
+    const accounts = [
+      account({ display_order: 0, id: "a" }),
+      account({ display_order: 1, id: "archived", is_archived: true }),
+      account({ display_order: 2, id: "c" }),
+      account({ display_order: 3, id: "d" }),
+    ];
+    const result = prepareBalanceReorder({
+      accounts,
+      memberId: "m1",
+      // drag "d" above "c" within the visible (non-archived) list
+      reorderedSection: [accounts[0]!, accounts[3]!, accounts[2]!],
+    });
+
+    expect(result?.map((item) => item.id)).toEqual(["a", "archived", "d", "c"]);
+    expect(new Set(result?.map((item) => item.id)).size).toBe(accounts.length);
+    expect(result?.find((item) => item.id === "archived")).toEqual(accounts[1]);
+  });
 });

@@ -117,6 +117,10 @@ export function createBudgetRows({
   }
   for (const transaction of spending) {
     if (!transaction.category_id) continue;
+    // base_amount is a generated column (amount * fx_rate) and fx_rate is
+    // NOT NULL on every write path (form validation, create_transfer RPC), so
+    // this can't actually be null for a real row — the fallback is here only
+    // because the generated column type is conservatively nullable.
     const spent = Math.abs(transaction.base_amount ?? 0);
     const current = rowsByCategory.get(transaction.category_id);
     if (current?.id === null) {

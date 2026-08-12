@@ -32,6 +32,10 @@ export function saveActiveHouseholdId(storage: Storage, householdId: string): vo
   storage.setItem(ACTIVE_HOUSEHOLD_STORAGE_KEY, householdId);
 }
 
+export function clearActiveHouseholdId(storage: Storage): void {
+  storage.removeItem(ACTIVE_HOUSEHOLD_STORAGE_KEY);
+}
+
 export function getInviteErrorKey(error: unknown): string {
   if (
     error &&
