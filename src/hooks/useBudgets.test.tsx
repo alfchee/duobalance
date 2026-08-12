@@ -12,6 +12,7 @@ type QueryResult = { data: unknown; error: Error | null };
 function mockSupabase(result: QueryResult) {
   const builder = {
     eq: vi.fn(),
+    delete: vi.fn(),
     gte: vi.fn(),
     insert: vi.fn(),
     is: vi.fn(),
@@ -19,10 +20,13 @@ function mockSupabase(result: QueryResult) {
     not: vi.fn(),
     order: vi.fn(),
     select: vi.fn(),
+    single: vi.fn(),
+    update: vi.fn(),
     then: (resolve: (value: QueryResult) => unknown) => Promise.resolve(result).then(resolve),
   };
   for (const method of [
     builder.eq,
+    builder.delete,
     builder.gte,
     builder.insert,
     builder.is,
@@ -30,6 +34,8 @@ function mockSupabase(result: QueryResult) {
     builder.not,
     builder.order,
     builder.select,
+    builder.single,
+    builder.update,
   ])
     method.mockReturnValue(builder);
   const from = vi.fn().mockReturnValue(builder);
@@ -112,5 +118,51 @@ describe("budget hooks", () => {
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["budget-spending", "household-1"],
     });
+  });
+
+  it("creates, updates, and deletes budgets through RLS-protected client mutations", async () => {
+    const { builder } = mockSupabase({ data: [], error: null });
+    const { result } = renderHook(() => useBudgetMutations("household-1"), {
+      wrapper: wrapper(),
+    });
+
+    await result.current.create.mutateAsync({
+      amount: 250,
+      category_id: "category-1",
+      owner_member_id: null,
+      period_month: "2026-08-01",
+      rollover: false,
+    });
+    await result.current.update.mutateAsync({ amount: 350, id: "budget-1", rollover: true });
+    await result.current.remove.mutateAsync("budget-1");
+
+    expect(builder.insert).toHaveBeenCalledWith({
+      amount: 250,
+      category_id: "category-1",
+      household_id: "household-1",
+      owner_member_id: null,
+      period_month: "2026-08-01",
+      rollover: false,
+    });
+    expect(builder.update).toHaveBeenCalledWith({ amount: 350, rollover: true });
+    expect(builder.delete).toHaveBeenCalledOnce();
+    expect(builder.eq).toHaveBeenCalledWith("id", "budget-1");
+  });
+
+  it("surfaces a rejected RLS mutation instead of closing over an unauthorized result", async () => {
+    mockSupabase({ data: null, error: new Error("new row violates row-level security policy") });
+    const { result } = renderHook(() => useBudgetMutations("household-1"), {
+      wrapper: wrapper(),
+    });
+
+    await expect(
+      result.current.create.mutateAsync({
+        amount: 250,
+        category_id: "category-1",
+        owner_member_id: null,
+        period_month: "2026-08-01",
+        rollover: false,
+      }),
+    ).rejects.toThrow("row-level security policy");
   });
 });

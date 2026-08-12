@@ -461,6 +461,32 @@
     "saving": "Saving…"
   },
   "budget": {
+    "title": "Budget",
+    "categories": "Categories",
+    "new": "Add budget",
+    "edit": "Edit budget",
+    "delete": "Delete budget",
+    "editor": {
+      "createTitle": "Add a budget",
+      "createDescription": "Set a monthly limit for one category.",
+      "editTitle": "Edit budget",
+      "editDescription": "Update this category's monthly limit.",
+      "category": "Category",
+      "selectCategory": "Select a category",
+      "amount": "Monthly limit",
+      "rollover": "Carry any remaining amount into the next month",
+      "validationCategory": "Choose a category.",
+      "validationAmount": "Enter a valid amount of zero or more.",
+      "save": "Save budget",
+      "saving": "Saving…",
+      "error": "Couldn't save the budget. Check your access and try again."
+    },
+    "deleteDialog": {
+      "title": "Delete this budget?",
+      "description": "This removes the monthly limit, not its transactions.",
+      "confirm": "Delete budget",
+      "error": "Couldn't delete the budget. Check your access and try again."
+    },
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
     "scopeLabel": "Budget scope",
@@ -478,6 +504,8 @@
     "visibleToYou": "Based on what is visible to you",
     "chartAria": "Spending composition totaling {total}",
     "chartCenter": "Spent",
+    "ofBudget": "of {amount}",
+    "percentUsed": "{percent}% used",
     "loadError": "Couldn't load your budget.",
     "retry": "Retry",
     "copyPrevious": "Copy from {month}",

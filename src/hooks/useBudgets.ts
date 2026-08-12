@@ -5,6 +5,7 @@ import { createSupabaseBrowser } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 
 type BudgetInsert = Database["public"]["Tables"]["budgets"]["Insert"];
+type BudgetUpdate = Database["public"]["Tables"]["budgets"]["Update"];
 
 function budgetStatusKey(householdId: string, periodMonth: string, ownerMemberId: string | null) {
   return ["budget-status", householdId, periodMonth, ownerMemberId] as const;
@@ -96,8 +97,40 @@ export function useBudgetMutations(householdId: string | null) {
     },
     onSuccess: invalidate,
   });
-
-  return { copy };
+  const create = useMutation({
+    mutationFn: async (budget: Omit<BudgetInsert, "household_id">) => {
+      if (!householdId) throw new Error("no household");
+      const { data, error } = await requireSupabase()
+        .from("budgets")
+        .insert({ ...budget, household_id: householdId })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+  const update = useMutation({
+    mutationFn: async ({ id, ...budget }: BudgetUpdate & { id: string }) => {
+      const { data, error } = await requireSupabase()
+        .from("budgets")
+        .update(budget)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await requireSupabase().from("budgets").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+  return { copy, create, remove, update };
 }
 
 export { budgetsKey, budgetStatusKey };

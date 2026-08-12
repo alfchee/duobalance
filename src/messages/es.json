@@ -461,6 +461,32 @@
     "saving": "Guardando…"
   },
   "budget": {
+    "title": "Presupuesto",
+    "categories": "Categorías",
+    "new": "Agregar presupuesto",
+    "edit": "Editar presupuesto",
+    "delete": "Eliminar presupuesto",
+    "editor": {
+      "createTitle": "Agregar un presupuesto",
+      "createDescription": "Define un límite mensual para una categoría.",
+      "editTitle": "Editar presupuesto",
+      "editDescription": "Actualiza el límite mensual de esta categoría.",
+      "category": "Categoría",
+      "selectCategory": "Selecciona una categoría",
+      "amount": "Límite mensual",
+      "rollover": "Acumular el monto restante para el próximo mes",
+      "validationCategory": "Elige una categoría.",
+      "validationAmount": "Ingresa un monto válido de cero o más.",
+      "save": "Guardar presupuesto",
+      "saving": "Guardando…",
+      "error": "No se pudo guardar el presupuesto. Revisa tu acceso e inténtalo nuevamente."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar este presupuesto?",
+      "description": "Esto elimina el límite mensual, no sus transacciones.",
+      "confirm": "Eliminar presupuesto",
+      "error": "No se pudo eliminar el presupuesto. Revisa tu acceso e inténtalo nuevamente."
+    },
     "previousMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
     "scopeLabel": "Alcance del presupuesto",
@@ -478,6 +504,8 @@
     "visibleToYou": "Según lo que ves",
     "chartAria": "Composición de gastos por un total de {total}",
     "chartCenter": "Gastado",
+    "ofBudget": "de {amount}",
+    "percentUsed": "{percent}% usado",
     "loadError": "No se pudo cargar tu presupuesto.",
     "retry": "Reintentar",
     "copyPrevious": "Copiar desde {month}",
