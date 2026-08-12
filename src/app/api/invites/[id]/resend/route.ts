@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { sendInviteEmail } from "@/lib/invite-email";
 import {
-  createRouteContext,
+  createInviteRouteContext,
   getAuthedUser,
   HttpError,
   recordInviteSend,
@@ -26,17 +26,17 @@ const paramsSchema = z.object({ id: z.string().uuid() });
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = paramsSchema.parse(await params);
 
-  const supabase = await createRouteContext();
+  const { auth, admin } = await createInviteRouteContext();
   let user;
   try {
-    user = await getAuthedUser(supabase);
+    user = await getAuthedUser(auth);
   } catch (err) {
     if (err instanceof HttpError)
       return Response.json({ error: err.message }, { status: err.status });
     throw err;
   }
 
-  const { data: invite, error: getError } = await supabase
+  const { data: invite, error: getError } = await admin
     .from("household_invites")
     .select("id, household_id, email, token, accepted_at, expires_at")
     .eq("id", id)
@@ -47,7 +47,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   let owner;
   try {
-    owner = await requireOwner(supabase, user.id, invite.household_id);
+    owner = await requireOwner(admin, user.id, invite.household_id);
   } catch (err) {
     if (err instanceof HttpError)
       return Response.json({ error: err.message }, { status: err.status });
@@ -59,7 +59,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   }
 
   try {
-    await recordInviteSend(supabase, user.id);
+    await recordInviteSend(admin, user.id);
   } catch (err) {
     if (err instanceof HttpError)
       return Response.json({ error: err.message }, { status: err.status });
@@ -67,7 +67,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   }
 
   // Refresh the expiry so a resent link is usable for another full window.
-  const { error: updateError } = await supabase
+  const { error: updateError } = await admin
     .from("household_invites")
     .update({ expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() })
     .eq("id", id);

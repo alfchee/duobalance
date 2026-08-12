@@ -9,6 +9,7 @@
 // allowlist (see CLAUDE.md) actually checks for.
 
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import type { Database } from "./types";
@@ -24,6 +25,19 @@ export async function createSupabaseRouteHandler() {
   return createServerClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, serviceRoleKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
+    },
+  });
+}
+
+export function createSupabaseServiceRoleClient() {
+  if (!serviceRoleKey || !env.NEXT_PUBLIC_SUPABASE_URL) {
+    throw new Error("Supabase env not set — see issue #9");
+  }
+  return createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
     },
   });
 }
