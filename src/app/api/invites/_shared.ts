@@ -11,8 +11,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { createRouteContext, getAuthedUser, HttpError } from "../_shared";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
-export { createRouteContext, getAuthedUser, HttpError };
+export { getAuthedUser, HttpError };
+
+export async function createInviteRouteContext() {
+  const [auth, admin] = await Promise.all([
+    createRouteContext(),
+    createSupabaseServiceRoleClient(),
+  ]);
+  return { auth, admin };
+}
 
 // Verifies the caller is the owner of `householdId` and returns their member
 // row (id + display_name) plus the household name/locale for the email.

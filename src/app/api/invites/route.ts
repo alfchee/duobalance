@@ -7,7 +7,7 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { sendInviteEmail } from "@/lib/invite-email";
 import {
-  createRouteContext,
+  createInviteRouteContext,
   getAuthedUser,
   HttpError,
   recordInviteSend,
@@ -20,10 +20,10 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabase = await createRouteContext();
+  const { auth, admin } = await createInviteRouteContext();
   let user;
   try {
-    user = await getAuthedUser(supabase);
+    user = await getAuthedUser(auth);
   } catch (err) {
     if (err instanceof HttpError)
       return Response.json({ error: err.message }, { status: err.status });
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
   let owner;
   try {
-    owner = await requireOwner(supabase, user.id, household_id);
+    owner = await requireOwner(admin, user.id, household_id);
   } catch (err) {
     if (err instanceof HttpError)
       return Response.json({ error: err.message }, { status: err.status });
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await recordInviteSend(supabase, user.id);
+    await recordInviteSend(admin, user.id);
   } catch (err) {
     if (err instanceof HttpError)
       return Response.json({ error: err.message }, { status: err.status });
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   // transaction is needed. A failed delete can't be ignored: proceeding would
   // leave two pending invites for the same (household, email) and the old
   // token would still work, so abort the whole create.
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await admin
     .from("household_invites")
     .delete()
     .eq("household_id", household_id)
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
   }
 
   const token = randomBytes(32).toString("base64url");
-  const { data: invite, error: insertError } = await supabase
+  const { data: invite, error: insertError } = await admin
     .from("household_invites")
     .insert({
       household_id,
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   } catch {
     // The invite row exists but the email never went out — revoke it so a
     // dangling, unreachable invite can't pile up; the caller can retry.
-    await supabase.from("household_invites").delete().eq("id", invite.id);
+    await admin.from("household_invites").delete().eq("id", invite.id);
     return Response.json({ error: "failed to send invite email" }, { status: 502 });
   }
 
