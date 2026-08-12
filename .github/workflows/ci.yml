@@ -45,9 +45,6 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
-
       - name: Lint, typecheck, format
         run: npm run check
 
@@ -75,6 +72,9 @@ jobs:
         run: npm run build
         env:
           BUILD_TARGET: web
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Browser validation
         run: npm run test:ui-validation
