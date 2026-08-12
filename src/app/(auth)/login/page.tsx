@@ -5,14 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { pendingInvitePath } from "@/lib/pending-invite";
@@ -52,9 +45,7 @@ export default function LoginPage() {
   return (
     <Card className="w-full rounded-[2rem] border-0 shadow-raised">
       <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
-        <CardTitle className="text-3xl font-black leading-none tracking-tight">
-          {t("title")}
-        </CardTitle>
+        <h1 className="text-3xl font-black leading-none tracking-tight">{t("title")}</h1>
         <CardDescription className="text-base leading-relaxed">{t("subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="p-6 pt-0 sm:px-8">
