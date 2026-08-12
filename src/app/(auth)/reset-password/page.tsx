@@ -14,15 +14,15 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { getAuthErrorKey } from "@/lib/supabase/auth-errors";
 import { useSession } from "@/hooks/useSession";
+import { useAuthCommands } from "@/hooks/useAuthCommands";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const { session, loading } = useSession();
   const t = useTranslations("auth.resetPassword");
   const tErrors = useTranslations("auth.errors");
+  const { completePasswordReset } = useAuthCommands();
 
   // A recovery link lands on /reset-password?code=… (PKCE). The code is present
   // when the page mounts and is stripped only after the async code exchange, so
@@ -45,44 +45,32 @@ export default function ResetPasswordPage() {
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-    if (password !== confirmPassword) {
-      setError("mismatch");
-      return;
-    }
-
     setPending(true);
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setError("generic");
+    const result = await completePasswordReset({ password, confirmPassword });
+    if (!result.ok) {
       setPending(false);
+      setError(result.errorKey);
       return;
     }
-
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-
-    if (updateError) {
-      setPending(false);
-      setError(getAuthErrorKey(updateError));
-      return;
-    }
-
-    // The recovery-link session exists only to authorize this one update —
-    // sign out so the user re-enters the app with a normal login, matching
-    // the "you can now log in" copy below.
-    await supabase.auth.signOut();
     setPending(false);
     setDone(true);
   }
 
   if (done) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t("successTitle")}</CardTitle>
-          <CardDescription>{t("successBody")}</CardDescription>
+      <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 sm:p-8">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("successTitle")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">
+            {t("successBody")}
+          </CardDescription>
         </CardHeader>
-        <CardFooter>
-          <Button onClick={() => router.replace("/login")}>{t("goToLogin")}</Button>
+        <CardFooter className="p-6 pt-0 sm:px-8 sm:pb-8">
+          <Button size="lg" className="w-full" onClick={() => router.replace("/login")}>
+            {t("goToLogin")}
+          </Button>
         </CardFooter>
       </Card>
     );
@@ -92,26 +80,34 @@ export default function ResetPasswordPage() {
   // change the password without the current one.
   if (!loading && (!session || !cameViaRecovery)) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("invalidLink")}</CardDescription>
+      <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 sm:p-8">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("title")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">
+            {t("invalidLink")}
+          </CardDescription>
         </CardHeader>
-        <CardFooter>
-          <Button onClick={() => router.replace("/forgot-password")}>{t("requestNewLink")}</Button>
+        <CardFooter className="p-6 pt-0 sm:px-8 sm:pb-8">
+          <Button size="lg" className="w-full" onClick={() => router.replace("/forgot-password")}>
+            {t("requestNewLink")}
+          </Button>
         </CardFooter>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("subtitle")}</CardDescription>
+    <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+      <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+        <CardTitle className="text-3xl font-black leading-none tracking-tight">
+          {t("title")}
+        </CardTitle>
+        <CardDescription className="text-base leading-relaxed">{t("subtitle")}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <form action={handleSubmit} className="flex flex-col gap-4">
+      <CardContent className="p-6 pt-0 sm:px-8">
+        <form action={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">{t("password")}</Label>
             <Input
@@ -139,7 +135,7 @@ export default function ResetPasswordPage() {
               {tErrors(error)}
             </p>
           ) : null}
-          <Button type="submit" disabled={pending || loading}>
+          <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending || loading}>
             {pending ? t("submitting") : t("submit")}
           </Button>
         </form>

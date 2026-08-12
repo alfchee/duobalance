@@ -160,4 +160,20 @@ describe("reorderAccounts", () => {
     expect(reordered.map((a) => a.id)).toEqual(["b", "c", "a"]);
     expect(reordered.map((a) => a.display_order)).toEqual([1, 2, 3]);
   });
+
+  it("does not duplicate a locked account display order", () => {
+    const reordered = reorderAccounts(
+      [
+        account({ id: "locked", owner_member_id: "p1", display_order: 0 }),
+        account({ id: "editable", display_order: 1 }),
+      ],
+      [
+        account({ id: "locked", owner_member_id: "p1", display_order: 0 }),
+        account({ id: "editable", display_order: 1 }),
+      ],
+      { lockedIds: new Set(["locked"]) },
+    );
+
+    expect(reordered.map((item) => item.display_order)).toEqual([0, 1]);
+  });
 });

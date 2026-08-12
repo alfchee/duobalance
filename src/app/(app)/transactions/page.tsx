@@ -11,9 +11,9 @@ export default function TransactionsPage() {
   const tTransactions = useTranslations("transactions");
 
   return (
-    <main className="mx-auto w-full max-w-2xl p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold">{tNav("transactions")}</h1>
-      <div className="mt-4">
+    <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+      <h1 className="sr-only">{tNav("transactions")}</h1>
+      <div>
         <Suspense
           fallback={<p className="text-sm text-muted-foreground">{tTransactions("loading")}</p>}
         >

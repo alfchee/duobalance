@@ -36,6 +36,7 @@ import { todayInHousehold } from "@/lib/dates";
 import {
   appendMoneyPadInput,
   formatMoneyInput,
+  formatSignedMoney,
   maskMoneyInput,
   parseMoneyInput,
   roundToMinorUnit,
@@ -47,6 +48,8 @@ import { useOfflineQueue } from "@/components/realtime-status";
 
 const LAST_ACCOUNT_STORAGE_KEY = "duobalance:lastTransactionAccountId";
 const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"] as const;
+const ENTRY_SHEET_CLASS_NAME =
+  "max-h-[92dvh] overflow-y-auto rounded-t-[2rem] sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[2rem]";
 
 type Draft = {
   amount: string;
@@ -61,15 +64,26 @@ type Draft = {
   isExpense: boolean;
 };
 
+function findMinorUnit(
+  currencies: readonly { code: string; minor_unit: number }[],
+  code: string | null,
+): number | null {
+  if (!code) return null;
+  return currencies.find((currency) => currency.code === code)?.minor_unit ?? null;
+}
+
+// Only reroute to the offline queue when the failure genuinely looks like a
+// connectivity problem — a structured API/DB error (it carries a string
+// `code`, e.g. an RLS denial or constraint violation) is never transient,
+// even if its message happens to contain a network-sounding word.
 function isTransientWriteError(error: unknown): boolean {
-  if (error instanceof TypeError) return true;
+  if (typeof navigator !== "undefined" && !navigator.onLine) return true;
   if (!error || typeof error !== "object") return false;
   const { code, message, name } = error as { code?: unknown; message?: unknown; name?: unknown };
+  if (typeof code === "string") return false;
+  if (name === "AbortError") return true;
   return (
-    typeof code !== "string" &&
-    (name === "FetchError" ||
-      name === "NetworkError" ||
-      (typeof message === "string" && /network|fetch|offline|timeout/i.test(message)))
+    typeof message === "string" && /network|failed to fetch|load failed|timeout/i.test(message)
   );
 }
 
@@ -161,6 +175,8 @@ function TransferEntryContent({
   const usableAccounts = accounts.filter((account) => !account.is_archived);
   const fromAccount = usableAccounts.find((account) => account.id === fromAccountId) ?? null;
   const toAccount = usableAccounts.find((account) => account.id === toAccountId) ?? null;
+  const fromMinorUnit = findMinorUnit(currencies, fromAccount?.currency ?? null);
+  const toMinorUnit = findMinorUnit(currencies, toAccount?.currency ?? null);
   const fromRateQuery = useFxRateOn(
     householdId,
     occurredOn,
@@ -224,10 +240,7 @@ function TransferEntryContent({
     )
       return setError("rate");
     if (!occurredOn || (today && occurredOn > addDays(today, 1))) return setError("date");
-    const fromMinorUnit =
-      currencies.find((currency) => currency.code === fromAccount?.currency)?.minor_unit ?? 2;
-    const toMinorUnit =
-      currencies.find((currency) => currency.code === toAccount?.currency)?.minor_unit ?? 2;
+    if (fromMinorUnit == null || toMinorUnit == null) return setError("amount");
     if (connectionState === "offline") return setError("offlineTransfer");
     try {
       await createTransfer.mutateAsync({
@@ -248,12 +261,14 @@ function TransferEntryContent({
   }
 
   return (
-    <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto sm:mx-auto sm:max-w-2xl">
-      <SheetHeader>
-        <SheetTitle>{t("form.transferTitle")}</SheetTitle>
+    <SheetContent side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
+      <SheetHeader className="border-b px-6 pb-5 pt-6">
+        <SheetTitle className="text-2xl font-black tracking-tight">
+          {t("form.transferTitle")}
+        </SheetTitle>
         <SheetDescription>{t("form.transferDescription")}</SheetDescription>
       </SheetHeader>
-      <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-6">
+      <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-8 pt-2">
         <TransferAccountSelect
           accounts={usableAccounts}
           label={t("form.fromAccount")}
@@ -265,6 +280,9 @@ function TransferEntryContent({
           id="transfer-from-amount"
           label={t("form.fromAmount", { currency: fromAccount?.currency ?? "" })}
           value={fromAmount}
+          locale={locale}
+          minorUnit={fromMinorUnit ?? 0}
+          disabled={fromMinorUnit == null}
           onChange={setFromAmount}
         />
         {fromAccount?.currency !== baseCurrency ? (
@@ -281,6 +299,9 @@ function TransferEntryContent({
           id="transfer-to-amount"
           label={t("form.toAmount", { currency: toAccount?.currency ?? "" })}
           value={toAmount}
+          locale={locale}
+          minorUnit={toMinorUnit ?? 0}
+          disabled={toMinorUnit == null}
           onChange={setToAmount}
         />
         {toAccount?.currency !== baseCurrency ? (
@@ -311,7 +332,11 @@ function TransferEntryContent({
             {t(`form.errors.${error}`)}
           </p>
         ) : null}
-        <Button type="submit" className="w-full" disabled={createTransfer.isPending}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={createTransfer.isPending || fromMinorUnit == null || toMinorUnit == null}
+        >
           {createTransfer.isPending ? t("form.saving") : t("form.saveTransfer")}
         </Button>
       </form>
@@ -354,12 +379,18 @@ function TransferAccountSelect({
 function TransferAmountField({
   id,
   label,
+  locale,
+  minorUnit,
   value,
+  disabled,
   onChange,
 }: {
   id: string;
   label: string;
+  locale: string;
+  minorUnit: number;
   value: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -369,7 +400,8 @@ function TransferAmountField({
         id={id}
         inputMode="decimal"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+        onChange={(event) => onChange(maskMoneyInput(event.target.value, locale, minorUnit))}
       />
     </div>
   );
@@ -428,8 +460,7 @@ function TransactionEntryContent({
   const [fxRateOverridden, setFxRateOverridden] = useState(transaction !== null);
   const amountRef = useRef<HTMLInputElement>(null);
   const selectedAccount = accounts.find((account) => account.id === draft.accountId) ?? null;
-  const minorUnit =
-    currencies.find((currency) => currency.code === draft.currency)?.minor_unit ?? 2;
+  const minorUnit = findMinorUnit(currencies, draft.currency || null);
   const isForeignCurrency = !!draft.currency && !!baseCurrency && draft.currency !== baseCurrency;
   const rateQuery = useFxRateOn(
     householdId,
@@ -447,6 +478,7 @@ function TransactionEntryContent({
     (category) => !category.is_archived && category.kind === categoryKind,
   );
   const effectiveRate = effectiveRates.find((rate) => rate.code === draft.currency);
+  const isTransfer = transaction?.transfer_group_id != null;
 
   useEffect(() => {
     if (!draft.accountId && usableAccounts[0]) {
@@ -521,14 +553,13 @@ function TransactionEntryContent({
     if (!draft.currency || !Number.isFinite(fxRate) || fxRate <= 0) return setError("rate");
     if (!draft.occurredOn || (today && draft.occurredOn > addDays(today, 1)))
       return setError("date");
+    if (minorUnit == null) return setError("amount");
 
-    const inputMinorUnit =
-      currencies.find((currency) => currency.code === draft.currency)?.minor_unit ?? 2;
     const input = {
       account_id: draft.accountId,
       amount: draft.isExpense
-        ? -roundToMinorUnit(amount, inputMinorUnit)
-        : roundToMinorUnit(amount, inputMinorUnit),
+        ? -roundToMinorUnit(amount, minorUnit)
+        : roundToMinorUnit(amount, minorUnit),
       category_id: draft.categoryId,
       currency: draft.currency,
       description,
@@ -597,7 +628,8 @@ function TransactionEntryContent({
       amount === 0 ||
       !draft.accountId ||
       !draft.currency ||
-      !Number.isFinite(fxRate)
+      !Number.isFinite(fxRate) ||
+      minorUnit == null
     ) {
       return setError("generic");
     }
@@ -621,17 +653,65 @@ function TransactionEntryContent({
     }
   }
 
-  return (
-    <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto sm:mx-auto sm:max-w-2xl">
-      <SheetHeader>
-        <SheetTitle>{transaction ? t("form.editTitle") : t("form.title")}</SheetTitle>
-        <SheetDescription>{t("form.description")}</SheetDescription>
-      </SheetHeader>
-      <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-6">
-        <div className="grid grid-cols-2 gap-2">
+  if (isTransfer && transaction) {
+    return (
+      <SheetContent side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
+        <SheetHeader className="border-b px-6 pb-5 pt-6">
+          <SheetTitle className="text-2xl font-black tracking-tight">
+            {t("form.transferTitle")}
+          </SheetTitle>
+          <SheetDescription>{t("form.errors.transferReadOnly")}</SheetDescription>
+        </SheetHeader>
+        <div className="space-y-5 px-6 pb-8 pt-2">
+          <div className="rounded-2xl bg-secondary p-4">
+            <p className="text-sm text-muted-foreground">{t("form.descriptionLabel")}</p>
+            <p className="mt-1 font-semibold">{transaction.description}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border p-4">
+              <p className="text-sm text-muted-foreground">{t("form.account")}</p>
+              <p className="mt-1 font-semibold">{selectedAccount?.name}</p>
+            </div>
+            <div className="rounded-2xl border p-4 text-right">
+              <p className="text-sm text-muted-foreground">{t("form.amount")}</p>
+              <p className="mt-1 font-semibold tabular-nums">
+                {formatSignedMoney(transaction.amount, transaction.currency, locale)}
+              </p>
+            </div>
+          </div>
+          {error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t(`form.errors.${error}`)}
+            </p>
+          ) : null}
           <Button
             type="button"
-            variant={draft.isExpense ? "default" : "outline"}
+            variant="destructive"
+            className="w-full"
+            onClick={handleDelete}
+            disabled={pending}
+          >
+            {pending ? t("form.saving") : t("form.delete")}
+          </Button>
+        </div>
+      </SheetContent>
+    );
+  }
+
+  return (
+    <SheetContent side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
+      <SheetHeader className="border-b px-6 pb-5 pt-6">
+        <SheetTitle className="text-2xl font-black tracking-tight">
+          {transaction ? t("form.editTitle") : t("form.title")}
+        </SheetTitle>
+        <SheetDescription>{t("form.description")}</SheetDescription>
+      </SheetHeader>
+      <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-8 pt-2">
+        <div className="grid grid-cols-2 rounded-full bg-secondary p-1">
+          <Button
+            type="button"
+            variant={draft.isExpense ? "default" : "ghost"}
+            className="rounded-full"
             onClick={() =>
               setDraft((current) => ({ ...current, isExpense: true, categoryId: null }))
             }
@@ -640,7 +720,8 @@ function TransactionEntryContent({
           </Button>
           <Button
             type="button"
-            variant={!draft.isExpense ? "default" : "outline"}
+            variant={!draft.isExpense ? "default" : "ghost"}
+            className="rounded-full"
             onClick={() =>
               setDraft((current) => ({ ...current, isExpense: false, categoryId: null }))
             }
@@ -657,20 +738,21 @@ function TransactionEntryContent({
             value={draft.amount}
             readOnly
             inputMode="none"
-            className="h-14 text-2xl"
+            className="h-16 rounded-2xl border-0 bg-secondary px-5 text-right text-4xl font-black tabular-nums shadow-none"
           />
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 rounded-2xl bg-secondary p-2">
             {PAD_KEYS.map((key) => (
               <Button
                 key={key}
                 type="button"
-                variant="outline"
-                className="h-12 text-lg"
+                variant="ghost"
+                className="h-12 rounded-xl text-lg hover:bg-background"
                 aria-label={key === "backspace" ? t("form.backspace") : key}
+                disabled={minorUnit == null}
                 onClick={() =>
                   setDraft((current) => ({
                     ...current,
-                    amount: appendMoneyPadInput(current.amount, key, locale, minorUnit),
+                    amount: appendMoneyPadInput(current.amount, key, locale, minorUnit ?? 0),
                   }))
                 }
               >
@@ -838,7 +920,11 @@ function TransactionEntryContent({
           </p>
         ) : null}
         <div className="flex gap-2">
-          <Button type="submit" className="flex-1" disabled={pending || !selectedAccount}>
+          <Button
+            type="submit"
+            className="flex-1"
+            disabled={pending || !selectedAccount || minorUnit == null}
+          >
             {pending ? t("form.saving") : t("form.save")}
           </Button>
           {transaction ? (

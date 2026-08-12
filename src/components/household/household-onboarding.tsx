@@ -3,11 +3,10 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/hooks/useSession";
 import { useCountries } from "@/hooks/useCountries";
 import { useCurrencies } from "@/hooks/useCurrencies";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,15 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const ACTIVE_HOUSEHOLD_STORAGE_KEY = "duobalance:activeHouseholdId";
-
-const INVITE_RPC_ERROR_MAP: Record<string, string> = {
-  "invite expired": "expired",
-  "invite already accepted": "alreadyAccepted",
-  "invite email does not match authenticated user": "emailMismatch",
-  "invite not found": "invalidToken",
-};
 
 // Shown instead of a dead-end "We couldn't find a household for your account"
 // paragraph when:
@@ -47,8 +37,8 @@ export function HouseholdOnboarding() {
   const tInviteErrors = useTranslations("household.onboarding.errorsInvite");
   const locale = useLocale();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { session } = useSession();
+  const { create: createHousehold, accept: acceptInvite } = useHouseholdCommands();
 
   const countries = useCountries({ enabled: !!session });
   const currencies = useCurrencies({ enabled: !!session });
@@ -88,28 +78,19 @@ export function HouseholdOnboarding() {
       return;
     }
 
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setCreateError("generic");
-      return;
-    }
-
     setCreatePending(true);
-    const { error } = await supabase.rpc("create_household", {
-      p_name: householdNameTrim,
-      p_country: country,
-      p_base_currency: baseCurrency,
-      p_display_name: displayNameTrim,
+    const result = await createHousehold({
+      name: householdNameTrim,
+      country,
+      baseCurrency,
+      displayName: displayNameTrim,
     });
     setCreatePending(false);
 
-    if (error) {
-      console.error(error);
-      setCreateError("generic");
+    if (!result.ok) {
+      setCreateError(result.errorKey);
       return;
     }
-
-    await queryClient.invalidateQueries({ queryKey: ["households", "memberships"] });
     router.replace("/balances");
   }
 
@@ -118,50 +99,40 @@ export function HouseholdOnboarding() {
     setInviteError(null);
     const token = inviteToken.trim();
     if (!token) {
-      setInviteError("tokenRequired");
-      return;
-    }
-
-    const supabase = createSupabaseBrowser();
-    if (!supabase) {
-      setInviteError("generic");
+      setInviteError(tInviteErrors("tokenRequired"));
       return;
     }
 
     setInvitePending(true);
-    const { data: householdId, error } = await supabase.rpc("accept_invite", {
-      p_token: token,
-    });
+    const result = await acceptInvite(token);
     setInvitePending(false);
 
-    if (error) {
-      const key = INVITE_RPC_ERROR_MAP[error.message];
-      setInviteError(key ? tInviteErrors(key) : tErrors("generic"));
+    if (!result.ok) {
+      setInviteError(
+        result.errorKey === "generic" ? tErrors("generic") : tInviteErrors(result.errorKey),
+      );
       return;
     }
-
-    if (householdId) {
-      localStorage.setItem(ACTIVE_HOUSEHOLD_STORAGE_KEY, String(householdId));
-    }
-    await queryClient.invalidateQueries({ queryKey: ["households", "memberships"] });
     router.replace("/balances");
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center p-6">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("subtitle")}</CardDescription>
+    <main className="flex min-h-dvh w-full items-center justify-center bg-secondary/70 px-4 py-8 sm:p-8">
+      <Card className="w-full max-w-md rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("title")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">{t("subtitle")}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 pt-0 sm:px-8 sm:pb-8">
           <Tabs defaultValue="create" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="create">{t("tabCreate")}</TabsTrigger>
               <TabsTrigger value="invite">{t("tabInvite")}</TabsTrigger>
             </TabsList>
             <TabsContent value="create">
-              <form onSubmit={handleCreate} className="mt-4 flex flex-col gap-4">
+              <form onSubmit={handleCreate} className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="onboarding-displayName">{t("displayName")}</Label>
                   <Input
@@ -228,13 +199,13 @@ export function HouseholdOnboarding() {
                     {tErrors(createError)}
                   </p>
                 ) : null}
-                <Button type="submit" disabled={createPending}>
+                <Button type="submit" size="lg" className="mt-1 w-full" disabled={createPending}>
                   {createPending ? t("creating") : t("createButton")}
                 </Button>
               </form>
             </TabsContent>
             <TabsContent value="invite">
-              <form onSubmit={handleInvite} className="mt-4 flex flex-col gap-4">
+              <form onSubmit={handleInvite} className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="onboarding-inviteToken">{t("inviteToken")}</Label>
                   <Input
@@ -251,7 +222,7 @@ export function HouseholdOnboarding() {
                     {inviteError}
                   </p>
                 ) : null}
-                <Button type="submit" disabled={invitePending}>
+                <Button type="submit" size="lg" className="mt-1 w-full" disabled={invitePending}>
                   {invitePending ? t("inviteAccepting") : t("inviteAccept")}
                 </Button>
               </form>

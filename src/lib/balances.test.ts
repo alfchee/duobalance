@@ -69,6 +69,10 @@ describe("filterByTab", () => {
     expect(filterByTab(all, "mine", "u9")).toEqual([]);
   });
 
+  it("Mine is empty before the active member resolves", () => {
+    expect(filterByTab(all, "mine", null)).toEqual([]);
+  });
+
   it("Joint shows only accounts with a null owner", () => {
     expect(filterByTab(all, "joint", "u1").map((a) => a.id)).toEqual(["j"]);
   });
