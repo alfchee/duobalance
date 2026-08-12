@@ -82,17 +82,17 @@ export function BalancesView() {
               ))}
             </div>
           )}
-          {today ? (
-            <p className="px-1 text-[11px] text-muted-foreground">
-              {t("computedOn", { date: today })}
-            </p>
-          ) : null}
         </>
       ) : (
         <EmptyAccounts />
       )}
 
-      <div className="flex justify-end">
+      <div className="flex flex-col items-center gap-3 text-center">
+        {hasAccounts && today ? (
+          <p className="px-1 text-[11px] text-muted-foreground">
+            {t("computedOn", { date: today })}
+          </p>
+        ) : null}
         <Button type="button" onClick={openCreate}>
           <Plus />
           {t("newAccount")}

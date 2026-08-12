@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
@@ -46,19 +46,19 @@ export function BalancesHeader({
   return (
     <section aria-label={t("headerAriaLabel")} className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">{t("accountCount", { count })}</span>
         <div className="flex items-center -space-x-2">
-          <MemberAvatar
-            label={me?.display_name ?? "—"}
-            color={me?.color_hex ?? null}
-            isPartner={false}
-          />
           <MemberAvatar
             label={partner?.display_name ?? t("partnerPlaceholder")}
             color={partner?.color_hex ?? null}
             isPartner
           />
+          <MemberAvatar
+            label={me?.display_name ?? "—"}
+            color={me?.color_hex ?? null}
+            isPartner={false}
+          />
         </div>
-        <span className="text-xs text-muted-foreground">{t("accountCount", { count })}</span>
       </div>
 
       <Popover open={open} onOpenChange={setOpen}>
@@ -69,8 +69,9 @@ export function BalancesHeader({
             aria-expanded={open}
             disabled={!baseCurrency}
           >
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="flex w-full items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
               {t("netWorthLabel")}
+              <ChevronRight className="size-5" aria-hidden="true" />
             </span>
             <span
               className={cn(
@@ -82,12 +83,6 @@ export function BalancesHeader({
                 ? formatMoney(netWorth, baseCurrency, locale)
                 : t("netWorthLoading")}
             </span>
-            {breakdown.length > 0 ? (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <ChevronDown className="size-3" />
-                {t("breakdownToggle")}
-              </span>
-            ) : null}
           </button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">

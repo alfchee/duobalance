@@ -19,6 +19,8 @@
     "budget": "Budget",
     "bills": "Bills",
     "more": "More",
+    "settings": "Settings",
+    "newTransaction": "New transaction",
     "logout": "Log out"
   },
   "transactions": {

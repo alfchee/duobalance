@@ -19,6 +19,8 @@
     "budget": "Presupuesto",
     "bills": "Cuentas",
     "more": "Más",
+    "settings": "Configuración",
+    "newTransaction": "Nuevo movimiento",
     "logout": "Cerrar sesión"
   },
   "transactions": {
