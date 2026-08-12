@@ -461,6 +461,8 @@
     "saving": "Guardando…"
   },
   "budget": {
+    "title": "Presupuesto",
+    "categories": "Categorías",
     "previousMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
     "scopeLabel": "Alcance del presupuesto",
@@ -478,6 +480,8 @@
     "visibleToYou": "Según lo que ves",
     "chartAria": "Composición de gastos por un total de {total}",
     "chartCenter": "Gastado",
+    "ofBudget": "de {amount}",
+    "percentUsed": "{percent}% usado",
     "loadError": "No se pudo cargar tu presupuesto.",
     "retry": "Reintentar",
     "copyPrevious": "Copiar desde {month}",

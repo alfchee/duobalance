@@ -461,6 +461,8 @@
     "saving": "Saving…"
   },
   "budget": {
+    "title": "Budget",
+    "categories": "Categories",
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
     "scopeLabel": "Budget scope",
@@ -478,6 +480,8 @@
     "visibleToYou": "Based on what is visible to you",
     "chartAria": "Spending composition totaling {total}",
     "chartCenter": "Spent",
+    "ofBudget": "of {amount}",
+    "percentUsed": "{percent}% used",
     "loadError": "Couldn't load your budget.",
     "retry": "Retry",
     "copyPrevious": "Copy from {month}",
