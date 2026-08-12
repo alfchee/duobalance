@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, ReceiptText } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  Clock3,
+  Plus,
+  ReceiptText,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { RRule, rrulestr } from "rrule";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,105 +37,30 @@ import { useCategories } from "@/hooks/useCategories";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
+import { createBillWriteInput, parseBillAmount } from "@/lib/bills/commands";
+import {
+  calculateBillWeekTotal,
+  createBillInstancesByDate,
+  createBillStatusCounts,
+  createBillWeeks,
+  dateFromYmd,
+  formatBillDate,
+  getBillMonthWindow,
+  moveBillMonth,
+  type SelectedBillInstance,
+} from "@/lib/bills/model";
+import {
+  createDefaultBillDraft,
+  previewBillRecurrence,
+  type BillEditorDraft,
+  type RecurrenceKind,
+} from "@/lib/bills/recurrence";
 import { todayInHousehold } from "@/lib/dates";
-import { formatMoney, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useBillsUiStore } from "@/store/bills";
 
-type RecurrenceKind = "monthly-day" | "monthly-last" | "weekly" | "yearly" | "monthly-interval";
-
-type BillEditorState = {
-  accountId: string;
-  amount: string;
-  categoryId: string;
-  currency: string;
-  endsOn: string;
-  interval: string;
-  name: string;
-  reminderDays: string;
-  responsibleMemberId: string;
-  startsOn: string;
-  recurrence: RecurrenceKind;
-  weekday: string;
-};
-
-type SelectedInstance = {
-  bill: BillWithInstances;
-  instance: BillWithInstances["instances"][number];
-};
-
-function dateFromYmd(value: string): Date {
-  return new Date(`${value}T00:00:00Z`);
-}
-
-function moveMonth(value: string, offset: number): string {
-  const date = dateFromYmd(`${value}-01`);
-  date.setUTCMonth(date.getUTCMonth() + offset);
-  return date.toISOString().slice(0, 7);
-}
-
-function monthBounds(month: string): { start: string; end: string } {
-  const date = dateFromYmd(`${month}-01`);
-  const start = date.toISOString().slice(0, 10);
-  date.setUTCMonth(date.getUTCMonth() + 1);
-  date.setUTCDate(0);
-  return { end: date.toISOString().slice(0, 10), start };
-}
-
-function createRrule(draft: BillEditorState): string {
-  const start = dateFromYmd(draft.startsOn);
-  if (draft.recurrence === "monthly-last") return "FREQ=MONTHLY;BYMONTHDAY=-1";
-  if (draft.recurrence === "weekly") {
-    return `FREQ=WEEKLY;INTERVAL=${Math.max(1, Number(draft.interval) || 1)};BYDAY=${draft.weekday}`;
-  }
-  if (draft.recurrence === "yearly") {
-    return `FREQ=YEARLY;BYMONTH=${start.getUTCMonth() + 1};BYMONTHDAY=${start.getUTCDate()}`;
-  }
-  if (draft.recurrence === "monthly-interval") {
-    return `FREQ=MONTHLY;INTERVAL=${Math.max(1, Number(draft.interval) || 1)};BYMONTHDAY=${start.getUTCDate()}`;
-  }
-  return `FREQ=MONTHLY;BYMONTHDAY=${start.getUTCDate()}`;
-}
-
-type PreviewResult = { dates: string[]; valid: boolean };
-
-// Returns valid: false when the recurrence itself can't be parsed, so the UI
-// can tell "invalid rule" apart from "valid rule, nothing due in range" —
-// both previously rendered as the same empty list.
-function previewDates(draft: BillEditorState): PreviewResult {
-  if (!draft.startsOn) return { dates: [], valid: true };
-  try {
-    const parsed = rrulestr(createRrule(draft)) as RRule;
-    const rule = new RRule({ ...parsed.origOptions, dtstart: dateFromYmd(draft.startsOn) });
-    const start = dateFromYmd(draft.startsOn);
-    const end = dateFromYmd(draft.endsOn || "2099-12-31");
-    const dates = rule
-      .between(start, end, true)
-      .slice(0, 6)
-      .map((date) => date.toISOString().slice(0, 10));
-    return { dates, valid: true };
-  } catch {
-    return { dates: [], valid: false };
-  }
-}
-
-function defaultDraft(today: string, currency: string): BillEditorState {
-  return {
-    accountId: "none",
-    amount: "",
-    categoryId: "none",
-    currency,
-    endsOn: "",
-    interval: "1",
-    name: "",
-    recurrence: "monthly-day",
-    reminderDays: "3",
-    responsibleMemberId: "joint",
-    startsOn: today,
-    weekday: "MO",
-  };
-}
-
-function draftFromBill(bill: BillWithInstances): BillEditorState {
+function draftFromBill(bill: BillWithInstances): BillEditorDraft {
   return {
     accountId: bill.account_id ?? "none",
     amount: bill.default_amount?.toString() ?? "",
@@ -153,38 +85,11 @@ function draftFromBill(bill: BillWithInstances): BillEditorState {
   };
 }
 
-function weekStart(date: string): string {
-  const value = dateFromYmd(date);
-  const weekday = value.getUTCDay();
-  value.setUTCDate(value.getUTCDate() - ((weekday + 6) % 7));
-  return value.toISOString().slice(0, 10);
-}
-
-function displayDate(date: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(dateFromYmd(date));
-}
-
 function statusTone(status: string | null): string {
-  if (status === "paid") return "bg-emerald-100 text-emerald-800";
-  if (status === "overdue") return "bg-red-100 text-red-700";
+  if (status === "paid") return "bg-success/10 text-success";
+  if (status === "overdue") return "bg-destructive/10 text-destructive";
   if (status === "skipped") return "bg-muted text-muted-foreground";
-  return "bg-blue-100 text-blue-800";
-}
-
-function weeklyTotals(items: readonly SelectedInstance[], locale: string): string {
-  const totals = new Map<string, number>();
-  for (const { bill, instance } of items) {
-    if (instance.effective_status === "skipped") continue;
-    totals.set(bill.currency, (totals.get(bill.currency) ?? 0) + (instance.amount ?? 0));
-  }
-  return [...totals.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([currency, amount]) => formatMoney(amount, currency, locale))
-    .join(" · ");
+  return "bg-primary/30 text-primary-foreground";
 }
 
 export function BillsView() {
@@ -193,10 +98,20 @@ export function BillsView() {
   const { baseCurrency, householdId, memberId, timezone } = useHousehold();
   const today = todayInHousehold(timezone ?? "UTC");
   const [month, setMonth] = useState(today.slice(0, 7));
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingBill, setEditingBill] = useState<BillWithInstances | null>(null);
-  const [selected, setSelected] = useState<SelectedInstance | null>(null);
-  const [payOpen, setPayOpen] = useState(false);
+  const {
+    closeEditor,
+    closeInstance,
+    closePay,
+    editorBillId,
+    editorOpen,
+    openCreate: openCreateEditor,
+    openEdit,
+    openInstance: selectInstance,
+    openPay: openPaymentSheet,
+    payOpen,
+    reset,
+    selectedInstanceId,
+  } = useBillsUiStore();
   const [amount, setAmount] = useState("");
   const [paidOn, setPaidOn] = useState(today);
   const [paidByMemberId, setPaidByMemberId] = useState(memberId ?? "");
@@ -204,7 +119,7 @@ export function BillsView() {
   const [skipReason, setSkipReason] = useState("");
   const [instanceAmount, setInstanceAmount] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
-  const bounds = monthBounds(month);
+  const bounds = getBillMonthWindow(month);
   const billsQuery = useBills(householdId, bounds);
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: categories = [] } = useCategories(householdId);
@@ -214,12 +129,14 @@ export function BillsView() {
     householdId,
     memberId,
   );
-  const [draft, setDraft] = useState(() => defaultDraft(today, baseCurrency ?? "USD"));
+  const [draft, setDraft] = useState(() => createDefaultBillDraft(today, baseCurrency ?? "USD"));
 
   useEffect(() => {
     if (baseCurrency)
       setDraft((current) => ({ ...current, currency: current.currency || baseCurrency }));
   }, [baseCurrency]);
+
+  useEffect(() => reset, [householdId, reset]);
 
   const bills = useMemo(() => billsQuery.data ?? [], [billsQuery.data]);
   const monthInstances = useMemo(
@@ -234,112 +151,96 @@ export function BillsView() {
       ),
     [bills, bounds.end, bounds.start],
   );
-  const instancesByDate = useMemo(() => {
-    const result = new Map<string, SelectedInstance[]>();
-    for (const value of monthInstances) {
-      const date = value.instance.due_on!;
-      result.set(date, [...(result.get(date) ?? []), value]);
-    }
-    return result;
-  }, [monthInstances]);
-  const weeks = useMemo(() => {
-    const grouped = new Map<string, SelectedInstance[]>();
-    for (const value of monthInstances) {
-      const key = weekStart(value.instance.due_on!);
-      grouped.set(key, [...(grouped.get(key) ?? []), value]);
-    }
-    return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [monthInstances]);
+  const instancesByDate = useMemo(
+    () => createBillInstancesByDate(monthInstances),
+    [monthInstances],
+  );
+  const weeks = useMemo(() => createBillWeeks(monthInstances), [monthInstances]);
+  const statusCounts = useMemo(() => createBillStatusCounts(monthInstances), [monthInstances]);
+  const selected = useMemo(
+    () => monthInstances.find(({ instance }) => instance.id === selectedInstanceId) ?? null,
+    [monthInstances, selectedInstanceId],
+  );
   const firstDay = dateFromYmd(bounds.start).getUTCDay();
   const calendarStartOffset = (firstDay + 6) % 7;
   const dayCount = Number(bounds.end.slice(-2));
   const minorUnitFor = (currency: string) =>
     currencies.find((c) => c.code === currency)?.minor_unit ?? 2;
   const minorUnit = minorUnitFor(draft.currency);
-  const preview = previewDates(draft);
+  const preview = previewBillRecurrence(draft);
   const previews = preview.dates;
 
-  const openCreate = () => {
-    setEditingBill(null);
-    setDraft(defaultDraft(today, baseCurrency ?? "USD"));
+  const beginCreate = () => {
+    setDraft(createDefaultBillDraft(today, baseCurrency ?? "USD"));
     setActionError(null);
-    setEditorOpen(true);
+    openCreateEditor();
   };
-  const openEdit = (bill: BillWithInstances) => {
-    setEditingBill(bill);
+  const beginEdit = (bill: BillWithInstances) => {
     setDraft(draftFromBill(bill));
     setActionError(null);
-    setEditorOpen(true);
+    openEdit(bill.id);
   };
-  const openInstance = (value: SelectedInstance) => {
+  const beginInstance = (value: SelectedBillInstance) => {
+    if (!value.instance.id) return;
     setSkipReason("");
     setInstanceAmount(value.instance.amount?.toString() ?? "");
     setActionError(null);
-    setSelected(value);
+    selectInstance(value.instance.id);
   };
-  const openPay = () => {
-    if (!selected?.instance.amount) return;
+  const beginPay = () => {
+    if (selected?.instance.amount === null || selected?.instance.amount === undefined) return;
     setAmount(selected.instance.amount.toString());
     setPaidOn(today);
     setPaidByMemberId(memberId ?? "");
     setCreateTransaction(true);
     setActionError(null);
-    setPayOpen(true);
+    openPaymentSheet();
   };
   const saveBill = async () => {
-    const parsedAmount = draft.amount ? parseMoneyInput(draft.amount, locale) : null;
-    if (!draft.name.trim() || (draft.amount && parsedAmount === null)) return;
-    const payload = {
-      account_id: draft.accountId === "none" ? null : draft.accountId,
-      category_id: draft.categoryId === "none" ? null : draft.categoryId,
-      currency: draft.currency,
-      default_amount: parsedAmount === null ? null : roundToMinorUnit(parsedAmount, minorUnit),
-      ends_on: draft.endsOn || null,
-      name: draft.name.trim(),
-      reminder_days_before: Number(draft.reminderDays) || 0,
-      responsible_member_id:
-        draft.responsibleMemberId === "joint" ? null : draft.responsibleMemberId,
-      rrule: createRrule(draft),
-      starts_on: draft.startsOn,
-    };
+    const result = createBillWriteInput(draft, locale, minorUnit);
+    if (!result.ok) return;
     try {
-      if (editingBill) await update.mutateAsync({ id: editingBill.id, input: payload });
-      else await create.mutateAsync(payload);
-      setEditorOpen(false);
+      if (editorBillId) await update.mutateAsync({ id: editorBillId, input: result.value });
+      else await create.mutateAsync(result.value);
+      closeEditor();
     } catch {
       setActionError(t("error"));
     }
   };
   const confirmPay = async () => {
     if (!selected || !paidByMemberId) return;
-    const parsedAmount = parseMoneyInput(amount, locale);
+    const parsedAmount = parseBillAmount(amount, locale, minorUnitFor(selected.bill.currency));
     if (parsedAmount === null) return;
     try {
       await pay.mutateAsync({
         input: {
-          amount: roundToMinorUnit(parsedAmount, minorUnitFor(selected.bill.currency)),
+          amount: parsedAmount,
           createTransaction,
           paidByMemberId,
           paidOn,
         },
         instance: selected.instance,
       });
-      setPayOpen(false);
-      setSelected(null);
+      closePay();
+      closeInstance();
     } catch {
       setActionError(t("error"));
     }
   };
   const saveInstanceAmount = async () => {
     if (!selected?.instance.id) return;
-    const parsedAmount = parseMoneyInput(instanceAmount, locale);
+    const parsedAmount = parseBillAmount(
+      instanceAmount,
+      locale,
+      minorUnitFor(selected.bill.currency),
+    );
     if (parsedAmount === null) return;
     try {
       await updateInstanceAmount.mutateAsync({
-        amount: roundToMinorUnit(parsedAmount, minorUnitFor(selected.bill.currency)),
+        amount: parsedAmount,
         id: selected.instance.id,
       });
-      setSelected(null);
+      closeInstance();
     } catch {
       setActionError(t("error"));
     }
@@ -347,69 +248,104 @@ export function BillsView() {
 
   if (billsQuery.isPending) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-72" />
-        <Skeleton className="h-36" />
+      <div className="space-y-6" aria-busy="true">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-24" />
+          <Skeleton className="h-9 w-28 rounded-full" />
+        </div>
+        <Skeleton className="h-52 rounded-2xl" />
+        <Skeleton className="h-32 rounded-2xl" />
+        <span className="sr-only">{t("loading")}</span>
       </div>
     );
   }
   if (billsQuery.isError) {
     return (
-      <Card>
-        <CardContent className="space-y-3 p-6">
-          <p>{t("loadError")}</p>
-          <Button onClick={() => void billsQuery.refetch()}>{t("retry")}</Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-4xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+        <CircleAlert className="mx-auto size-7 text-destructive" />
+        <p className="mt-3 font-semibold text-destructive">{t("loadError")}</p>
+        <Button className="mt-4" variant="outline" onClick={() => void billsQuery.refetch()}>
+          {t("retry")}
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-7">
+      <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("eyebrow")}
+          </p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight">{t("title")}</h1>
         </div>
-        <Button size="sm" onClick={openCreate}>
+        <Button className="shrink-0" size="sm" onClick={beginCreate}>
           <Plus />
           {t("new")}
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("previousMonth")}
-              onClick={() => setMonth(moveMonth(month, -1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <p className="font-semibold uppercase">
+      <section className="rounded-2xl bg-secondary p-4 sm:p-5" aria-label={t("calendarLabel")}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="font-black tracking-tight">
               {new Intl.DateTimeFormat(locale, {
                 month: "long",
                 year: "numeric",
                 timeZone: "UTC",
               }).format(dateFromYmd(`${month}-01`))}
             </p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+          </div>
+          <div className="flex gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
+              size="icon"
+              aria-label={t("previousMonth")}
+              onClick={() => setMonth(moveBillMonth(month, -1))}
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
               size="icon"
               aria-label={t("nextMonth")}
-              onClick={() => setMonth(moveMonth(month, 1))}
+              onClick={() => setMonth(moveBillMonth(month, 1))}
             >
               <ChevronRight />
             </Button>
           </div>
-          <div className="grid grid-cols-7 text-center text-xs text-muted-foreground">
+        </div>
+        <div className="mt-5 grid grid-cols-3 divide-x divide-border text-center">
+          <div className="px-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("summary.paid")}
+            </p>
+            <p className="mt-1 text-lg font-black tabular-nums text-success">{statusCounts.paid}</p>
+          </div>
+          <div className="px-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("summary.upcoming")}
+            </p>
+            <p className="mt-1 text-lg font-black tabular-nums">{statusCounts.due}</p>
+          </div>
+          <div className="px-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("summary.overdue")}
+            </p>
+            <p className="mt-1 text-lg font-black tabular-nums text-destructive">
+              {statusCounts.overdue}
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="grid grid-cols-7 text-center text-[10px] font-semibold tracking-wider text-muted-foreground">
             {["MO", "TU", "WE", "TH", "FR", "SA", "SU"].map((day) => (
               <span key={day}>{day}</span>
             ))}
           </div>
-          <div className="mt-2 grid grid-cols-7 gap-y-2">
+          <div className="mt-2 grid grid-cols-7 gap-y-1">
             {Array.from({ length: calendarStartOffset }, (_, index) => (
               <span key={`blank-${index}`} />
             ))}
@@ -421,11 +357,11 @@ export function BillsView() {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => due[0] && openInstance(due[0])}
+                  onClick={() => due[0] && beginInstance(due[0])}
                   className={cn(
-                    "flex min-h-11 flex-col items-center rounded-md pt-1 text-sm",
+                    "flex min-h-10 flex-col items-center rounded-xl pt-1 text-sm transition-colors",
                     value === today && "bg-primary font-semibold text-primary-foreground",
-                    due.length > 0 && value !== today && "hover:bg-muted",
+                    due.length > 0 && value !== today && "hover:bg-background",
                   )}
                 >
                   <span>{day}</span>
@@ -435,9 +371,12 @@ export function BillsView() {
                         key={instance.id}
                         className="size-1.5 rounded-full"
                         style={{
-                          backgroundColor:
-                            members.find((member) => member.id === bill.responsible_member_id)
-                              ?.color_hex ?? "var(--color-primary)",
+                          backgroundColor: statusTone(instance.effective_status).includes(
+                            "destructive",
+                          )
+                            ? "var(--destructive)"
+                            : (members.find((member) => member.id === bill.responsible_member_id)
+                                ?.color_hex ?? "var(--primary)"),
                         }}
                       />
                     ))}
@@ -446,42 +385,42 @@ export function BillsView() {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {bills.length === 0 ? (
-        <Card>
-          <CardContent className="space-y-3 p-6 text-center">
-            <ReceiptText className="mx-auto size-8 text-muted-foreground" />
-            <h2 className="font-semibold">{t("empty.title")}</h2>
-            <p className="text-sm text-muted-foreground">{t("empty.description")}</p>
-            <Button onClick={openCreate}>{t("empty.action")}</Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-4xl border border-dashed p-8 text-center">
+          <ReceiptText className="mx-auto size-9 text-muted-foreground" />
+          <h2 className="mt-4 font-black tracking-tight">{t("empty.title")}</h2>
+          <p className="text-sm text-muted-foreground">{t("empty.description")}</p>
+          <Button className="mt-5" onClick={beginCreate}>
+            {t("empty.action")}
+          </Button>
+        </div>
       ) : weeks.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center text-sm text-muted-foreground">
-            {t("emptyMonth")}
-          </CardContent>
-        </Card>
+        <div className="rounded-4xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+          <CalendarDays className="mx-auto mb-3 size-8" />
+          {t("emptyMonth")}
+        </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-7">
           {weeks.map(([week, items]) => (
             <section key={week}>
-              <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                <span>
-                  {displayDate(week, locale)} –{" "}
-                  {displayDate(
+              <div className="mb-3 flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <span className="truncate">
+                  {formatBillDate(week, locale)} –{" "}
+                  {formatBillDate(
                     new Date(dateFromYmd(week).getTime() + 6 * 86400000).toISOString().slice(0, 10),
                     locale,
                   )}
                 </span>
-                <span>{weeklyTotals(items, locale)}</span>
+                <span>{calculateBillWeekTotal(items, locale)}</span>
               </div>
-              <Card>
-                <CardContent className="divide-y p-0">
+              <div className="overflow-hidden rounded-2xl border bg-background shadow-ring">
+                <div className="divide-y">
                   {items.map(({ bill, instance }) => {
                     const category = categories.find((item) => item.id === bill.category_id);
+                    const account = accounts.find((item) => item.id === bill.account_id);
                     const paidBy = members.find(
                       (member) => member.id === instance.paid_by_member_id,
                     );
@@ -489,17 +428,41 @@ export function BillsView() {
                       <button
                         key={instance.id}
                         type="button"
-                        onClick={() => openInstance({ bill, instance })}
-                        className="flex w-full items-center gap-3 p-4 text-left hover:bg-muted/50"
+                        onClick={() => beginInstance({ bill, instance })}
+                        className={cn(
+                          "flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-secondary/60",
+                          instance.effective_status === "overdue" && "bg-destructive/5",
+                        )}
                       >
-                        <span className="grid size-9 place-items-center rounded-full bg-muted">
-                          {category?.icon ?? "•"}
+                        <span
+                          className={cn(
+                            "grid size-10 shrink-0 place-items-center rounded-2xl bg-secondary text-lg",
+                            instance.effective_status === "overdue" &&
+                              "bg-destructive/10 text-destructive",
+                          )}
+                        >
+                          {instance.effective_status === "paid" ? (
+                            <Check className="size-5" />
+                          ) : (
+                            (category?.icon ?? "•")
+                          )}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium">{bill.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {displayDate(instance.due_on!, locale)}
-                            {paidBy ? ` · ${paidBy.display_name}` : ""}
+                          <span className="flex items-center gap-2">
+                            <span className="truncate font-semibold">{bill.name}</span>
+                            <span
+                              className={cn(
+                                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                                statusTone(instance.effective_status),
+                              )}
+                            >
+                              {t(`status.${instance.effective_status ?? "due"}`)}
+                            </span>
+                          </span>
+                          <span className="mt-1 block truncate text-xs text-muted-foreground">
+                            {[category?.name, account?.name, paidBy?.display_name]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </span>
                         </span>
                         <span className="text-right">
@@ -513,29 +476,25 @@ export function BillsView() {
                           >
                             {formatMoney(instance.amount ?? 0, bill.currency, locale)}
                           </span>
-                          <span
-                            className={cn(
-                              "mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
-                              statusTone(instance.effective_status),
-                            )}
-                          >
-                            {t(`status.${instance.effective_status ?? "due"}`)}
+                          <span className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                            <Clock3 className="size-3" />
+                            {formatBillDate(instance.due_on!, locale)}
                           </span>
                         </span>
                       </button>
                     );
                   })}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </section>
           ))}
         </div>
       )}
 
-      <Sheet open={editorOpen} onOpenChange={setEditorOpen}>
+      <Sheet open={editorOpen} onOpenChange={(open) => !open && closeEditor()}>
         <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{editingBill ? t("editor.editTitle") : t("editor.title")}</SheetTitle>
+            <SheetTitle>{editorBillId ? t("editor.editTitle") : t("editor.title")}</SheetTitle>
             <SheetDescription>{t("editor.description")}</SheetDescription>
           </SheetHeader>
           <div className="grid gap-4 p-4">
@@ -710,7 +669,7 @@ export function BillsView() {
               {preview.valid ? (
                 <ul className="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
                   {previews.map((date) => (
-                    <li key={date}>{displayDate(date, locale)}</li>
+                    <li key={date}>{formatBillDate(date, locale)}</li>
                   ))}
                 </ul>
               ) : (
@@ -734,12 +693,12 @@ export function BillsView() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+      <Sheet open={selected !== null} onOpenChange={(open) => !open && closeInstance()}>
         <SheetContent side="bottom">
           <SheetHeader>
             <SheetTitle>{selected?.bill.name}</SheetTitle>
             <SheetDescription>
-              {selected?.instance.due_on ? displayDate(selected.instance.due_on, locale) : ""}
+              {selected?.instance.due_on ? formatBillDate(selected.instance.due_on, locale) : ""}
             </SheetDescription>
           </SheetHeader>
           {selected && (
@@ -782,7 +741,7 @@ export function BillsView() {
                       .mutateAsync({
                         id: selected.instance.id!,
                       })
-                      .then(() => setSelected(null))
+                      .then(closeInstance)
                       .catch(() => setActionError(t("error")));
                   }}
                 >
@@ -792,7 +751,7 @@ export function BillsView() {
                 <p className="text-sm text-muted-foreground">{t("actions.skippedInstance")}</p>
               ) : (
                 <>
-                  <Button className="w-full" onClick={openPay}>
+                  <Button className="w-full" onClick={beginPay}>
                     {t("actions.markPaid")}
                   </Button>
                   <Input
@@ -809,7 +768,7 @@ export function BillsView() {
                           id: selected.instance.id!,
                           reason: skipReason.trim() || null,
                         })
-                        .then(() => setSelected(null))
+                        .then(closeInstance)
                         .catch(() => setActionError(t("error")))
                     }
                   >
@@ -827,8 +786,8 @@ export function BillsView() {
                 className="w-full"
                 onClick={() => {
                   const bill = selected.bill;
-                  setSelected(null);
-                  openEdit(bill);
+                  closeInstance();
+                  beginEdit(bill);
                 }}
               >
                 {t("actions.editBill")}
@@ -838,7 +797,7 @@ export function BillsView() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={payOpen} onOpenChange={setPayOpen}>
+      <Sheet open={payOpen} onOpenChange={(open) => !open && closePay()}>
         <SheetContent side="bottom">
           <SheetHeader>
             <SheetTitle>{t("pay.title")}</SheetTitle>

@@ -25,6 +25,10 @@ export default defineConfig({
         "src/lib/transactions/activity-filters.ts",
         "src/lib/transactions/activity-model.ts",
         "src/lib/transactions/activity-query.ts",
+        "src/lib/bills/commands.ts",
+        "src/lib/bills/model.ts",
+        "src/lib/bills/recurrence.ts",
+        "src/store/bills.ts",
       ],
       thresholds: {
         functions: 95,
