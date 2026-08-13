@@ -632,6 +632,10 @@
       "iosGuide": "See iPhone install guide",
       "unavailable": "Use your browser menu to install DuoBalance."
     },
+    "push": {
+      "title": "Bill reminder notifications",
+      "description": "Receive bill reminders on this device. Email remains the fallback."
+    },
     "ios": {
       "back": "Back to settings",
       "title": "Add DuoBalance to your iPhone",

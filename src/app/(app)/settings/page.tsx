@@ -13,6 +13,7 @@ import { MembersSection } from "./members-section";
 import { FxRatesSection } from "./fx-rates-section";
 import { FxOverridesSection } from "./fx-overrides-section";
 import { InstallSection } from "@/components/pwa/install-section";
+import { PushNotificationsSection } from "@/components/pwa/push-notifications-section";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -70,6 +71,7 @@ export default function SettingsPage() {
         <div className="px-4 py-4">
           <InstallSection />
         </div>
+        <PushNotificationsSection />
       </SettingsGroup>
 
       <SettingsGroup title={t("groups.configuration")}>

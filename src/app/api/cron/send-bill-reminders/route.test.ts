@@ -7,6 +7,9 @@ import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 vi.mock("@/lib/bill-reminder-email", () => ({ sendReminderDigest: vi.fn() }));
 import { sendReminderDigest } from "@/lib/bill-reminder-email";
 
+vi.mock("@/lib/web-push", () => ({ sendBillReminderPush: vi.fn() }));
+import { sendBillReminderPush } from "@/lib/web-push";
+
 function authedRequest(path: string, init: RequestInit = {}): Request {
   return new Request(path, {
     ...init,
@@ -16,10 +19,15 @@ function authedRequest(path: string, init: RequestInit = {}): Request {
 
 function makeClient(
   reminderRows: unknown[],
-  opts?: { memberRows?: unknown[]; userRows?: { id: string; email: string }[] },
+  opts?: {
+    memberRows?: unknown[];
+    userRows?: { id: string; email: string }[];
+    subscriptionRows?: unknown[];
+  },
 ) {
   const members = opts?.memberRows ?? [];
   const users = opts?.userRows ?? [];
+  const subscriptions = opts?.subscriptionRows ?? [];
   return {
     rpc: vi.fn((name: string) => {
       if (name === "bill_instances_due_for_reminder") {
@@ -48,6 +56,16 @@ function makeClient(
           })),
         };
       }
+      if (table === "push_subscriptions") {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn(() => Promise.resolve({ data: subscriptions, error: null })),
+          })),
+          delete: vi.fn(() => ({
+            in: vi.fn(() => Promise.resolve({ error: null })),
+          })),
+        };
+      }
       throw new Error(`unexpected table ${table}`);
     }),
   };
@@ -56,6 +74,7 @@ function makeClient(
 beforeEach(() => {
   process.env.CRON_SECRET = "test-secret";
   process.env.RESEND_API_KEY = "re_secret";
+  vi.mocked(sendBillReminderPush).mockResolvedValue("failed");
 });
 
 afterEach(() => {
@@ -143,6 +162,48 @@ describe("/api/cron/send-bill-reminders", () => {
         locale: "en",
       }),
     );
+  });
+
+  it("prefers a successful push delivery over email", async () => {
+    vi.mocked(sendBillReminderPush).mockResolvedValue("sent");
+    const client = makeClient(
+      [
+        {
+          instance_id: "i-1",
+          bill_id: "b-1",
+          household_id: "h-1",
+          due_on: "2026-08-15",
+          amount: 1000,
+          bill_name: "Rent",
+          currency: "USD",
+          responsible_member_id: "m-1",
+          household_name: "Test Home",
+          household_timezone: "America/New_York",
+          household_locale: "en",
+        },
+      ],
+      {
+        memberRows: [{ id: "m-1", user_id: "u-1", display_name: "Alice", household_id: "h-1" }],
+        userRows: [{ id: "u-1", email: "alice@test.local" }],
+        subscriptionRows: [
+          {
+            id: "p-1",
+            member_id: "m-1",
+            endpoint: "https://push.example/subscription",
+            p256dh: "key",
+            auth: "auth",
+          },
+        ],
+      },
+    );
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client as never);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/send-bill-reminders"));
+
+    expect(res.status).toBe(200);
+    expect(sendBillReminderPush).toHaveBeenCalledTimes(1);
+    expect(sendReminderDigest).not.toHaveBeenCalled();
+    await expect(res.json()).resolves.toEqual({ sent: 1, instances: 1 });
   });
 
   it("handles joint bills by sending individual emails to each member", async () => {

@@ -632,6 +632,10 @@
       "iosGuide": "Ver guía para iPhone",
       "unavailable": "Usa el menú de tu navegador para instalar DuoBalance."
     },
+    "push": {
+      "title": "Notificaciones de recordatorios",
+      "description": "Recibe recordatorios de cuentas en este dispositivo. El correo sigue siendo el respaldo."
+    },
     "ios": {
       "back": "Volver a configuración",
       "title": "Agrega DuoBalance a tu iPhone",
