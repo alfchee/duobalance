@@ -21,7 +21,7 @@ export default function GlobalError({
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-4 p-6">
       <h1 className="text-2xl font-semibold">{t("somethingWrong")}</h1>
-      <p className="text-sm text-muted-foreground">{error.message || t("unknownError")}</p>
+      <p className="text-sm text-muted-foreground">{t("unknownError")}</p>
       <Button onClick={() => reset()}>{t("retry")}</Button>
     </main>
   );

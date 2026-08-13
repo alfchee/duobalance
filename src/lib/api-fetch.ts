@@ -12,12 +12,13 @@ export class ApiError extends Error {
   }
 }
 
-type ApiFetchInit = Omit<RequestInit, "body"> & { body?: unknown };
+type ApiFetchInit = Omit<RequestInit, "body"> & { body?: unknown; responseType?: "blob" | "json" };
 
 export async function apiFetch<T = unknown>(path: string, init: ApiFetchInit = {}): Promise<T> {
   const url = path.startsWith("http") ? path : `${BASE}${path}`;
+  const { responseType = "json", ...requestInit } = init;
   const res = await fetch(url, {
-    ...init,
+    ...requestInit,
     headers: {
       "Content-Type": "application/json",
       ...(init.headers ?? {}),
@@ -35,6 +36,9 @@ export async function apiFetch<T = unknown>(path: string, init: ApiFetchInit = {
   }
   if (res.status === 204) {
     return undefined as T;
+  }
+  if (responseType === "blob") {
+    return (await res.blob()) as T;
   }
   return (await res.json()) as T;
 }
