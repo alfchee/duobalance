@@ -39,7 +39,8 @@ export async function sendBillReminderPush(
     );
     return "sent";
   } catch (error) {
-    if (error instanceof webpush.WebPushError && error.statusCode === 410) return "gone";
+    if (error instanceof webpush.WebPushError && [404, 410].includes(error.statusCode))
+      return "gone";
     console.error("send-bill-reminders: push delivery failed", error);
     return "failed";
   }

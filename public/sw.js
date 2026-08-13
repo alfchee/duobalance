@@ -47,7 +47,14 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(self.clients.openWindow(event.notification.data.url));
+  let target = "/bills";
+  try {
+    const url = new URL(event.notification.data?.url || "/bills", self.location.origin);
+    if (url.origin === self.location.origin) target = url.href;
+  } catch {
+    target = "/bills";
+  }
+  event.waitUntil(self.clients.openWindow(target));
 });
 
 self.addEventListener("fetch", (event) => {

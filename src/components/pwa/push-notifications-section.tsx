@@ -43,6 +43,7 @@ export function PushNotificationsSection() {
 
       const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       if (!key) return;
+      const created = !current;
       const subscription =
         current ??
         (await registration.pushManager.subscribe({
@@ -51,17 +52,22 @@ export function PushNotificationsSection() {
         }));
       const keys = subscription.toJSON().keys;
       if (!keys?.p256dh || !keys.auth) return;
-      await apiFetch("/api/push-subscriptions", {
-        method: "POST",
-        body: {
-          householdId,
-          memberId,
-          endpoint: subscription.endpoint,
-          p256dh: keys.p256dh,
-          auth: keys.auth,
-          userAgent: navigator.userAgent,
-        },
-      });
+      try {
+        await apiFetch("/api/push-subscriptions", {
+          method: "POST",
+          body: {
+            householdId,
+            memberId,
+            endpoint: subscription.endpoint,
+            p256dh: keys.p256dh,
+            auth: keys.auth,
+            userAgent: navigator.userAgent,
+          },
+        });
+      } catch (error) {
+        if (created) await subscription.unsubscribe();
+        throw error;
+      }
       setEnabled(true);
     } finally {
       setBusy(false);
