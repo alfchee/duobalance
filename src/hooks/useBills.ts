@@ -64,6 +64,19 @@ export function useBills(householdId: string | null, window: BillWindow) {
 
 export function useBillMutations(householdId: string | null, memberId: string | null) {
   const queryClient = useQueryClient();
+
+  async function generateInstances(billId: string) {
+    const {
+      data: { session },
+    } = await requireSupabase().auth.getSession();
+    if (!session) throw new Error("authentication required");
+    await apiFetch(`/api/bills/${billId}/generate`, {
+      method: "POST",
+      body: { accessToken: session.access_token },
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+  }
+
   const invalidate = () => {
     if (householdId) {
       void queryClient.invalidateQueries({ queryKey: billsKey(householdId) });
@@ -81,7 +94,7 @@ export function useBillMutations(householdId: string | null, memberId: string | 
         .select()
         .single();
       if (error) throw error;
-      await apiFetch(`/api/bills/${data.id}/generate`, { method: "POST" });
+      await generateInstances(data.id);
       return data;
     },
     onSuccess: invalidate,
@@ -96,7 +109,7 @@ export function useBillMutations(householdId: string | null, memberId: string | 
         .select()
         .single();
       if (error) throw error;
-      await apiFetch(`/api/bills/${id}/generate`, { method: "POST" });
+      await generateInstances(id);
       return data;
     },
     onSuccess: invalidate,

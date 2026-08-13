@@ -43,6 +43,7 @@ describe("apiFetch", () => {
     await apiFetch("/api/items", { method: "POST", body: { id: 1 } });
     const init = fetchMock.mock.calls[0]![1]!;
     expect(init.method).toBe("POST");
+    expect(init.credentials).toBe("include");
     expect(init.body).toBe('{"id":1}');
     expect(init.headers).toMatchObject({ "Content-Type": "application/json" });
   });
