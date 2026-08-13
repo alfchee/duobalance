@@ -7,6 +7,7 @@
 
 import { createRouteContext, getAuthedUser, HttpError } from "../../_shared";
 import { runFxRefresh } from "@/lib/fx/refresh";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
 export async function POST() {
   const supabase = await createRouteContext();
@@ -20,7 +21,7 @@ export async function POST() {
   }
 
   try {
-    const result = await runFxRefresh(supabase);
+    const result = await runFxRefresh(createSupabaseServiceRoleClient());
     return Response.json(result);
   } catch {
     return Response.json({ error: "fx refresh failed" }, { status: 502 });

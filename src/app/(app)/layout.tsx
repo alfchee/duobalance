@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSession } from "@/hooks/useSession";
@@ -20,12 +20,22 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { session, loading: sessionLoading } = useSession();
   const { loading: householdLoading, needsPicker, householdId, memberships } = useHousehold();
   const t = useTranslations("household");
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
     if (!sessionLoading && !session) {
       router.replace("/login");
     }
   }, [sessionLoading, session, router]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const updateKeyboardState = () => setKeyboardOpen(window.innerHeight - viewport.height > 160);
+    updateKeyboardState();
+    viewport.addEventListener("resize", updateKeyboardState);
+    return () => viewport.removeEventListener("resize", updateKeyboardState);
+  }, []);
 
   if (sessionLoading || !session) {
     return <FullPageSpinner />;
@@ -50,7 +60,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <RealtimeStatus>
           <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">{children}</div>
           <TransactionEntrySheet />
-          <BottomNav />
+          {!keyboardOpen ? <BottomNav /> : null}
         </RealtimeStatus>
       </div>
     </div>

@@ -25,3 +25,15 @@ export function isIOS(): boolean {
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
   );
 }
+
+export function supportsPush(): boolean {
+  if (typeof window === "undefined") return false;
+  return "PushManager" in window && "serviceWorker" in navigator && isStandalone();
+}
+
+export function urlBase64ToUint8Array(value: string): Uint8Array<ArrayBuffer> {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
+  const decoded = window.atob(`${normalized}${padding}`);
+  return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+}

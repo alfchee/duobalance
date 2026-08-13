@@ -6,6 +6,7 @@
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 import { sendReminderDigest } from "@/lib/bill-reminder-email";
 import type { ReminderItem } from "@/lib/bill-reminder-email";
+import { sendBillReminderPush, type StoredPushSubscription } from "@/lib/web-push";
 
 export const dynamic = "force-static";
 
@@ -30,6 +31,25 @@ type ReminderRow = {
   household_timezone: string;
   household_locale: string;
 };
+
+type PushSubscriptionQuery = {
+  select: (columns: string) => {
+    in: (
+      column: string,
+      values: string[],
+    ) => Promise<{
+      data: StoredPushSubscription[] | null;
+      error: unknown;
+    }>;
+  };
+  delete: () => {
+    in: (column: string, values: string[]) => Promise<{ error: unknown }>;
+  };
+};
+
+function pushSubscriptions(supabase: Awaited<ReturnType<typeof createSupabaseRouteHandler>>) {
+  return supabase.from as unknown as (table: "push_subscriptions") => PushSubscriptionQuery;
+}
 
 async function handle(request: Request) {
   if (!isAuthorized(request)) {
@@ -149,6 +169,23 @@ async function handle(request: Request) {
       }
     }
 
+    const memberIds = Array.from(new Set((allHouseholdMembers ?? []).map((member) => member.id)));
+    const { data: subscriptionRows, error: subscriptionError } = await pushSubscriptions(supabase)(
+      "push_subscriptions",
+    )
+      .select("id, member_id, endpoint, p256dh, auth")
+      .in("member_id", memberIds);
+    if (subscriptionError) {
+      console.error("send-bill-reminders: push subscription lookup failed", subscriptionError);
+      throw new Error(`push subscription lookup failed: ${String(subscriptionError)}`);
+    }
+    const subscriptionsByMember = new Map<string, StoredPushSubscription[]>();
+    for (const subscription of subscriptionRows ?? []) {
+      const subscriptions = subscriptionsByMember.get(subscription.member_id) ?? [];
+      subscriptions.push(subscription);
+      subscriptionsByMember.set(subscription.member_id, subscriptions);
+    }
+
     // Group by household, then by responsible member
     const grouped = new Map<
       string,
@@ -194,6 +231,7 @@ async function handle(request: Request) {
 
         // Build recipient list
         const toEmails: string[] = [];
+        const recipientMemberIds: string[] = [];
         const memberInstanceIds = items
           .filter((i) =>
             key === "joint"
@@ -206,12 +244,18 @@ async function handle(request: Request) {
           const hhMembers = householdMemberIds.get(hhId) ?? [];
           for (const m of hhMembers) {
             const email = userIdToEmail.get(m.user_id);
-            if (email) toEmails.push(email);
+            if (email) {
+              toEmails.push(email);
+              recipientMemberIds.push(m.id);
+            }
           }
         } else {
           const uid = memberToUserId.get(key);
           const email = uid ? userIdToEmail.get(uid) : undefined;
-          if (email) toEmails.push(email);
+          if (email) {
+            toEmails.push(email);
+            recipientMemberIds.push(key);
+          }
         }
 
         if (toEmails.length === 0) continue;
@@ -225,7 +269,19 @@ async function handle(request: Request) {
         // there's no way to dedup a retry for just the recipient who already
         // got it; a partial failure means the whole group is retried next run.
         let allSucceeded = true;
-        for (const email of toEmails) {
+        const deadSubscriptionIds: string[] = [];
+        for (const [index, email] of toEmails.entries()) {
+          const recipientMemberId = recipientMemberIds[index];
+          const subscriptions = recipientMemberId
+            ? (subscriptionsByMember.get(recipientMemberId) ?? [])
+            : [];
+          let pushSent = false;
+          for (const subscription of subscriptions) {
+            const result = await sendBillReminderPush(subscription, entry.items.length);
+            if (result === "gone") deadSubscriptionIds.push(subscription.id);
+            if (result === "sent") pushSent = true;
+          }
+          if (pushSent) continue;
           try {
             await sendReminderDigest({
               to: [email],
@@ -240,6 +296,15 @@ async function handle(request: Request) {
               `send-bill-reminders: failed to send digest for household=${hhId} member=${key} to=${email}`,
               err,
             );
+          }
+        }
+
+        if (deadSubscriptionIds.length > 0) {
+          const { error: pruneError } = await pushSubscriptions(supabase)("push_subscriptions")
+            .delete()
+            .in("id", deadSubscriptionIds);
+          if (pruneError) {
+            console.error("send-bill-reminders: failed to prune push subscriptions", pruneError);
           }
         }
 
