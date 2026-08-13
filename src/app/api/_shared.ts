@@ -17,11 +17,11 @@ export class HttpError extends Error {
   }
 }
 
-export async function getAuthedUser(supabase: SupabaseClient<Database>) {
+export async function getAuthedUser(supabase: SupabaseClient<Database>, accessToken?: string) {
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser(accessToken);
   if (error || !user) throw new HttpError(401, "authentication required");
   return user;
 }

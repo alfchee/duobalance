@@ -18,6 +18,7 @@ export async function apiFetch<T = unknown>(path: string, init: ApiFetchInit = {
   const url = path.startsWith("http") ? path : `${BASE}${path}`;
   const res = await fetch(url, {
     ...init,
+    credentials: init.credentials ?? "include",
     headers: {
       "Content-Type": "application/json",
       ...(init.headers ?? {}),

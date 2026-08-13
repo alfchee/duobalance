@@ -17,14 +17,19 @@ export function generateStaticParams() {
 }
 
 const paramsSchema = z.object({ id: z.string().uuid() });
+const bodySchema = z.object({ accessToken: z.string().min(1).optional() });
 
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = paramsSchema.parse(await params);
 
   const supabase = await createRouteContext();
+  const authorization = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+  const body = await request.json().catch(() => ({}));
+  const { accessToken: bodyToken } = bodySchema.parse(body);
+  const accessToken = authorization ?? bodyToken;
   let user;
   try {
-    user = await getAuthedUser(supabase);
+    user = await getAuthedUser(supabase, accessToken);
   } catch (err) {
     if (err instanceof HttpError)
       return Response.json({ error: err.message }, { status: err.status });
