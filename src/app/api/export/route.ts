@@ -18,6 +18,10 @@ const EXPORT_TABLES = [
   "import_batches",
   "fx_overrides",
 ] as const;
+const EXPORT_CACHE_HEADERS = {
+  "Cache-Control": "private, no-store",
+  Pragma: "no-cache",
+};
 
 type ExportTable = (typeof EXPORT_TABLES)[number];
 type ExportData = Record<ExportTable, unknown[]>;
@@ -134,6 +138,7 @@ export async function GET(request: Request) {
   if (format === "csv") {
     return new Response(transactionsToCsv(data.transactions as Record<string, unknown>[]), {
       headers: {
+        ...EXPORT_CACHE_HEADERS,
         "Content-Disposition": `attachment; filename=\"${filename}.csv\"`,
         "Content-Type": "text/csv; charset=utf-8",
       },
@@ -148,6 +153,7 @@ export async function GET(request: Request) {
     },
     {
       headers: {
+        ...EXPORT_CACHE_HEADERS,
         "Content-Disposition": `attachment; filename=\"${filename}.json\"`,
       },
     },

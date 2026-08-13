@@ -15,7 +15,12 @@ function mergeMessages(base: Record<string, unknown>, overrides: Record<string, 
   for (const [key, value] of Object.entries(overrides)) {
     const baseValue = base[key];
     merged[key] =
-      value && typeof value === "object" && baseValue && typeof baseValue === "object"
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      baseValue &&
+      typeof baseValue === "object" &&
+      !Array.isArray(baseValue)
         ? mergeMessages(baseValue as Record<string, unknown>, value as Record<string, unknown>)
         : value;
   }

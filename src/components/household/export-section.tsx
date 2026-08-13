@@ -43,7 +43,8 @@ export function ExportSection() {
       anchor.href = href;
       anchor.download = downloadFilename(householdName ?? "household", format);
       anchor.click();
-      URL.revokeObjectURL(href);
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(href), 0);
     } catch {
       setError(true);
     } finally {
