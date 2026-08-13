@@ -9,9 +9,25 @@ import { apiFetch } from "@/lib/api-fetch";
 
 type ExportFormat = "json" | "csv";
 
+export function downloadFilename(
+  householdName: string,
+  format: ExportFormat,
+  now: Date = new Date(),
+): string {
+  const date = now.toISOString().slice(0, 10);
+  const household =
+    householdName
+      .trim()
+      .toLowerCase()
+      .replaceAll(/[^a-z0-9]+/g, "-")
+      .replaceAll(/^-|-$/g, "")
+      .slice(0, 80) || "household";
+  return `duobalance-${household}-${date}.${format}`;
+}
+
 export function ExportSection() {
   const t = useTranslations("settings.export");
-  const { householdId } = useHousehold();
+  const { householdId, householdName } = useHousehold();
   const [pending, setPending] = useState<ExportFormat | null>(null);
   const [error, setError] = useState(false);
 
@@ -25,7 +41,7 @@ export function ExportSection() {
       const href = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = href;
-      anchor.download = `duobalance-export.${format}`;
+      anchor.download = downloadFilename(householdName ?? "household", format);
       anchor.click();
       URL.revokeObjectURL(href);
     } catch {

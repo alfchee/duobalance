@@ -77,6 +77,7 @@ async function fetchAllRows(
       .from(table)
       .select("*")
       .eq("household_id", householdId)
+      .order("id", { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) throw error;
     const page = data ?? [];

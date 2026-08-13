@@ -28,8 +28,9 @@ export type SupportedLocale = keyof typeof MESSAGES;
 const STORAGE_KEY = "duobalance:locale";
 
 export function toSupportedLocale(locale: string | null | undefined): SupportedLocale {
-  if (locale === "pt" || locale === "pt-BR") return "pt-BR";
-  return locale === "en" ? "en" : "es";
+  const language = locale?.toLowerCase().split("-")[0];
+  if (language === "pt") return "pt-BR";
+  return language === "en" ? "en" : "es";
 }
 
 function detectBrowserLocale(): SupportedLocale {
