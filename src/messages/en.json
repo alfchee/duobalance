@@ -664,7 +664,8 @@
     "groups": {
       "household": "Household",
       "preferences": "Preferences",
-      "configuration": "Categories & rules"
+      "configuration": "Categories & rules",
+      "data": "Your data"
     },
     "navigation": {
       "categories": {
@@ -740,7 +741,16 @@
     },
     "languages": {
       "es": "Español",
-      "en": "English"
+      "en": "English",
+      "pt-BR": "Português (Brasil)"
+    },
+    "export": {
+      "title": "Backup export",
+      "description": "Download your household data for safekeeping or use in a spreadsheet.",
+      "json": "Download JSON",
+      "csv": "Download CSV",
+      "exporting": "Preparing…",
+      "error": "Couldn't create your export. Try again."
     },
     "logout": "Log out"
   }

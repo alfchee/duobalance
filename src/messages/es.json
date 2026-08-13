@@ -664,7 +664,8 @@
     "groups": {
       "household": "Hogar",
       "preferences": "Preferencias",
-      "configuration": "Categorías y reglas"
+      "configuration": "Categorías y reglas",
+      "data": "Tus datos"
     },
     "navigation": {
       "categories": {
@@ -740,7 +741,16 @@
     },
     "languages": {
       "es": "Español",
-      "en": "English"
+      "en": "English",
+      "pt-BR": "Português (Brasil)"
+    },
+    "export": {
+      "title": "Exportar respaldo",
+      "description": "Descarga los datos de tu hogar para guardarlos o usarlos en una hoja de cálculo.",
+      "json": "Descargar JSON",
+      "csv": "Descargar CSV",
+      "exporting": "Preparando…",
+      "error": "No se pudo crear la exportación. Inténtalo de nuevo."
     },
     "logout": "Cerrar sesión"
   }

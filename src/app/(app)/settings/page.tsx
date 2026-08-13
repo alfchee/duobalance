@@ -14,6 +14,7 @@ import { FxRatesSection } from "./fx-rates-section";
 import { FxOverridesSection } from "./fx-overrides-section";
 import { InstallSection } from "@/components/pwa/install-section";
 import { PushNotificationsSection } from "@/components/pwa/push-notifications-section";
+import { ExportSection } from "@/components/household/export-section";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -90,6 +91,10 @@ export default function SettingsPage() {
       <FxRatesSection />
 
       <FxOverridesSection />
+
+      <SettingsGroup title={t("groups.data")}>
+        <ExportSection />
+      </SettingsGroup>
 
       <Button
         variant="outline"

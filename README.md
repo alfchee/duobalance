@@ -11,7 +11,7 @@ milestone ends at: "both partners can log in and see the same household."
 - **Supabase** (Auth, Postgres, RLS, Realtime)
 - **Vercel** (hosting; PR previews on)
 - **Tailwind 4** + **shadcn/ui** (new-york style)
-- **next-intl** (es default, en; wired in #16)
+- **next-intl** (es default, en, pt-BR)
 - **Zod** (env + payload validation)
 - **Husky + lint-staged** (pre-commit)
 
@@ -30,7 +30,7 @@ that's the proof the conventions in this scaffold keep that option viable.
    through `lib/api-fetch.ts` and `NEXT_PUBLIC_API_BASE_URL`.
 4. **RLS is the primary authorization boundary** (per #1). The client talks to Supabase
    directly for reads and realtime; the service role is route-handler only.
-5. **i18n lives in `src/messages/{es,en}.json`.** Wiring lands in #16.
+5. **i18n lives in `src/messages/{es,en,pt-BR}.json`.**
 
 ## Local development
 
@@ -39,6 +39,34 @@ npm install
 cp .env.example .env.local        # fill in once #9 lands; not required for #8
 npm run dev                       # http://localhost:3000
 ```
+
+Copy `.env.example` to `.env.local` and fill in the required Supabase browser
+variables. Server-only variables are required only for their matching features:
+the service role for API handlers, Resend for email, ExchangeRate for rate
+refreshes, cron secret for scheduled endpoints, and VAPID values for push.
+Never expose server-only values with a `NEXT_PUBLIC_` prefix.
+
+## Database setup
+
+Install Docker and the Supabase CLI, then start the local stack, apply every
+migration and seed, regenerate database types, and run the RLS suite:
+
+```bash
+npm run db:start
+npm run db:reset
+npm run db:types
+npm run db:test
+```
+
+Use `npm run db:push` only to apply reviewed migrations to the linked remote
+project. Configure the same variables from `.env.example` in the deployment
+provider; leave `BUILD_TARGET` unset for web deployments.
+
+## Backups
+
+Signed-in household members can download a lossless JSON backup or a
+spreadsheet-compatible transaction CSV in **Settings → Your data**. Keep JSON
+exports in a secure location: they contain your household's financial records.
 
 ## Build verification
 

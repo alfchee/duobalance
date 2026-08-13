@@ -64,6 +64,15 @@ describe("apiFetch", () => {
     await expect(apiFetch("/api/items", { method: "DELETE" })).resolves.toBeUndefined();
   });
 
+  it("returns a Blob when requested", async () => {
+    const { apiFetch } = await loadApiFetch("");
+    fetchMock.mockResolvedValue(new Response("backup", { status: 200 }));
+    await expect(apiFetch<Blob>("/api/export", { responseType: "blob" })).resolves.toMatchObject({
+      size: 6,
+      type: "text/plain;charset=utf-8",
+    });
+  });
+
   it("throws ApiError with the parsed body on failure", async () => {
     const { apiFetch } = await loadApiFetch("");
     fetchMock.mockResolvedValue(jsonResponse({ message: "nope" }, 400));

@@ -4,23 +4,43 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { NextIntlClientProvider } from "next-intl";
 import es from "@/messages/es.json";
 import en from "@/messages/en.json";
+import ptBR from "@/messages/pt-BR.json";
 
 // next-intl runs client-only here — no routing/middleware, since middleware.ts
 // doesn't exist in a static export (architecture rule #1). Locale resolution
 // order (household -> browser -> es) is #16's full scope; this is the minimal
 // slice #14 needs so auth copy resolves through next-intl.
-const MESSAGES = { es, en } as const;
+function mergeMessages(base: Record<string, unknown>, overrides: Record<string, unknown>) {
+  const merged: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(overrides)) {
+    const baseValue = base[key];
+    merged[key] =
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      baseValue &&
+      typeof baseValue === "object" &&
+      !Array.isArray(baseValue)
+        ? mergeMessages(baseValue as Record<string, unknown>, value as Record<string, unknown>)
+        : value;
+  }
+  return merged;
+}
+
+const MESSAGES = { es, en, "pt-BR": mergeMessages(en, ptBR) } as const;
 export type SupportedLocale = keyof typeof MESSAGES;
 
 const STORAGE_KEY = "duobalance:locale";
 
 export function toSupportedLocale(locale: string | null | undefined): SupportedLocale {
-  return locale === "en" ? "en" : "es";
+  const language = locale?.toLowerCase().split("-")[0];
+  if (language === "pt") return "pt-BR";
+  return language === "en" ? "en" : "es";
 }
 
 function detectBrowserLocale(): SupportedLocale {
   if (typeof navigator === "undefined") return "es";
-  return toSupportedLocale(navigator.language.slice(0, 2).toLowerCase());
+  return toSupportedLocale(navigator.language);
 }
 
 type LocaleContextValue = {
@@ -41,7 +61,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "es" || stored === "en") {
+    if (stored === "es" || stored === "en" || stored === "pt-BR") {
       setLocaleState(stored);
       setHasStoredPreference(true);
     } else {
