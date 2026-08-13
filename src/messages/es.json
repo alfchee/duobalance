@@ -401,7 +401,7 @@
     "delete": "Eliminar categoría",
     "loadError": "No se pudieron cargar las categorías.",
     "retry": "Reintentar",
-    "deleteError": "No se pudo eliminar esta categoría. Reasigna primero sus presupuestos o cuentas.",
+    "deleteError": "No se pudo eliminar esta categoría. Primero elimina o reasigna sus presupuestos o facturas.",
     "newTitle": "Nueva categoría",
     "editTitle": "Editar categoría",
     "formDescription": "Las categorías pueden tener un nivel de anidamiento.",

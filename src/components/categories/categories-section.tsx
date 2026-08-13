@@ -87,6 +87,15 @@ export function CategoriesSection({ standalone = false }: { standalone?: boolean
     </div>
   ) : (
     <div className="space-y-6">
+      {deleteError ? (
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {deleteError}
+        </p>
+      ) : null}
       {(["expense", "income"] as const).map((kind) => (
         <CategoryList
           key={kind}
@@ -95,13 +104,9 @@ export function CategoriesSection({ standalone = false }: { standalone?: boolean
           ruleCounts={ruleCounts}
           onEdit={setEditing}
           onDelete={handleDelete}
+          deletePending={remove.isPending}
         />
       ))}
-      {deleteError ? (
-        <p role="alert" className="text-sm text-destructive">
-          {deleteError}
-        </p>
-      ) : null}
     </div>
   );
 
@@ -175,12 +180,14 @@ function CategoryList({
   ruleCounts,
   onEdit,
   onDelete,
+  deletePending,
 }: {
   categories: Category[];
   kind: CategoryKind;
   ruleCounts: Map<string, number>;
   onEdit: (category: Category) => void;
   onDelete: (category: Category) => void;
+  deletePending: boolean;
 }) {
   const t = useTranslations("categories");
   return (
@@ -218,6 +225,7 @@ function CategoryList({
                 variant="ghost"
                 aria-label={t("delete")}
                 onClick={() => onDelete(category)}
+                disabled={deletePending}
               >
                 <Trash2 />
               </Button>
