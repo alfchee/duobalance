@@ -7,18 +7,22 @@
 // configured (local/dev). POST is also accepted (same code path) so the
 // endpoint can be triggered from scripts with the secret.
 //
-// `dynamic = "force-static"` satisfies the Tauri static-export build
-// (`BUILD_TARGET=tauri`), which rejects GET route handlers that don't declare
-// it. On the Vercel web build that declaration is overridden by the handler
-// reading `request.headers` — Next then serves the route as a live dynamic
-// function (verified: it exports as `ƒ Dynamic` in the web build), which is
-// what the cron needs. The Tauri build-time prerender bakes an unauthorized
-// 401, which is harmless because the desktop app never calls this endpoint.
+// `revalidate = 1` (a positive number) satisfies the Tauri static-export build
+// (`BUILD_TARGET=tauri`), which requires GET route handlers to declare either
+// `dynamic = "force-static"` or a `revalidate > 0`. `dynamic = "force-static"`
+// must NOT be used here: Next unconditionally proxies the request to strip
+// cookies/headers/searchParams whenever `dynamic === "force-static"`, on every
+// real request, not just during static generation (verified against a
+// production `next start`) — that would make
+// `request.headers.get("authorization")` always null and this route
+// permanently return 401. `revalidate = 1` satisfies the same Tauri build
+// requirement; reading `request.headers` still makes Next render this fully
+// dynamically per-request regardless of the revalidate value.
 
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 import { runFxRefresh } from "@/lib/fx/refresh";
 
-export const dynamic = "force-static";
+export const revalidate = 1;
 
 export async function GET(request: Request) {
   return handle(request);

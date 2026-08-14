@@ -632,6 +632,11 @@
       "iosGuide": "See iPhone install guide",
       "unavailable": "Use your browser menu to install DuoBalance."
     },
+    "push": {
+      "title": "Bill reminder notifications",
+      "description": "Receive bill reminders on this device. Email remains the fallback.",
+      "error": "Something went wrong updating notification settings. Please try again."
+    },
     "ios": {
       "back": "Back to settings",
       "title": "Add DuoBalance to your iPhone",
@@ -660,7 +665,8 @@
     "groups": {
       "household": "Household",
       "preferences": "Preferences",
-      "configuration": "Categories & rules"
+      "configuration": "Categories & rules",
+      "data": "Your data"
     },
     "navigation": {
       "categories": {
@@ -736,7 +742,16 @@
     },
     "languages": {
       "es": "Español",
-      "en": "English"
+      "en": "English",
+      "pt-BR": "Português (Brasil)"
+    },
+    "export": {
+      "title": "Backup export",
+      "description": "Download your household data for safekeeping or use in a spreadsheet.",
+      "json": "Download JSON",
+      "csv": "Download CSV",
+      "exporting": "Preparing…",
+      "error": "Couldn't create your export. Try again."
     },
     "logout": "Log out"
   }

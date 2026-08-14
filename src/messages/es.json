@@ -632,6 +632,11 @@
       "iosGuide": "Ver guía para iPhone",
       "unavailable": "Usa el menú de tu navegador para instalar DuoBalance."
     },
+    "push": {
+      "title": "Notificaciones de recordatorios",
+      "description": "Recibe recordatorios de cuentas en este dispositivo. El correo sigue siendo el respaldo.",
+      "error": "Ocurrió un error al actualizar las notificaciones. Inténtalo de nuevo."
+    },
     "ios": {
       "back": "Volver a configuración",
       "title": "Agrega DuoBalance a tu iPhone",
@@ -660,7 +665,8 @@
     "groups": {
       "household": "Hogar",
       "preferences": "Preferencias",
-      "configuration": "Categorías y reglas"
+      "configuration": "Categorías y reglas",
+      "data": "Tus datos"
     },
     "navigation": {
       "categories": {
@@ -736,7 +742,16 @@
     },
     "languages": {
       "es": "Español",
-      "en": "English"
+      "en": "English",
+      "pt-BR": "Português (Brasil)"
+    },
+    "export": {
+      "title": "Exportar respaldo",
+      "description": "Descarga los datos de tu hogar para guardarlos o usarlos en una hoja de cálculo.",
+      "json": "Descargar JSON",
+      "csv": "Descargar CSV",
+      "exporting": "Preparando…",
+      "error": "No se pudo crear la exportación. Inténtalo de nuevo."
     },
     "logout": "Cerrar sesión"
   }

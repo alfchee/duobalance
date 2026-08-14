@@ -3,10 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { POST } from "./route";
 
-vi.mock("@/lib/supabase/server", () => ({ createSupabaseRouteHandler: vi.fn() }));
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseRouteHandler: vi.fn(),
+  createSupabaseServiceRoleClient: vi.fn(),
+}));
 vi.mock("@/lib/fx/refresh", () => ({ runFxRefresh: vi.fn() }));
 
-import { createSupabaseRouteHandler } from "@/lib/supabase/server";
+import { createSupabaseRouteHandler, createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { runFxRefresh } from "@/lib/fx/refresh";
 
 // Only auth.getUser() is used by the handler (getAuthedUser); runFxRefresh is
@@ -24,6 +27,7 @@ function makeClient(user: unknown) {
 
 beforeEach(() => {
   vi.mocked(createSupabaseRouteHandler).mockReset();
+  vi.mocked(createSupabaseServiceRoleClient).mockReset();
   vi.mocked(runFxRefresh).mockReset();
 });
 
@@ -43,7 +47,10 @@ describe("POST /api/fx/refresh", () => {
   });
 
   it("runs the refresh for an authenticated user and returns counts", async () => {
-    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(makeClient({ id: "user-1" }));
+    const authorizationClient = makeClient({ id: "user-1" });
+    const serviceClient = makeClient(null);
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(authorizationClient);
+    vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(serviceClient);
     vi.mocked(runFxRefresh).mockResolvedValue({
       rateDate: "2026-08-06",
       inserted: 1,
@@ -61,10 +68,12 @@ describe("POST /api/fx/refresh", () => {
       skipped: 0,
     });
     expect(runFxRefresh).toHaveBeenCalledTimes(1);
+    expect(runFxRefresh).toHaveBeenCalledWith(serviceClient);
   });
 
   it("maps a refresh failure to 502", async () => {
     vi.mocked(createSupabaseRouteHandler).mockResolvedValue(makeClient({ id: "user-1" }));
+    vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(makeClient(null));
     vi.mocked(runFxRefresh).mockRejectedValue(new Error("provider down"));
 
     const res = await POST();
