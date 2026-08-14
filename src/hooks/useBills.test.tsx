@@ -44,9 +44,13 @@ function mockSupabase(opts: {
   const from = vi.fn().mockReturnValue({ insert, update });
   const rpc = vi.fn().mockResolvedValue(opts.rpcResult ?? { error: null });
 
-  vi.mocked(createSupabaseBrowser).mockReturnValue({ from, rpc } as unknown as ReturnType<
-    typeof createSupabaseBrowser
-  >);
+  vi.mocked(createSupabaseBrowser).mockReturnValue({
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: "token-1" } } }),
+    },
+    from,
+    rpc,
+  } as unknown as ReturnType<typeof createSupabaseBrowser>);
 
   return { from, insert, select, single, update, eq, rpc };
 }
@@ -74,7 +78,11 @@ describe("useBillMutations", () => {
     expect(insert).toHaveBeenCalledWith(
       expect.objectContaining({ household_id: "household-1", name: "Rent" }),
     );
-    expect(apiFetchMock).toHaveBeenCalledWith("/api/bills/bill-1/generate", { method: "POST" });
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/bills/bill-1/generate", {
+      method: "POST",
+      body: { accessToken: "token-1" },
+      headers: { Authorization: "Bearer token-1" },
+    });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["bills", "household-1"] });
   });
 
