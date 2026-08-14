@@ -99,9 +99,10 @@ function makeDraft(
   lastAccountId: string | null,
   memberId: string | null,
   locale: string,
+  numberFormat: import("@/lib/money").NumberFormatPref,
 ): Draft {
   return {
-    amount: transaction ? formatMoneyInput(Math.abs(transaction.amount), locale) : "",
+    amount: transaction ? formatMoneyInput(Math.abs(transaction.amount), locale, numberFormat) : "",
     description: transaction?.description ?? "",
     accountId: transaction?.account_id ?? lastAccountId ?? "",
     categoryId: transaction?.category_id ?? null,
@@ -158,7 +159,7 @@ function TransferEntryContent({
 }) {
   const locale = useLocale();
   const t = useTranslations("transactions");
-  const { householdId, baseCurrency } = useHousehold();
+  const { householdId, baseCurrency, numberFormat } = useHousehold();
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: currencies = [] } = useCurrencies();
   const { createTransfer } = useTransactionMutations(householdId, memberId);
@@ -219,8 +220,8 @@ function TransferEntryContent({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
-    const parsedFromAmount = parseMoneyInput(fromAmount, locale);
-    const parsedToAmount = parseMoneyInput(toAmount, locale);
+    const parsedFromAmount = parseMoneyInput(fromAmount, locale, numberFormat);
+    const parsedToAmount = parseMoneyInput(toAmount, locale, numberFormat);
     const parsedFromRate = Number(fromFxRate);
     const parsedToRate = Number(toFxRate);
     if (!fromAccountId || !toAccountId || fromAccountId === toAccountId)
@@ -282,6 +283,7 @@ function TransferEntryContent({
           value={fromAmount}
           locale={locale}
           minorUnit={fromMinorUnit ?? 0}
+          numberFormat={numberFormat}
           disabled={fromMinorUnit == null}
           onChange={setFromAmount}
         />
@@ -301,6 +303,7 @@ function TransferEntryContent({
           value={toAmount}
           locale={locale}
           minorUnit={toMinorUnit ?? 0}
+          numberFormat={numberFormat}
           disabled={toMinorUnit == null}
           onChange={setToAmount}
         />
@@ -381,6 +384,7 @@ function TransferAmountField({
   label,
   locale,
   minorUnit,
+  numberFormat,
   value,
   disabled,
   onChange,
@@ -389,6 +393,7 @@ function TransferAmountField({
   label: string;
   locale: string;
   minorUnit: number;
+  numberFormat: import("@/lib/money").NumberFormatPref;
   value: string;
   disabled?: boolean;
   onChange: (value: string) => void;
@@ -401,7 +406,9 @@ function TransferAmountField({
         inputMode="decimal"
         value={value}
         disabled={disabled}
-        onChange={(event) => onChange(maskMoneyInput(event.target.value, locale, minorUnit))}
+        onChange={(event) =>
+          onChange(maskMoneyInput(event.target.value, locale, minorUnit, numberFormat))
+        }
       />
     </div>
   );
@@ -443,7 +450,7 @@ function TransactionEntryContent({
 }) {
   const locale = useLocale();
   const t = useTranslations("transactions");
-  const { householdId, baseCurrency } = useHousehold();
+  const { householdId, baseCurrency, numberFormat } = useHousehold();
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: categories = [] } = useCategories(householdId);
   const { data: rules = [] } = useCategorizationRules(householdId);
@@ -452,7 +459,7 @@ function TransactionEntryContent({
   const { data: descriptions = [] } = useTransactionDescriptions(householdId);
   const { data: effectiveRates = [] } = useFxOverrides();
   const [draft, setDraft] = useState(() =>
-    makeDraft(transaction, today, lastAccountId, memberId, locale),
+    makeDraft(transaction, today, lastAccountId, memberId, locale, numberFormat),
   );
   const [showMore, setShowMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -545,7 +552,7 @@ function TransactionEntryContent({
     event.preventDefault();
     setError(null);
     const description = draft.description.trim();
-    const amount = parseMoneyInput(draft.amount, locale);
+    const amount = parseMoneyInput(draft.amount, locale, numberFormat);
     const fxRate = Number(draft.fxRate);
     if (!description || description.length > 200) return setError("description");
     if (!draft.accountId) return setError("account");
@@ -621,7 +628,7 @@ function TransactionEntryContent({
   async function handleDuplicate() {
     if (!transaction) return;
     setError(null);
-    const amount = parseMoneyInput(draft.amount, locale);
+    const amount = parseMoneyInput(draft.amount, locale, numberFormat);
     const fxRate = Number(draft.fxRate);
     if (
       amount == null ||
@@ -675,7 +682,7 @@ function TransactionEntryContent({
             <div className="rounded-2xl border p-4 text-right">
               <p className="text-sm text-muted-foreground">{t("form.amount")}</p>
               <p className="mt-1 font-semibold tabular-nums">
-                {formatSignedMoney(transaction.amount, transaction.currency, locale)}
+                {formatSignedMoney(transaction.amount, transaction.currency, locale, numberFormat)}
               </p>
             </div>
           </div>
@@ -752,7 +759,13 @@ function TransactionEntryContent({
                 onClick={() =>
                   setDraft((current) => ({
                     ...current,
-                    amount: appendMoneyPadInput(current.amount, key, locale, minorUnit ?? 0),
+                    amount: appendMoneyPadInput(
+                      current.amount,
+                      key,
+                      locale,
+                      minorUnit ?? 0,
+                      numberFormat,
+                    ),
                   }))
                 }
               >

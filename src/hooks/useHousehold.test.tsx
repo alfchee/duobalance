@@ -14,6 +14,7 @@ const ACTIVE: Membership = {
   householdId: "h1",
   role: "owner",
   displayName: "Ana",
+  numberFormat: "locale",
   household: {
     name: "Casa 123",
     country: "CL",
@@ -46,6 +47,7 @@ describe("useHousehold", () => {
       householdId: "h1",
       memberId: "m1",
       role: "owner",
+      numberFormat: "locale",
       baseCurrency: "CLP",
       timezone: "America/Santiago",
       locale: "es",
@@ -65,6 +67,7 @@ describe("useHousehold", () => {
     expect(result.current.householdId).toBeNull();
     expect(result.current.memberId).toBeNull();
     expect(result.current.role).toBeNull();
+    expect(result.current.numberFormat).toBe("locale");
     expect(result.current.baseCurrency).toBeNull();
     expect(result.current.timezone).toBeNull();
     expect(result.current.locale).toBeNull();

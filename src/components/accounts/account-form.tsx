@@ -82,7 +82,7 @@ function AccountFormContent({
   const tKinds = useTranslations("accounts.kinds");
   const tModes = useTranslations("accounts.balanceModes");
   const locale = useLocale();
-  const { memberId, baseCurrency, householdId } = useHousehold();
+  const { memberId, baseCurrency, householdId, numberFormat } = useHousehold();
   const { create, update, archive } = useAccountMutations(householdId);
   const { data: currencies } = useCurrencies();
 
@@ -108,7 +108,7 @@ function AccountFormContent({
     return (e: ChangeEvent<HTMLInputElement>) =>
       setDraft((d) => ({
         ...d,
-        [field]: maskMoneyInput(e.target.value, locale, minorUnit),
+        [field]: maskMoneyInput(e.target.value, locale, minorUnit, numberFormat),
       }));
   }
 
@@ -145,11 +145,11 @@ function AccountFormContent({
 
     const amountSource =
       draft.balanceMode === "manual" ? draft.manualBalance : draft.openingBalance;
-    const parsedAmount = parseMoneyInput(amountSource, locale);
+    const parsedAmount = parseMoneyInput(amountSource, locale, numberFormat);
     if (parsedAmount == null) return setFormError("balanceRequired");
 
     const creditRaw = draft.creditLimit.trim();
-    const parsedCredit = creditRaw ? parseMoneyInput(creditRaw, locale) : null;
+    const parsedCredit = creditRaw ? parseMoneyInput(creditRaw, locale, numberFormat) : null;
     if (creditRaw && parsedCredit == null) return setFormError("generic");
     if (!draft.isShared && !memberId) return setFormError("generic");
 

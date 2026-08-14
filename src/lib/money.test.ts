@@ -12,6 +12,27 @@ import {
 // the CLP symbol renders "$" in browsers/full-icu and "CLP" in a trimmed
 // build, so assertions avoid the symbol and grouping entirely.
 describe("formatMoney", () => {
+  it.each([
+    ["USD", "en"],
+    ["NIO", "es"],
+    ["CLP", "es"],
+    ["BRL", "pt-BR"],
+  ] as const)("keeps %s currency precision with every preference", (currency, locale) => {
+    const localeFormat = formatMoney(1234.5, currency, locale);
+    const dotDecimal = formatMoney(1234.5, currency, locale, "dot_decimal");
+    const commaDecimal = formatMoney(1234.5, currency, locale, "comma_decimal");
+    const decimals = currency === "CLP" ? 0 : 2;
+
+    if (decimals === 0) {
+      expect(localeFormat).not.toMatch(/[.,]\d{2}/);
+      expect(dotDecimal).not.toMatch(/[.,]\d{2}/);
+      expect(commaDecimal).not.toMatch(/[.,]\d{2}/);
+    } else {
+      expect(localeFormat).toMatch(/[.,]50/);
+      expect(dotDecimal).toMatch(/\.50/);
+      expect(commaDecimal).toMatch(/,50/);
+    }
+  });
   it("renders CLP with 0 decimals (no minimumFractionDigits override)", () => {
     // es uses "," as the decimal separator, so its absence proves 0 decimals.
     expect(formatMoney(1234.5, "CLP", "es")).not.toContain(",");
@@ -47,6 +68,15 @@ describe("parseMoneyInput", () => {
 
   it("parses period-decimal en input (1,234.56)", () => {
     expect(parseMoneyInput("1,234.56", "en")).toBe(1234.56);
+  });
+
+  it("parses explicit preferences rather than guessing", () => {
+    expect(parseMoneyInput("1.234", "es", "comma_decimal")).toBe(1234);
+    expect(parseMoneyInput("1.234", "es", "dot_decimal")).toBe(1.234);
+  });
+
+  it.each(["Bs.", "R$", "C$"])('strips the "%s" symbol before parsing', (symbol) => {
+    expect(parseMoneyInput(`${symbol}1.234,56`, "es", "comma_decimal")).toBe(1234.56);
   });
 
   it("tolerates currency symbols and the U+2212 minus sign", () => {

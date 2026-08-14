@@ -731,6 +731,7 @@ export type Database = {
           household_id: string
           id: string
           joined_at: string
+          number_format: string
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -741,6 +742,7 @@ export type Database = {
           household_id: string
           id?: string
           joined_at?: string
+          number_format?: string
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -751,6 +753,7 @@ export type Database = {
           household_id?: string
           id?: string
           joined_at?: string
+          number_format?: string
           role?: Database["public"]["Enums"]["household_member_role"]
           user_id?: string
         }
@@ -1365,6 +1368,7 @@ export type Database = {
           household_id: string
           id: string
           joined_at: string
+          number_format: string
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -1438,6 +1442,10 @@ export type Database = {
       }
       unmark_bill_instance_paid: {
         Args: { p_instance_id: string }
+        Returns: undefined
+      }
+      update_my_number_format: {
+        Args: { member_id: string; new_number_format: string }
         Returns: undefined
       }
     }

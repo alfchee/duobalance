@@ -1,18 +1,54 @@
-export function formatMoney(amount: number, currency: string, locale = "es"): string {
-  // Intl derives symbol, grouping, and decimal places from the currency code.
-  // Do NOT pass minimumFractionDigits: 2 — CLP/PYG would be wrong.
-  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount);
+export type NumberFormatPref = "locale" | "dot_decimal" | "comma_decimal";
+
+type Separators = { decimal: string; group: string };
+
+export function formatMoney(
+  amount: number,
+  currency: string,
+  locale = "es",
+  pref: NumberFormatPref = "locale",
+): string {
+  const parts = new Intl.NumberFormat(locale, { style: "currency", currency }).formatToParts(
+    amount,
+  );
+  if (pref === "locale") return parts.map((part) => part.value).join("");
+
+  const { decimal, group } = separatorsFor(locale, pref);
+  return parts
+    .map((part) => {
+      if (part.type === "decimal") return decimal;
+      if (part.type === "group") return group;
+      return part.value;
+    })
+    .join("");
 }
 
-export function formatMoneyInput(amount: number, locale = "es"): string {
-  return new Intl.NumberFormat(locale).format(amount);
+export function formatMoneyInput(
+  amount: number,
+  locale = "es",
+  pref: NumberFormatPref = "locale",
+): string {
+  const parts = new Intl.NumberFormat(locale).formatToParts(amount);
+  if (pref === "locale") return parts.map((part) => part.value).join("");
+
+  const { decimal, group } = separatorsFor(locale, pref);
+  return parts
+    .map((part) => {
+      if (part.type === "decimal") return decimal;
+      if (part.type === "group") return group;
+      return part.value;
+    })
+    .join("");
 }
 
 // Derive the locale's decimal/grouping separators. A 7-digit sample forces
 // grouping to appear even in trimmed ICU builds (Node), where 4-digit samples
 // may render without a group separator. Cached — keypads call this per keystroke.
-const separatorCache = new Map<string, { decimal: string; group: string }>();
-function separatorsFor(locale: string): { decimal: string; group: string } {
+const separatorCache = new Map<string, Separators>();
+function separatorsFor(locale: string, pref: NumberFormatPref = "locale"): Separators {
+  if (pref === "dot_decimal") return { decimal: ".", group: "," };
+  if (pref === "comma_decimal") return { decimal: ",", group: "." };
+
   const cached = separatorCache.get(locale);
   if (cached) return cached;
   const parts = new Intl.NumberFormat(locale).formatToParts(1234567.89);
@@ -29,14 +65,37 @@ function separatorsFor(locale: string): { decimal: string; group: string } {
 // es/pt-BR "1.234,56" -> 1234.56, en "1,234.56" -> 1234.56. Currency
 // symbols and the U+2212 minus sign are tolerated; non-numeric garbage
 // yields null.
-export function parseMoneyInput(raw: string, locale = "es"): number | null {
-  // Global replace: every U+2212 becomes an ASCII hyphen, so no U+2212 can
-  // survive into `normalized` and trip Number() later.
-  const input = raw.replace(/[^\d.,−-]/g, "").replace(/−/g, "-");
-  if (!input) return null;
+export function parseMoneyInput(
+  raw: string,
+  locale = "es",
+  pref: NumberFormatPref = "locale",
+): number | null {
+  const firstDigit = raw.search(/\d/);
+  if (firstDigit === -1) return null;
+  const startsWithSign = firstDigit > 0 && /[−-]/.test(raw[firstDigit - 1] ?? "");
+  const start = startsWithSign ? firstDigit - 1 : firstDigit;
+  const lastDigit = raw.lastIndexOf(raw.match(/\d(?!.*\d)/)?.[0] ?? "");
+  const input = raw.slice(start, lastDigit + 1).replace(/−/g, "-");
+  if (!/^-?[\d.,]+$/.test(input)) return null;
 
-  const { decimal, group } = separatorsFor(locale);
-  const normalized = input.split(group).join("").replace(decimal, ".");
+  const { decimal, group } = separatorsFor(locale, pref);
+  const decimalParts = input.split(decimal);
+  if (decimalParts.length > 2) return null;
+  const integer = decimalParts[0] ?? "";
+  const fraction = decimalParts[1];
+  const sign = integer.startsWith("-") ? "-" : "";
+  const unsignedInteger = sign ? integer.slice(1) : integer;
+  const groupPattern = new RegExp(`^\\d{1,3}(?:${escapeRegExp(group)}\\d{3})*$|^\\d+$`);
+  if (
+    (pref !== "locale" && !groupPattern.test(unsignedInteger)) ||
+    (fraction !== undefined && !/^\d+$/.test(fraction))
+  ) {
+    return null;
+  }
+
+  const normalized = `${sign}${unsignedInteger.split(group).join("")}${
+    fraction === undefined ? "" : `.${fraction}`
+  }`;
   if (normalized === "-" || normalized === "." || normalized === "-.") return null;
 
   const amount = Number(normalized);
@@ -52,8 +111,13 @@ function escapeRegExp(text: string): string {
 // leading minus, and the locale's decimal/group separators survive, and the
 // fraction never exceeds minorUnit places (CLP accepts no decimals). The
 // value is still a string — parse with parseMoneyInput on submit.
-export function maskMoneyInput(raw: string, locale: string, minorUnit: number): string {
-  const { decimal, group } = separatorsFor(locale);
+export function maskMoneyInput(
+  raw: string,
+  locale: string,
+  minorUnit: number,
+  pref: NumberFormatPref = "locale",
+): string {
+  const { decimal, group } = separatorsFor(locale, pref);
   const filtered = raw
     .replace(new RegExp(`[^0-9${escapeRegExp(decimal)}${escapeRegExp(group)}−-]`, "g"), "")
     .replace(/−/g, "-");
@@ -87,11 +151,14 @@ export function appendMoneyPadInput(
   key: string,
   locale: string,
   minorUnit: number,
+  pref: NumberFormatPref = "locale",
 ): string {
-  const { decimal } = separatorsFor(locale);
+  const { decimal } = separatorsFor(locale, pref);
   if (key === "backspace") return value.slice(0, -1);
-  if (key === "." || key === ",") return maskMoneyInput(`${value}${decimal}`, locale, minorUnit);
-  return maskMoneyInput(`${value}${key}`, locale, minorUnit);
+  if (key === "." || key === ",") {
+    return maskMoneyInput(`${value}${decimal}`, locale, minorUnit, pref);
+  }
+  return maskMoneyInput(`${value}${key}`, locale, minorUnit, pref);
 }
 
 export function roundToMinorUnit(amount: number, minorUnit: number): number {
@@ -101,10 +168,15 @@ export function roundToMinorUnit(amount: number, minorUnit: number): number {
   return Math.round((amount + Number.EPSILON) * f) / f;
 }
 
-export function formatSignedMoney(amount: number, currency: string, locale = "es"): string {
+export function formatSignedMoney(
+  amount: number,
+  currency: string,
+  locale = "es",
+  pref: NumberFormatPref = "locale",
+): string {
   if (amount < 0) {
     // U+2212 MINUS SIGN, not a hyphen — keeps alignment with Intl output
-    return `−${formatMoney(Math.abs(amount), currency, locale)}`;
+    return `−${formatMoney(Math.abs(amount), currency, locale, pref)}`;
   }
-  return `+${formatMoney(amount, currency, locale)}`;
+  return `+${formatMoney(amount, currency, locale, pref)}`;
 }
