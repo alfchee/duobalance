@@ -101,7 +101,15 @@ describe("apiFetch", () => {
     expect(fetchMock).toHaveBeenCalledWith("https://external.example/x", expect.any(Object));
   });
 
-  it("prefixes relative paths with NEXT_PUBLIC_API_BASE_URL", async () => {
+  it("keeps web API requests same-origin when NEXT_PUBLIC_API_BASE_URL is configured", async () => {
+    const { apiFetch } = await loadApiFetch("https://api.example.test");
+    fetchMock.mockResolvedValue(jsonResponse({}));
+    await apiFetch("/health");
+    expect(fetchMock).toHaveBeenCalledWith("/health", expect.any(Object));
+  });
+
+  it("prefixes relative paths with NEXT_PUBLIC_API_BASE_URL in Tauri", async () => {
+    vi.stubGlobal("window", { location: { protocol: "tauri:" } });
     const { apiFetch } = await loadApiFetch("https://api.example.test");
     fetchMock.mockResolvedValue(jsonResponse({}));
     await apiFetch("/health");

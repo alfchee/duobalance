@@ -1,4 +1,7 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const BASE =
+  typeof window !== "undefined" && window.location.protocol === "tauri:"
+    ? (process.env.NEXT_PUBLIC_API_BASE_URL ?? "")
+    : "";
 
 export class ApiError extends Error {
   public readonly status: number;

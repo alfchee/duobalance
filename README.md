@@ -62,6 +62,10 @@ Use `npm run db:push` only to apply reviewed migrations to the linked remote
 project. Configure the same variables from `.env.example` in the deployment
 provider; leave `BUILD_TARGET` unset for web deployments.
 
+Web deployments always call API routes on their current origin. Set
+`NEXT_PUBLIC_API_BASE_URL` only for a Tauri build, where it must be the
+absolute URL of the hosted API.
+
 ## Backups
 
 Signed-in household members can download a lossless JSON backup or a
