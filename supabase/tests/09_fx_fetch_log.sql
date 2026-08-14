@@ -7,7 +7,7 @@
 
 begin;
 
-select plan(8);
+select plan(12);
 
 -- ============================================================================
 -- Shape: rows accept a run outcome with counts, reject unknown outcomes.
@@ -15,20 +15,20 @@ select plan(8);
 -- ============================================================================
 
 select lives_ok(
-  $$ insert into public.fx_fetch_log (rate_date, outcome, inserted, updated, skipped)
-     values ('2026-08-06', 'success', 30, 4, 2) $$,
-  'a success run with counts is accepted'
+  $$ insert into public.fx_fetch_log (fetch_date, status, currencies_updated)
+     values ('2026-08-06', 'success', 30) $$,
+  'a success run with updated currency count is accepted'
 );
 
 select results_eq(
-  $$ select rate_date::text, outcome, inserted, updated, skipped
-     from public.fx_fetch_log order by ran_at desc limit 1 $$,
-  $$ values ('2026-08-06', 'success', 30::int, 4::int, 2::int) $$,
+  $$ select fetch_date::text, status, currencies_updated
+     from public.fx_fetch_log order by fetched_at desc limit 1 $$,
+  $$ values ('2026-08-06', 'success', 30::int) $$,
   'the inserted run is readable back'
 );
 
 select throws_ok(
-  $$ insert into public.fx_fetch_log (rate_date, outcome)
+  $$ insert into public.fx_fetch_log (fetch_date, status)
      values ('2026-08-06', 'bogus') $$,
   '23514',
   null,
@@ -36,7 +36,7 @@ select throws_ok(
 );
 
 select lives_ok(
-  $$ insert into public.fx_fetch_log (rate_date, outcome, error)
+  $$ insert into public.fx_fetch_log (fetch_date, status, error)
      values ('2026-08-06', 'failed', 'provider returned HTTP 500') $$,
   'a failed run with an error message is accepted'
 );
@@ -55,7 +55,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$ insert into public.fx_fetch_log (rate_date, outcome)
+  $$ insert into public.fx_fetch_log (fetch_date, status)
      values ('2026-08-06', 'success') $$,
   '42501',
   null,
@@ -81,6 +81,32 @@ select results_eq(
      where schemaname = 'public' and tablename = 'fx_fetch_log' $$,
   $$ values (0::int) $$,
   'fx_fetch_log has zero RLS policies'
+);
+
+select tests.clear_auth();
+
+select lives_ok(
+  $$ select public.claim_fx_refresh('2026-08-07') $$,
+  'the first refresh claim succeeds'
+);
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-07') $$,
+  $$ values (false) $$,
+  'a same-day refresh claim is skipped'
+);
+
+select results_eq(
+  $$ select count(*)::int from public.fx_fetch_log
+     where fetch_date = '2026-08-07' and status = 'skipped' $$,
+  $$ values (1::int) $$,
+  'a skipped claim is logged'
+);
+
+select results_eq(
+  $$ select public.record_fx_refresh_success('2026-08-07', 3) $$,
+  $$ values (true) $$,
+  'the first success is recorded'
 );
 
 select * from finish();

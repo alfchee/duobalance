@@ -9,18 +9,9 @@ import { FxProviderError, fetchDailyRates } from "./provider";
 
 export type FxRefreshResult = {
   rateDate: string;
-  inserted: number;
-  updated: number;
+  status: "success" | "skipped";
+  currenciesUpdated: number;
   skipped: number;
-};
-
-type LogRow = {
-  outcome: "success" | "failed";
-  rate_date: string;
-  inserted?: number;
-  updated?: number;
-  skipped?: number;
-  error?: string;
 };
 
 // One retry on transient provider failures (network blip, upstream 5xx). A
@@ -44,7 +35,7 @@ export async function applyDailyRates(
   supabase: SupabaseClient<Database>,
   rates: Record<string, number>,
   rateDate: string,
-): Promise<Omit<FxRefreshResult, "rateDate">> {
+): Promise<{ currenciesUpdated: number; skipped: number }> {
   const { data: currencies, error: currenciesError } = await supabase
     .from("currencies")
     .select("code");
@@ -59,20 +50,6 @@ export async function applyDailyRates(
     .map(([code, usdRate]) => ({ rate_date: rateDate, code, usd_rate: usdRate }));
   const skipped = payload.length - rows.length;
 
-  const { data: existing, error: existingError } = await supabase
-    .from("fx_rates")
-    .select("code")
-    .eq("rate_date", rateDate);
-  if (existingError) throw existingError;
-  const existingCodes = new Set((existing ?? []).map((row) => row.code.trim()));
-
-  let inserted = 0;
-  let updated = 0;
-  for (const row of rows) {
-    if (existingCodes.has(row.code)) updated += 1;
-    else inserted += 1;
-  }
-
   if (rows.length > 0) {
     const { error: upsertError } = await supabase
       .from("fx_rates")
@@ -80,13 +57,20 @@ export async function applyDailyRates(
     if (upsertError) throw upsertError;
   }
 
-  return { inserted, updated, skipped };
+  return { currenciesUpdated: rows.length, skipped };
 }
 
-async function logRun(supabase: SupabaseClient<Database>, row: LogRow): Promise<void> {
+async function logFailure(
+  supabase: SupabaseClient<Database>,
+  rateDate: string,
+  error: string,
+): Promise<void> {
   try {
-    const { error } = await supabase.from("fx_fetch_log").insert(row);
-    if (error) console.error("fx_fetch_log insert failed:", error.message);
+    const { error: logError } = await supabase.rpc("record_fx_refresh_failure", {
+      refresh_date: rateDate,
+      failure_error: error,
+    });
+    if (logError) console.error("fx_fetch_log insert failed:", logError.message);
   } catch (err) {
     // A failed log write must not mask the run's own outcome.
     console.error("fx_fetch_log insert failed:", err);
@@ -102,13 +86,25 @@ function messageOf(err: unknown): string {
 // shape the HTTP response.
 export async function runFxRefresh(supabase: SupabaseClient<Database>): Promise<FxRefreshResult> {
   const rateDate = new Date().toISOString().slice(0, 10);
+  const { data: claimed, error: claimError } = await supabase.rpc("claim_fx_refresh", {
+    refresh_date: rateDate,
+  });
+  if (claimError) throw claimError;
+  if (!claimed) {
+    return { rateDate, status: "skipped", currenciesUpdated: 0, skipped: 0 };
+  }
+
   try {
     const rates = await fetchWithRetry();
     const counts = await applyDailyRates(supabase, rates, rateDate);
-    await logRun(supabase, { outcome: "success", rate_date: rateDate, ...counts });
-    return { rateDate, ...counts };
+    const { error: logError } = await supabase.rpc("record_fx_refresh_success", {
+      refresh_date: rateDate,
+      updated_currencies: counts.currenciesUpdated,
+    });
+    if (logError) throw logError;
+    return { rateDate, status: "success", ...counts };
   } catch (err) {
-    await logRun(supabase, { outcome: "failed", rate_date: rateDate, error: messageOf(err) });
+    await logFailure(supabase, rateDate, messageOf(err));
     throw err;
   }
 }
