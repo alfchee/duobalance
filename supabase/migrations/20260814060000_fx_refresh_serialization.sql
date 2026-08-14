@@ -27,7 +27,7 @@ create table public.fx_refresh_claims (
 );
 
 alter table public.fx_refresh_claims enable row level security;
-grant select, insert on public.fx_refresh_claims to service_role;
+grant select, insert, delete on public.fx_refresh_claims to service_role;
 
 create or replace function public.claim_fx_refresh(refresh_date date)
 returns boolean

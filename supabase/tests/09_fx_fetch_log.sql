@@ -7,7 +7,7 @@
 
 begin;
 
-select plan(12);
+select plan(15);
 
 -- ============================================================================
 -- Shape: rows accept a run outcome with counts, reject unknown outcomes.
@@ -107,6 +107,25 @@ select results_eq(
   $$ select public.record_fx_refresh_success('2026-08-07', 3) $$,
   $$ values (true) $$,
   'the first success is recorded'
+);
+
+select set_config('role', 'service_role', true);
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-08') $$,
+  $$ values (true) $$,
+  'service_role can claim a refresh date'
+);
+
+select lives_ok(
+  $$ select public.record_fx_refresh_failure('2026-08-08', 'provider unavailable') $$,
+  'service_role can record a failure and release its refresh claim'
+);
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-08') $$,
+  $$ values (true) $$,
+  'service_role can reclaim a date after a failed refresh'
 );
 
 select * from finish();
