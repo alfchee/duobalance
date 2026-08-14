@@ -41,7 +41,8 @@ async function handle(request: Request) {
   try {
     const result = await runFxRefresh(supabase);
     return Response.json(result);
-  } catch {
+  } catch (err) {
+    console.error("fx refresh failed:", err);
     return Response.json({ error: "fx refresh failed" }, { status: 502 });
   }
 }

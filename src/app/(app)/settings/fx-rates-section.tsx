@@ -1,11 +1,9 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { ApiError } from "@/lib/api-fetch";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHousehold } from "@/hooks/useHousehold";
-import { useFxRefresh, useFxRatesStatus } from "@/hooks/useFxRates";
+import { useFxRatesStatus } from "@/hooks/useFxRates";
 import { daysSinceNewestRate } from "@/lib/fx/staleness";
 import { todayInHousehold } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -20,17 +18,11 @@ export function formatRateDate(isoDate: string, locale: string): string {
   );
 }
 
-function refreshErrorKey(err: unknown): string {
-  if (err instanceof ApiError && err.status === 401) return "notSignedIn";
-  return "refreshError";
-}
-
 export function FxRatesSection() {
   const t = useTranslations("settings.fx");
   const locale = useLocale();
   const { timezone } = useHousehold();
   const status = useFxRatesStatus();
-  const refresh = useFxRefresh();
 
   const today = timezone ? todayInHousehold(timezone) : new Date().toISOString().slice(0, 10);
   const newest = status.data?.[0]?.rate_date;
@@ -60,22 +52,6 @@ export function FxRatesSection() {
             {t("stale", { days: daysOld })}
           </p>
         ) : null}
-
-        <div className="flex flex-col gap-2">
-          <Button variant="outline" onClick={() => refresh.mutate()} disabled={refresh.isPending}>
-            {refresh.isPending ? t("refreshing") : t("refresh")}
-          </Button>
-          {refresh.isSuccess && refresh.data ? (
-            <p role="status" className="text-sm text-muted-foreground">
-              {t("refreshSuccess", refresh.data)}
-            </p>
-          ) : null}
-          {refresh.isError ? (
-            <p role="alert" className="text-sm text-destructive">
-              {t(refreshErrorKey(refresh.error))}
-            </p>
-          ) : null}
-        </div>
       </CardContent>
     </Card>
   );

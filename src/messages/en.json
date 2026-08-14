@@ -725,12 +725,7 @@
       "subtitle": "Daily rates from ExchangeRate-API.",
       "noData": "No exchange rates loaded yet.",
       "lastUpdated": "Last updated: {date}.",
-      "stale": "Exchange rates haven't updated in over {days} days. The daily update may be failing.",
-      "refresh": "Refresh now",
-      "refreshing": "Refreshing…",
-      "refreshSuccess": "Updated {inserted} new, {updated} existing, skipped {skipped}.",
-      "refreshError": "Couldn't refresh exchange rates. Try again.",
-      "notSignedIn": "Sign in again to refresh exchange rates."
+      "stale": "Exchange rates haven't updated in over {days} days. The daily update may be failing."
     },
     "overrides": {
       "title": "Effective exchange rates",

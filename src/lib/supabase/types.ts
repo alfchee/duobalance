@@ -561,34 +561,28 @@ export type Database = {
       }
       fx_fetch_log: {
         Row: {
+          currencies_updated: number | null
           error: string | null
+          fetch_date: string
+          fetched_at: string
           id: string
-          inserted: number
-          outcome: string
-          ran_at: string
-          rate_date: string
-          skipped: number
-          updated: number
+          status: string
         }
         Insert: {
+          currencies_updated?: number | null
           error?: string | null
+          fetch_date?: string
+          fetched_at?: string
           id?: string
-          inserted?: number
-          outcome: string
-          ran_at?: string
-          rate_date: string
-          skipped?: number
-          updated?: number
+          status: string
         }
         Update: {
+          currencies_updated?: number | null
           error?: string | null
+          fetch_date?: string
+          fetched_at?: string
           id?: string
-          inserted?: number
-          outcome?: string
-          ran_at?: string
-          rate_date?: string
-          skipped?: number
-          updated?: number
+          status?: string
         }
         Relationships: []
       }
@@ -662,6 +656,21 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      fx_refresh_claims: {
+        Row: {
+          claimed_at: string
+          fetch_date: string
+        }
+        Insert: {
+          claimed_at?: string
+          fetch_date: string
+        }
+        Update: {
+          claimed_at?: string
+          fetch_date?: string
+        }
+        Relationships: []
       }
       household_invites: {
         Row: {
@@ -1321,6 +1330,7 @@ export type Database = {
         Args: { p_household_id: string; p_member_id: string }
         Returns: undefined
       }
+      claim_fx_refresh: { Args: { refresh_date: string }; Returns: boolean }
       create_household: {
         Args: {
           p_base_currency: string
@@ -1405,6 +1415,14 @@ export type Database = {
           p_paid_on: string
         }
         Returns: undefined
+      }
+      record_fx_refresh_failure: {
+        Args: { failure_error: string; refresh_date: string }
+        Returns: undefined
+      }
+      record_fx_refresh_success: {
+        Args: { refresh_date: string; updated_currencies: number }
+        Returns: boolean
       }
       seed_default_categories: {
         Args: { p_household_id: string; p_locale: string }
