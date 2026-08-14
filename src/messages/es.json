@@ -604,6 +604,8 @@
       "unmarkPaid": "Desmarcar como pagada",
       "unmarkPaidConfirm": "Esto eliminará el movimiento creado para este pago. ¿Deseas continuar?",
       "skip": "Omitir esta cuenta",
+      "delete": "Eliminar este vencimiento futuro",
+      "deleteConfirm": "¿Eliminar permanentemente solo este vencimiento futuro? No se podrá restaurar ni generar de nuevo.",
       "skippedInstance": "Esta cuenta fue omitida y no se puede pagar.",
       "skipReason": "Motivo opcional para omitirla",
       "instanceAmount": "Monto de esta cuenta",

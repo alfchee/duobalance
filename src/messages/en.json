@@ -604,6 +604,8 @@
       "unmarkPaid": "Unmark as paid",
       "unmarkPaidConfirm": "This will delete the transaction created for this payment. Continue?",
       "skip": "Skip this bill",
+      "delete": "Delete this future occurrence",
+      "deleteConfirm": "Permanently delete only this future occurrence? It cannot be restored or regenerated.",
       "skippedInstance": "This bill instance was skipped and cannot be paid.",
       "skipReason": "Optional reason for skipping",
       "instanceAmount": "This instance amount",

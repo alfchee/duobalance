@@ -164,5 +164,23 @@ export function useBillMutations(householdId: string | null, memberId: string | 
     onSuccess: invalidate,
   });
 
-  return { create, pay, skip, unmarkPaid, update, updateInstanceAmount };
+  const deleteFutureInstance = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { error } = await requireSupabase().rpc("delete_future_bill_instance", {
+        p_instance_id: id,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: invalidate,
+  });
+
+  return {
+    create,
+    deleteFutureInstance,
+    pay,
+    skip,
+    unmarkPaid,
+    update,
+    updateInstanceAmount,
+  };
 }

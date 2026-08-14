@@ -176,6 +176,21 @@ describe("useBillMutations", () => {
     expect(rpc).toHaveBeenCalledWith("unmark_bill_instance_paid", { p_instance_id: "instance-1" });
   });
 
+  it("permanently deletes a future instance via delete_future_bill_instance", async () => {
+    const { rpc } = mockSupabase({});
+    const { result } = renderHook(() => useBillMutations("household-1", "member-1"), {
+      wrapper: wrapper(),
+    });
+
+    await act(async () => {
+      await result.current.deleteFutureInstance.mutateAsync({ id: "instance-1" });
+    });
+
+    expect(rpc).toHaveBeenCalledWith("delete_future_bill_instance", {
+      p_instance_id: "instance-1",
+    });
+  });
+
   it("surfaces the RPC error message when unmark_bill_instance_paid rejects", async () => {
     mockSupabase({ rpcResult: { error: { message: "only paid bill instances can be unmarked" } } });
     const { result } = renderHook(() => useBillMutations("household-1", "member-1"), {

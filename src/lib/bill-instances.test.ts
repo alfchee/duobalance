@@ -142,6 +142,7 @@ describe("computeDueDates", () => {
  * Minimal fake Supabase client covering exactly the calls
  * generateInstancesForBill/generateAllInstances make:
  *   from("bills").select().eq()
+ *   from("bill_instance_deletions").select().eq()
  *   from("bill_instances").select().eq().gte().lte()  (count, called twice)
  *   from("bill_instances").upsert()
  *   rpc("bill_instance_generation_bounds", {...}).maybeSingle()
@@ -150,6 +151,8 @@ function makeSupabase(opts: {
   bills?: Array<{ id: string; household_id: string; default_amount: number | null }>;
   bounds?: Record<string, { data: GenerationBounds | null; error: unknown }>;
   billInstanceCounts?: number[];
+  deletedDueDates?: string[];
+  deletedInstancesError?: { message: string } | null;
   upsertError?: { message: string } | null;
 }) {
   const counts = [...(opts.billInstanceCounts ?? [])];
@@ -171,6 +174,17 @@ function makeSupabase(opts: {
           }),
         }),
         upsert,
+      };
+    }
+    if (table === "bill_instance_deletions") {
+      return {
+        select: () => ({
+          eq: () =>
+            Promise.resolve({
+              data: (opts.deletedDueDates ?? []).map((due_on) => ({ due_on })),
+              error: opts.deletedInstancesError ?? null,
+            }),
+        }),
       };
     }
     throw new Error(`unexpected table ${table}`);
@@ -215,6 +229,15 @@ describe("generateInstancesForBill", () => {
     const bounds = { ...oneDayBounds, horizon_start: "2026-02-01", horizon_end: "2026-02-01" };
 
     const count = await generateInstancesForBill(supabase, bounds, "bill-1", "household-1");
+
+    expect(count).toBe(0);
+    expect(supabase.upsert).not.toHaveBeenCalled();
+  });
+
+  it("does not regenerate a deleted occurrence", async () => {
+    const supabase = makeSupabase({ deletedDueDates: ["2026-01-15"] });
+
+    const count = await generateInstancesForBill(supabase, oneDayBounds, "bill-1", "household-1");
 
     expect(count).toBe(0);
     expect(supabase.upsert).not.toHaveBeenCalled();

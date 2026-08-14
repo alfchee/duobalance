@@ -110,6 +110,25 @@ export async function generateInstancesForBill(
 
   if (dueDates.length === 0) return 0;
 
+  const { data: deletedInstances, error: deletedInstancesError } = await supabase
+    .from("bill_instance_deletions")
+    .select("due_on")
+    .eq("bill_id", billId);
+
+  if (deletedInstancesError) {
+    throw new BillGenerationError(
+      billId,
+      `deleted instances fetch failed: ${deletedInstancesError.message}`,
+    );
+  }
+
+  const deletedDueDates = new Set((deletedInstances ?? []).map(({ due_on }) => due_on));
+  const activeDueDates = dueDates.filter(
+    (dueOn) => !deletedDueDates.has(dueOn.toISOString().slice(0, 10)),
+  );
+
+  if (activeDueDates.length === 0) return 0;
+
   // Bills without a fixed default_amount are "variable" — instances still
   // need to materialize (so they show up on the calendar and can be paid),
   // just with a 0 placeholder amount that the per-instance amount editor
@@ -133,7 +152,7 @@ export async function generateInstancesForBill(
     throw new BillGenerationError(billId, `count failed: ${countError.message}`);
   }
 
-  const rows = dueDates.map((dueOn) => ({
+  const rows = activeDueDates.map((dueOn) => ({
     bill_id: billId,
     household_id: householdId,
     due_on: dueOn.toISOString().slice(0, 10),
