@@ -92,5 +92,20 @@
     @apply bg-background text-foreground antialiased;
     font-family: Arial, Helvetica, ui-sans-serif, system-ui, sans-serif;
     font-feature-settings: "calt" 1;
+    overscroll-behavior: none;
+  }
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+  button,
+  a,
+  [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
   }
 }

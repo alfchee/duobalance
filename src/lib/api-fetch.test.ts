@@ -65,6 +65,15 @@ describe("apiFetch", () => {
     await expect(apiFetch("/api/items", { method: "DELETE" })).resolves.toBeUndefined();
   });
 
+  it("returns a Blob when requested", async () => {
+    const { apiFetch } = await loadApiFetch("");
+    fetchMock.mockResolvedValue(new Response("backup", { status: 200 }));
+    await expect(apiFetch<Blob>("/api/export", { responseType: "blob" })).resolves.toMatchObject({
+      size: 6,
+      type: "text/plain;charset=utf-8",
+    });
+  });
+
   it("throws ApiError with the parsed body on failure", async () => {
     const { apiFetch } = await loadApiFetch("");
     fetchMock.mockResolvedValue(jsonResponse({ message: "nope" }, 400));
@@ -92,7 +101,15 @@ describe("apiFetch", () => {
     expect(fetchMock).toHaveBeenCalledWith("https://external.example/x", expect.any(Object));
   });
 
-  it("prefixes relative paths with NEXT_PUBLIC_API_BASE_URL", async () => {
+  it("keeps web API requests same-origin when NEXT_PUBLIC_API_BASE_URL is configured", async () => {
+    const { apiFetch } = await loadApiFetch("https://api.example.test");
+    fetchMock.mockResolvedValue(jsonResponse({}));
+    await apiFetch("/health");
+    expect(fetchMock).toHaveBeenCalledWith("/health", expect.any(Object));
+  });
+
+  it("prefixes relative paths with NEXT_PUBLIC_API_BASE_URL in Tauri", async () => {
+    vi.stubGlobal("window", { location: { protocol: "tauri:" } });
     const { apiFetch } = await loadApiFetch("https://api.example.test");
     fetchMock.mockResolvedValue(jsonResponse({}));
     await apiFetch("/health");

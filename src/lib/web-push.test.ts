@@ -1,0 +1,136 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { setVapidDetails, sendNotification, MockWebPushError } = vi.hoisted(() => {
+  class MockWebPushError extends Error {
+    statusCode: number;
+    constructor(message: string, statusCode: number) {
+      super(message);
+      this.name = "WebPushError";
+      this.statusCode = statusCode;
+    }
+  }
+  return { setVapidDetails: vi.fn(), sendNotification: vi.fn(), MockWebPushError };
+});
+
+vi.mock("web-push", () => {
+  const webpush = { setVapidDetails, sendNotification, WebPushError: MockWebPushError };
+  return { default: webpush, ...webpush };
+});
+
+import { sendBillReminderPush, type StoredPushSubscription } from "./web-push";
+
+const subscription: StoredPushSubscription = {
+  id: "sub-1",
+  member_id: "member-1",
+  endpoint: "https://push.example/endpoint",
+  p256dh: "p256dh-key",
+  auth: "auth-key",
+};
+
+function setVapidEnv() {
+  process.env.VAPID_SUBJECT = "mailto:test@duobalance.app";
+  process.env.VAPID_PUBLIC_KEY = "public-key";
+  process.env.VAPID_PRIVATE_KEY = "private-key";
+}
+
+function clearVapidEnv() {
+  delete process.env.VAPID_SUBJECT;
+  delete process.env.VAPID_PUBLIC_KEY;
+  delete process.env.VAPID_PRIVATE_KEY;
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.spyOn(console, "error").mockImplementation(() => undefined);
+  setVapidEnv();
+});
+
+afterEach(() => {
+  clearVapidEnv();
+  vi.restoreAllMocks();
+});
+
+describe("sendBillReminderPush", () => {
+  it("returns failed and logs when VAPID env vars are not configured", async () => {
+    clearVapidEnv();
+
+    const result = await sendBillReminderPush(subscription, 1, "en");
+
+    expect(result).toBe("failed");
+    expect(sendNotification).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("VAPID"));
+  });
+
+  it("sends the notification and returns sent on success", async () => {
+    sendNotification.mockResolvedValue(undefined);
+
+    const result = await sendBillReminderPush(subscription, 2, "en");
+
+    expect(result).toBe("sent");
+    expect(setVapidDetails).toHaveBeenCalledWith(
+      "mailto:test@duobalance.app",
+      "public-key",
+      "private-key",
+    );
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+    const [target, payload] = sendNotification.mock.calls[0]!;
+    expect(target).toEqual({
+      endpoint: subscription.endpoint,
+      keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+    });
+    expect(JSON.parse(payload)).toMatchObject({
+      title: "DuoBalance",
+      body: "You have 2 bills due soon.",
+      url: "/bills",
+    });
+  });
+
+  it("localizes the notification body for a known locale", async () => {
+    sendNotification.mockResolvedValue(undefined);
+
+    await sendBillReminderPush(subscription, 1, "es");
+
+    const [, payload] = sendNotification.mock.calls[0]!;
+    expect(JSON.parse(payload)).toMatchObject({ body: "Tienes una factura por vencer." });
+  });
+
+  it("falls back to English for an unsupported locale", async () => {
+    sendNotification.mockResolvedValue(undefined);
+
+    await sendBillReminderPush(subscription, 1, "pt-BR");
+
+    const [, payload] = sendNotification.mock.calls[0]!;
+    expect(JSON.parse(payload)).toMatchObject({ body: "You have a bill due soon." });
+  });
+
+  it.each([404, 410])("classifies a %i WebPushError as gone", async (statusCode) => {
+    sendNotification.mockRejectedValue(new MockWebPushError("gone", statusCode));
+
+    const result = await sendBillReminderPush(subscription, 1, "en");
+
+    expect(result).toBe("gone");
+  });
+
+  it("classifies any other error as failed and logs identifying context", async () => {
+    sendNotification.mockRejectedValue(new MockWebPushError("server error", 500));
+
+    const result = await sendBillReminderPush(subscription, 1, "en");
+
+    expect(result).toBe("failed");
+    expect(console.error).toHaveBeenCalledWith(
+      "send-bill-reminders: push delivery failed",
+      expect.objectContaining({
+        subscriptionId: subscription.id,
+        memberId: subscription.member_id,
+      }),
+    );
+  });
+
+  it("classifies a non-WebPushError failure (e.g. network error) as failed", async () => {
+    sendNotification.mockRejectedValue(new Error("network unreachable"));
+
+    const result = await sendBillReminderPush(subscription, 1, "en");
+
+    expect(result).toBe("failed");
+  });
+});

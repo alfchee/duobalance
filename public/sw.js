@@ -33,6 +33,30 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
+self.addEventListener("push", (event) => {
+  const payload = event.data?.json() || {};
+  event.waitUntil(
+    self.registration.showNotification(payload.title || "DuoBalance", {
+      body: payload.body || "You have a bill reminder.",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: payload.url || "/bills" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  let target = "/bills";
+  try {
+    const url = new URL(event.notification.data?.url || "/bills", self.location.origin);
+    if (url.origin === self.location.origin) target = url.href;
+  } catch {
+    target = "/bills";
+  }
+  event.waitUntil(self.clients.openWindow(target));
+});
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);

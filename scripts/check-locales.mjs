@@ -9,8 +9,8 @@ import { fileURLToPath } from "node:url";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const messagesDir = path.resolve(dirname, "../src/messages");
-const FILES = ["es.json", "en.json"];
-const ENDONYMS = ["settings.languages.es", "settings.languages.en"];
+const FILES = ["es.json", "en.json", "pt-BR.json"];
+const ENDONYMS = ["settings.languages.es", "settings.languages.en", "settings.languages.pt-BR"];
 
 function flattenKeys(obj, prefix = "", out = []) {
   for (const [key, value] of Object.entries(obj)) {
@@ -28,9 +28,24 @@ function lookup(obj, dotted) {
   return dotted.split(".").reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
 }
 
-const parsed = Object.fromEntries(
+const raw = Object.fromEntries(
   FILES.map((file) => [file, JSON.parse(readFileSync(path.join(messagesDir, file), "utf8"))]),
 );
+function mergeMessages(base, overrides) {
+  const merged = { ...base };
+  for (const [key, value] of Object.entries(overrides)) {
+    merged[key] =
+      value && typeof value === "object" && !Array.isArray(value)
+        ? mergeMessages(base[key] ?? {}, value)
+        : value;
+  }
+  return merged;
+}
+const parsed = {
+  "es.json": raw["es.json"],
+  "en.json": raw["en.json"],
+  "pt-BR.json": mergeMessages(raw["en.json"], raw["pt-BR.json"]),
+};
 const byFile = Object.fromEntries(FILES.map((file) => [file, new Set(flattenKeys(parsed[file]))]));
 
 const errors = [];

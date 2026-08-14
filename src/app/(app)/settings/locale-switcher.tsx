@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { useLocaleContext, type SupportedLocale } from "@/components/locale-provider";
 
-const LOCALES: SupportedLocale[] = ["es", "en"];
+const LOCALES: SupportedLocale[] = ["es", "en", "pt-BR"];
 
 // Radix's onValueChange hands us an arbitrary string; narrow it before it
 // reaches setLocale so a malformed value can't silently become a valid locale.

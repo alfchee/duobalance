@@ -116,23 +116,6 @@ export async function generateInstancesForBill(
   // fills in before payment.
   const instanceAmount = bounds.default_amount ?? 0;
 
-  // Count existing instances in the horizon range so we can return the
-  // true number of newly inserted rows rather than just dueDates.length
-  // (upsert with ignoreDuplicates skips existing rows silently).
-  const horizonStartStr = bounds.horizon_start;
-  const horizonEndStr = bounds.horizon_end;
-
-  const { count: existingCount, error: countError } = await supabase
-    .from("bill_instances")
-    .select("*", { count: "exact", head: true })
-    .eq("bill_id", billId)
-    .gte("due_on", horizonStartStr)
-    .lte("due_on", horizonEndStr);
-
-  if (countError) {
-    throw new BillGenerationError(billId, `count failed: ${countError.message}`);
-  }
-
   const rows = dueDates.map((dueOn) => ({
     bill_id: billId,
     household_id: householdId,
@@ -141,24 +124,19 @@ export async function generateInstancesForBill(
   }));
 
   // Batch insert with ON CONFLICT DO NOTHING (unique on bill_id, due_on)
-  const { error } = await supabase.from("bill_instances").upsert(rows, {
-    onConflict: "bill_id, due_on",
-    ignoreDuplicates: true,
-  });
+  const { data, error } = await supabase
+    .from("bill_instances")
+    .upsert(rows, {
+      onConflict: "bill_id, due_on",
+      ignoreDuplicates: true,
+    })
+    .select("id");
 
   if (error) {
     throw new BillGenerationError(billId, error.message);
   }
 
-  // Query the post-insert count and return the delta
-  const { count: newCount } = await supabase
-    .from("bill_instances")
-    .select("*", { count: "exact", head: true })
-    .eq("bill_id", billId)
-    .gte("due_on", horizonStartStr)
-    .lte("due_on", horizonEndStr);
-
-  return (newCount ?? 0) - (existingCount ?? 0);
+  return data?.length ?? 0;
 }
 
 /**

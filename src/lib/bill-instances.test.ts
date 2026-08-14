@@ -142,18 +142,20 @@ describe("computeDueDates", () => {
  * Minimal fake Supabase client covering exactly the calls
  * generateInstancesForBill/generateAllInstances make:
  *   from("bills").select().eq()
- *   from("bill_instances").select().eq().gte().lte()  (count, called twice)
- *   from("bill_instances").upsert()
+ *   from("bill_instances").upsert().select()
  *   rpc("bill_instance_generation_bounds", {...}).maybeSingle()
  */
 function makeSupabase(opts: {
   bills?: Array<{ id: string; household_id: string; default_amount: number | null }>;
   bounds?: Record<string, { data: GenerationBounds | null; error: unknown }>;
-  billInstanceCounts?: number[];
+  insertedIds?: string[];
   upsertError?: { message: string } | null;
 }) {
-  const counts = [...(opts.billInstanceCounts ?? [])];
-  const upsert = vi.fn().mockResolvedValue({ error: opts.upsertError ?? null });
+  const selectInserted = vi.fn().mockResolvedValue({
+    data: (opts.insertedIds ?? []).map((id) => ({ id })),
+    error: opts.upsertError ?? null,
+  });
+  const upsert = vi.fn().mockReturnValue({ select: selectInserted });
 
   const from = vi.fn((table: string) => {
     if (table === "bills") {
@@ -163,13 +165,6 @@ function makeSupabase(opts: {
     }
     if (table === "bill_instances") {
       return {
-        select: () => ({
-          eq: () => ({
-            gte: () => ({
-              lte: () => Promise.resolve({ count: counts.shift() ?? 0, error: null }),
-            }),
-          }),
-        }),
         upsert,
       };
     }
@@ -184,7 +179,10 @@ function makeSupabase(opts: {
     return { maybeSingle: () => Promise.resolve(result) };
   });
 
-  return { from, rpc, upsert } as unknown as SupabaseClient<Database> & { upsert: typeof upsert };
+  return { from, rpc, upsert, selectInserted } as unknown as SupabaseClient<Database> & {
+    selectInserted: typeof selectInserted;
+    upsert: typeof upsert;
+  };
 }
 
 const oneDayBounds: GenerationBounds = {
@@ -198,7 +196,7 @@ const oneDayBounds: GenerationBounds = {
 
 describe("generateInstancesForBill", () => {
   it("generates a variable-amount bill's instances with amount 0 instead of skipping it", async () => {
-    const supabase = makeSupabase({ billInstanceCounts: [0, 1] });
+    const supabase = makeSupabase({ insertedIds: ["instance-1"] });
     const bounds = { ...oneDayBounds, default_amount: null };
 
     const count = await generateInstancesForBill(supabase, bounds, "bill-1", "household-1");
@@ -208,6 +206,7 @@ describe("generateInstancesForBill", () => {
       [expect.objectContaining({ amount: 0 })],
       expect.anything(),
     );
+    expect(supabase.selectInserted).toHaveBeenCalledWith("id");
   });
 
   it("returns 0 without touching the database when there are no due dates", async () => {
@@ -220,15 +219,17 @@ describe("generateInstancesForBill", () => {
     expect(supabase.upsert).not.toHaveBeenCalled();
   });
 
-  it("wraps a count-query failure in BillGenerationError", async () => {
-    const from = vi.fn(() => ({
-      select: () => ({
-        eq: () => ({
-          gte: () => ({ lte: () => Promise.resolve({ count: null, error: { message: "boom" } }) }),
-        }),
-      }),
-    }));
-    const supabase = { from } as unknown as SupabaseClient<Database>;
+  it("returns zero when the database tombstone guard skips every occurrence", async () => {
+    const supabase = makeSupabase({});
+
+    const count = await generateInstancesForBill(supabase, oneDayBounds, "bill-1", "household-1");
+
+    expect(count).toBe(0);
+    expect(supabase.upsert).toHaveBeenCalled();
+  });
+
+  it("wraps an insert failure in BillGenerationError", async () => {
+    const supabase = makeSupabase({ upsertError: { message: "boom" } });
 
     await expect(
       generateInstancesForBill(supabase, oneDayBounds, "bill-1", "household-1"),
@@ -282,7 +283,7 @@ describe("generateAllInstances", () => {
     const supabase = makeSupabase({
       bills: [{ id: "bill-1", household_id: "household-1", default_amount: 50 }],
       bounds: { "bill-1": { data: oneDayBounds, error: null } },
-      billInstanceCounts: [0, 1],
+      insertedIds: ["instance-1"],
     });
 
     const results = await generateAllInstances(supabase);

@@ -1,4 +1,7 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const BASE =
+  typeof window !== "undefined" && window.location.protocol === "tauri:"
+    ? (process.env.NEXT_PUBLIC_API_BASE_URL ?? "")
+    : "";
 
 export class ApiError extends Error {
   public readonly status: number;
@@ -12,12 +15,13 @@ export class ApiError extends Error {
   }
 }
 
-type ApiFetchInit = Omit<RequestInit, "body"> & { body?: unknown };
+type ApiFetchInit = Omit<RequestInit, "body"> & { body?: unknown; responseType?: "blob" | "json" };
 
 export async function apiFetch<T = unknown>(path: string, init: ApiFetchInit = {}): Promise<T> {
   const url = path.startsWith("http") ? path : `${BASE}${path}`;
+  const { responseType = "json", ...requestInit } = init;
   const res = await fetch(url, {
-    ...init,
+    ...requestInit,
     credentials: init.credentials ?? "include",
     headers: {
       "Content-Type": "application/json",
@@ -36,6 +40,9 @@ export async function apiFetch<T = unknown>(path: string, init: ApiFetchInit = {
   }
   if (res.status === 204) {
     return undefined as T;
+  }
+  if (responseType === "blob") {
+    return (await res.blob()) as T;
   }
   return (await res.json()) as T;
 }

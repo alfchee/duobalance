@@ -125,10 +125,8 @@ export function BillsView() {
   const { data: categories = [] } = useCategories(householdId);
   const { data: currencies = [] } = useCurrencies();
   const { data: members = [] } = useHouseholdMembers(householdId);
-  const { create, pay, skip, unmarkPaid, update, updateInstanceAmount } = useBillMutations(
-    householdId,
-    memberId,
-  );
+  const { create, deleteFutureInstance, pay, skip, unmarkPaid, update, updateInstanceAmount } =
+    useBillMutations(householdId, memberId);
   const [draft, setDraft] = useState(() => createDefaultBillDraft(today, baseCurrency ?? "USD"));
 
   useEffect(() => {
@@ -764,18 +762,35 @@ export function BillsView() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() =>
+                    disabled={skip.isPending}
+                    onClick={() => {
                       void skip
                         .mutateAsync({
                           id: selected.instance.id!,
                           reason: skipReason.trim() || null,
                         })
                         .then(closeInstance)
-                        .catch(() => setActionError(t("error")))
-                    }
+                        .catch(() => setActionError(t("error")));
+                    }}
                   >
                     {t("actions.skip")}
                   </Button>
+                  {selected.instance.due_on! > today && (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      disabled={deleteFutureInstance.isPending}
+                      onClick={() => {
+                        if (!window.confirm(t("actions.deleteConfirm"))) return;
+                        void deleteFutureInstance
+                          .mutateAsync({ id: selected.instance.id! })
+                          .then(closeInstance)
+                          .catch(() => setActionError(t("error")));
+                      }}
+                    >
+                      {t("actions.delete")}
+                    </Button>
+                  )}
                 </>
               )}
               {actionError ? (

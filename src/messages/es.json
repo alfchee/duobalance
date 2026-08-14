@@ -604,6 +604,8 @@
       "unmarkPaid": "Desmarcar como pagada",
       "unmarkPaidConfirm": "Esto eliminará el movimiento creado para este pago. ¿Deseas continuar?",
       "skip": "Omitir esta cuenta",
+      "delete": "Eliminar este vencimiento futuro",
+      "deleteConfirm": "¿Eliminar permanentemente solo este vencimiento futuro? No se podrá restaurar ni generar de nuevo.",
       "skippedInstance": "Esta cuenta fue omitida y no se puede pagar.",
       "skipReason": "Motivo opcional para omitirla",
       "instanceAmount": "Monto de esta cuenta",
@@ -631,6 +633,11 @@
       "button": "Instalar app",
       "iosGuide": "Ver guía para iPhone",
       "unavailable": "Usa el menú de tu navegador para instalar DuoBalance."
+    },
+    "push": {
+      "title": "Notificaciones de recordatorios",
+      "description": "Recibe recordatorios de cuentas en este dispositivo. El correo sigue siendo el respaldo.",
+      "error": "Ocurrió un error al actualizar las notificaciones. Inténtalo de nuevo."
     },
     "ios": {
       "back": "Volver a configuración",
@@ -660,7 +667,8 @@
     "groups": {
       "household": "Hogar",
       "preferences": "Preferencias",
-      "configuration": "Categorías y reglas"
+      "configuration": "Categorías y reglas",
+      "data": "Tus datos"
     },
     "navigation": {
       "categories": {
@@ -736,7 +744,16 @@
     },
     "languages": {
       "es": "Español",
-      "en": "English"
+      "en": "English",
+      "pt-BR": "Português (Brasil)"
+    },
+    "export": {
+      "title": "Exportar respaldo",
+      "description": "Descarga los datos de tu hogar para guardarlos o usarlos en una hoja de cálculo.",
+      "json": "Descargar JSON",
+      "csv": "Descargar CSV",
+      "exporting": "Preparando…",
+      "error": "No se pudo crear la exportación. Inténtalo de nuevo."
     },
     "logout": "Cerrar sesión"
   }

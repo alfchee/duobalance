@@ -69,8 +69,8 @@ export function CategoriesSection({ standalone = false }: { standalone?: boolean
     setDeleteError(null);
     try {
       await remove.mutateAsync(category.id);
-    } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : t("deleteError"));
+    } catch {
+      setDeleteError(t("deleteError"));
     }
   }
 

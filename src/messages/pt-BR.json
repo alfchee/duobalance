@@ -1,0 +1,23 @@
+{
+  "common": {
+    "loading": "Carregando…",
+    "retry": "Tentar novamente",
+    "cancel": "Cancelar",
+    "back": "Voltar",
+    "somethingWrong": "Algo deu errado.",
+    "unknownError": "Erro desconhecido",
+    "pageNotFound": "Esta página não existe.",
+    "backHome": "Voltar ao início"
+  },
+  "settings": {
+    "locale": {
+      "title": "Idioma",
+      "subtitle": "Idioma da interface."
+    },
+    "languages": {
+      "es": "Español",
+      "en": "English",
+      "pt-BR": "Português (Brasil)"
+    }
+  }
+}

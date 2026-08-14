@@ -116,6 +116,42 @@ export type Database = {
           },
         ]
       }
+      bill_instance_deletions: {
+        Row: {
+          bill_id: string
+          deleted_at: string
+          due_on: string
+          household_id: string
+        }
+        Insert: {
+          bill_id: string
+          deleted_at?: string
+          due_on: string
+          household_id: string
+        }
+        Update: {
+          bill_id?: string
+          deleted_at?: string
+          due_on?: string
+          household_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_instance_deletions_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_instance_deletions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bill_instances: {
         Row: {
           amount: number
@@ -926,6 +962,54 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          household_id: string
+          id: string
+          member_id: string
+          p256dh: string
+          user_agent: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          household_id: string
+          id?: string
+          member_id: string
+          p256dh: string
+          user_agent?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          household_id?: string
+          id?: string
+          member_id?: string
+          p256dh?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           account_id: string
@@ -1282,6 +1366,10 @@ export type Database = {
         }
       }
       current_member_id: { Args: { household: string }; Returns: string }
+      delete_future_bill_instance: {
+        Args: { p_instance_id: string }
+        Returns: undefined
+      }
       delete_transfer: {
         Args: { p_transaction_id: string }
         Returns: undefined

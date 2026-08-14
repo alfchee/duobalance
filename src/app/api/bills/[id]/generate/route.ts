@@ -10,8 +10,12 @@ import {
   type GenerationBounds,
 } from "@/lib/bill-instances";
 
-export const dynamic = "force-static";
-
+// Web-only API route. Under `output: "export"` (Tauri) it is not exported at
+// all — a placeholder param list satisfies the exporter without emitting
+// anything for real bill ids. No `dynamic` export: this route only has a POST
+// handler, so the Tauri build already skips it — see cron/fx-refresh/route.ts
+// for why `dynamic = "force-static"` must not be added to a route that reads
+// real per-request auth data.
 export function generateStaticParams() {
   return [{ id: "__placeholder__" }];
 }
