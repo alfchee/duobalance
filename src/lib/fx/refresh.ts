@@ -1,6 +1,5 @@
-// Server-only (#17): fetches today's rates, applies them to fx_rates, and
-// records every run in fx_fetch_log. Both the cron handler and the manual
-// Settings refresh go through runFxRefresh(), so a missing day of rates is
+// Server-only (#17): the cron handler fetches today's rates, applies them to
+// fx_rates, and records every run in fx_fetch_log so a missing day of rates is
 // visible instead of silently falling back to an older rate.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -27,10 +26,8 @@ async function fetchWithRetry(): Promise<Record<string, number>> {
   }
 }
 
-// Upserts one row per code into fx_rates for `rateDate`, skipping codes the
-// currencies table doesn't know. Counts come from a pre-check of which
-// (rate_date, code) pairs already exist — accurate for a daily run; a
-// simultaneous manual refresh could skew the counts but never the data.
+// Upserts one row per known currency code into fx_rates for `rateDate` and
+// returns the written-row count and the number of skipped provider codes.
 export async function applyDailyRates(
   supabase: SupabaseClient<Database>,
   rates: Record<string, number>,
@@ -70,10 +67,10 @@ async function logFailure(
       refresh_date: rateDate,
       failure_error: error,
     });
-    if (logError) console.error("fx_fetch_log insert failed:", logError.message);
+    if (logError) console.error("record_fx_refresh_failure RPC failed:", logError.message);
   } catch (err) {
     // A failed log write must not mask the run's own outcome.
-    console.error("fx_fetch_log insert failed:", err);
+    console.error("record_fx_refresh_failure RPC failed:", err);
   }
 }
 

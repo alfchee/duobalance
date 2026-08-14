@@ -1,6 +1,6 @@
--- Issue #17: fx_fetch_log run-outcome audit table. The cron + manual refresh
--- handlers write it with the service role; these tests prove it accepts runs,
--- enforces the outcome enum, and stays closed to the data API.
+-- Issue #17: fx_fetch_log run-outcome audit table. The cron handler writes it
+-- with the service role; these tests prove it accepts runs, enforces the
+-- outcome enum, and stays closed to the data API.
 
 \set ON_ERROR_STOP on
 \i supabase/tests/_lib/helpers.sql
