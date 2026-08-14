@@ -1,14 +1,16 @@
 // GET /api/cron/send-bill-reminders — daily reminder emails for due bills (#33).
 // Fired by the Vercel cron job (vercel.json). Auth pattern matches fx-refresh.
 //
-// `dynamic = "force-static"` satisfies the Tauri static-export build.
+// `revalidate = 0` satisfies the Tauri static-export build without Next
+// stripping cookies/headers/searchParams from real requests — see
+// cron/fx-refresh/route.ts for why `dynamic = "force-static"` must not be used.
 
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 import { sendReminderDigest } from "@/lib/bill-reminder-email";
 import type { ReminderItem } from "@/lib/bill-reminder-email";
 import { sendBillReminderPush, type StoredPushSubscription } from "@/lib/web-push";
 
-export const dynamic = "force-static";
+export const revalidate = 1;
 
 export async function GET(request: Request) {
   return handle(request);
@@ -31,25 +33,6 @@ type ReminderRow = {
   household_timezone: string;
   household_locale: string;
 };
-
-type PushSubscriptionQuery = {
-  select: (columns: string) => {
-    in: (
-      column: string,
-      values: string[],
-    ) => Promise<{
-      data: StoredPushSubscription[] | null;
-      error: unknown;
-    }>;
-  };
-  delete: () => {
-    in: (column: string, values: string[]) => Promise<{ error: unknown }>;
-  };
-};
-
-function pushSubscriptions(supabase: Awaited<ReturnType<typeof createSupabaseRouteHandler>>) {
-  return supabase.from as unknown as (table: "push_subscriptions") => PushSubscriptionQuery;
-}
 
 async function handle(request: Request) {
   if (!isAuthorized(request)) {
@@ -170,9 +153,8 @@ async function handle(request: Request) {
     }
 
     const memberIds = Array.from(new Set((allHouseholdMembers ?? []).map((member) => member.id)));
-    const { data: subscriptionRows, error: subscriptionError } = await pushSubscriptions(supabase)(
-      "push_subscriptions",
-    )
+    const { data: subscriptionRows, error: subscriptionError } = await supabase
+      .from("push_subscriptions")
       .select("id, member_id, endpoint, p256dh, auth")
       .in("member_id", memberIds);
     if (subscriptionError) {
@@ -277,7 +259,7 @@ async function handle(request: Request) {
             : [];
           let pushSent = false;
           for (const subscription of subscriptions) {
-            const result = await sendBillReminderPush(subscription, entry.items.length);
+            const result = await sendBillReminderPush(subscription, entry.items.length, hh.locale);
             if (result === "gone") deadSubscriptionIds.push(subscription.id);
             if (result === "sent") pushSent = true;
           }
@@ -300,7 +282,8 @@ async function handle(request: Request) {
         }
 
         if (deadSubscriptionIds.length > 0) {
-          const { error: pruneError } = await pushSubscriptions(supabase)("push_subscriptions")
+          const { error: pruneError } = await supabase
+            .from("push_subscriptions")
             .delete()
             .in("id", deadSubscriptionIds);
           if (pruneError) {

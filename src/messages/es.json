@@ -634,7 +634,8 @@
     },
     "push": {
       "title": "Notificaciones de recordatorios",
-      "description": "Recibe recordatorios de cuentas en este dispositivo. El correo sigue siendo el respaldo."
+      "description": "Recibe recordatorios de cuentas en este dispositivo. El correo sigue siendo el respaldo.",
+      "error": "Ocurrió un error al actualizar las notificaciones. Inténtalo de nuevo."
     },
     "ios": {
       "back": "Volver a configuración",

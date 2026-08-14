@@ -19,11 +19,38 @@ function configureWebPush() {
   return true;
 }
 
+// Matches the two locales bill-reminder-email.ts's DIGEST_BODY actually
+// covers — households on other locales (e.g. pt-BR) fall back to English
+// here exactly as the email digest does.
+const PUSH_COPY: Record<string, { title: string; body: (itemCount: number) => string }> = {
+  en: {
+    title: "DuoBalance",
+    body: (itemCount) =>
+      itemCount === 1 ? "You have a bill due soon." : `You have ${itemCount} bills due soon.`,
+  },
+  es: {
+    title: "DuoBalance",
+    body: (itemCount) =>
+      itemCount === 1
+        ? "Tienes una factura por vencer."
+        : `Tienes ${itemCount} facturas por vencer.`,
+  },
+};
+
+function pushCopyFor(locale: string) {
+  return PUSH_COPY[locale] ?? PUSH_COPY.en!;
+}
+
 export async function sendBillReminderPush(
   subscription: StoredPushSubscription,
   itemCount: number,
+  locale: string,
 ): Promise<PushDeliveryResult> {
-  if (!configureWebPush()) return "failed";
+  if (!configureWebPush()) {
+    console.error("web-push: VAPID env vars not configured — push delivery skipped");
+    return "failed";
+  }
+  const copy = pushCopyFor(locale);
   try {
     await webpush.sendNotification(
       {
@@ -31,9 +58,8 @@ export async function sendBillReminderPush(
         keys: { p256dh: subscription.p256dh, auth: subscription.auth },
       },
       JSON.stringify({
-        title: "DuoBalance",
-        body:
-          itemCount === 1 ? "You have a bill due soon." : `You have ${itemCount} bills due soon.`,
+        title: copy.title,
+        body: copy.body(itemCount),
         url: "/bills",
       }),
     );
@@ -41,7 +67,11 @@ export async function sendBillReminderPush(
   } catch (error) {
     if (error instanceof webpush.WebPushError && [404, 410].includes(error.statusCode))
       return "gone";
-    console.error("send-bill-reminders: push delivery failed", error);
+    console.error("send-bill-reminders: push delivery failed", {
+      subscriptionId: subscription.id,
+      memberId: subscription.member_id,
+      error,
+    });
     return "failed";
   }
 }

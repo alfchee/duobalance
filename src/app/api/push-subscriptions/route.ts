@@ -1,52 +1,9 @@
-import { createSupabaseRouteHandler } from "@/lib/supabase/server";
+import { createSupabaseRouteHandler, createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
-export const dynamic = "force-static";
-
-type PushSubscriptionTable = {
-  select: (columns: string) => {
-    eq: (
-      column: string,
-      value: string,
-    ) => {
-      maybeSingle: () => Promise<{
-        data: { household_id: string; member_id: string } | null;
-        error: unknown;
-      }>;
-    };
-  };
-  insert: (value: unknown) => Promise<{ error: { code?: string } | null }>;
-  update: (value: unknown) => {
-    eq: (
-      column: string,
-      value: string,
-    ) => {
-      eq: (
-        column: string,
-        value: string,
-      ) => {
-        eq: (column: string, value: string) => Promise<{ error: unknown }>;
-      };
-    };
-  };
-  delete: () => {
-    eq: (
-      column: string,
-      value: string,
-    ) => {
-      eq: (
-        column: string,
-        value: string,
-      ) => {
-        eq: (column: string, value: string) => Promise<{ error: unknown }>;
-      };
-    };
-  };
-};
-
-function pushSubscriptions(supabase: Awaited<ReturnType<typeof createSupabaseRouteHandler>>) {
-  return supabase.from as unknown as (table: "push_subscriptions") => PushSubscriptionTable;
-}
+// No `dynamic` export: this route only has POST/DELETE handlers, so the Tauri
+// static-export build already skips it (nothing to prerender) — see
+// cron/fx-refresh/route.ts for why `force-static` must NOT be added here.
 
 const subscriptionSchema = z.object({
   householdId: z.uuid(),
@@ -72,14 +29,11 @@ function isUniqueViolation(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
 }
 
-export async function POST(request: Request) {
-  const parsed = await parseBody(request, subscriptionSchema);
-  if (!parsed.success) {
-    return Response.json({ error: "invalid push subscription" }, { status: 400 });
-  }
-  const payload = parsed.data;
-
-  const supabase = await createSupabaseRouteHandler();
+async function requireOwnMember(
+  supabase: Awaited<ReturnType<typeof createSupabaseRouteHandler>>,
+  memberId: string,
+  householdId: string,
+): Promise<Response | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -88,26 +42,43 @@ export async function POST(request: Request) {
   const { data: member } = await supabase
     .from("household_members")
     .select("id")
-    .eq("id", payload.memberId)
-    .eq("household_id", payload.householdId)
+    .eq("id", memberId)
+    .eq("household_id", householdId)
     .eq("user_id", user.id)
     .maybeSingle();
   if (!member) return Response.json({ error: "forbidden" }, { status: 403 });
 
-  const subscriptions = pushSubscriptions(supabase)("push_subscriptions");
-  const { data: existing, error: existingError } = await subscriptions
-    .select("household_id, member_id")
+  return null;
+}
+
+export async function POST(request: Request) {
+  const parsed = await parseBody(request, subscriptionSchema);
+  if (!parsed.success) {
+    return Response.json({ error: "invalid push subscription" }, { status: 400 });
+  }
+  const payload = parsed.data;
+
+  const supabase = await createSupabaseRouteHandler();
+  const forbidden = await requireOwnMember(supabase, payload.memberId, payload.householdId);
+  if (forbidden) return forbidden;
+
+  // `endpoint` is globally unique (one browser/device push registration can't
+  // belong to two accounts at once). RLS scopes reads to the caller's own
+  // household, so a registration left behind by a different member (e.g. two
+  // partners sharing one browser profile) would be invisible here — use the
+  // service role, already gated by the ownership check above, to find and
+  // reassign it instead of hitting the unique constraint and returning a
+  // permanent, unrecoverable 409.
+  const admin = createSupabaseServiceRoleClient();
+  const { data: existing, error: existingError } = await admin
+    .from("push_subscriptions")
+    .select("id")
     .eq("endpoint", payload.endpoint)
     .maybeSingle();
   if (existingError) {
     return Response.json({ error: "unable to find push subscription" }, { status: 502 });
   }
-  if (
-    existing &&
-    (existing.member_id !== payload.memberId || existing.household_id !== payload.householdId)
-  ) {
-    return Response.json({ error: "push subscription belongs to another member" }, { status: 409 });
-  }
+
   const values = {
     household_id: payload.householdId,
     member_id: payload.memberId,
@@ -117,12 +88,8 @@ export async function POST(request: Request) {
     user_agent: payload.userAgent,
   };
   const { error } = existing
-    ? await subscriptions
-        .update(values as never)
-        .eq("endpoint", payload.endpoint)
-        .eq("household_id", payload.householdId)
-        .eq("member_id", payload.memberId)
-    : await subscriptions.insert(values as never);
+    ? await admin.from("push_subscriptions").update(values).eq("id", existing.id)
+    : await admin.from("push_subscriptions").insert(values);
   if (isUniqueViolation(error)) {
     return Response.json({ error: "push subscription already exists" }, { status: 409 });
   }
@@ -137,19 +104,11 @@ export async function DELETE(request: Request) {
   }
   const { householdId, memberId, endpoint } = parsed.data;
   const supabase = await createSupabaseRouteHandler();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const { data: member } = await supabase
-    .from("household_members")
-    .select("id")
-    .eq("id", memberId)
-    .eq("household_id", householdId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!member) return Response.json({ error: "forbidden" }, { status: 403 });
-  const { error } = await pushSubscriptions(supabase)("push_subscriptions")
+  const forbidden = await requireOwnMember(supabase, memberId, householdId);
+  if (forbidden) return forbidden;
+
+  const { error } = await supabase
+    .from("push_subscriptions")
     .delete()
     .eq("household_id", householdId)
     .eq("member_id", memberId)

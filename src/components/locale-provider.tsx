@@ -10,7 +10,7 @@ import ptBR from "@/messages/pt-BR.json";
 // doesn't exist in a static export (architecture rule #1). Locale resolution
 // order (household -> browser -> es) is #16's full scope; this is the minimal
 // slice #14 needs so auth copy resolves through next-intl.
-function mergeMessages(base: Record<string, unknown>, overrides: Record<string, unknown>) {
+export function mergeMessages(base: Record<string, unknown>, overrides: Record<string, unknown>) {
   const merged: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(overrides)) {
     const baseValue = base[key];

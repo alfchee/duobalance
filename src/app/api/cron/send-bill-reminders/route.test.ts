@@ -28,6 +28,10 @@ function makeClient(
   const members = opts?.memberRows ?? [];
   const users = opts?.userRows ?? [];
   const subscriptions = opts?.subscriptionRows ?? [];
+  // Shared across every `.from("push_subscriptions")` call (the route looks
+  // the table up once for the initial select and again for pruning), so
+  // assertions can inspect calls made through either lookup.
+  const deletePushSubscriptionsIn = vi.fn().mockResolvedValue({ error: null });
   return {
     rpc: vi.fn((name: string) => {
       if (name === "bill_instances_due_for_reminder") {
@@ -38,6 +42,7 @@ function makeClient(
       }
       return Promise.resolve({ data: null, error: null });
     }),
+    deletePushSubscriptionsIn,
     from: vi.fn((table: string) => {
       if (table === "household_members") {
         return {
@@ -62,7 +67,7 @@ function makeClient(
             in: vi.fn(() => Promise.resolve({ data: subscriptions, error: null })),
           })),
           delete: vi.fn(() => ({
-            in: vi.fn(() => Promise.resolve({ error: null })),
+            in: deletePushSubscriptionsIn,
           })),
         };
       }
@@ -204,6 +209,98 @@ describe("/api/cron/send-bill-reminders", () => {
     expect(sendBillReminderPush).toHaveBeenCalledTimes(1);
     expect(sendReminderDigest).not.toHaveBeenCalled();
     await expect(res.json()).resolves.toEqual({ sent: 1, instances: 1 });
+  });
+
+  it("falls back to email when a recipient's push delivery fails, and passes the household locale", async () => {
+    vi.mocked(sendBillReminderPush).mockResolvedValue("failed");
+    vi.mocked(sendReminderDigest).mockResolvedValue(undefined);
+    const client = makeClient(
+      [
+        {
+          instance_id: "i-1",
+          bill_id: "b-1",
+          household_id: "h-1",
+          due_on: "2026-08-15",
+          amount: 1000,
+          bill_name: "Rent",
+          currency: "USD",
+          responsible_member_id: "m-1",
+          household_name: "Test Home",
+          household_timezone: "America/New_York",
+          household_locale: "es",
+        },
+      ],
+      {
+        memberRows: [{ id: "m-1", user_id: "u-1", display_name: "Alice", household_id: "h-1" }],
+        userRows: [{ id: "u-1", email: "alice@test.local" }],
+        subscriptionRows: [
+          {
+            id: "p-1",
+            member_id: "m-1",
+            endpoint: "https://push.example/subscription",
+            p256dh: "key",
+            auth: "auth",
+          },
+        ],
+      },
+    );
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client as never);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/send-bill-reminders"));
+
+    expect(res.status).toBe(200);
+    expect(sendBillReminderPush).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "p-1" }),
+      1,
+      "es",
+    );
+    expect(sendReminderDigest).toHaveBeenCalledWith(
+      expect.objectContaining({ to: ["alice@test.local"], locale: "es" }),
+    );
+    await expect(res.json()).resolves.toEqual({ sent: 1, instances: 1 });
+  });
+
+  it("prunes push subscriptions that report gone (404/410) instead of retrying them", async () => {
+    vi.mocked(sendBillReminderPush).mockResolvedValue("gone");
+    vi.mocked(sendReminderDigest).mockResolvedValue(undefined);
+    const client = makeClient(
+      [
+        {
+          instance_id: "i-1",
+          bill_id: "b-1",
+          household_id: "h-1",
+          due_on: "2026-08-15",
+          amount: 1000,
+          bill_name: "Rent",
+          currency: "USD",
+          responsible_member_id: "m-1",
+          household_name: "Test Home",
+          household_timezone: "America/New_York",
+          household_locale: "en",
+        },
+      ],
+      {
+        memberRows: [{ id: "m-1", user_id: "u-1", display_name: "Alice", household_id: "h-1" }],
+        userRows: [{ id: "u-1", email: "alice@test.local" }],
+        subscriptionRows: [
+          {
+            id: "dead-sub",
+            member_id: "m-1",
+            endpoint: "https://push.example/subscription",
+            p256dh: "key",
+            auth: "auth",
+          },
+        ],
+      },
+    );
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client as never);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/send-bill-reminders"));
+
+    expect(res.status).toBe(200);
+    // Still falls back to email since "gone" is not a successful delivery.
+    expect(sendReminderDigest).toHaveBeenCalledTimes(1);
+    expect(client.deletePushSubscriptionsIn).toHaveBeenCalledWith("id", ["dead-sub"]);
   });
 
   it("handles joint bills by sending individual emails to each member", async () => {

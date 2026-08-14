@@ -1,13 +1,14 @@
 // GET /api/cron/generate-bill-instances — nightly bill instance generation (#33).
 // Fired by the Vercel cron job (vercel.json). Auth pattern matches fx-refresh.
 //
-// `dynamic = "force-static"` satisfies the Tauri static-export build.
-// On Vercel, reading `request.headers` makes it dynamic at runtime.
+// `revalidate = 0` satisfies the Tauri static-export build without Next
+// stripping cookies/headers/searchParams from real requests — see
+// cron/fx-refresh/route.ts for why `dynamic = "force-static"` must not be used.
 
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 import { generateAllInstances } from "@/lib/bill-instances";
 
-export const dynamic = "force-static";
+export const revalidate = 1;
 
 export async function GET(request: Request) {
   return handle(request);

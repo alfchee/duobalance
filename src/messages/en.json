@@ -634,7 +634,8 @@
     },
     "push": {
       "title": "Bill reminder notifications",
-      "description": "Receive bill reminders on this device. Email remains the fallback."
+      "description": "Receive bill reminders on this device. Email remains the fallback.",
+      "error": "Something went wrong updating notification settings. Please try again."
     },
     "ios": {
       "back": "Back to settings",

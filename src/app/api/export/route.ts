@@ -1,10 +1,14 @@
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
 
-export const dynamic = "force-static";
-
-export function generateStaticParams() {
-  return [];
-}
+// `revalidate = 1` (a positive number, not `dynamic = "force-static"`) satisfies
+// the Tauri static-export build without Next stripping cookies/searchParams
+// from real requests on the web build — see cron/fx-refresh/route.ts for the
+// full story. `revalidate = 0` does NOT satisfy the Tauri build's check
+// (`isStaticGenEnabled` requires `revalidate > 0`); reading `cookies()` here
+// still makes Next render this fully dynamically per-request regardless of
+// the revalidate value (verified: two requests with different session
+// cookies never see each other's response).
+export const revalidate = 1;
 
 const EXPORT_TABLES = [
   "accounts",
@@ -26,7 +30,24 @@ const EXPORT_CACHE_HEADERS = {
 type ExportTable = (typeof EXPORT_TABLES)[number];
 type ExportData = Record<ExportTable, unknown[]>;
 
+// Every export table has an `id` primary key except `fx_overrides`, which is
+// keyed by (household_id, code, rate_date) — ordering it by "id" throws
+// Postgres error 42703 ("column does not exist") and fails the whole export.
+const EXPORT_ORDER_COLUMNS: Record<ExportTable, readonly string[]> = {
+  accounts: ["id"],
+  transactions: ["id"],
+  categories: ["id"],
+  categorization_rules: ["id"],
+  budgets: ["id"],
+  bills: ["id"],
+  bill_instances: ["id"],
+  import_profiles: ["id"],
+  import_batches: ["id"],
+  fx_overrides: ["code", "rate_date"],
+};
+
 function escapeCsv(value: unknown): string {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
   const raw = value == null ? "" : String(value);
   const text = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
@@ -77,12 +98,11 @@ async function fetchAllRows(
   const pageSize = 1_000;
   const rows: unknown[] = [];
   for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabase
-      .from(table)
-      .select("*")
-      .eq("household_id", householdId)
-      .order("id", { ascending: true })
-      .range(from, from + pageSize - 1);
+    let query = supabase.from(table).select("*").eq("household_id", householdId);
+    for (const column of EXPORT_ORDER_COLUMNS[table]) {
+      query = query.order(column, { ascending: true });
+    }
+    const { data, error } = await query.range(from, from + pageSize - 1);
     if (error) throw error;
     const page = data ?? [];
     rows.push(...page);
@@ -128,21 +148,34 @@ export async function GET(request: Request) {
     return Response.json({ error: "household not found" }, { status: 404 });
   }
 
-  const data = {} as ExportData;
-  for (const table of EXPORT_TABLES) {
-    data[table] = await fetchAllRows(supabase, table, household.id);
-  }
-
   const date = new Date().toISOString().slice(0, 10);
   const filename = `duobalance-${safeFilenamePart(household.name)}-${date}`;
+
   if (format === "csv") {
-    return new Response(transactionsToCsv(data.transactions as Record<string, unknown>[]), {
+    let transactions: unknown[];
+    try {
+      transactions = await fetchAllRows(supabase, "transactions", household.id);
+    } catch (error) {
+      console.error("export: failed to fetch transactions", { householdId, error });
+      return Response.json({ error: "export failed" }, { status: 502 });
+    }
+    return new Response(transactionsToCsv(transactions as Record<string, unknown>[]), {
       headers: {
         ...EXPORT_CACHE_HEADERS,
         "Content-Disposition": `attachment; filename=\"${filename}.csv\"`,
         "Content-Type": "text/csv; charset=utf-8",
       },
     });
+  }
+
+  const data = {} as ExportData;
+  try {
+    for (const table of EXPORT_TABLES) {
+      data[table] = await fetchAllRows(supabase, table, household.id);
+    }
+  } catch (error) {
+    console.error("export: failed to fetch household data", { householdId, error });
+    return Response.json({ error: "export failed" }, { status: 502 });
   }
 
   return Response.json(
