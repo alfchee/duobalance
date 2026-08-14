@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(11);
+select plan(16);
 
 do $$
 declare
@@ -68,6 +68,23 @@ select throws_ok(
   'a paid instance cannot be permanently deleted'
 );
 
+select throws_ok(
+  $$ delete from public.bill_instances where id = 'a6000000-0000-0000-0000-000000000003' $$,
+  '42501', null,
+  'members cannot bypass the guarded deletion procedure'
+);
+
+select is(
+  (select count(*) from pg_policies where schemaname = 'public' and tablename = 'bill_instances' and cmd = 'DELETE'),
+  0::bigint,
+  'bill instances have no direct delete policy'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.bill_instances', 'DELETE'),
+  'authenticated users have no direct delete privilege'
+);
+
 select tests.authenticate_anon();
 
 select throws_ok(
@@ -83,6 +100,18 @@ select throws_ok(
 );
 
 select tests.clear_auth();
+
+select is_empty(
+  $$ insert into public.bill_instances (household_id, bill_id, due_on, amount, status)
+     values ('a0000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001', current_date + 1, 45, 'due')
+     returning id $$,
+  'the insert trigger suppresses recreation of a deleted occurrence'
+);
+
+select is_empty(
+  $$ select * from public.bill_instances where bill_id = 'a5000000-0000-0000-0000-000000000001' and due_on = current_date + 1 $$,
+  'the tombstoned occurrence remains absent after generation-style insertion'
+);
 
 do $$
 declare
