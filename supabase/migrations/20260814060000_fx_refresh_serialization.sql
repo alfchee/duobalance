@@ -21,14 +21,33 @@ create index fx_fetch_log_fetched_at_idx on public.fx_fetch_log (fetched_at desc
 create unique index fx_fetch_log_one_success_per_day
   on public.fx_fetch_log (fetch_date) where status = 'success';
 
+-- Refreshes are one-per-UTC-day. A row here means "a run for this date is
+-- either in flight or has committed a success/failure log entry"; the row is
+-- removed on failure (so the next cron tick can retry) and left in place on
+-- success (so no later caller can reclaim an already-completed day).
 create table public.fx_refresh_claims (
   fetch_date date primary key,
   claimed_at timestamptz not null default now()
 );
 
 alter table public.fx_refresh_claims enable row level security;
-grant select, insert, delete on public.fx_refresh_claims to service_role;
+grant select, insert, update, delete on public.fx_refresh_claims to service_role;
 
+-- claim_fx_refresh(date) -> true iff the caller may proceed with a refresh
+-- for that date. Serialization has two layers:
+--   1. A per-date advisory lock (xact-scoped: released the instant this
+--      function returns, since each RPC call from the app is its own
+--      transaction) makes truly simultaneous callers for the *same* date
+--      fail fast instead of both racing the insert below. Keyed by
+--      refresh_date, not a fixed key, so an unrelated date's claim never
+--      contends with this one.
+--   2. The fetch_date primary key on fx_refresh_claims is what actually
+--      enforces "at most one active claim per day" once the lock is held —
+--      the on conflict clause below is the real source of truth.
+-- A claim older than the reclaim window is treated as abandoned (e.g. the
+-- caller crashed between claiming and calling record_fx_refresh_success/
+-- failure) and can be taken over by a later run, so a single crash doesn't
+-- permanently block the day.
 create or replace function public.claim_fx_refresh(refresh_date date)
 returns boolean
 language plpgsql
@@ -38,15 +57,17 @@ as $$
 declare
   claimed boolean;
 begin
-  if not pg_try_advisory_xact_lock(hashtext('fx_refresh')) then
+  if not pg_try_advisory_xact_lock(hashtext('fx_refresh:' || refresh_date::text)) then
     insert into fx_fetch_log (fetch_date, status)
     values (refresh_date, 'skipped');
     return false;
   end if;
 
-  insert into fx_refresh_claims (fetch_date)
-  values (refresh_date)
-  on conflict do nothing
+  insert into fx_refresh_claims (fetch_date, claimed_at)
+  values (refresh_date, now())
+  on conflict (fetch_date) do update
+    set claimed_at = excluded.claimed_at
+    where fx_refresh_claims.claimed_at < now() - interval '1 hour'
   returning true into claimed;
 
   if coalesce(claimed, false) then
@@ -59,6 +80,10 @@ begin
 end;
 $$;
 
+-- Records a successful run. The partial unique index on
+-- fx_fetch_log(fetch_date) where status = 'success' is the arbiter: a second
+-- success for a date that already has one is a no-op, and the returned
+-- boolean tells the caller whether its write actually landed.
 create or replace function public.record_fx_refresh_success(refresh_date date, updated_currencies int)
 returns boolean
 language plpgsql
@@ -77,6 +102,8 @@ begin
 end;
 $$;
 
+-- Records a failed run and releases the claim so the next cron tick (or a
+-- manual retry) can attempt the same date again.
 create or replace function public.record_fx_refresh_failure(refresh_date date, failure_error text)
 returns void
 language plpgsql
@@ -97,3 +124,9 @@ revoke all on function public.record_fx_refresh_failure(date, text) from public;
 grant execute on function public.claim_fx_refresh(date) to service_role;
 grant execute on function public.record_fx_refresh_success(date, int) to service_role;
 grant execute on function public.record_fx_refresh_failure(date, text) to service_role;
+
+-- The table/column comments from migration 17 described the pre-rename shape
+-- (outcome/manual refresh); refresh them to match the current schema.
+comment on table public.fx_fetch_log is
+  'One row per FX refresh run (cron only). status distinguishes success/failed/skipped so a missing day of rates is diagnosable.';
+comment on column public.fx_fetch_log.error is 'Failure message when status = failed.';

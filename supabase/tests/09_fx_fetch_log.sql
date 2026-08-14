@@ -7,7 +7,7 @@
 
 begin;
 
-select plan(15);
+select plan(23);
 
 -- ============================================================================
 -- Shape: rows accept a run outcome with counts, reject unknown outcomes.
@@ -83,6 +83,50 @@ select results_eq(
   'fx_fetch_log has zero RLS policies'
 );
 
+-- ============================================================================
+-- fx_refresh_claims is likewise closed to the data API: RLS enabled, no
+-- policies, and only service_role (not anon/authenticated) holds a grant.
+-- ============================================================================
+
+select tests.authenticate_as('e0e0e0e0-0000-0000-0000-000000000000');
+
+select throws_ok(
+  $$ select count(*) from public.fx_refresh_claims $$,
+  '42501',
+  null,
+  'authenticated has no SELECT grant on fx_refresh_claims'
+);
+
+select throws_ok(
+  $$ insert into public.fx_refresh_claims (fetch_date) values ('2026-08-06') $$,
+  '42501',
+  null,
+  'authenticated has no INSERT grant on fx_refresh_claims'
+);
+
+select throws_ok(
+  $$ update public.fx_refresh_claims set claimed_at = now() where fetch_date = '2026-08-06' $$,
+  '42501',
+  null,
+  'authenticated has no UPDATE grant on fx_refresh_claims'
+);
+
+select tests.authenticate_anon();
+
+select throws_ok(
+  $$ select count(*) from public.fx_refresh_claims $$,
+  '42501',
+  null,
+  'anon has no SELECT grant on fx_refresh_claims'
+);
+
+select results_eq(
+  $$ select count(*)::int from pg_policies
+     where schemaname = 'public' and tablename = 'fx_refresh_claims' $$,
+  $$ values (0::int) $$,
+  'fx_refresh_claims has zero RLS policies'
+);
+
 select tests.clear_auth();
 
 select lives_ok(
@@ -90,6 +134,10 @@ select lives_ok(
   'the first refresh claim succeeds'
 );
 
+-- This proves the fx_refresh_claims primary key rejects a same-session,
+-- same-date reclaim — not the advisory lock (which is re-entrant within one
+-- session/transaction and can't be exercised without a second concurrent
+-- connection, which pgTAP's single-transaction model doesn't provide).
 select results_eq(
   $$ select public.claim_fx_refresh('2026-08-07') $$,
   $$ values (false) $$,
@@ -107,6 +155,32 @@ select results_eq(
   $$ select public.record_fx_refresh_success('2026-08-07', 3) $$,
   $$ values (true) $$,
   'the first success is recorded'
+);
+
+select results_eq(
+  $$ select public.record_fx_refresh_success('2026-08-07', 99) $$,
+  $$ values (false) $$,
+  'a second success for the same day is a no-op'
+);
+
+select results_eq(
+  $$ select currencies_updated from public.fx_fetch_log
+     where fetch_date = '2026-08-07' and status = 'success' $$,
+  $$ values (3::int) $$,
+  'the no-op success does not overwrite the already-recorded currency count'
+);
+
+-- Stranded-claim recovery: a claim whose claimed_at predates the 1-hour
+-- reclaim window is treated as abandoned (e.g. a process crashed after
+-- claiming but before calling record_fx_refresh_success/failure), so a
+-- later caller can take over the date instead of being blocked forever.
+insert into public.fx_refresh_claims (fetch_date, claimed_at)
+values ('2026-08-10', now() - interval '2 hours');
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-10') $$,
+  $$ values (true) $$,
+  'a stranded claim past the reclaim window can be reclaimed'
 );
 
 select set_config('role', 'service_role', true);
