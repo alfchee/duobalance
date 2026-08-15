@@ -15,9 +15,9 @@ Ao registrar uma transação no duobalance, distinguimos entre **Quem gastou (sp
 
 É comum que uma pessoa lance os recibos ou notas de ambas as pessoas no final do dia ou da semana.
 
-- **Gastador por (spent_by):** Indica de quem foi a compra ou responsabilidade. Usado para filtrar relatórios pessoais e orçamentos individuais.
+- **Gasto por (spent_by):** Indica de quem foi a compra ou responsabilidade. Usado para filtrar relatórios pessoais e orçamentos individuais.
 - **Registrado por (entered_by):** Atribuído automaticamente ao usuário ativo que criou o registro.
 
 ## Corrigindo a atribuição
 
-Você pode editar qualquer transação existente a qualquer momento para alterar o campo "Gastador por" se tiver sido atribuído incorretamente.
+Você pode editar qualquer transação existente a qualquer momento para alterar o campo "Gasto por" se tiver sido atribuído incorretamente.

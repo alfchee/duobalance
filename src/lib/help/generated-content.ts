@@ -310,7 +310,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        '\n# Categorías y reglas de autocategorización\n\nLas categorías organizan tus movimientos para que los presupuestos y reportes reflejen tus hábitos de consumo.\n\n## Categorías por defecto y personalizadas\n\nduobalance incluye categorías estándar como Alimentación, Servicios, Transporte y Vivienda. Puedes crear nuevas categorías o editar las existentes desde **Ajustes > Categorías**.\n\n## Reglas de autocategorización\n\nLas reglas automáticas te permiten asignar categorías basadas en el texto de la descripción o comercio:\n\n- **Creación de reglas:** Cuando registras un comercio recurrente (ej. "Supermercado X"), puedes guardar una regla para que los movimientos futuros que contengan esa palabra clave se asignen automáticamente a la categoría correspondiente.\n',
+        '\n# Categorías y reglas de autocategorización\n\nLas categorías organizan tus movimientos para que los presupuestos y reportes reflejen tus hábitos de consumo.\n\n## Categorías por defecto y personalizadas\n\nduobalance incluye categorías estándar como Alimentación, Servicios, Transporte y Vivienda. Puedes crear nuevas categorías o editar las existentes desde **Configuración > Categorías**.\n\n## Reglas de autocategorización\n\nLas reglas automáticas te permiten asignar categorías basadas en el texto de la descripción o comercio:\n\n- **Creación de reglas:** Cuando registras un comercio recurrente (ej. "Supermercado X"), puedes guardar una regla para que los movimientos futuros que contengan esa palabra clave se asignen automáticamente a la categoría correspondiente.\n',
     },
     "household-vs-personal-budgets": {
       frontmatter: {
@@ -1344,7 +1344,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        '\n# Quem gastou vs. quem registrou?\n\nAo registrar uma transação no duobalance, distinguimos entre **Quem gastou (spent_by)** e **Quem registrou (entered_by)**.\n\n## Por que essa distinção existe?\n\nÉ comum que uma pessoa lance os recibos ou notas de ambas as pessoas no final do dia ou da semana.\n\n- **Gastador por (spent_by):** Indica de quem foi a compra ou responsabilidade. Usado para filtrar relatórios pessoais e orçamentos individuais.\n- **Registrado por (entered_by):** Atribuído automaticamente ao usuário ativo que criou o registro.\n\n## Corrigindo a atribuição\n\nVocê pode editar qualquer transação existente a qualquer momento para alterar o campo "Gastador por" se tiver sido atribuído incorretamente.\n',
+        '\n# Quem gastou vs. quem registrou?\n\nAo registrar uma transação no duobalance, distinguimos entre **Quem gastou (spent_by)** e **Quem registrou (entered_by)**.\n\n## Por que essa distinção existe?\n\nÉ comum que uma pessoa lance os recibos ou notas de ambas as pessoas no final do dia ou da semana.\n\n- **Gasto por (spent_by):** Indica de quem foi a compra ou responsabilidade. Usado para filtrar relatórios pessoais e orçamentos individuais.\n- **Registrado por (entered_by):** Atribuído automaticamente ao usuário ativo que criou o registro.\n\n## Corrigindo a atribuição\n\nVocê pode editar qualquer transação existente a qualquer momento para alterar o campo "Gasto por" se tiver sido atribuído incorretamente.\n',
     },
     "getting-started-creating-household": {
       frontmatter: {
@@ -1426,7 +1426,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        '\n# Adicionando contas: tipos, moedas e privacidade\n\nVocê pode registrar contas bancárias, cartões de crédito, dinheiro físico e investimentos.\n\n## Passos para criar uma conta\n\n1. Vá em **Saldos** e clique em **+ Nova Conta**.\n2. Preencha os detalhes:\n   - **Nome:** Título descritivo (ex: "Conta Corrente Itaú" or "Carteira").\n   - **Tipo:** Conta corrente, poupança, cartão de crédito, dinheiro ou investimento.\n   - **Moeda:** Escolha a moeda nativa da conta.\n   - **Visibilidade:** Escolha **Compartilhada** (visível para o parceiro) ou **Privada**.\n   - **Modo de saldo:** Selecione **Livro diário** ou **Manual**.\n3. Insira o **Saldo Inicial** e salve.\n',
+        '\n# Adicionando contas: tipos, moedas e privacidade\n\nVocê pode registrar contas bancárias, cartões de crédito, dinheiro físico e investimentos.\n\n## Passos para criar uma conta\n\n1. Vá em **Saldos** e clique em **+ Nova Conta**.\n2. Preencha os detalhes:\n   - **Nome:** Título descritivo (ex: "Conta Corrente Itaú" ou "Carteira").\n   - **Tipo:** Conta corrente, poupança, cartão de crédito, dinheiro ou investimento.\n   - **Moeda:** Escolha a moeda nativa da conta.\n   - **Visibilidade:** Escolha **Compartilhada** (visível para o parceiro) ou **Privada**.\n   - **Modo de saldo:** Selecione **Livro diário** ou **Manual**.\n3. Insira o **Saldo Inicial** e salve.\n',
     },
     "recording-transaction-fast": {
       frontmatter: {

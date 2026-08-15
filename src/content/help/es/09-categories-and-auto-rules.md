@@ -13,7 +13,7 @@ Las categorías organizan tus movimientos para que los presupuestos y reportes r
 
 ## Categorías por defecto y personalizadas
 
-duobalance incluye categorías estándar como Alimentación, Servicios, Transporte y Vivienda. Puedes crear nuevas categorías o editar las existentes desde **Ajustes > Categorías**.
+duobalance incluye categorías estándar como Alimentación, Servicios, Transporte y Vivienda. Puedes crear nuevas categorías o editar las existentes desde **Configuración > Categorías**.
 
 ## Reglas de autocategorización
 

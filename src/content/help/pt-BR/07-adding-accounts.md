@@ -15,7 +15,7 @@ Você pode registrar contas bancárias, cartões de crédito, dinheiro físico e
 
 1. Vá em **Saldos** e clique em **+ Nova Conta**.
 2. Preencha os detalhes:
-   - **Nome:** Título descritivo (ex: "Conta Corrente Itaú" or "Carteira").
+   - **Nome:** Título descritivo (ex: "Conta Corrente Itaú" ou "Carteira").
    - **Tipo:** Conta corrente, poupança, cartão de crédito, dinheiro ou investimento.
    - **Moeda:** Escolha a moeda nativa da conta.
    - **Visibilidade:** Escolha **Compartilhada** (visível para o parceiro) ou **Privada**.
