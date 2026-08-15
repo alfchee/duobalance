@@ -144,8 +144,9 @@ export function MonthlyBalanceChart({
 
                   {/* Hover tooltip */}
                   <div className="pointer-events-none absolute -top-8 left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-xs font-medium text-popover-foreground shadow-md group-hover:block">
-                    {monthLabel}: {formatSignedMoney(netVal, currency, locale, numberFormat)} | 3M
-                    Avg: {formatSignedMoney(rollingVal, currency, locale, numberFormat)}
+                    {monthLabel}: {formatSignedMoney(netVal, currency, locale, numberFormat)} |{" "}
+                    {t("charts.monthlyBalance.rollingAvg")}:{" "}
+                    {formatSignedMoney(rollingVal, currency, locale, numberFormat)}
                   </div>
                 </div>
               );
