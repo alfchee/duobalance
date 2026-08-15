@@ -146,7 +146,7 @@ select is_empty(
 
 select throws_ok(
   $$ select * from public.report_category_totals('21000000-0000-0000-0000-000000000001', '2026-08-01', '2026-08-31', 'invalid') $$,
-  null,
+  '22023',
   'p_kind must be expense or income, got invalid',
   'an invalid category report kind raises an error'
 );
