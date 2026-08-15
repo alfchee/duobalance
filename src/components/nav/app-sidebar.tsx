@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeftRight,
+  BarChart3,
   LogOut,
   MoreHorizontal,
   PieChart,
@@ -20,6 +21,7 @@ const ITEMS = [
   { href: "/balances", labelKey: "balances", Icon: Wallet },
   { href: "/transactions", labelKey: "transactions", Icon: ArrowLeftRight },
   { href: "/budget", labelKey: "budget", Icon: PieChart },
+  { href: "/reports", labelKey: "reports", Icon: BarChart3 },
   { href: "/bills", labelKey: "bills", Icon: Receipt },
 ] as const;
 

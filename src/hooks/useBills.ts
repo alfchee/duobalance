@@ -82,6 +82,7 @@ export function useBillMutations(householdId: string | null, memberId: string | 
       void queryClient.invalidateQueries({ queryKey: billsKey(householdId) });
       void queryClient.invalidateQueries({ queryKey: ["transactions", householdId] });
       void queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
+      void queryClient.invalidateQueries({ queryKey: ["reports", householdId] });
     }
   };
 
