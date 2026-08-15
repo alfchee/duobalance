@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { CurrencyPicker } from "@/components/accounts/currency-picker";
+import { HelpButton } from "@/components/help/help-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -708,9 +709,12 @@ function TransactionEntryContent({
   return (
     <SheetContent side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
       <SheetHeader className="border-b px-6 pb-5 pt-6">
-        <SheetTitle className="text-2xl font-black tracking-tight">
-          {transaction ? t("form.editTitle") : t("form.title")}
-        </SheetTitle>
+        <div className="flex items-center justify-between gap-2 pr-6">
+          <SheetTitle className="text-2xl font-black tracking-tight">
+            {transaction ? t("form.editTitle") : t("form.title")}
+          </SheetTitle>
+          <HelpButton article="who-spent-vs-who-typed" />
+        </div>
         <SheetDescription>{t("form.description")}</SheetDescription>
       </SheetHeader>
       <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-8 pt-2">

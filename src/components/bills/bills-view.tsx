@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { HelpButton } from "@/components/help/help-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -293,7 +294,10 @@ export function BillsView() {
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             {t("eyebrow")}
           </p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight">{t("title")}</h1>
+          <div className="mt-1 flex items-center gap-2">
+            <h1 className="text-3xl font-black tracking-tight">{t("title")}</h1>
+            <HelpButton article="recurrence-and-marking-paid" />
+          </div>
         </div>
         <Button className="shrink-0" size="sm" onClick={beginCreate}>
           <Plus />

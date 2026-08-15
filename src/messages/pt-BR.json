@@ -10,7 +10,8 @@
     "backHome": "Voltar ao início"
   },
   "nav": {
-    "reports": "Relatórios"
+    "reports": "Relatórios",
+    "help": "Ajuda"
   },
   "reports": {
     "title": "Relatórios",
@@ -85,6 +86,24 @@
       "es": "Español",
       "en": "English",
       "pt-BR": "Português (Brasil)"
+    }
+  },
+  "help": {
+    "title": "Central de Ajuda",
+    "searchPlaceholder": "Buscar artigos de ajuda...",
+    "noResults": "Nenhum artigo encontrado.",
+    "openArticle": "Ver artigo de ajuda",
+    "backToHelp": "Voltar para Ajuda",
+    "relatedArticles": "Artigos relacionados",
+    "updatedOn": "Atualizado em {date}",
+    "categories": {
+      "accounts": "Contas e Saldos",
+      "transactions": "Transações",
+      "budgets": "Orçamentos",
+      "bills": "Contas e Pagamentos",
+      "reports": "Relatórios e Gráficos",
+      "settings": "Configurações",
+      "general": "Geral"
     }
   }
 }

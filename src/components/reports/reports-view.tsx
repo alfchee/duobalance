@@ -11,6 +11,7 @@ import type { DatePreset } from "@/lib/reports";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { HelpButton } from "@/components/help/help-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryChartCard } from "./category-chart";
@@ -90,7 +91,10 @@ export function ReportsView() {
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{t("title")}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{t("title")}</h1>
+            <HelpButton article="reading-the-charts" />
+          </div>
           <p className="text-sm font-medium text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-secondary-foreground self-start sm:self-auto">

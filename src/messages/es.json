@@ -21,6 +21,7 @@
     "bills": "Cuentas",
     "more": "Más",
     "settings": "Configuración",
+    "help": "Ayuda",
     "newTransaction": "Nuevo movimiento",
     "logout": "Cerrar sesión"
   },
@@ -816,5 +817,23 @@
     },
     "uncategorized": "Sin categoría",
     "transactionsCount": "{count, plural, =1 {1 movimiento} other {# movimientos}}"
+  },
+  "help": {
+    "title": "Centro de ayuda",
+    "searchPlaceholder": "Buscar artículos de ayuda...",
+    "noResults": "No se encontraron artículos para tu búsqueda.",
+    "openArticle": "Ver artículo de ayuda",
+    "backToHelp": "Volver a la ayuda",
+    "relatedArticles": "Artículos relacionados",
+    "updatedOn": "Actualizado el {date}",
+    "categories": {
+      "accounts": "Cuentas y Saldos",
+      "transactions": "Transacciones",
+      "budgets": "Presupuestos",
+      "bills": "Facturas y Pagos",
+      "reports": "Reportes y Gráficos",
+      "settings": "Ajustes y Configuración",
+      "general": "General"
+    }
   }
 }

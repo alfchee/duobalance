@@ -33,6 +33,7 @@ import {
 import { formatMoneyInput, maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 import { CurrencyPicker } from "./currency-picker";
+import { HelpButton } from "@/components/help/help-button";
 
 type Draft = {
   name: string;
@@ -200,7 +201,10 @@ function AccountFormContent({
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>{account ? t("titleEdit") : t("titleCreate")}</DialogTitle>
+        <div className="flex items-center justify-between gap-2 pr-6">
+          <DialogTitle>{account ? t("titleEdit") : t("titleCreate")}</DialogTitle>
+          <HelpButton article="ledger-vs-manual-balance" />
+        </div>
         <DialogDescription className="sr-only">
           {account ? t("titleEdit") : t("titleCreate")}
         </DialogDescription>

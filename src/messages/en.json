@@ -21,6 +21,7 @@
     "bills": "Bills",
     "more": "More",
     "settings": "Settings",
+    "help": "Help",
     "newTransaction": "New transaction",
     "logout": "Log out"
   },
@@ -816,5 +817,23 @@
     },
     "uncategorized": "Uncategorized",
     "transactionsCount": "{count, plural, =1 {1 transaction} other {# transactions}}"
+  },
+  "help": {
+    "title": "Help Center",
+    "searchPlaceholder": "Search help articles...",
+    "noResults": "No articles found matching your search.",
+    "openArticle": "View help article",
+    "backToHelp": "Back to Help",
+    "relatedArticles": "Related articles",
+    "updatedOn": "Updated on {date}",
+    "categories": {
+      "accounts": "Accounts & Balances",
+      "transactions": "Transactions",
+      "budgets": "Budgets",
+      "bills": "Bills & Payments",
+      "reports": "Reports & Charts",
+      "settings": "Settings & Config",
+      "general": "General"
+    }
   }
 }

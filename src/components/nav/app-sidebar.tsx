@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   ArrowLeftRight,
   BarChart3,
+  HelpCircle,
   LogOut,
   MoreHorizontal,
   PieChart,
@@ -80,6 +81,18 @@ export function AppSidebar() {
           <Plus className="size-5" />
           {t("newTransaction")}
         </button>
+        <Link
+          href="/help"
+          className={cn(
+            "flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            pathname === "/help" || pathname.startsWith("/help/")
+              ? "bg-primary/35 text-primary-foreground"
+              : "text-foreground hover:bg-secondary",
+          )}
+        >
+          <HelpCircle className="size-5" />
+          {t("help")}
+        </Link>
         <Link
           href="/settings"
           className={cn(
