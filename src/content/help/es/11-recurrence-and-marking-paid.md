@@ -1,9 +1,9 @@
 ---
-title: "Facturas recurrentes y marcar como pagado"
+title: "¿Cómo administrar facturas recurrentes y marcarlas como pagadas?"
 slug: "recurrence-and-marking-paid"
 category: "bills"
-order: 5
-related: ["who-spent-vs-who-typed", "bill-reminders-troubleshooting"]
+order: 11
+related: ["bill-reminders-not-arriving", "who-spent-vs-who-typed"]
 updated: "2026-08-15"
 ---
 
