@@ -22,7 +22,7 @@ begin
 end
 $$;
 
-select plan(4);
+select plan(5);
 
 select tests.authenticate_as('18181818-1818-1818-1818-181818181818');
 select lives_ok(
@@ -38,6 +38,12 @@ select results_eq(
   $$ select number_format from public.household_members where id = '22222222-2222-2222-2222-222222222222' $$,
   $$ values ('locale'::text) $$,
   'partner retains an independent default preference'
+);
+select throws_ok(
+  $$ select public.update_my_number_format('22222222-2222-2222-2222-222222222222', 'comma_decimal') $$,
+  'P0001',
+  'membership not found',
+  'member cannot update another member preference'
 );
 select throws_ok(
   $$ select public.update_my_number_format('22222222-2222-2222-2222-222222222222', 'invalid') $$,

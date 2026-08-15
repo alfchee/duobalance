@@ -72,10 +72,13 @@ export function parseMoneyInput(
 ): number | null {
   const firstDigit = raw.search(/\d/);
   if (firstDigit === -1) return null;
-  const startsWithSign = firstDigit > 0 && /[−-]/.test(raw[firstDigit - 1] ?? "");
-  const start = startsWithSign ? firstDigit - 1 : firstDigit;
+  const prefix = raw.slice(0, firstDigit);
+  const signs = prefix.match(/[−-]/g) ?? [];
+  if (signs.length > 1) return null;
   const lastDigit = raw.lastIndexOf(raw.match(/\d(?!.*\d)/)?.[0] ?? "");
-  const input = raw.slice(start, lastDigit + 1).replace(/−/g, "-");
+  const input = `${signs.length === 1 ? "-" : ""}${raw
+    .slice(firstDigit, lastDigit + 1)
+    .replace(/−/g, "-")}`;
   if (!/^-?[\d.,]+$/.test(input)) return null;
 
   const { decimal, group } = separatorsFor(locale, pref);

@@ -83,6 +83,8 @@ describe("parseMoneyInput", () => {
     expect(parseMoneyInput("$1.234,56", "es")).toBe(1234.56);
     expect(parseMoneyInput("−1.234,56", "es")).toBe(-1234.56);
     expect(parseMoneyInput("-1,234.56", "en")).toBe(-1234.56);
+    expect(parseMoneyInput("−$1.234,56", "es")).toBe(-1234.56);
+    expect(parseMoneyInput("-R$1,234.56", "en")).toBe(-1234.56);
   });
 
   it("treats a doubled minus sign as garbage, not a negative", () => {
