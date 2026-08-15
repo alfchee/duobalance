@@ -765,6 +765,8 @@
   "reports": {
     "title": "Análisis",
     "subtitle": "Rastrea tus tendencias de gastos e ingresos a lo largo del tiempo.",
+    "loadError": "No se pudieron cargar los datos del análisis.",
+    "retry": "Reintentar",
     "currencyNotice": "Montos en {currency}",
     "dateRanges": {
       "label": "Rango de fechas",

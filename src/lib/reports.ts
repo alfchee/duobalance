@@ -12,12 +12,22 @@ export function getReportDateRange(
   customFrom?: string,
   customTo?: string,
 ): DateRange {
-  if (preset === "custom" && customFrom && customTo) {
-    return { from: customFrom, to: customTo };
+  if (preset === "custom") {
+    if (customFrom && customTo) {
+      return { from: customFrom, to: customTo };
+    }
+    return { from: customFrom ?? "", to: customTo ?? "" };
+  }
+
+  let safeTimezone = timezone;
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+  } catch {
+    safeTimezone = "UTC";
   }
 
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
+    timeZone: safeTimezone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

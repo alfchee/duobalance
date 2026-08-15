@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 
 function requireSupabase() {
@@ -11,20 +12,23 @@ function requireSupabase() {
 
 export type ReportCategoryKind = "expense" | "income";
 
-export type ReportCategoryTotal = {
-  category_id: string | null;
-  category_name: string | null;
-  color_hex: string;
-  total: number;
-  txn_count: number;
-};
+export const reportCategoryTotalSchema = z.object({
+  category_id: z.string().nullable(),
+  category_name: z.string().nullable(),
+  color_hex: z.string().default("#9ca3af"),
+  total: z.coerce.number().nonnegative().default(0),
+  txn_count: z.coerce.number().default(0),
+});
 
-export type ReportMonthlyTotal = {
-  period_month: string;
-  income: number;
-  expense: number;
-  net: number;
-};
+export const reportMonthlyTotalSchema = z.object({
+  period_month: z.string(),
+  income: z.coerce.number().default(0),
+  expense: z.coerce.number().default(0),
+  net: z.coerce.number().default(0),
+});
+
+export type ReportCategoryTotal = z.infer<typeof reportCategoryTotalSchema>;
+export type ReportMonthlyTotal = z.infer<typeof reportMonthlyTotalSchema>;
 
 export function useReportCategoryTotals(
   householdId: string | null,
@@ -34,7 +38,7 @@ export function useReportCategoryTotals(
   memberId: string | null = null,
 ) {
   return useQuery({
-    queryKey: ["report-category-totals", householdId, from, to, kind, memberId],
+    queryKey: ["reports", householdId, "category-totals", from, to, kind, memberId],
     queryFn: async () => {
       const { data, error } = await requireSupabase().rpc("report_category_totals", {
         p_household: householdId!,
@@ -44,7 +48,7 @@ export function useReportCategoryTotals(
         p_member: memberId ?? undefined,
       });
       if (error) throw error;
-      return (data as ReportCategoryTotal[]) ?? [];
+      return z.array(reportCategoryTotalSchema).parse(data ?? []);
     },
     enabled: Boolean(householdId && from && to),
   });
@@ -57,7 +61,7 @@ export function useReportMonthlyTotals(
   memberId: string | null = null,
 ) {
   return useQuery({
-    queryKey: ["report-monthly-totals", householdId, from, to, memberId],
+    queryKey: ["reports", householdId, "monthly-totals", from, to, memberId],
     queryFn: async () => {
       const { data, error } = await requireSupabase().rpc("report_monthly_totals", {
         p_household: householdId!,
@@ -66,7 +70,7 @@ export function useReportMonthlyTotals(
         p_member: memberId ?? undefined,
       });
       if (error) throw error;
-      return (data as ReportMonthlyTotal[]) ?? [];
+      return z.array(reportMonthlyTotalSchema).parse(data ?? []);
     },
     enabled: Boolean(householdId && from && to),
   });

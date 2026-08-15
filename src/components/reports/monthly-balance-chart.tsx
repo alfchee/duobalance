@@ -2,10 +2,11 @@
 
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney, formatSignedMoney } from "@/lib/money";
+import { formatSignedMoney } from "@/lib/money";
 import type { NumberFormatPref } from "@/lib/money";
 import type { ReportMonthlyTotal } from "@/hooks/useReports";
 import { calculateRolling3MonthAverage } from "@/lib/reports";
+import { cn } from "@/lib/utils";
 
 interface MonthlyBalanceChartProps {
   data: readonly ReportMonthlyTotal[];
@@ -33,7 +34,7 @@ export function MonthlyBalanceChart({
 }: MonthlyBalanceChartProps) {
   const t = useTranslations("reports");
 
-  if (data.length < 2) {
+  if (data.length === 0) {
     return (
       <Card className="border-2 border-primary/20 shadow-md">
         <CardHeader>
@@ -58,10 +59,6 @@ export function MonthlyBalanceChart({
   const maxAbs = Math.max(...allValues.map((v) => Math.abs(v)), 1);
   const totalNet = nets.reduce((acc, v) => acc + v, 0);
 
-  // Height available for bars in SVG/container
-  const chartHeight = 180;
-  const zeroY = chartHeight / 2; // Middle baseline for positive/negative bars
-
   return (
     <Card className="border-2 border-primary/20 shadow-md">
       <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between pb-2">
@@ -75,9 +72,10 @@ export function MonthlyBalanceChart({
         </div>
         <div className="flex flex-col sm:items-end">
           <span
-            className={`text-lg font-black tabular-nums ${
-              totalNet >= 0 ? "text-success" : "text-destructive"
-            }`}
+            className={cn(
+              "text-lg font-black tabular-nums",
+              totalNet >= 0 ? "text-success" : "text-destructive",
+            )}
           >
             {formatSignedMoney(totalNet, currency, locale, numberFormat)}
           </span>
@@ -97,19 +95,13 @@ export function MonthlyBalanceChart({
           </div>
         </div>
 
-        {/* Chart area with SVG overlay */}
-        <div className="relative h-56 w-full pt-4 pb-6">
-          {/* Zero baseline */}
-          <div
-            className="absolute left-0 right-0 border-b border-dashed border-border"
-            style={{ top: `${zeroY}px` }}
-          />
-
+        {/* Chart area */}
+        <div className="relative h-60 w-full pt-4 pb-6">
           <div className="relative flex h-full items-center justify-between gap-2">
             {data.map((item, index) => {
               const netVal = nets[index] ?? 0;
               const rollingVal = rolling3m[index] ?? 0;
-              const barHeight = (Math.abs(netVal) / maxAbs) * (chartHeight / 2 - 12);
+              const barHeightPercent = Math.min((Math.abs(netVal) / maxAbs) * 100, 100);
               const isPositive = netVal >= 0;
               const monthLabel = formatMonthLabel(item.period_month, locale, timezone);
 
@@ -118,35 +110,42 @@ export function MonthlyBalanceChart({
                   key={item.period_month}
                   className="group relative flex flex-1 flex-col items-center h-full justify-between"
                 >
-                  {/* Top / Value Label */}
+                  {/* Amount label */}
                   <div className="text-[10px] font-bold tabular-nums sm:text-xs">
-                    {formatMoney(netVal, currency, locale, numberFormat)}
+                    {formatSignedMoney(netVal, currency, locale, numberFormat)}
                   </div>
 
-                  {/* Bar container centered at zero line */}
-                  <div className="relative w-full flex-1 flex items-center justify-center">
-                    <div
-                      className={`w-full max-w-[32px] rounded-sm transition-all duration-300 ${
-                        isPositive ? "bg-success" : "bg-destructive"
-                      }`}
-                      style={{
-                        height: `${Math.max(barHeight, 4)}px`,
-                        transform: isPositive
-                          ? `translateY(-${barHeight / 2}px)`
-                          : `translateY(${barHeight / 2}px)`,
-                      }}
-                    />
+                  {/* Dual pane bar representation split by zero line */}
+                  <div className="relative w-full flex-1 flex flex-col my-1">
+                    {/* Upper pane for positive bars */}
+                    <div className="flex-1 flex items-end justify-center border-b border-dashed border-border pb-px">
+                      {isPositive && (
+                        <div
+                          className="w-full max-w-[28px] rounded-t-sm bg-success transition-all duration-300"
+                          style={{ height: `${Math.max(barHeightPercent, 4)}%` }}
+                        />
+                      )}
+                    </div>
+                    {/* Lower pane for negative bars */}
+                    <div className="flex-1 flex items-start justify-center pt-px">
+                      {!isPositive && (
+                        <div
+                          className="w-full max-w-[28px] rounded-b-sm bg-destructive transition-all duration-300"
+                          style={{ height: `${Math.max(barHeightPercent, 4)}%` }}
+                        />
+                      )}
+                    </div>
                   </div>
 
-                  {/* Month Label */}
+                  {/* Month label */}
                   <div className="text-xs font-semibold text-muted-foreground truncate w-full text-center">
                     {monthLabel}
                   </div>
 
-                  {/* Tooltip on hover */}
+                  {/* Hover tooltip */}
                   <div className="pointer-events-none absolute -top-8 left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-xs font-medium text-popover-foreground shadow-md group-hover:block">
                     {monthLabel}: {formatSignedMoney(netVal, currency, locale, numberFormat)} | 3M
-                    Avg: {formatMoney(rollingVal, currency, locale, numberFormat)}
+                    Avg: {formatSignedMoney(rollingVal, currency, locale, numberFormat)}
                   </div>
                 </div>
               );

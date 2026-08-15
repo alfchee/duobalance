@@ -765,6 +765,8 @@
   "reports": {
     "title": "Reports",
     "subtitle": "Track your spending and income trends over time.",
+    "loadError": "Couldn't load report data.",
+    "retry": "Retry",
     "currencyNotice": "Amounts in {currency}",
     "dateRanges": {
       "label": "Date range",

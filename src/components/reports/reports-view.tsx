@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { SlidersHorizontal, CheckCircle2, AlertCircle } from "lucide-react";
+import { SlidersHorizontal, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
 import { useReportCategoryTotals, useReportMonthlyTotals } from "@/hooks/useReports";
 import { getReportDateRange } from "@/lib/reports";
 import type { DatePreset } from "@/lib/reports";
 import { formatMoney } from "@/lib/money";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryChartCard } from "./category-chart";
 import { MonthlyBarChart } from "./monthly-bar-chart";
 import { MonthlyBalanceChart } from "./monthly-balance-chart";
@@ -36,39 +40,53 @@ export function ReportsView() {
   );
 
   // Category total RPCs
-  const { data: expenseCategories = [] } = useReportCategoryTotals(
-    householdId,
-    from,
-    to,
-    "expense",
-    memberFilter,
-  );
-  const { data: incomeCategories = [] } = useReportCategoryTotals(
-    householdId,
-    from,
-    to,
-    "income",
-    memberFilter,
-  );
+  const expenseQuery = useReportCategoryTotals(householdId, from, to, "expense", memberFilter);
+  const incomeQuery = useReportCategoryTotals(householdId, from, to, "income", memberFilter);
 
   // Monthly totals (filtered by member for trend charts)
-  const { data: monthlyFiltered = [] } = useReportMonthlyTotals(
-    householdId,
-    from,
-    to,
-    memberFilter,
-  );
+  const monthlyFilteredQuery = useReportMonthlyTotals(householdId, from, to, memberFilter);
 
   // Monthly totals (ALL members for Monthly Balance chart)
-  const { data: monthlyAll = [] } = useReportMonthlyTotals(householdId, from, to, null);
+  const monthlyAllQuery = useReportMonthlyTotals(householdId, from, to, null);
+
+  const expenseCategories = expenseQuery.data ?? [];
+  const incomeCategories = incomeQuery.data ?? [];
+  const monthlyFiltered = monthlyFilteredQuery.data ?? [];
+  const monthlyAll = monthlyAllQuery.data ?? [];
+
+  const isLoading =
+    expenseQuery.isLoading ||
+    incomeQuery.isLoading ||
+    monthlyFilteredQuery.isLoading ||
+    monthlyAllQuery.isLoading;
+
+  const isError =
+    expenseQuery.isError ||
+    incomeQuery.isError ||
+    monthlyFilteredQuery.isError ||
+    monthlyAllQuery.isError;
+
+  const refetchAll = () => {
+    void expenseQuery.refetch();
+    void incomeQuery.refetch();
+    void monthlyFilteredQuery.refetch();
+    void monthlyAllQuery.refetch();
+  };
 
   // Reconciliation check between category expense total and monthly expense sum
   const catExpenseTotal = expenseCategories.reduce((sum, item) => sum + Number(item.total), 0);
   const monthlyExpenseTotal = monthlyFiltered.reduce((sum, item) => sum + Number(item.expense), 0);
   const isReconciled = Math.abs(catExpenseTotal - monthlyExpenseTotal) < 0.01;
 
+  const showReconciliation =
+    !isLoading &&
+    !isError &&
+    expenseQuery.isSuccess &&
+    monthlyFilteredQuery.isSuccess &&
+    monthlyFiltered.length > 0;
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 pb-20 md:pb-6">
+    <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 pb-20 md:pb-6">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -93,11 +111,12 @@ export function ReportsView() {
                 key={preset}
                 type="button"
                 onClick={() => setDatePreset(preset)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   datePreset === preset
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+                )}
               >
                 {t(`dateRanges.${preset}`)}
               </button>
@@ -150,14 +169,50 @@ export function ReportsView() {
         )}
       </div>
 
+      {/* Error state */}
+      {isError && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+            <AlertCircle className="size-8 text-destructive mb-2" />
+            <p className="text-sm font-semibold text-foreground">{t("loadError")}</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={refetchAll}
+              className="mt-4 gap-2"
+            >
+              <RefreshCw className="size-4" />
+              {t("retry")}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading state skeleton */}
+      {isLoading && !isError && (
+        <div className="space-y-6" aria-busy="true">
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-80 w-full rounded-2xl" />
+            <Skeleton className="h-80 w-full rounded-2xl" />
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          </div>
+        </div>
+      )}
+
       {/* Reconciliation Callout */}
-      {monthlyFiltered.length > 0 && (
+      {!isLoading && !isError && showReconciliation && (
         <div
-          className={`flex items-center gap-3 rounded-xl border p-3.5 text-xs font-semibold transition-colors ${
+          className={cn(
+            "flex items-center gap-3 rounded-xl border p-3.5 text-xs font-semibold transition-colors",
             isReconciled
-              ? "border-success/30 bg-success/10 text-success-foreground"
-              : "border-destructive/30 bg-destructive/10 text-destructive-foreground"
-          }`}
+              ? "border-success/30 bg-success/10 text-success"
+              : "border-destructive/30 bg-destructive/10 text-destructive",
+          )}
         >
           {isReconciled ? (
             <CheckCircle2 className="size-4 shrink-0 text-success" />
@@ -187,62 +242,66 @@ export function ReportsView() {
         </div>
       )}
 
-      {/* Monthly Balance Chart (Top feature chart) */}
-      <MonthlyBalanceChart
-        data={monthlyAll}
-        currency={activeCurrency}
-        locale={activeLocale}
-        numberFormat={numberFormat}
-        timezone={activeTimezone}
-      />
+      {!isLoading && !isError && (
+        <>
+          {/* Monthly Balance Chart (Top feature chart) */}
+          <MonthlyBalanceChart
+            data={monthlyAll}
+            currency={activeCurrency}
+            locale={activeLocale}
+            numberFormat={numberFormat}
+            timezone={activeTimezone}
+          />
 
-      {/* Category Breakdown Charts Grid */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <CategoryChartCard
-          title={t("charts.expenseByCategory.title")}
-          kind="expense"
-          data={expenseCategories}
-          currency={activeCurrency}
-          locale={activeLocale}
-          numberFormat={numberFormat}
-          fromDate={from}
-          toDate={to}
-          memberId={memberFilter}
-        />
-        <CategoryChartCard
-          title={t("charts.incomeByCategory.title")}
-          kind="income"
-          data={incomeCategories}
-          currency={activeCurrency}
-          locale={activeLocale}
-          numberFormat={numberFormat}
-          fromDate={from}
-          toDate={to}
-          memberId={memberFilter}
-        />
-      </div>
+          {/* Category Breakdown Charts Grid */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <CategoryChartCard
+              title={t("charts.expenseByCategory.title")}
+              kind="expense"
+              data={expenseCategories}
+              currency={activeCurrency}
+              locale={activeLocale}
+              numberFormat={numberFormat}
+              fromDate={from}
+              toDate={to}
+              memberId={memberFilter}
+            />
+            <CategoryChartCard
+              title={t("charts.incomeByCategory.title")}
+              kind="income"
+              data={incomeCategories}
+              currency={activeCurrency}
+              locale={activeLocale}
+              numberFormat={numberFormat}
+              fromDate={from}
+              toDate={to}
+              memberId={memberFilter}
+            />
+          </div>
 
-      {/* Monthly Trend Charts Grid */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <MonthlyBarChart
-          title={t("charts.monthlyExpenses.title")}
-          field="expense"
-          data={monthlyFiltered}
-          currency={activeCurrency}
-          locale={activeLocale}
-          numberFormat={numberFormat}
-          timezone={activeTimezone}
-        />
-        <MonthlyBarChart
-          title={t("charts.monthlyIncomes.title")}
-          field="income"
-          data={monthlyFiltered}
-          currency={activeCurrency}
-          locale={activeLocale}
-          numberFormat={numberFormat}
-          timezone={activeTimezone}
-        />
-      </div>
-    </div>
+          {/* Monthly Trend Charts Grid */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <MonthlyBarChart
+              title={t("charts.monthlyExpenses.title")}
+              field="expense"
+              data={monthlyFiltered}
+              currency={activeCurrency}
+              locale={activeLocale}
+              numberFormat={numberFormat}
+              timezone={activeTimezone}
+            />
+            <MonthlyBarChart
+              title={t("charts.monthlyIncomes.title")}
+              field="income"
+              data={monthlyFiltered}
+              currency={activeCurrency}
+              locale={activeLocale}
+              numberFormat={numberFormat}
+              timezone={activeTimezone}
+            />
+          </div>
+        </>
+      )}
+    </main>
   );
 }

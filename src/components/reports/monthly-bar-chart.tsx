@@ -4,11 +4,11 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
 import type { NumberFormatPref } from "@/lib/money";
-import type { ReportMonthlyTotal } from "@/hooks/useReports";
+import type { ReportCategoryKind, ReportMonthlyTotal } from "@/hooks/useReports";
 
 interface MonthlyBarChartProps {
   title: string;
-  field: "expense" | "income";
+  field: ReportCategoryKind;
   data: readonly ReportMonthlyTotal[];
   currency: string;
   locale: string;
@@ -36,7 +36,7 @@ export function MonthlyBarChart({
 }: MonthlyBarChartProps) {
   const t = useTranslations("reports");
 
-  if (data.length < 2) {
+  if (data.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -78,7 +78,9 @@ export function MonthlyBarChart({
                 className="group relative flex flex-1 flex-col items-center h-full justify-end"
               >
                 <div className="mb-1 text-[10px] font-semibold tabular-nums opacity-80 group-hover:opacity-100 sm:text-xs">
-                  {val > 0 ? formatMoney(val, currency, locale, numberFormat) : "0"}
+                  {val > 0
+                    ? formatMoney(val, currency, locale, numberFormat)
+                    : formatMoney(0, currency, locale, numberFormat)}
                 </div>
                 <div className="w-full flex-1 flex items-end justify-center">
                   <div

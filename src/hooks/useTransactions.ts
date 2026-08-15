@@ -94,7 +94,7 @@ export function useTransactionSummary(householdId: string | null, filters: Trans
   });
 }
 
-function createFilterOperations<
+export function createFilterOperations<
   T extends {
     eq: (column: string, value: string) => T;
     gte: (column: string, value: string) => T;
@@ -155,6 +155,7 @@ export function useTransactionMutations(householdId: string | null, memberId: st
     if (!key) return;
     void queryClient.invalidateQueries({ queryKey: key });
     void queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
+    void queryClient.invalidateQueries({ queryKey: ["reports", householdId] });
   };
 
   const create = useMutation({
