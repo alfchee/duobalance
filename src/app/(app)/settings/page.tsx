@@ -5,10 +5,12 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { HelpButton } from "@/components/help/help-button";
 import { useSession } from "@/hooks/useSession";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useAuthCommands } from "@/hooks/useAuthCommands";
 import { LocaleSwitcher } from "./locale-switcher";
+import { NumberFormatSwitcher } from "./number-format-switcher";
 import { MembersSection } from "./members-section";
 import { FxRatesSection } from "./fx-rates-section";
 import { FxOverridesSection } from "./fx-overrides-section";
@@ -31,7 +33,10 @@ export default function SettingsPage() {
   return (
     <main className="mx-auto w-full max-w-2xl space-y-6 p-6">
       <header className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+          <HelpButton article="number-format-currency-timezone" />
+        </div>
         <div
           aria-label={t("profileAvatar", { email: user?.email ?? "" })}
           className="flex size-10 items-center justify-center rounded-full border bg-secondary text-sm font-semibold"
@@ -68,6 +73,9 @@ export default function SettingsPage() {
       <SettingsGroup title={t("groups.preferences")}>
         <div className="border-b px-4 py-4">
           <LocaleSwitcher />
+        </div>
+        <div className="border-b px-4 py-4">
+          <NumberFormatSwitcher />
         </div>
         <div className="px-4 py-4">
           <InstallSection />

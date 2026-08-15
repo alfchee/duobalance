@@ -90,6 +90,7 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
     const invalidateTransactions = () => {
       void queryClient.invalidateQueries({ queryKey: ["transactions", householdId] });
       void queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
+      void queryClient.invalidateQueries({ queryKey: ["reports", householdId] });
     };
     const channel = supabase
       .channel(`household:${householdId}`)

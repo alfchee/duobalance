@@ -30,9 +30,10 @@ import {
   type Account,
   type AccountKind,
 } from "@/lib/accounts";
-import { maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { formatMoneyInput, maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 import { CurrencyPicker } from "./currency-picker";
+import { HelpButton } from "@/components/help/help-button";
 
 type Draft = {
   name: string;
@@ -53,10 +54,6 @@ type FormError =
   | "balanceRequired"
   | "privateNeedsOwner"
   | "generic";
-
-function formatInputAmount(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale).format(value);
-}
 
 export function AccountForm() {
   const { formOpen, editingAccount, closeForm } = useAccountsUiStore();
@@ -82,7 +79,7 @@ function AccountFormContent({
   const tKinds = useTranslations("accounts.kinds");
   const tModes = useTranslations("accounts.balanceModes");
   const locale = useLocale();
-  const { memberId, baseCurrency, householdId } = useHousehold();
+  const { memberId, baseCurrency, householdId, numberFormat } = useHousehold();
   const { create, update, archive } = useAccountMutations(householdId);
   const { data: currencies } = useCurrencies();
 
@@ -91,11 +88,15 @@ function AccountFormContent({
     kind: (account?.kind as AccountKind) ?? "checking",
     currency: account?.currency ?? baseCurrency,
     balanceMode: account?.balance_mode === "manual" ? "manual" : "ledger",
-    openingBalance: account ? formatInputAmount(account.opening_balance, locale) : "0",
+    openingBalance: account ? formatMoneyInput(account.opening_balance, locale, numberFormat) : "0",
     manualBalance:
-      account?.manual_balance != null ? formatInputAmount(account.manual_balance, locale) : "",
+      account?.manual_balance != null
+        ? formatMoneyInput(account.manual_balance, locale, numberFormat)
+        : "",
     creditLimit:
-      account?.credit_limit != null ? formatInputAmount(account.credit_limit, locale) : "",
+      account?.credit_limit != null
+        ? formatMoneyInput(account.credit_limit, locale, numberFormat)
+        : "",
     isShared: account?.is_shared ?? true,
     ownerIsMine: account ? account.owner_member_id != null : false,
   }));
@@ -108,7 +109,7 @@ function AccountFormContent({
     return (e: ChangeEvent<HTMLInputElement>) =>
       setDraft((d) => ({
         ...d,
-        [field]: maskMoneyInput(e.target.value, locale, minorUnit),
+        [field]: maskMoneyInput(e.target.value, locale, minorUnit, numberFormat),
       }));
   }
 
@@ -145,11 +146,11 @@ function AccountFormContent({
 
     const amountSource =
       draft.balanceMode === "manual" ? draft.manualBalance : draft.openingBalance;
-    const parsedAmount = parseMoneyInput(amountSource, locale);
+    const parsedAmount = parseMoneyInput(amountSource, locale, numberFormat);
     if (parsedAmount == null) return setFormError("balanceRequired");
 
     const creditRaw = draft.creditLimit.trim();
-    const parsedCredit = creditRaw ? parseMoneyInput(creditRaw, locale) : null;
+    const parsedCredit = creditRaw ? parseMoneyInput(creditRaw, locale, numberFormat) : null;
     if (creditRaw && parsedCredit == null) return setFormError("generic");
     if (!draft.isShared && !memberId) return setFormError("generic");
 
@@ -200,7 +201,10 @@ function AccountFormContent({
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>{account ? t("titleEdit") : t("titleCreate")}</DialogTitle>
+        <div className="flex items-center justify-between gap-2 pr-6">
+          <DialogTitle>{account ? t("titleEdit") : t("titleCreate")}</DialogTitle>
+          <HelpButton article="ledger-vs-manual-balance" />
+        </div>
         <DialogDescription className="sr-only">
           {account ? t("titleEdit") : t("titleCreate")}
         </DialogDescription>

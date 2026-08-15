@@ -17,9 +17,11 @@
     "transactions": "Movimientos",
     "addTransaction": "Agregar",
     "budget": "Presupuesto",
+    "reports": "Análisis",
     "bills": "Cuentas",
     "more": "Más",
     "settings": "Configuración",
+    "help": "Ayuda",
     "newTransaction": "Nuevo movimiento",
     "logout": "Cerrar sesión"
   },
@@ -720,17 +722,21 @@
       "title": "Idioma",
       "subtitle": "Idioma de la interfaz."
     },
+    "numberFormat": {
+      "title": "Formato de números",
+      "subtitle": "Elige los separadores decimal y de miles que te resulten más cómodos.",
+      "options": {
+        "locale": "Usar el formato del idioma",
+        "dot_decimal": "1,234.56",
+        "comma_decimal": "1.234,56"
+      }
+    },
     "fx": {
       "title": "Tipos de cambio",
       "subtitle": "Tasas diarias desde ExchangeRate-API.",
       "noData": "Aún no hay tipos de cambio cargados.",
       "lastUpdated": "Última actualización: {date}.",
-      "stale": "Los tipos de cambio no se actualizan desde hace más de {days} días. La actualización diaria podría estar fallando.",
-      "refresh": "Actualizar ahora",
-      "refreshing": "Actualizando…",
-      "refreshSuccess": "Actualizados: {inserted} nuevos, {updated} existentes, {skipped} omitidos.",
-      "refreshError": "No se pudieron actualizar los tipos de cambio. Intenta de nuevo.",
-      "notSignedIn": "Vuelve a iniciar sesión para actualizar los tipos de cambio."
+      "stale": "Los tipos de cambio no se actualizan desde hace más de {days} días. La actualización diaria podría estar fallando."
     },
     "overrides": {
       "title": "Tipos de cambio efectivos",
@@ -756,5 +762,79 @@
       "error": "No se pudo crear la exportación. Inténtalo de nuevo."
     },
     "logout": "Cerrar sesión"
+  },
+  "reports": {
+    "title": "Análisis",
+    "subtitle": "Rastrea tus tendencias de gastos e ingresos a lo largo del tiempo.",
+    "loadError": "No se pudieron cargar los datos del análisis.",
+    "retry": "Reintentar",
+    "currencyNotice": "Montos en {currency}",
+    "dateRanges": {
+      "label": "Rango de fechas",
+      "this_month": "Este mes",
+      "3m": "Últimos 3 meses",
+      "6m": "Últimos 6 meses",
+      "12m": "Últimos 12 meses",
+      "ytd": "Año a la fecha",
+      "custom": "Personalizado"
+    },
+    "customDates": {
+      "from": "Desde",
+      "to": "Hasta",
+      "incomplete": "Selecciona una fecha de inicio y de fin para ver este reporte."
+    },
+    "memberFilter": {
+      "label": "Por miembro",
+      "all": "Todos los miembros"
+    },
+    "reconciliation": {
+      "title": "Reconciliación",
+      "matching": "Total por categoría coincide con el total mensual ({amount})",
+      "mismatch": "Total por categoría ({catTotal}) difiere del total mensual ({monthlyTotal})"
+    },
+    "charts": {
+      "expenseByCategory": {
+        "title": "Gastos por categoría",
+        "empty": "No se encontraron gastos para este período."
+      },
+      "incomeByCategory": {
+        "title": "Ingresos por categoría",
+        "empty": "No se encontraron ingresos para este período."
+      },
+      "monthlyExpenses": {
+        "title": "Gastos mensuales",
+        "empty": "Se necesitan al menos 2 meses de datos para mostrar gráficos de tendencia mensual."
+      },
+      "monthlyIncomes": {
+        "title": "Ingresos mensuales",
+        "empty": "Se necesitan al menos 2 meses de datos para mostrar gráficos de tendencia mensual."
+      },
+      "monthlyBalance": {
+        "title": "Balance mensual",
+        "subtitle": "Ahorro neto a lo largo del tiempo",
+        "rollingAvg": "Promedio móvil de 3 meses",
+        "empty": "Se necesitan al menos 2 meses de datos para mostrar gráficos de tendencia mensual."
+      }
+    },
+    "uncategorized": "Sin categoría",
+    "transactionsCount": "{count, plural, =1 {1 movimiento} other {# movimientos}}"
+  },
+  "help": {
+    "title": "Centro de ayuda",
+    "searchPlaceholder": "Buscar artículos de ayuda...",
+    "noResults": "No se encontraron artículos para tu búsqueda.",
+    "openArticle": "Ver artículo de ayuda",
+    "backToHelp": "Volver a la ayuda",
+    "relatedArticles": "Artículos relacionados",
+    "updatedOn": "Actualizado el {date}",
+    "categories": {
+      "accounts": "Cuentas y Saldos",
+      "transactions": "Transacciones",
+      "budgets": "Presupuestos",
+      "bills": "Facturas y Pagos",
+      "reports": "Reportes y Gráficos",
+      "settings": "Ajustes y Configuración",
+      "general": "General"
+    }
   }
 }

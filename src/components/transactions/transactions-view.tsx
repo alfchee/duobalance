@@ -51,7 +51,7 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("transactions");
-  const { householdId, baseCurrency } = useHousehold();
+  const { householdId, baseCurrency, numberFormat } = useHousehold();
   const accountDetailId = accountId ?? searchParams.get("accountDetail");
   const filters = readActivityFilters(searchParams, accountDetailId);
   const transactionsQuery = useTransactions(householdId, filters);
@@ -121,7 +121,12 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
             {[detailAccount.institution, detailAccount.currency].filter(Boolean).join(" · ")}
           </p>
           <p className="mt-5 text-3xl font-black tracking-tight tabular-nums">
-            {formatMoney(displayBalance(detailAccount), detailAccount.currency, locale)}
+            {formatMoney(
+              displayBalance(detailAccount),
+              detailAccount.currency,
+              locale,
+              numberFormat,
+            )}
           </p>
           <p className="text-xs text-muted-foreground">
             {balanceUpdated.never
@@ -326,16 +331,25 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
         </div>
         <div className="bg-secondary p-4 text-center">
           <p>{t("summary.inflow")}</p>
-          <strong>{formatMoney(summary.inflow, baseCurrency ?? "USD", locale)}</strong>
+          <strong>
+            {formatMoney(summary.inflow, baseCurrency ?? "USD", locale, numberFormat)}
+          </strong>
         </div>
         <div className="bg-secondary p-4 text-center">
           <p>{t("summary.outflow")}</p>
-          <strong>{formatMoney(summary.outflow, baseCurrency ?? "USD", locale)}</strong>
+          <strong>
+            {formatMoney(summary.outflow, baseCurrency ?? "USD", locale, numberFormat)}
+          </strong>
         </div>
         <div className="bg-secondary p-4 text-center">
           <p>{t("summary.net")}</p>
           <strong>
-            {formatSignedMoney(summary.inflow - summary.outflow, baseCurrency ?? "USD", locale)}
+            {formatSignedMoney(
+              summary.inflow - summary.outflow,
+              baseCurrency ?? "USD",
+              locale,
+              numberFormat,
+            )}
           </strong>
         </div>
       </div>
@@ -354,7 +368,9 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
                 >
                   <header className="flex justify-between bg-secondary px-5 py-3 text-xs font-bold uppercase tracking-wider">
                     <span>{dateLabel(date, locale)}</span>
-                    <span>{formatSignedMoney(subtotal, baseCurrency ?? "USD", locale)}</span>
+                    <span>
+                      {formatSignedMoney(subtotal, baseCurrency ?? "USD", locale, numberFormat)}
+                    </span>
                   </header>
                   <ul className="divide-y">
                     {dayTransactions.map((transaction) => {
@@ -391,7 +407,12 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
                                 : "font-semibold text-success"
                             }`}
                           >
-                            {formatSignedMoney(transaction.amount, transaction.currency, locale)}
+                            {formatSignedMoney(
+                              transaction.amount,
+                              transaction.currency,
+                              locale,
+                              numberFormat,
+                            )}
                             {transaction.currency !== baseCurrency &&
                             transaction.base_amount !== null ? (
                               <span className="block text-xs font-normal text-muted-foreground">
@@ -399,6 +420,7 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
                                   transaction.base_amount,
                                   baseCurrency ?? "USD",
                                   locale,
+                                  numberFormat,
                                 )}
                               </span>
                             ) : null}

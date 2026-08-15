@@ -12,13 +12,21 @@ type FakeClient = SupabaseClient<Database> & {
   from: ReturnType<typeof vi.fn>;
   upsertRates: ReturnType<typeof vi.fn>;
   insertLog: ReturnType<typeof vi.fn>;
+  rpc: ReturnType<typeof vi.fn>;
 };
 
-// Service-role client fake supporting the three tables runFxRefresh touches:
-// currencies (select), fx_rates (select+upsert), fx_fetch_log (insert).
+// Service-role client fake supporting the tables/RPCs runFxRefresh touches:
+// currencies (select), fx_rates (upsert), fx_fetch_log (direct insert, used
+// only for the claim_fx_refresh-errored path), plus the three refresh RPCs.
 function makeClient(opts: { currencies?: string[] }) {
-  const insertLog = vi.fn().mockResolvedValue({ error: null });
   const upsertRates = vi.fn().mockResolvedValue({ error: null });
+  const insertLog = vi.fn().mockResolvedValue({ error: null });
+  const rpc = vi.fn((fn: string) => {
+    if (fn === "claim_fx_refresh") return Promise.resolve({ data: true, error: null });
+    if (fn === "record_fx_refresh_success") return Promise.resolve({ data: true, error: null });
+    if (fn === "record_fx_refresh_failure") return Promise.resolve({ data: null, error: null });
+    throw new Error(`unexpected function ${fn}`);
+  });
   const from = vi.fn((table: string) => {
     if (table === "currencies") {
       return {
@@ -28,20 +36,11 @@ function makeClient(opts: { currencies?: string[] }) {
         }),
       };
     }
-    if (table === "fx_rates") {
-      return {
-        select: vi.fn(() => ({
-          eq: vi.fn().mockResolvedValue({ data: [], error: null }),
-        })),
-        upsert: upsertRates,
-      };
-    }
-    if (table === "fx_fetch_log") {
-      return { insert: insertLog };
-    }
+    if (table === "fx_rates") return { upsert: upsertRates };
+    if (table === "fx_fetch_log") return { insert: insertLog };
     throw new Error(`unexpected table ${table}`);
   });
-  return { from, insertLog, upsertRates } as unknown as FakeClient;
+  return { from, rpc, upsertRates, insertLog } as unknown as FakeClient;
 }
 
 function providerResponse(conversion_rates: Record<string, number>, status = 200) {
@@ -104,13 +103,14 @@ describe("/api/cron/fx-refresh", () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       rateDate: expect.stringMatching(RATE_DATE_RE),
-      inserted: 2,
-      updated: 0,
-      skipped: 0,
+      status: "success",
+      currenciesUpdated: 2,
+      skippedCodes: 0,
     });
     expect(client.upsertRates).toHaveBeenCalledTimes(1);
-    expect(client.insertLog).toHaveBeenCalledWith(
-      expect.objectContaining({ outcome: "success", inserted: 2 }),
+    expect(client.rpc).toHaveBeenCalledWith(
+      "record_fx_refresh_success",
+      expect.objectContaining({ updated_currencies: 2 }),
     );
   });
 
@@ -126,13 +126,14 @@ describe("/api/cron/fx-refresh", () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       rateDate: expect.stringMatching(RATE_DATE_RE),
-      inserted: 2,
-      updated: 0,
-      skipped: 0,
+      status: "success",
+      currenciesUpdated: 2,
+      skippedCodes: 0,
     });
     expect(client.upsertRates).toHaveBeenCalledTimes(1);
-    expect(client.insertLog).toHaveBeenCalledWith(
-      expect.objectContaining({ outcome: "success", inserted: 2 }),
+    expect(client.rpc).toHaveBeenCalledWith(
+      "record_fx_refresh_success",
+      expect.objectContaining({ updated_currencies: 2 }),
     );
   });
 
@@ -151,13 +152,14 @@ describe("/api/cron/fx-refresh", () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       rateDate: expect.stringMatching(RATE_DATE_RE),
-      inserted: 2,
-      updated: 0,
-      skipped: 0,
+      status: "success",
+      currenciesUpdated: 2,
+      skippedCodes: 0,
     });
     expect(client.upsertRates).toHaveBeenCalledTimes(1);
-    expect(client.insertLog).toHaveBeenCalledWith(
-      expect.objectContaining({ outcome: "success", inserted: 2 }),
+    expect(client.rpc).toHaveBeenCalledWith(
+      "record_fx_refresh_success",
+      expect.objectContaining({ updated_currencies: 2 }),
     );
   });
 
@@ -176,7 +178,7 @@ describe("/api/cron/fx-refresh", () => {
 
     expect(res.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(client.insertLog).toHaveBeenCalledWith(expect.objectContaining({ outcome: "success" }));
+    expect(client.rpc).toHaveBeenCalledWith("record_fx_refresh_success", expect.any(Object));
   });
 
   it("returns 502 and logs a failed run when the provider keeps failing", async () => {
@@ -189,8 +191,103 @@ describe("/api/cron/fx-refresh", () => {
     );
 
     expect(res.status).toBe(502);
-    expect(client.insertLog).toHaveBeenCalledWith(
-      expect.objectContaining({ outcome: "failed", error: expect.any(String) }),
+    expect(client.rpc).toHaveBeenCalledWith(
+      "record_fx_refresh_failure",
+      expect.objectContaining({ failure_error: expect.any(String) }),
     );
+  });
+
+  it("skips a claimed same-day refresh without calling the provider", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const client = makeClient({ currencies: ["USD"] });
+    client.rpc.mockImplementation((fn: string) => {
+      if (fn === "claim_fx_refresh") return Promise.resolve({ data: false, error: null });
+      throw new Error(`unexpected function ${fn}`);
+    });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/fx-refresh"));
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      rateDate: expect.stringMatching(RATE_DATE_RE),
+      status: "skipped",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 502 without calling the provider when claim_fx_refresh itself errors", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const client = makeClient({ currencies: ["USD"] });
+    client.rpc.mockImplementation((fn: string) => {
+      if (fn === "claim_fx_refresh") {
+        return Promise.resolve({ data: null, error: new Error("db unreachable") });
+      }
+      throw new Error(`unexpected function ${fn}`);
+    });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/fx-refresh"));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
+    // Logs the audit row directly rather than via record_fx_refresh_failure,
+    // which would delete a claim this call never proved it owns.
+    expect(client.insertLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "failed",
+        fetch_date: expect.stringMatching(RATE_DATE_RE),
+      }),
+    );
+    expect(client.rpc).not.toHaveBeenCalledWith("record_fx_refresh_failure", expect.any(Object));
+  });
+
+  it("still reports success when record_fx_refresh_success errors after rates are applied", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(providerResponse({ USD: 1, CLP: 950 })));
+    const client = makeClient({ currencies: ["USD", "CLP"] });
+    client.rpc.mockImplementation((fn: string) => {
+      if (fn === "claim_fx_refresh") return Promise.resolve({ data: true, error: null });
+      if (fn === "record_fx_refresh_success") {
+        return Promise.resolve({ data: null, error: new Error("log write failed") });
+      }
+      throw new Error(`unexpected function ${fn}`);
+    });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/fx-refresh"));
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      rateDate: expect.stringMatching(RATE_DATE_RE),
+      status: "success",
+      currenciesUpdated: 2,
+      skippedCodes: 0,
+    });
+    expect(client.upsertRates).toHaveBeenCalledTimes(1);
+    // The claim must not be released for an already-applied, already-successful day.
+    expect(client.rpc).not.toHaveBeenCalledWith("record_fx_refresh_failure", expect.any(Object));
+  });
+
+  it("still reports success when record_fx_refresh_success reports an existing success row", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(providerResponse({ USD: 1, CLP: 950 })));
+    const client = makeClient({ currencies: ["USD", "CLP"] });
+    client.rpc.mockImplementation((fn: string) => {
+      if (fn === "claim_fx_refresh") return Promise.resolve({ data: true, error: null });
+      if (fn === "record_fx_refresh_success") return Promise.resolve({ data: false, error: null });
+      throw new Error(`unexpected function ${fn}`);
+    });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValue(client);
+
+    const res = await GET(authedRequest("http://localhost/api/cron/fx-refresh"));
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      rateDate: expect.stringMatching(RATE_DATE_RE),
+      status: "success",
+      currenciesUpdated: 2,
+      skippedCodes: 0,
+    });
   });
 });

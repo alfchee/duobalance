@@ -561,34 +561,28 @@ export type Database = {
       }
       fx_fetch_log: {
         Row: {
+          currencies_updated: number | null
           error: string | null
+          fetch_date: string
+          fetched_at: string
           id: string
-          inserted: number
-          outcome: string
-          ran_at: string
-          rate_date: string
-          skipped: number
-          updated: number
+          status: string
         }
         Insert: {
+          currencies_updated?: number | null
           error?: string | null
+          fetch_date?: string
+          fetched_at?: string
           id?: string
-          inserted?: number
-          outcome: string
-          ran_at?: string
-          rate_date: string
-          skipped?: number
-          updated?: number
+          status: string
         }
         Update: {
+          currencies_updated?: number | null
           error?: string | null
+          fetch_date?: string
+          fetched_at?: string
           id?: string
-          inserted?: number
-          outcome?: string
-          ran_at?: string
-          rate_date?: string
-          skipped?: number
-          updated?: number
+          status?: string
         }
         Relationships: []
       }
@@ -663,6 +657,21 @@ export type Database = {
           },
         ]
       }
+      fx_refresh_claims: {
+        Row: {
+          claimed_at: string
+          fetch_date: string
+        }
+        Insert: {
+          claimed_at?: string
+          fetch_date: string
+        }
+        Update: {
+          claimed_at?: string
+          fetch_date?: string
+        }
+        Relationships: []
+      }
       household_invites: {
         Row: {
           accepted_at: string | null
@@ -722,6 +731,7 @@ export type Database = {
           household_id: string
           id: string
           joined_at: string
+          number_format: string
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -732,6 +742,7 @@ export type Database = {
           household_id: string
           id?: string
           joined_at?: string
+          number_format?: string
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -742,6 +753,7 @@ export type Database = {
           household_id?: string
           id?: string
           joined_at?: string
+          number_format?: string
           role?: Database["public"]["Enums"]["household_member_role"]
           user_id?: string
         }
@@ -1321,6 +1333,7 @@ export type Database = {
         Args: { p_household_id: string; p_member_id: string }
         Returns: undefined
       }
+      claim_fx_refresh: { Args: { refresh_date: string }; Returns: boolean }
       create_household: {
         Args: {
           p_base_currency: string
@@ -1355,6 +1368,7 @@ export type Database = {
           household_id: string
           id: string
           joined_at: string
+          number_format: string
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -1406,6 +1420,44 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_fx_refresh_failure: {
+        Args: { failure_error: string; refresh_date: string }
+        Returns: undefined
+      }
+      record_fx_refresh_success: {
+        Args: { refresh_date: string; updated_currencies: number }
+        Returns: boolean
+      }
+      report_category_totals: {
+        Args: {
+          p_from: string
+          p_household: string
+          p_kind: string
+          p_member?: string
+          p_to: string
+        }
+        Returns: {
+          category_id: string
+          category_name: string
+          color_hex: string
+          total: number
+          txn_count: number
+        }[]
+      }
+      report_monthly_totals: {
+        Args: {
+          p_from: string
+          p_household: string
+          p_member?: string
+          p_to: string
+        }
+        Returns: {
+          expense: number
+          income: number
+          net: number
+          period_month: string
+        }[]
+      }
       seed_default_categories: {
         Args: { p_household_id: string; p_locale: string }
         Returns: undefined
@@ -1420,6 +1472,10 @@ export type Database = {
       }
       unmark_bill_instance_paid: {
         Args: { p_instance_id: string }
+        Returns: undefined
+      }
+      update_my_number_format: {
+        Args: { member_id: string; new_number_format: string }
         Returns: undefined
       }
     }

@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Household finance for two.",
     start_url: "/balances",
     display: "standalone",
-    background_color: "#3478d4",
-    theme_color: "#3478d4",
+    background_color: "#ffffff",
+    theme_color: "#9fe870",
     orientation: "portrait",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },

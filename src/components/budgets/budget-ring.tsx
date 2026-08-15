@@ -1,10 +1,12 @@
 "use client";
 
 import { formatMoney } from "@/lib/money";
+import type { NumberFormatPref } from "@/lib/money";
 
 type BudgetRingProps = {
   currency: string;
   locale: string;
+  numberFormat: NumberFormatPref;
   spent: number;
   totalBudget: number;
   ariaLabel: string;
@@ -19,6 +21,7 @@ export function BudgetRing({
   currency,
   leftLabel,
   locale,
+  numberFormat,
   ofBudget,
   spent,
   totalBudget,
@@ -49,12 +52,12 @@ export function BudgetRing({
       </svg>
       <div className="relative z-10 flex flex-col items-center">
         <p className="text-4xl font-black tracking-tight tabular-nums sm:text-5xl">
-          {formatMoney(spent, currency, locale)}
+          {formatMoney(spent, currency, locale, numberFormat)}
         </p>
         {totalBudget > 0 ? (
           <p className="mt-1 text-sm font-semibold text-muted-foreground tabular-nums">
-            {ofBudget({ amount: formatMoney(totalBudget, currency, locale) })} ·{" "}
-            {formatMoney(remaining, currency, locale)} {leftLabel}
+            {ofBudget({ amount: formatMoney(totalBudget, currency, locale, numberFormat) })} ·{" "}
+            {formatMoney(remaining, currency, locale, numberFormat)} {leftLabel}
           </p>
         ) : (
           <p className="mt-1 text-sm font-semibold text-muted-foreground">{chartCenter}</p>

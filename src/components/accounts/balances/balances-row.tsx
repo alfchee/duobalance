@@ -28,7 +28,7 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
   const tModes = useTranslations("accounts.balanceModes");
   const locale = useLocale();
   const router = useRouter();
-  const { memberId } = useHousehold();
+  const { memberId, numberFormat } = useHousehold();
   const { openEdit, openManualBalance } = useAccountsUiStore();
 
   const isManual = account.balance_mode === "manual";
@@ -89,7 +89,7 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
             balance < 0 && "text-destructive",
           )}
         >
-          {formatMoney(balance, account.currency, locale)}
+          {formatMoney(balance, account.currency, locale, numberFormat)}
         </p>
         {isManual && canManage ? (
           <button
