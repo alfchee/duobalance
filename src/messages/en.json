@@ -17,6 +17,7 @@
     "transactions": "Transactions",
     "addTransaction": "Add",
     "budget": "Budget",
+    "reports": "Reports",
     "bills": "Bills",
     "more": "More",
     "settings": "Settings",
@@ -760,5 +761,58 @@
       "error": "Couldn't create your export. Try again."
     },
     "logout": "Log out"
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Track your spending and income trends over time.",
+    "currencyNotice": "Amounts in {currency}",
+    "dateRanges": {
+      "label": "Date range",
+      "this_month": "This month",
+      "3m": "Last 3 months",
+      "6m": "Last 6 months",
+      "12m": "Last 12 months",
+      "ytd": "Year to date",
+      "custom": "Custom"
+    },
+    "customDates": {
+      "from": "From",
+      "to": "To"
+    },
+    "memberFilter": {
+      "label": "Per member",
+      "all": "All members"
+    },
+    "reconciliation": {
+      "title": "Reconciliation",
+      "matching": "Category total matches monthly total ({amount})",
+      "mismatch": "Category total ({catTotal}) differs from monthly total ({monthlyTotal})"
+    },
+    "charts": {
+      "expenseByCategory": {
+        "title": "Expense by Category",
+        "empty": "No expense transactions found for this period."
+      },
+      "incomeByCategory": {
+        "title": "Income by Category",
+        "empty": "No income transactions found for this period."
+      },
+      "monthlyExpenses": {
+        "title": "Monthly Expenses",
+        "empty": "At least 2 months of data are required to display monthly trend charts."
+      },
+      "monthlyIncomes": {
+        "title": "Monthly Incomes",
+        "empty": "At least 2 months of data are required to display monthly trend charts."
+      },
+      "monthlyBalance": {
+        "title": "Monthly Balance",
+        "subtitle": "Net savings over time",
+        "rollingAvg": "3-Month Rolling Average",
+        "empty": "At least 2 months of data are required to display monthly trend charts."
+      }
+    },
+    "uncategorized": "Uncategorized",
+    "transactionsCount": "{count, plural, =1 {1 transaction} other {# transactions}}"
   }
 }

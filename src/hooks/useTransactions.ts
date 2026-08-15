@@ -109,7 +109,17 @@ function createFilterOperations<
 >(get: () => T, set: (query: T) => void): ActivityFilterOperations {
   return {
     accountIds: (ids) => set(get().in("account_id", ids)),
-    categoryIds: (ids) => set(get().in("category_id", ids)),
+    categoryIds: (ids) => {
+      const hasUncategorized = ids.includes("uncategorized") || ids.includes("null");
+      const regularIds = ids.filter((id) => id !== "uncategorized" && id !== "null");
+      if (hasUncategorized && regularIds.length > 0) {
+        set(get().or(`category_id.is.null,category_id.in.(${regularIds.join(",")})`));
+      } else if (hasUncategorized) {
+        set(get().is("category_id", null));
+      } else if (regularIds.length > 0) {
+        set(get().in("category_id", regularIds));
+      }
+    },
     endDate: (date) => set(get().lte("occurred_on", date)),
     expense: () => set(get().lt("amount", 0).is("transfer_group_id", null)),
     income: () => set(get().gt("amount", 0).is("transfer_group_id", null)),

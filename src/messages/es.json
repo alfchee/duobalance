@@ -17,6 +17,7 @@
     "transactions": "Movimientos",
     "addTransaction": "Agregar",
     "budget": "Presupuesto",
+    "reports": "Análisis",
     "bills": "Cuentas",
     "more": "Más",
     "settings": "Configuración",
@@ -760,5 +761,58 @@
       "error": "No se pudo crear la exportación. Inténtalo de nuevo."
     },
     "logout": "Cerrar sesión"
+  },
+  "reports": {
+    "title": "Análisis",
+    "subtitle": "Rastrea tus tendencias de gastos e ingresos a lo largo del tiempo.",
+    "currencyNotice": "Montos en {currency}",
+    "dateRanges": {
+      "label": "Rango de fechas",
+      "this_month": "Este mes",
+      "3m": "Últimos 3 meses",
+      "6m": "Últimos 6 meses",
+      "12m": "Últimos 12 meses",
+      "ytd": "Año a la fecha",
+      "custom": "Personalizado"
+    },
+    "customDates": {
+      "from": "Desde",
+      "to": "Hasta"
+    },
+    "memberFilter": {
+      "label": "Por miembro",
+      "all": "Todos los miembros"
+    },
+    "reconciliation": {
+      "title": "Reconciliación",
+      "matching": "Total por categoría coincide con el total mensual ({amount})",
+      "mismatch": "Total por categoría ({catTotal}) difiere del total mensual ({monthlyTotal})"
+    },
+    "charts": {
+      "expenseByCategory": {
+        "title": "Gastos por categoría",
+        "empty": "No se encontraron gastos para este período."
+      },
+      "incomeByCategory": {
+        "title": "Ingresos por categoría",
+        "empty": "No se encontraron ingresos para este período."
+      },
+      "monthlyExpenses": {
+        "title": "Gastos mensuales",
+        "empty": "Se necesitan al menos 2 meses de datos para mostrar gráficos de tendencia mensual."
+      },
+      "monthlyIncomes": {
+        "title": "Ingresos mensuales",
+        "empty": "Se necesitan al menos 2 meses de datos para mostrar gráficos de tendencia mensual."
+      },
+      "monthlyBalance": {
+        "title": "Balance mensual",
+        "subtitle": "Ahorro neto a lo largo del tiempo",
+        "rollingAvg": "Promedio móvil de 3 meses",
+        "empty": "Se necesitan al menos 2 meses de datos para mostrar gráficos de tendencia mensual."
+      }
+    },
+    "uncategorized": "Sin categoría",
+    "transactionsCount": "{count, plural, =1 {1 movimiento} other {# movimientos}}"
   }
 }

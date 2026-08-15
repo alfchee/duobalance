@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Wallet, ArrowLeftRight, PieChart, Receipt, MoreHorizontal, Plus } from "lucide-react";
+import {
+  Wallet,
+  ArrowLeftRight,
+  PieChart,
+  BarChart3,
+  Receipt,
+  MoreHorizontal,
+  Plus,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTransactionsUiStore } from "@/store/transactions";
 
@@ -11,6 +19,7 @@ const ITEMS = [
   { href: "/balances", labelKey: "balances", Icon: Wallet },
   { href: "/transactions", labelKey: "transactions", Icon: ArrowLeftRight },
   { href: "/budget", labelKey: "budget", Icon: PieChart },
+  { href: "/reports", labelKey: "reports", Icon: BarChart3 },
   { href: "/bills", labelKey: "bills", Icon: Receipt },
   { href: "/settings", labelKey: "more", Icon: MoreHorizontal },
 ] as const;
