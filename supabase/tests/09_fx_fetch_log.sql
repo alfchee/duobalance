@@ -1,13 +1,16 @@
--- Issue #17: fx_fetch_log run-outcome audit table. The cron handler writes it
--- with the service role; these tests prove it accepts runs, enforces the
--- outcome enum, and stays closed to the data API.
+-- Issue #17/#109: fx_fetch_log run-outcome audit table and the
+-- fx_refresh_claims serialization it backs. The cron handler writes both with
+-- the service role; these tests prove fx_fetch_log accepts runs, enforces the
+-- status enum, and stays closed to the data API, and that
+-- claim_fx_refresh/record_fx_refresh_success/record_fx_refresh_failure
+-- correctly serialize same-day refreshes and recover stranded claims.
 
 \set ON_ERROR_STOP on
 \i supabase/tests/_lib/helpers.sql
 
 begin;
 
-select plan(23);
+select plan(25);
 
 -- ============================================================================
 -- Shape: rows accept a run outcome with counts, reject unknown outcomes.
@@ -168,6 +171,26 @@ select results_eq(
      where fetch_date = '2026-08-07' and status = 'success' $$,
   $$ values (3::int) $$,
   'the no-op success does not overwrite the already-recorded currency count'
+);
+
+-- A day that already has a recorded success must not be reclaimable even
+-- once its claim row falls outside the reclaim window — otherwise a stray
+-- retry would re-fetch and re-apply rates for a day already done.
+update public.fx_refresh_claims
+set claimed_at = now() - interval '2 hours'
+where fetch_date = '2026-08-07';
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-07') $$,
+  $$ values (false) $$,
+  'a day with a recorded success cannot be reclaimed even past the reclaim window'
+);
+
+select results_eq(
+  $$ select count(*)::int from public.fx_fetch_log
+     where fetch_date = '2026-08-07' and status = 'skipped' $$,
+  $$ values (2::int) $$,
+  'the blocked reclaim attempt on an already-succeeded day is logged as skipped, alongside the earlier same-day skip'
 );
 
 -- Stranded-claim recovery: a claim whose claimed_at predates the 1-hour

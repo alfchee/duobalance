@@ -780,7 +780,8 @@
     },
     "customDates": {
       "from": "From",
-      "to": "To"
+      "to": "To",
+      "incomplete": "Select both a start and end date to view this report."
     },
     "memberFilter": {
       "label": "Per member",

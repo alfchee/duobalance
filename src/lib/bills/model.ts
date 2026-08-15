@@ -1,4 +1,5 @@
 import { formatMoney } from "@/lib/money";
+import type { NumberFormatPref } from "@/lib/money";
 import type { Database } from "@/lib/supabase/types";
 
 export type Bill = Database["public"]["Tables"]["bills"]["Row"];
@@ -84,6 +85,7 @@ export function createBillWeeks(
 export function calculateBillWeekTotal(
   values: readonly SelectedBillInstance[],
   locale: string,
+  numberFormat: NumberFormatPref = "locale",
 ): string {
   const totals = new Map<string, number>();
   for (const { bill, instance } of values) {
@@ -92,6 +94,6 @@ export function calculateBillWeekTotal(
   }
   return [...totals.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([currency, amount]) => formatMoney(amount, currency, locale))
+    .map(([currency, amount]) => formatMoney(amount, currency, locale, numberFormat))
     .join(" · ");
 }

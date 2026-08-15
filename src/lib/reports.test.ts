@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { calculateRolling3MonthAverage, getReportDateRange } from "./reports";
+import { describe, expect, it, vi } from "vitest";
+import {
+  calculateRolling3MonthAverage,
+  densifyMonthlyTotals,
+  formatReportMonthLabel,
+  getReportDateRange,
+} from "./reports";
 
 describe("reports lib", () => {
   const mockNow = new Date("2026-08-15T12:00:00Z");
@@ -70,12 +75,18 @@ describe("reports lib", () => {
       });
     });
 
-    it("handles invalid timezone gracefully without throwing", () => {
+    it("handles invalid timezone gracefully without throwing, but logs the fallback", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const range = getReportDateRange("this_month", "Invalid/Timezone_Name", mockNow);
       expect(range).toEqual({
         from: "2026-08-01",
         to: "2026-08-31",
       });
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid household timezone "Invalid/Timezone_Name"'),
+        expect.anything(),
+      );
+      errorSpy.mockRestore();
     });
 
     it("returns custom range when preset is custom and dates are provided", () => {
@@ -110,6 +121,63 @@ describe("reports lib", () => {
         200 / 3, // (100 - 200 + 300) / 3 = 200 / 3
         -300 / 3, // (-200 + 300 - 400) / 3 = -100
       ]);
+    });
+
+    it("is skewed by a gap in the source data — densifying first fixes it", () => {
+      // Without a January row, the "3-month average" for March is really
+      // averaging January and March only under a February label.
+      const gappy = [
+        { period_month: "2026-01-01", net: 300 },
+        { period_month: "2026-03-01", net: 300 },
+      ];
+      const skewed = calculateRolling3MonthAverage(gappy);
+      expect(skewed).toEqual([300, 300]);
+
+      const dense = densifyMonthlyTotals(
+        [
+          { period_month: "2026-01-01", income: 300, expense: 0, net: 300 },
+          { period_month: "2026-03-01", income: 300, expense: 0, net: 300 },
+        ],
+        "2026-01-01",
+        "2026-03-31",
+        { income: 0, expense: 0, net: 0 },
+      );
+      expect(dense.map((d) => d.period_month)).toEqual(["2026-01-01", "2026-02-01", "2026-03-01"]);
+      expect(calculateRolling3MonthAverage(dense)).toEqual([300, 150, 200]);
+    });
+  });
+
+  describe("densifyMonthlyTotals", () => {
+    it("fills gaps in the middle of the range with zero rows", () => {
+      const result = densifyMonthlyTotals(
+        [{ period_month: "2026-06-01", income: 10, expense: 4, net: 6 }],
+        "2026-05-01",
+        "2026-07-31",
+        { income: 0, expense: 0, net: 0 },
+      );
+      expect(result).toEqual([
+        { period_month: "2026-05-01", income: 0, expense: 0, net: 0 },
+        { period_month: "2026-06-01", income: 10, expense: 4, net: 6 },
+        { period_month: "2026-07-01", income: 0, expense: 0, net: 0 },
+      ]);
+    });
+
+    it("returns an empty array untouched, preserving the dedicated empty state", () => {
+      const result = densifyMonthlyTotals<{
+        period_month: string;
+        income: number;
+        expense: number;
+        net: number;
+      }>([], "2026-01-01", "2026-03-31", { income: 0, expense: 0, net: 0 });
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("formatReportMonthLabel", () => {
+    it("labels a date-only period_month in UTC regardless of the caller's timezone", () => {
+      // The historical bug: formatting in a negative-offset timezone rolled
+      // 2026-08-01T00:00:00Z back to July 31st, mislabeling the whole month.
+      expect(formatReportMonthLabel("2026-08-01", "en")).toBe("Aug 26");
     });
   });
 });

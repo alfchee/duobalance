@@ -1,5 +1,11 @@
 export type NumberFormatPref = "locale" | "dot_decimal" | "comma_decimal";
 
+const NUMBER_FORMAT_PREFS: readonly NumberFormatPref[] = ["locale", "dot_decimal", "comma_decimal"];
+
+export function isNumberFormatPref(value: string): value is NumberFormatPref {
+  return (NUMBER_FORMAT_PREFS as readonly string[]).includes(value);
+}
+
 type Separators = { decimal: string; group: string };
 
 export function formatMoney(
@@ -41,9 +47,11 @@ export function formatMoneyInput(
     .join("");
 }
 
-// Derive the locale's decimal/grouping separators. A 7-digit sample forces
-// grouping to appear even in trimmed ICU builds (Node), where 4-digit samples
-// may render without a group separator. Cached — keypads call this per keystroke.
+// Derive the locale's decimal/grouping separators, unless pref is
+// "dot_decimal"/"comma_decimal", which fixes the separators regardless of
+// locale. A 7-digit sample forces grouping to appear even in trimmed ICU
+// builds (Node), where 4-digit samples may render without a group separator.
+// Cached — keypads call this per keystroke.
 const separatorCache = new Map<string, Separators>();
 function separatorsFor(locale: string, pref: NumberFormatPref = "locale"): Separators {
   if (pref === "dot_decimal") return { decimal: ".", group: "," };
@@ -62,9 +70,10 @@ function separatorsFor(locale: string, pref: NumberFormatPref = "locale"): Separ
 }
 
 // Parse a user-typed amount in a locale's grouping/decimal convention:
-// es/pt-BR "1.234,56" -> 1234.56, en "1,234.56" -> 1234.56. Currency
-// symbols and the U+2212 minus sign are tolerated; non-numeric garbage
-// yields null.
+// es/pt-BR "1.234,56" -> 1234.56, en "1,234.56" -> 1234.56. When pref is
+// "dot_decimal"/"comma_decimal", the fixed separators are used instead of the
+// locale's, overriding locale entirely. Currency symbols and the U+2212 minus
+// sign are tolerated; non-numeric garbage yields null.
 export function parseMoneyInput(
   raw: string,
   locale = "es",
@@ -111,9 +120,10 @@ function escapeRegExp(text: string): string {
 }
 
 // Live mask for an amount input, enforced per keystroke: only digits, one
-// leading minus, and the locale's decimal/group separators survive, and the
-// fraction never exceeds minorUnit places (CLP accepts no decimals). The
-// value is still a string — parse with parseMoneyInput on submit.
+// leading minus, and the decimal/group separators (locale-derived, or fixed
+// by pref when set) survive, and the fraction never exceeds minorUnit places
+// (CLP accepts no decimals). The value is still a string — parse with
+// parseMoneyInput on submit.
 export function maskMoneyInput(
   raw: string,
   locale: string,

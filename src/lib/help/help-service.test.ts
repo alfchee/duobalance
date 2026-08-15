@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getAllArticles, getArticle, getArticlesByCategory, searchArticles } from "./help-service";
 
 describe("help-service", () => {
@@ -10,6 +10,21 @@ describe("help-service", () => {
     const articleEn = getArticle("en", "ledger-vs-manual-balance");
     expect(articleEn).not.toBeNull();
     expect(articleEn?.frontmatter.slug).toBe("ledger-vs-manual-balance");
+  });
+
+  it("normalizes an unrecognized locale to the Spanish article set", () => {
+    const result = getArticle("fr", "ledger-vs-manual-balance");
+    expect(result?.frontmatter.slug).toBe("ledger-vs-manual-balance");
+  });
+
+  it("returns null and warns for a slug that doesn't exist in any locale", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = getArticle("es", "this-slug-does-not-exist");
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('no article found for slug "this-slug-does-not-exist"'),
+    );
+    warnSpy.mockRestore();
   });
 
   it("returns all articles for a locale", () => {

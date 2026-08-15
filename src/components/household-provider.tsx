@@ -7,7 +7,7 @@ import { useSession } from "@/hooks/useSession";
 import { toSupportedLocale, useLocaleContext } from "@/components/locale-provider";
 import type { Database } from "@/lib/supabase/types";
 import { readActiveHouseholdId, saveActiveHouseholdId } from "@/lib/household/workflows";
-import type { NumberFormatPref } from "@/lib/money";
+import { isNumberFormatPref, type NumberFormatPref } from "@/lib/money";
 
 type MemberRole = Database["public"]["Enums"]["household_member_role"];
 
@@ -59,7 +59,7 @@ async function fetchMemberships(userId: string): Promise<Membership[]> {
         householdId: row.household_id,
         role: row.role,
         displayName: row.display_name,
-        numberFormat: row.number_format as NumberFormatPref,
+        numberFormat: isNumberFormatPref(row.number_format) ? row.number_format : "locale",
         household: {
           name: household.name,
           country: household.country,

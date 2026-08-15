@@ -14,9 +14,18 @@ export function getArticle(locale: string, slug: string): Article | null {
     return localeArticles[slug];
   }
   const esArticles = HELP_ARTICLES["es"];
-  if (esArticles && esArticles[slug]) return esArticles[slug];
+  if (esArticles && esArticles[slug]) {
+    console.warn(`help: no "${slug}" article for locale "${normLocale}", falling back to "es"`);
+    return esArticles[slug];
+  }
   const enArticles = HELP_ARTICLES["en"];
-  if (enArticles && enArticles[slug]) return enArticles[slug];
+  if (enArticles && enArticles[slug]) {
+    console.warn(
+      `help: no "${slug}" article for locale "${normLocale}" or "es", falling back to "en"`,
+    );
+    return enArticles[slug];
+  }
+  console.warn(`help: no article found for slug "${slug}" in any locale`);
   return null;
 }
 
