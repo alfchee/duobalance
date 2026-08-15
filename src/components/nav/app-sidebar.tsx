@@ -44,8 +44,11 @@ export function AppSidebar() {
         href="/balances"
         className="mb-8 flex items-center gap-2 px-2 text-xl font-black tracking-tight"
       >
-        <span className="flex size-8 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-          <Wallet className="size-4" />
+        <span
+          aria-hidden
+          className="grid size-8 place-items-center rounded-2xl bg-primary text-sm font-black text-primary-foreground"
+        >
+          db
         </span>
         duobalance
       </Link>
