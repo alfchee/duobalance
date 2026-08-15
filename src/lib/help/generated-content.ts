@@ -22,12 +22,25 @@ export type Article = {
 };
 
 export const ALL_HELP_SLUGS: string[] = [
+  "adding-accounts",
+  "balance-looks-wrong",
+  "bill-reminders-not-arriving",
+  "categories-and-auto-rules",
+  "exchange-rates-stale",
+  "exporting-your-data",
+  "getting-started-creating-household",
   "household-vs-personal-budgets",
+  "installing-on-mobile",
+  "inviting-your-partner",
   "ledger-vs-manual-balance",
+  "multi-currency-and-exchange-rates",
   "number-format-currency-timezone",
+  "privacy-what-we-can-and-cant-see",
   "private-accounts-and-views",
   "reading-the-charts",
+  "recording-transaction-fast",
   "recurrence-and-marking-paid",
+  "transfers-arent-expenses",
   "who-spent-vs-who-typed",
 ];
 
@@ -39,7 +52,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "ledger-vs-manual-balance",
         category: "accounts",
         order: 1,
-        related: ["private-accounts-and-views", "who-spent-vs-who-typed"],
+        related: ["private-accounts-and-views", "balance-looks-wrong"],
         updated: "2026-08-15",
       },
       headings: [
@@ -69,7 +82,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
     },
     "private-accounts-and-views": {
       frontmatter: {
-        title: "Cuentas privadas y visibilidad de saldos",
+        title: "¿Por qué mi pareja y yo vemos totales diferentes? Cuentas privadas",
         slug: "private-accounts-and-views",
         category: "accounts",
         order: 2,
@@ -101,13 +114,42 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       content:
         '\n# Cuentas privadas y visibilidad de saldos\n\nEn duobalance puedes elegir qué cuentas son compartidas con el hogar y cuáles son privadas.\n\n## Vistas: Todo, Mis cuentas y Compartidas\n\n- **Compartida (Shared):** Ambos miembros del hogar pueden ver el saldo, historial y transacciones de esta cuenta.\n- **Privada (Mine):** Solo el propietario de la cuenta puede ver el saldo detallado y los movimientos individuales.\n\n## ¿Por qué mi pareja y yo vemos totales diferentes?\n\nSi tienes una cuenta privada, tu total personal (vista "Todo" o "Mío") incluirá tus fondos privados, mientras que la vista de tu pareja no los incluirá. Esto es por diseño para respetar la privacidad financiera individual dentro del hogar.\n\n## Transacciones privadas en Presupuestos\n\nLas transacciones realizadas desde una cuenta privada aún pueden asignarse a presupuestos del hogar si tú decides categorizarlas como gasto compartido.\n',
     },
-    "who-spent-vs-who-typed": {
+    "transfers-arent-expenses": {
       frontmatter: {
-        title: "¿Quién gastó vs. quién lo registró?",
-        slug: "who-spent-vs-who-typed",
+        title: "¿Por qué las transferencias no aparecen como gastos en presupuestos o gráficos?",
+        slug: "transfers-arent-expenses",
         category: "transactions",
         order: 3,
-        related: ["ledger-vs-manual-balance", "transfers-and-expenses"],
+        related: ["who-spent-vs-who-typed", "recording-transaction-fast"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "¿Por qué las transferencias no son gastos?",
+          id: "por-qu-las-transferencias-no-son-gastos",
+        },
+        {
+          level: 2,
+          text: "Patrimonio neutro",
+          id: "patrimonio-neutro",
+        },
+        {
+          level: 2,
+          text: "Cómo registrar una transferencia",
+          id: "cmo-registrar-una-transferencia",
+        },
+      ],
+      content:
+        "\n# ¿Por qué las transferencias no son gastos?\n\nMover dinero entre dos cuentas de tu hogar (por ejemplo, desde tu cuenta corriente a tu tarjeta de crédito o a la cuenta de ahorros) no disminuye el patrimonio del hogar.\n\n## Patrimonio neutro\n\n- **Transferencias entre cuentas:** Solo mueven fondos de un lugar a otro. No son salidas de dinero reales, por lo que no se cuentan como gastos ni reducen tus presupuestos.\n- **Gastos reales:** Ocurren cuando el dinero sale del hogar hacia un tercero (supermercado, servicios, alquiler).\n\n## Cómo registrar una transferencia\n\nAl crear un movimiento, selecciona la pestaña **Transferencia**, elige la cuenta de origen y la cuenta de destino. Ambas cuentas actualizarán sus saldos sin afectar tus presupuestos mensuales.\n",
+    },
+    "who-spent-vs-who-typed": {
+      frontmatter: {
+        title: "¿Quién gastó el dinero vs. quién lo registró?",
+        slug: "who-spent-vs-who-typed",
+        category: "transactions",
+        order: 4,
+        related: ["transfers-arent-expenses", "recording-transaction-fast"],
         updated: "2026-08-15",
       },
       headings: [
@@ -130,12 +172,152 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       content:
         '\n# ¿Quién gastó vs. quién lo registró?\n\nAl registrar un movimiento en duobalance, distinguimos entre **Quién gastó (spent_by)** y **Quién registró (entered_by)**.\n\n## ¿Por qué existe esta distinción?\n\nEs muy común que una persona ingrese los recibos o facturas de ambas personas al final del día o de la semana.\n\n- **Gastado por (spent_by):** Indica de quién fue la compra o responsabilidad. Se utiliza para filtrar reportes personales y presupuestos individuales.\n- **Registrado por (entered_by):** Se asigna automáticamente al usuario con la sesión activa que creó la transacción.\n\n## Corrección de atribución\n\nPuedes editar una transacción existente en cualquier momento para cambiar la opción "Gastado por" si fue asignada incorrectamente.\n',
     },
+    "getting-started-creating-household": {
+      frontmatter: {
+        title: "¿Cómo empezar y crear tu hogar en duobalance?",
+        slug: "getting-started-creating-household",
+        category: "general",
+        order: 5,
+        related: ["inviting-your-partner", "adding-accounts"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Primeros pasos: cómo crear tu hogar",
+          id: "primeros-pasos-cmo-crear-tu-hogar",
+        },
+        {
+          level: 2,
+          text: "Registro inicial",
+          id: "registro-inicial",
+        },
+        {
+          level: 2,
+          text: "Siguientes pasos recomendados",
+          id: "siguientes-pasos-recomendados",
+        },
+      ],
+      content:
+        '\n# Primeros pasos: cómo crear tu hogar\n\nUn hogar en duobalance es el espacio compartido donde tú y tu pareja administran sus finanzas.\n\n## Registro inicial\n\n1. Crea tu cuenta con tu correo electrónico.\n2. Al iniciar sesión por primera vez, dale un nombre a tu hogar (por ejemplo, "Hogar García-López").\n3. Selecciona la **Moneda Base** del hogar. Todos los reportes globales consolidarán los montos en esta moneda.\n\n## Siguientes pasos recomendados\n\n- Invita a tu pareja desde **Ajustes del Hogar**.\n- Agrega tus primeras cuentas bancarias o de efectivo en **Saldos**.\n- Configura tus presupuestos principales en **Presupuesto**.\n',
+    },
+    "inviting-your-partner": {
+      frontmatter: {
+        title: "¿Cómo invitar a tu pareja a unirse a tu hogar?",
+        slug: "inviting-your-partner",
+        category: "general",
+        order: 6,
+        related: ["getting-started-creating-household", "privacy-what-we-can-and-cant-see"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "¿Cómo invitar a tu pareja a duobalance?",
+          id: "cmo-invitar-a-tu-pareja-a-duobalance",
+        },
+        {
+          level: 2,
+          text: "Pasos para enviar la invitación",
+          id: "pasos-para-enviar-la-invitacin",
+        },
+        {
+          level: 2,
+          text: "Cómo acepta tu pareja",
+          id: "cmo-acepta-tu-pareja",
+        },
+      ],
+      content:
+        "\n# ¿Cómo invitar a tu pareja a duobalance?\n\nAdministrar el presupuesto en pareja requiere que ambos tengan acceso al mismo hogar.\n\n## Pasos para enviar la invitación\n\n1. Ve a **Configuración** y selecciona la sección **Miembros del Hogar**.\n2. Ingresa el correo electrónico de tu pareja.\n3. Haz clic en **Enviar invitación**.\n\n## Cómo acepta tu pareja\n\n- Tu pareja recibirá un enlace de invitación por correo electrónico.\n- Al abrir el enlace e iniciar sesión o registrarse, se vinculará automáticamente a tu hogar y ambos verán la misma información compartida inmediatamente.\n",
+    },
+    "adding-accounts": {
+      frontmatter: {
+        title: "¿Cómo agregar cuentas bancarias o de efectivo?",
+        slug: "adding-accounts",
+        category: "accounts",
+        order: 7,
+        related: ["ledger-vs-manual-balance", "private-accounts-and-views"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Agregar cuentas: tipos, monedas y privacidad",
+          id: "agregar-cuentas-tipos-monedas-y-privacidad",
+        },
+        {
+          level: 2,
+          text: "Pasos para crear una cuenta",
+          id: "pasos-para-crear-una-cuenta",
+        },
+      ],
+      content:
+        '\n# Agregar cuentas: tipos, monedas y privacidad\n\nPuedes registrar todas tus cuentas bancarias, tarjetas de crédito, efectivo e inversiones.\n\n## Pasos para crear una cuenta\n\n1. Dirígete a la sección **Saldos** y haz clic en **+ Nueva cuenta**.\n2. Completa los detalles de la cuenta:\n   - **Nombre:** Un nombre descriptivo (ej. "Banco Estado Corriente" o "Efectivo").\n   - **Tipo:** Cuenta corriente, ahorros, tarjeta de crédito, efectivo o inversión.\n   - **Moneda:** Selecciona la moneda nativa de la cuenta.\n   - **Visibilidad:** Elige entre **Compartida** (visible para la pareja) o **Privada**.\n   - **Modo de saldo:** Elige **Libro diario** o **Manual**.\n3. Ingresa el **Saldo inicial** y guarda los cambios.\n',
+    },
+    "recording-transaction-fast": {
+      frontmatter: {
+        title: "¿Cómo registrar un movimiento de forma rápida?",
+        slug: "recording-transaction-fast",
+        category: "transactions",
+        order: 8,
+        related: ["who-spent-vs-who-typed", "categories-and-auto-rules"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Cómo registrar un movimiento rápidamente",
+          id: "cmo-registrar-un-movimiento-rpidamente",
+        },
+        {
+          level: 2,
+          text: "Registro rápido",
+          id: "registro-rpido",
+        },
+        {
+          level: 2,
+          text: "Consejos de rapidez",
+          id: "consejos-de-rapidez",
+        },
+      ],
+      content:
+        "\n# Cómo registrar un movimiento rápidamente\n\nduobalance está diseñado para que registrar un gasto te tome solo unos segundos desde tu teléfono o computador.\n\n## Registro rápido\n\n1. Presiona el botón flotante **+** o **Agregar** en la barra de navegación.\n2. Ingresa el monto del movimiento.\n3. Elige el tipo: **Gasto**, **Ingreso** o **Transferencia**.\n4. Selecciona la categoría y la cuenta utilizada.\n5. Selecciona **Gastado por** (quién hizo el gasto).\n6. Presiona **Guardar**.\n\n## Consejos de rapidez\n\n- Si usas la misma categoría o cuenta frecuentemente, duobalance recordará tus elecciones recientes.\n- Puedes agregar notas cortas si necesitas aclarar un detalle específico.\n",
+    },
+    "categories-and-auto-rules": {
+      frontmatter: {
+        title: "¿Cómo funcionan las categorías y reglas automáticas?",
+        slug: "categories-and-auto-rules",
+        category: "transactions",
+        order: 9,
+        related: ["recording-transaction-fast", "household-vs-personal-budgets"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Categorías y reglas de autocategorización",
+          id: "categoras-y-reglas-de-autocategorizacin",
+        },
+        {
+          level: 2,
+          text: "Categorías por defecto y personalizadas",
+          id: "categoras-por-defecto-y-personalizadas",
+        },
+        {
+          level: 2,
+          text: "Reglas de autocategorización",
+          id: "reglas-de-autocategorizacin",
+        },
+      ],
+      content:
+        '\n# Categorías y reglas de autocategorización\n\nLas categorías organizan tus movimientos para que los presupuestos y reportes reflejen tus hábitos de consumo.\n\n## Categorías por defecto y personalizadas\n\nduobalance incluye categorías estándar como Alimentación, Servicios, Transporte y Vivienda. Puedes crear nuevas categorías o editar las existentes desde **Ajustes > Categorías**.\n\n## Reglas de autocategorización\n\nLas reglas automáticas te permiten asignar categorías basadas en el texto de la descripción o comercio:\n\n- **Creación de reglas:** Cuando registras un comercio recurrente (ej. "Supermercado X"), puedes guardar una regla para que los movimientos futuros que contengan esa palabra clave se asignen automáticamente a la categoría correspondiente.\n',
+    },
     "household-vs-personal-budgets": {
       frontmatter: {
-        title: "Presupuestos del hogar vs. presupuestos personales",
+        title: "¿Cómo administrar presupuestos del hogar vs. personales?",
         slug: "household-vs-personal-budgets",
         category: "budgets",
-        order: 4,
+        order: 10,
         related: ["private-accounts-and-views", "reading-the-charts"],
         updated: "2026-08-15",
       },
@@ -166,11 +348,11 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
     },
     "recurrence-and-marking-paid": {
       frontmatter: {
-        title: "Facturas recurrentes y marcar como pagado",
+        title: "¿Cómo administrar facturas recurrentes y marcarlas como pagadas?",
         slug: "recurrence-and-marking-paid",
         category: "bills",
-        order: 5,
-        related: ["who-spent-vs-who-typed", "bill-reminders-troubleshooting"],
+        order: 11,
+        related: ["bill-reminders-not-arriving", "who-spent-vs-who-typed"],
         updated: "2026-08-15",
       },
       headings: [
@@ -195,11 +377,11 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
     },
     "reading-the-charts": {
       frontmatter: {
-        title: "¿Cómo interpretar los gráficos y reportes?",
+        title: "¿Cómo interpretar los gráficos y reportes del hogar?",
         slug: "reading-the-charts",
         category: "reports",
-        order: 6,
-        related: ["household-vs-personal-budgets", "multi-currency-exchange-rates"],
+        order: 12,
+        related: ["household-vs-personal-budgets", "multi-currency-and-exchange-rates"],
         updated: "2026-08-15",
       },
       headings: [
@@ -227,13 +409,42 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       content:
         "\n# ¿Cómo interpretar los gráficos y reportes?\n\nLa sección de Reportes convierte tus transacciones en visión financiera clara para el hogar.\n\n## Gráfico por categorías\n\nMuestra en qué categorías se concentra la mayor parte de tus gastos en el rango de fechas seleccionado.\n\n## Evolución mensual e ingresos vs. gastos\n\nCompara el flujo total de entradas y salidas mes a mes.\n\n- **Barras verdes:** Ingresos totales.\n- **Barras rojas:** Gastos totales.\n\n## Conversión de moneda en reportes\n\nTodos los montos se convierten a la moneda base de tu hogar utilizando los tipos de cambio registrados en la fecha correspondiente.\n",
     },
+    "multi-currency-and-exchange-rates": {
+      frontmatter: {
+        title: "¿Cómo funciona el manejo de varias monedas y tipos de cambio?",
+        slug: "multi-currency-and-exchange-rates",
+        category: "settings",
+        order: 13,
+        related: ["number-format-currency-timezone", "exchange-rates-stale"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Multimoneda y tipos de cambio",
+          id: "multimoneda-y-tipos-de-cambio",
+        },
+        {
+          level: 2,
+          text: "Obtención de tipos de cambio",
+          id: "obtencin-de-tipos-de-cambio",
+        },
+        {
+          level: 2,
+          text: "Ajuste manual de tasa",
+          id: "ajuste-manual-de-tasa",
+        },
+      ],
+      content:
+        "\n# Multimoneda y tipos de cambio\n\nduobalance te permite tener cuentas y movimientos en diferentes monedas (USD, EUR, CLP, BRL, etc.) mientras consolida los totales en la moneda base de tu hogar.\n\n## Obtención de tipos de cambio\n\n- duobalance actualiza diariamente las tasas de cambio de monedas mediante un servicio automático.\n- Cada transacción almacena la tasa de cambio vigente en el momento de su realización para no alterar los registros históricos.\n\n## Ajuste manual de tasa\n\nSi realizaste un cambio de divisas con una tasa especial o diferente a la de mercado:\n\n1. Al crear o editar la transacción en moneda extranjera, activa la opción de **Ajustar tasa de cambio**.\n2. Ingresa manualmente el valor pactado.\n",
+    },
     "number-format-currency-timezone": {
       frontmatter: {
-        title: "Configuración de moneda, formato de números y zona horaria",
+        title: "¿Cómo cambiar idioma, formato de números, zona horaria y moneda base?",
         slug: "number-format-currency-timezone",
         category: "settings",
-        order: 7,
-        related: ["multi-currency-exchange-rates", "stale-exchange-rates"],
+        order: 14,
+        related: ["multi-currency-and-exchange-rates", "exporting-your-data"],
         updated: "2026-08-15",
       },
       headings: [
@@ -259,7 +470,166 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Configuración de moneda, formato de números y zona horaria\n\nPuedes personalizar la manera en que duobalance muestra los montos y fechas en la sección **Ajustes**.\n\n## Moneda Base del Hogar\n\nEs la moneda principal en la que se calculan los totales y reportes del hogar.\n\n## Formato de Números\n\nElige entre separadores con punto (`1.234,56`) o con coma (`1,234.56`) según tus preferencias regionales.\n\n## Zona Horaria\n\nAsegura que los cierres de mes y las fechas de facturas se calculen según tu hora local.\n",
+        "\n# Configuración de moneda, formato de números y zona horaria\n\nPuedes personalizar la manera en que duobalance muestra los montos y fechas en la sección **Configuración**.\n\n## Moneda Base del Hogar\n\nEs la moneda principal en la que se calculan los totales y reportes del hogar.\n\n## Formato de Números\n\nElige entre separadores con punto (`1.234,56`) o con coma (`1,234.56`) según tus preferencias regionales.\n\n## Zona Horaria\n\nAsegura que los cierres de mes y las fechas de facturas se calculen según tu hora local.\n",
+    },
+    "exporting-your-data": {
+      frontmatter: {
+        title: "¿Cómo exportar tus datos financieros a archivos CSV o JSON?",
+        slug: "exporting-your-data",
+        category: "settings",
+        order: 15,
+        related: ["privacy-what-we-can-and-cant-see", "number-format-currency-timezone"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Exportar tus datos financieros",
+          id: "exportar-tus-datos-financieros",
+        },
+        {
+          level: 2,
+          text: "Pasos para realizar una exportación",
+          id: "pasos-para-realizar-una-exportacin",
+        },
+      ],
+      content:
+        "\n# Exportar tus datos financieros\n\nTus datos son siempre tuyos. Puedes respaldar o descargar el historial de transacciones y cuentas en cualquier momento.\n\n## Pasos para realizar una exportación\n\n1. Dirígete a **Configuración** y desplázate hasta **Datos y Privacidad**.\n2. Selecciona **Exportar datos**.\n3. Elige el formato deseado:\n   - **CSV:** Ideal para abrir en hojas de cálculo como Excel o Google Sheets.\n   - **JSON:** Formato completo estructurado para respaldos de datos.\n4. Presiona **Descargar archivo**.\n",
+    },
+    "privacy-what-we-can-and-cant-see": {
+      frontmatter: {
+        title: "Privacidad: ¿qué información pueden ver duobalance y tu pareja?",
+        slug: "privacy-what-we-can-and-cant-see",
+        category: "general",
+        order: 16,
+        related: ["private-accounts-and-views", "exporting-your-data"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Privacidad: qué podemos y qué no podemos ver",
+          id: "privacidad-qu-podemos-y-qu-no-podemos-ver",
+        },
+        {
+          level: 2,
+          text: "Lo que ve tu pareja",
+          id: "lo-que-ve-tu-pareja",
+        },
+        {
+          level: 2,
+          text: "Lo que ve la plataforma",
+          id: "lo-que-ve-la-plataforma",
+        },
+      ],
+      content:
+        "\n# Privacidad: qué podemos y qué no podemos ver\n\nEn duobalance la privacidad financiera y la seguridad de tus datos son prioridades fundamentales.\n\n## Lo que ve tu pareja\n\n- Tu pareja ve únicamente la información de las cuentas que configures como **Compartidas** y las transacciones asociadas a ellas.\n- Tus cuentas **Privadas** y sus detalles individuales son invisibles para tu pareja.\n\n## Lo que ve la plataforma\n\n- duobalance utiliza cifrado y políticas de seguridad a nivel de base de datos (RLS) para que solo los miembros autorizados de tu hogar accedan a tu información.\n- No vendemos ni compartimos tus datos con anunciantes ni terceros.\n",
+    },
+    "installing-on-mobile": {
+      frontmatter: {
+        title: "¿Cómo instalar duobalance en tu iPhone o Android?",
+        slug: "installing-on-mobile",
+        category: "general",
+        order: 17,
+        related: ["getting-started-creating-household", "bill-reminders-not-arriving"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Cómo instalar duobalance en iPhone o Android",
+          id: "cmo-instalar-duobalance-en-iphone-o-android",
+        },
+        {
+          level: 2,
+          text: "En iPhone (iOS)",
+          id: "en-iphone-ios",
+        },
+        {
+          level: 2,
+          text: "En Android",
+          id: "en-android",
+        },
+      ],
+      content:
+        "\n# Cómo instalar duobalance en iPhone o Android\n\nduobalance funciona como una Aplicación Web Progresiva (PWA), lo que te permite instalarla en tu pantalla de inicio sin pasar por tiendas de aplicaciones.\n\n## En iPhone (iOS)\n\n1. Abre Safari y navega a la dirección web de duobalance.\n2. Toca el botón **Compartir** (icono de cuadrado con flecha hacia arriba).\n3. Desplázate y selecciona **Agregar a pantalla de inicio**.\n\n## En Android\n\n1. Abre Chrome u otro navegador compatible.\n2. Toca el menú de tres puntos en la esquina superior derecha.\n3. Selecciona **Instalar aplicación** o **Agregar a pantalla principal**.\n\nPara más detalles, puedes visitar la guía paso a paso en [/install](/install).\n",
+    },
+    "bill-reminders-not-arriving": {
+      frontmatter: {
+        title: "¿Por qué no llegan los recordatorios de facturas?",
+        slug: "bill-reminders-not-arriving",
+        category: "bills",
+        order: 18,
+        related: ["recurrence-and-marking-paid", "installing-on-mobile"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "¿Por qué no llegan los recordatorios de facturas?",
+          id: "por-qu-no-llegan-los-recordatorios-de-facturas",
+        },
+        {
+          level: 2,
+          text: "Notificaciones en iOS (iPhone)",
+          id: "notificaciones-en-ios-iphone",
+        },
+        {
+          level: 2,
+          text: "Canal de correo electrónico garantizado",
+          id: "canal-de-correo-electrnico-garantizado",
+        },
+      ],
+      content:
+        "\n# ¿Por qué no llegan los recordatorios de facturas?\n\nSi configuraste un recordatorio de factura y no recibiste la notificación en tu teléfono o correo, considera las siguientes causas.\n\n## Notificaciones en iOS (iPhone)\n\nEn iOS, las notificaciones web push requieren que la aplicación esté instalada como PWA en la pantalla de inicio y que el sistema operativo sea iOS 16.4 o superior.\n\n- **Solución:** Sigue la guía en [/install](/install) para agregar duobalance a tu pantalla de inicio.\n\n## Canal de correo electrónico garantizado\n\nPara garantizar que nunca te pierdas un vencimiento, duobalance envía recordatorios por correo electrónico. Revisa tu carpeta de correo no deseado (spam) y agrega la dirección de duobalance a tus contactos de confianza.\n",
+    },
+    "balance-looks-wrong": {
+      frontmatter: {
+        title: "¿Qué hacer si el saldo de una cuenta parece incorrecto?",
+        slug: "balance-looks-wrong",
+        category: "accounts",
+        order: 19,
+        related: ["ledger-vs-manual-balance", "adding-accounts"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "¿Qué hacer si un saldo se ve incorrecto?",
+          id: "qu-hacer-si-un-saldo-se-ve-incorrecto",
+        },
+        {
+          level: 2,
+          text: "Comprobaciones paso a paso",
+          id: "comprobaciones-paso-a-paso",
+        },
+      ],
+      content:
+        "\n# ¿Qué hacer si un saldo se ve incorrecto?\n\nSi notas una discrepancia entre el saldo que muestra duobalance y el saldo real de tu banco, sigue estos pasos de diagnóstico.\n\n## Comprobaciones paso a paso\n\n1. **Verifica el modo de saldo:** Asegúrate de saber si la cuenta está en modo **Libro diario** o **Manual**.\n2. **Revisa el saldo inicial:** Ve a **Saldos**, edita la cuenta y confirma que el saldo inicial configurado coincida con la realidad a la fecha de inicio.\n3. **Revisa transacciones omitidas:** Confirma que no falte ningún movimiento por registrar.\n4. **Revisa transferencias entre cuentas:** Verifica si una transferencia fue registrada como gasto en lugar de transferencia.\n",
+    },
+    "exchange-rates-stale": {
+      frontmatter: {
+        title: "¿Por qué aparece una advertencia de tipo de cambio desactualizado?",
+        slug: "exchange-rates-stale",
+        category: "settings",
+        order: 20,
+        related: ["multi-currency-and-exchange-rates", "number-format-currency-timezone"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "¿Por qué la tasa de cambio muestra una advertencia?",
+          id: "por-qu-la-tasa-de-cambio-muestra-una-advertencia",
+        },
+        {
+          level: 2,
+          text: "¿Qué significa la advertencia?",
+          id: "qu-significa-la-advertencia",
+        },
+      ],
+      content:
+        "\n# ¿Por qué la tasa de cambio muestra una advertencia?\n\nCuando registras movimientos en una moneda distinta a la moneda base de tu hogar, duobalance utiliza tasas de cambio oficiales.\n\n## ¿Qué significa la advertencia?\n\nSi la tasa de cambio no se ha actualizado en las últimas 24 horas (por ejemplo, durante fines de semana o feriados bancarios), el sistema muestra un indicador de aviso.\n\n- **Efecto:** Puedes continuar registrando transacciones sin inconvenientes.\n- **Solución:** Las tasas se actualizarán automáticamente en la siguiente ejecución del proceso diario, o bien puedes ajustar manualmente la tasa en la pantalla de la transacción.\n",
     },
   },
   en: {
@@ -269,7 +639,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "ledger-vs-manual-balance",
         category: "accounts",
         order: 1,
-        related: ["private-accounts-and-views", "who-spent-vs-who-typed"],
+        related: ["private-accounts-and-views", "balance-looks-wrong"],
         updated: "2026-08-15",
       },
       headings: [
@@ -299,7 +669,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
     },
     "private-accounts-and-views": {
       frontmatter: {
-        title: "Private accounts and balance visibility",
+        title: "Why do my partner and I see different totals? Private accounts",
         slug: "private-accounts-and-views",
         category: "accounts",
         order: 2,
@@ -314,8 +684,8 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
         {
           level: 2,
-          text: "Views: All, Mine, and Shared",
-          id: "views-all-mine-and-shared",
+          text: "Views: All, My Accounts, and Shared",
+          id: "views-all-my-accounts-and-shared",
         },
         {
           level: 2,
@@ -329,27 +699,56 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        '\n# Private accounts and balance visibility\n\nIn duobalance you can choose which accounts are shared with the household and which remain private.\n\n## Views: All, Mine, and Shared\n\n- **Shared:** Both members of the household can view the balance, history, and transactions.\n- **Private (Mine):** Only the account owner can view detailed balances and individual movements.\n\n## Why do my partner and I see different totals?\n\nIf you have a private account, your personal total ("All" or "Mine" view) will include your private funds, while your partner\'s view will not. This is by design to respect individual financial privacy within the household.\n\n## Private transactions in Budgets\n\nTransactions made from a private account can still be assigned to household budgets if you choose to categorize them as a shared expense.\n',
+        '\n# Private accounts and balance visibility\n\nIn duobalance you can choose which accounts are shared with your household and which remain private.\n\n## Views: All, My Accounts, and Shared\n\n- **Shared:** Both household members can view the balance, history, and individual transactions of this account.\n- **Private (Mine):** Only the account owner can view detailed balances and individual line items.\n\n## Why do my partner and I see different totals?\n\nIf you hold a private account, your personal total ("All" or "Mine" view) includes your private funds, while your partner\'s view does not. This is by design to respect individual financial privacy within the household.\n\n## Private transactions in Budgets\n\nTransactions made from a private account can still be assigned to household budgets if you choose to categorize them as shared expenses.\n',
     },
-    "who-spent-vs-who-typed": {
+    "transfers-arent-expenses": {
       frontmatter: {
-        title: "Who spent it vs. who recorded it?",
-        slug: "who-spent-vs-who-typed",
+        title: "Why transfers aren't expenses in budgets or charts",
+        slug: "transfers-arent-expenses",
         category: "transactions",
         order: 3,
-        related: ["ledger-vs-manual-balance", "transfers-and-expenses"],
+        related: ["who-spent-vs-who-typed", "recording-transaction-fast"],
         updated: "2026-08-15",
       },
       headings: [
         {
           level: 1,
-          text: "Who spent it vs. who recorded it?",
+          text: "Why transfers aren't expenses",
+          id: "why-transfers-arent-expenses",
+        },
+        {
+          level: 2,
+          text: "Net-zero wealth impact",
+          id: "net-zero-wealth-impact",
+        },
+        {
+          level: 2,
+          text: "How to log a transfer",
+          id: "how-to-log-a-transfer",
+        },
+      ],
+      content:
+        "\n# Why transfers aren't expenses\n\nMoving money between two household accounts (for example, from your checking account to your credit card or savings account) does not decrease total household wealth.\n\n## Net-zero wealth impact\n\n- **Inter-account transfers:** Simply move funds from one place to another. They are not actual outflows and therefore do not count as expenses or reduce your budget limits.\n- **Real expenses:** Occur when money leaves the household to a third party (groceries, utilities, rent).\n\n## How to log a transfer\n\nWhen creating a transaction, select the **Transfer** tab, then pick the origin account and destination account. Both account balances will update without affecting your monthly spending budgets.\n",
+    },
+    "who-spent-vs-who-typed": {
+      frontmatter: {
+        title: "Who spent it vs. who recorded it",
+        slug: "who-spent-vs-who-typed",
+        category: "transactions",
+        order: 4,
+        related: ["transfers-arent-expenses", "recording-transaction-fast"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Who spent it vs. who recorded it",
           id: "who-spent-it-vs-who-recorded-it",
         },
         {
           level: 2,
-          text: "Why distinguish between them?",
-          id: "why-distinguish-between-them",
+          text: "Why this distinction matters",
+          id: "why-this-distinction-matters",
         },
         {
           level: 2,
@@ -358,14 +757,154 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        '\n# Who spent it vs. who recorded it?\n\nWhen logging a transaction in duobalance, we distinguish between **Who spent it (spent_by)** and **Who recorded it (entered_by)**.\n\n## Why distinguish between them?\n\nIt is very common for one partner to enter receipts or invoices for both people at the end of the day or week.\n\n- **Spent by (spent_by):** Indicates whose purchase or responsibility it was. Used for personal reports and individual budgets.\n- **Recorded by (entered_by):** Automatically assigned to the active user who created the transaction entry.\n\n## Correcting attribution\n\nYou can edit an existing transaction at any time to change the "Spent by" selection if it was misassigned.\n',
+        '\n# Who spent it vs. who recorded it\n\nWhen logging a transaction in duobalance, we distinguish between **Who spent it (spent_by)** and **Who recorded it (entered_by)**.\n\n## Why this distinction matters\n\nIt is common for one partner to enter receipts for both people at the end of the day or week.\n\n- **Spent by (spent_by):** Indicates whose purchase or responsibility it was. Used for filtering personal reports and individual budgets.\n- **Recorded by (entered_by):** Automatically assigned to the active user session that created the transaction entry.\n\n## Correcting attribution\n\nYou can edit any existing transaction at any time to update the "Spent by" field if it was assigned incorrectly.\n',
+    },
+    "getting-started-creating-household": {
+      frontmatter: {
+        title: "Getting started: how to create your household in duobalance",
+        slug: "getting-started-creating-household",
+        category: "general",
+        order: 5,
+        related: ["inviting-your-partner", "adding-accounts"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Getting started: creating your household",
+          id: "getting-started-creating-your-household",
+        },
+        {
+          level: 2,
+          text: "Initial setup",
+          id: "initial-setup",
+        },
+        {
+          level: 2,
+          text: "Recommended next steps",
+          id: "recommended-next-steps",
+        },
+      ],
+      content:
+        '\n# Getting started: creating your household\n\nA household in duobalance is the shared workspace where you and your partner manage finances together.\n\n## Initial setup\n\n1. Create your account with your email address.\n2. Upon first signing in, name your household (e.g., "Taylor & Alex Household").\n3. Select your household\'s **Base Currency**. All aggregate reports will consolidate totals into this currency.\n\n## Recommended next steps\n\n- Invite your partner under **Household Settings**.\n- Add your main bank or cash accounts under **Balances**.\n- Set up core category limits under **Budget**.\n',
+    },
+    "inviting-your-partner": {
+      frontmatter: {
+        title: "How to invite your partner to join your household",
+        slug: "inviting-your-partner",
+        category: "general",
+        order: 6,
+        related: ["getting-started-creating-household", "privacy-what-we-can-and-cant-see"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "How to invite your partner to duobalance",
+          id: "how-to-invite-your-partner-to-duobalance",
+        },
+        {
+          level: 2,
+          text: "Steps to send an invitation",
+          id: "steps-to-send-an-invitation",
+        },
+        {
+          level: 2,
+          text: "How your partner joins",
+          id: "how-your-partner-joins",
+        },
+      ],
+      content:
+        "\n# How to invite your partner to duobalance\n\nManaging household finances works best when both partners have access to the same household workspace.\n\n## Steps to send an invitation\n\n1. Navigate to **Settings** and open **Household Members**.\n2. Enter your partner's email address.\n3. Click **Send Invitation**.\n\n## How your partner joins\n\n- Your partner will receive an email invitation link.\n- Clicking the link and signing in or registering will automatically link them to your household, granting access to shared accounts and budgets immediately.\n",
+    },
+    "adding-accounts": {
+      frontmatter: {
+        title: "How to add bank or cash accounts",
+        slug: "adding-accounts",
+        category: "accounts",
+        order: 7,
+        related: ["ledger-vs-manual-balance", "private-accounts-and-views"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Adding accounts: types, currencies, and privacy",
+          id: "adding-accounts-types-currencies-and-privacy",
+        },
+        {
+          level: 2,
+          text: "Steps to create an account",
+          id: "steps-to-create-an-account",
+        },
+      ],
+      content:
+        '\n# Adding accounts: types, currencies, and privacy\n\nYou can track bank accounts, credit cards, cash, and investments in duobalance.\n\n## Steps to create an account\n\n1. Go to **Balances** and click **+ New Account**.\n2. Fill in the account details:\n   - **Name:** A descriptive title (e.g., "Checking Account" or "Cash Wallet").\n   - **Type:** Checking, savings, credit card, cash, or investment.\n   - **Currency:** Choose the native currency of the account.\n   - **Visibility:** Choose **Shared** (visible to your partner) or **Private**.\n   - **Balance mode:** Select **Ledger** or **Manual**.\n3. Enter the **Opening Balance** and save changes.\n',
+    },
+    "recording-transaction-fast": {
+      frontmatter: {
+        title: "How to record a transaction quickly",
+        slug: "recording-transaction-fast",
+        category: "transactions",
+        order: 8,
+        related: ["who-spent-vs-who-typed", "categories-and-auto-rules"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "How to record a transaction quickly",
+          id: "how-to-record-a-transaction-quickly",
+        },
+        {
+          level: 2,
+          text: "Quick entry workflow",
+          id: "quick-entry-workflow",
+        },
+        {
+          level: 2,
+          text: "Speed tips",
+          id: "speed-tips",
+        },
+      ],
+      content:
+        "\n# How to record a transaction quickly\n\nduobalance is optimized so logging expenses takes just a few seconds on desktop or mobile.\n\n## Quick entry workflow\n\n1. Tap the **+** or **Add** button in the navigation bar.\n2. Enter the transaction amount.\n3. Choose the type: **Expense**, **Income**, or **Transfer**.\n4. Pick the category and account used.\n5. Set **Spent by** (who incurred the expense).\n6. Tap **Save**.\n\n## Speed tips\n\n- duobalance remembers your recent account and category selections.\n- Add short notes whenever you need to record extra context for your partner.\n",
+    },
+    "categories-and-auto-rules": {
+      frontmatter: {
+        title: "How categories and auto-categorization rules work",
+        slug: "categories-and-auto-rules",
+        category: "transactions",
+        order: 9,
+        related: ["recording-transaction-fast", "household-vs-personal-budgets"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Categories and auto-categorization rules",
+          id: "categories-and-auto-categorization-rules",
+        },
+        {
+          level: 2,
+          text: "Default and custom categories",
+          id: "default-and-custom-categories",
+        },
+        {
+          level: 2,
+          text: "Auto-categorization rules",
+          id: "auto-categorization-rules",
+        },
+      ],
+      content:
+        '\n# Categories and auto-categorization rules\n\nCategories organize your transactions so budgets and reports reflect your actual spending habits.\n\n## Default and custom categories\n\nduobalance includes standard categories like Food & Dining, Utilities, Transportation, and Housing. You can add or edit custom categories under **Settings > Categories**.\n\n## Auto-categorization rules\n\nAuto-rules allow you to map merchant descriptions to categories automatically:\n\n- **Creating rules:** When logging a recurring vendor (e.g., "Grocery Store X"), you can save an auto-rule so future entries matching that keyword automatically populate the right category.\n',
     },
     "household-vs-personal-budgets": {
       frontmatter: {
-        title: "Household vs. personal budgets",
+        title: "How to manage household vs. personal budgets",
         slug: "household-vs-personal-budgets",
         category: "budgets",
-        order: 4,
+        order: 10,
         related: ["private-accounts-and-views", "reading-the-charts"],
         updated: "2026-08-15",
       },
@@ -392,27 +931,27 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Household vs. personal budgets\n\nduobalance lets you organize budgets into two scopes: **Household** and **Mine**.\n\n## Household Budgets\n\nTrack shared household spending (such as groceries, utilities, rent). Both partners contribute to the limit and see joint progress.\n\n## Personal Budgets\n\nPrivate to each member (such as hobbies or personal care). They let you manage individual spending without affecting shared household targets.\n\n## Switching tabs\n\nUse the tab selector at the top of the Budgets screen to toggle between **Household** and **Mine**.\n",
+        "\n# Household vs. personal budgets\n\nduobalance allows you to organize budgets into two scopes: **Household** and **My Budgets**.\n\n## Household Budgets\n\nTrack shared living costs (such as rent, groceries, and utilities). Both partners contribute toward the limit and view shared progress.\n\n## Personal Budgets\n\nPrivate to each member (e.g., hobbies or personal care). They let you track individual spending without affecting global household limits.\n\n## Switching tabs\n\nUse the toggle at the top of the Budget screen to switch between **Household** and **Mine** views.\n",
     },
     "recurrence-and-marking-paid": {
       frontmatter: {
-        title: "Recurring bills and marking paid",
+        title: "How to manage recurring bills and mark them as paid",
         slug: "recurrence-and-marking-paid",
         category: "bills",
-        order: 5,
-        related: ["who-spent-vs-who-typed", "bill-reminders-troubleshooting"],
+        order: 11,
+        related: ["bill-reminders-not-arriving", "who-spent-vs-who-typed"],
         updated: "2026-08-15",
       },
       headings: [
         {
           level: 1,
-          text: "Recurring bills and marking paid",
-          id: "recurring-bills-and-marking-paid",
+          text: "Recurring bills and marking as paid",
+          id: "recurring-bills-and-marking-as-paid",
         },
         {
           level: 2,
-          text: "Recurrence configuration",
-          id: "recurrence-configuration",
+          text: "Setting up recurrence",
+          id: "setting-up-recurrence",
         },
         {
           level: 2,
@@ -421,15 +960,15 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Recurring bills and marking paid\n\nThe Bills section helps you track fixed, recurring commitments like rent, subscriptions, or utilities.\n\n## Recurrence configuration\n\nWhen creating a bill, choose the repetition frequency (monthly, biweekly, annually, etc.). duobalance generates the corresponding instance for each period automatically.\n\n## Marking as paid\n\nWhen paying a bill:\n\n1. Tap the pending bill instance.\n2. Select **Mark as paid**.\n3. Choose whether to automatically log a linked expense transaction in one of your accounts.\n",
+        "\n# Recurring bills and marking as paid\n\nThe Bills section helps you keep track of fixed, recurring obligations such as rent, subscriptions, or utility payments.\n\n## Setting up recurrence\n\nWhen creating a bill, select the repeat cycle (monthly, biweekly, annually, etc.). duobalance will automatically generate the upcoming bill instance for each period.\n\n## Marking as paid\n\nWhen you pay a bill:\n\n1. Tap the pending bill.\n2. Select **Mark as Paid**.\n3. Choose whether to automatically record a corresponding expense transaction from one of your accounts.\n",
     },
     "reading-the-charts": {
       frontmatter: {
-        title: "How to read charts and reports",
+        title: "How to read household charts and reports",
         slug: "reading-the-charts",
         category: "reports",
-        order: 6,
-        related: ["household-vs-personal-budgets", "multi-currency-exchange-rates"],
+        order: 12,
+        related: ["household-vs-personal-budgets", "multi-currency-and-exchange-rates"],
         updated: "2026-08-15",
       },
       headings: [
@@ -445,8 +984,8 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
         {
           level: 2,
-          text: "Monthly Trends & Income vs. Expense",
-          id: "monthly-trends-income-vs-expense",
+          text: "Monthly Trend and Income vs. Expense",
+          id: "monthly-trend-and-income-vs-expense",
         },
         {
           level: 2,
@@ -455,15 +994,44 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# How to read charts and reports\n\nThe Reports section turns your transactions into clear financial insights for the household.\n\n## Category Breakdown Chart\n\nShows where most of your expenses are concentrated for the selected date range.\n\n## Monthly Trends & Income vs. Expense\n\nCompares total cash inflow and outflow month by month.\n\n- **Green bars:** Total income.\n- **Red bars:** Total expenses.\n\n## Currency conversion in reports\n\nAll amounts are converted to your household's base currency using exchange rates on the transaction date.\n",
+        "\n# How to read charts and reports\n\nThe Reports section turns your raw transactions into clear financial insights for your household.\n\n## Category Breakdown Chart\n\nShows which categories account for the largest portion of your spending during the selected date range.\n\n## Monthly Trend and Income vs. Expense\n\nCompares total money flowing in versus money going out month over month.\n\n- **Green bars:** Total income.\n- **Red bars:** Total expenses.\n\n## Currency conversion in reports\n\nAll foreign currency amounts are converted to your household's base currency using exchange rates recorded on the transaction dates.\n",
+    },
+    "multi-currency-and-exchange-rates": {
+      frontmatter: {
+        title: "How multi-currency support and exchange rates work",
+        slug: "multi-currency-and-exchange-rates",
+        category: "settings",
+        order: 13,
+        related: ["number-format-currency-timezone", "exchange-rates-stale"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Multi-currency and exchange rates",
+          id: "multi-currency-and-exchange-rates",
+        },
+        {
+          level: 2,
+          text: "Automatic exchange rates",
+          id: "automatic-exchange-rates",
+        },
+        {
+          level: 2,
+          text: "Manual rate overrides",
+          id: "manual-rate-overrides",
+        },
+      ],
+      content:
+        "\n# Multi-currency and exchange rates\n\nduobalance lets you maintain accounts and transactions in different currencies (USD, EUR, CLP, BRL, etc.) while consolidating all totals in your household base currency.\n\n## Automatic exchange rates\n\n- duobalance updates official currency exchange rates daily via an automated service.\n- Each transaction stores the exchange rate in effect on its date so historical records remain accurate.\n\n## Manual rate overrides\n\nIf you exchanged currency at a custom or non-market rate:\n\n1. When creating or editing the foreign currency transaction, enable **Override Exchange Rate**.\n2. Manually type the exact agreed rate.\n",
     },
     "number-format-currency-timezone": {
       frontmatter: {
-        title: "Currency, number format, and timezone settings",
+        title: "How to change language, number format, timezone, and base currency",
         slug: "number-format-currency-timezone",
         category: "settings",
-        order: 7,
-        related: ["multi-currency-exchange-rates", "stale-exchange-rates"],
+        order: 14,
+        related: ["multi-currency-and-exchange-rates", "exporting-your-data"],
         updated: "2026-08-15",
       },
       headings: [
@@ -479,8 +1047,8 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
         {
           level: 2,
-          text: "Number Format",
-          id: "number-format",
+          text: "Number Formatting",
+          id: "number-formatting",
         },
         {
           level: 2,
@@ -489,7 +1057,166 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Currency, number format, and timezone settings\n\nYou can customize how duobalance presents numbers and dates in the **Settings** section.\n\n## Household Base Currency\n\nThe primary currency used to calculate household totals and reports.\n\n## Number Format\n\nChoose between period separators (`1,234.56`) or comma separators (`1.234,56`) according to your regional preference.\n\n## Timezone\n\nEnsures month cutoffs and bill due dates are calculated according to your local time.\n",
+        "\n# Currency, number format, and timezone settings\n\nYou can customize how duobalance displays amounts and dates under **Settings**.\n\n## Household Base Currency\n\nThe primary currency used to calculate household totals and summary reports.\n\n## Number Formatting\n\nChoose between period separators (`1,234.56`) or comma separators (`1.234,56`) based on your regional preferences.\n\n## Timezone\n\nEnsures month-end cutoffs and bill due dates are calculated according to your local time.\n",
+    },
+    "exporting-your-data": {
+      frontmatter: {
+        title: "How to export your financial data to CSV or JSON",
+        slug: "exporting-your-data",
+        category: "settings",
+        order: 15,
+        related: ["privacy-what-we-can-and-cant-see", "number-format-currency-timezone"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Exporting your financial data",
+          id: "exporting-your-financial-data",
+        },
+        {
+          level: 2,
+          text: "Steps to export",
+          id: "steps-to-export",
+        },
+      ],
+      content:
+        "\n# Exporting your financial data\n\nYour data belongs to you. You can export or back up your complete transaction and account history at any time.\n\n## Steps to export\n\n1. Go to **Settings** and scroll down to **Data & Privacy**.\n2. Select **Export Data**.\n3. Choose your desired format:\n   - **CSV:** Best for opening in spreadsheets like Excel or Google Sheets.\n   - **JSON:** Complete structured backup format.\n4. Click **Download File**.\n",
+    },
+    "privacy-what-we-can-and-cant-see": {
+      frontmatter: {
+        title: "Privacy: what duobalance and your partner can and cannot see",
+        slug: "privacy-what-we-can-and-cant-see",
+        category: "general",
+        order: 16,
+        related: ["private-accounts-and-views", "exporting-your-data"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Privacy: what we can and cannot see",
+          id: "privacy-what-we-can-and-cannot-see",
+        },
+        {
+          level: 2,
+          text: "What your partner sees",
+          id: "what-your-partner-sees",
+        },
+        {
+          level: 2,
+          text: "What the platform sees",
+          id: "what-the-platform-sees",
+        },
+      ],
+      content:
+        "\n# Privacy: what we can and cannot see\n\nAt duobalance, financial privacy and data security are foundational principles.\n\n## What your partner sees\n\n- Your partner can only see accounts set as **Shared** and transactions associated with those accounts.\n- Your **Private** accounts and their detailed transaction histories remain invisible to your partner.\n\n## What the platform sees\n\n- duobalance uses encryption and database-level Row Level Security (RLS) policies so only authorized members of your household can access your data.\n- We do not sell or share your personal financial data with advertisers or third parties.\n",
+    },
+    "installing-on-mobile": {
+      frontmatter: {
+        title: "How to install duobalance on iPhone or Android",
+        slug: "installing-on-mobile",
+        category: "general",
+        order: 17,
+        related: ["getting-started-creating-household", "bill-reminders-not-arriving"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "How to install duobalance on iPhone or Android",
+          id: "how-to-install-duobalance-on-iphone-or-android",
+        },
+        {
+          level: 2,
+          text: "On iPhone (iOS)",
+          id: "on-iphone-ios",
+        },
+        {
+          level: 2,
+          text: "On Android",
+          id: "on-android",
+        },
+      ],
+      content:
+        "\n# How to install duobalance on iPhone or Android\n\nduobalance runs as a Progressive Web App (PWA), letting you install it to your phone's Home Screen without an app store download.\n\n## On iPhone (iOS)\n\n1. Open Safari and navigate to duobalance.\n2. Tap the **Share** button (square with an upward arrow).\n3. Scroll down and tap **Add to Home Screen**.\n\n## On Android\n\n1. Open Chrome or another supported browser.\n2. Tap the three-dot menu icon in the upper-right corner.\n3. Tap **Install app** or **Add to Home screen**.\n\nFor a complete walkthrough, visit [/install](/install).\n",
+    },
+    "bill-reminders-not-arriving": {
+      frontmatter: {
+        title: "Why aren't bill reminders arriving?",
+        slug: "bill-reminders-not-arriving",
+        category: "bills",
+        order: 18,
+        related: ["recurrence-and-marking-paid", "installing-on-mobile"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Why aren't bill reminders arriving?",
+          id: "why-arent-bill-reminders-arriving",
+        },
+        {
+          level: 2,
+          text: "iOS push notification requirements",
+          id: "ios-push-notification-requirements",
+        },
+        {
+          level: 2,
+          text: "Guaranteed email reminders",
+          id: "guaranteed-email-reminders",
+        },
+      ],
+      content:
+        "\n# Why aren't bill reminders arriving?\n\nIf you set up a bill reminder but haven't received a push or email notification, check the following reasons.\n\n## iOS push notification requirements\n\nOn iOS, web push notifications require the app to be installed as a PWA on your Home Screen and your phone to be running iOS 16.4 or later.\n\n- **Solution:** Follow the guide at [/install](/install) to add duobalance to your Home Screen.\n\n## Guaranteed email reminders\n\nTo ensure you never miss a due date, duobalance also sends email notifications. Check your spam folder and mark duobalance emails as trusted.\n",
+    },
+    "balance-looks-wrong": {
+      frontmatter: {
+        title: "What to do if an account balance looks wrong",
+        slug: "balance-looks-wrong",
+        category: "accounts",
+        order: 19,
+        related: ["ledger-vs-manual-balance", "adding-accounts"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "What to do if a balance looks wrong",
+          id: "what-to-do-if-a-balance-looks-wrong",
+        },
+        {
+          level: 2,
+          text: "Step-by-step diagnostic",
+          id: "step-by-step-diagnostic",
+        },
+      ],
+      content:
+        "\n# What to do if a balance looks wrong\n\nIf you notice a discrepancy between duobalance and your actual bank statement, follow these troubleshooting steps.\n\n## Step-by-step diagnostic\n\n1. **Check the balance mode:** Confirm whether the account is in **Ledger** or **Manual** mode.\n2. **Review the opening balance:** Go to **Balances**, edit the account, and verify that the initial balance matched your real balance on the starting date.\n3. **Look for missing transactions:** Ensure no recent transactions were skipped.\n4. **Check transfer entries:** Verify whether a transfer was accidentally logged as a regular expense.\n",
+    },
+    "exchange-rates-stale": {
+      frontmatter: {
+        title: "Why does an exchange rate show a stale warning?",
+        slug: "exchange-rates-stale",
+        category: "settings",
+        order: 20,
+        related: ["multi-currency-and-exchange-rates", "number-format-currency-timezone"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Why does an exchange rate show a warning?",
+          id: "why-does-an-exchange-rate-show-a-warning",
+        },
+        {
+          level: 2,
+          text: "What the warning means",
+          id: "what-the-warning-means",
+        },
+      ],
+      content:
+        "\n# Why does an exchange rate show a warning?\n\nWhen logging transactions in currencies different from your base currency, duobalance applies official exchange rates.\n\n## What the warning means\n\nIf exchange rates haven't been refreshed in over 24 hours (for instance, over weekends or banking holidays), an informational badge appears.\n\n- **Impact:** You can continue logging transactions normally.\n- **Resolution:** Rates refresh automatically on the next daily background job, or you can manually override the exchange rate on any transaction.\n",
     },
   },
   "pt-BR": {
@@ -499,7 +1226,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "ledger-vs-manual-balance",
         category: "accounts",
         order: 1,
-        related: ["private-accounts-and-views", "who-spent-vs-who-typed"],
+        related: ["private-accounts-and-views", "balance-looks-wrong"],
         updated: "2026-08-15",
       },
       headings: [
@@ -518,13 +1245,18 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Modo Saldo Manual",
           id: "modo-saldo-manual",
         },
+        {
+          level: 2,
+          text: "Como alterar o modo",
+          id: "como-alterar-o-modo",
+        },
       ],
       content:
-        "\n# Modo de saldo manual vs. livro diário\n\nNo duobalance, cada conta funciona em um de dois modos de saldo: **Livro diário (Ledger)** ou **Manual**.\n\n## Modo Livro Diário (Ledger)\n\nO saldo atual da conta é calculado automaticamente somando o saldo inicial e todas as transações associadas.\n\n- **Quando usar:** Para contas principais onde você registra cada gasto, receita ou transferência.\n- **Por que pode divergirem:** Se faltar alguma transação ou se o saldo inicial não estiver correto.\n\n## Modo Saldo Manual\n\nVocê define diretamente qual é o saldo atual atualizando-o periodicamente.\n\n- **Quando usar:** Cartões de crédito, contas de investimento ou secundárias.\n",
+        "\n# Modo de saldo manual vs. livro diário\n\nNo duobalance, cada conta funciona em um de dois modos de saldo: **Livro diário (Ledger)** ou **Manual**.\n\n## Modo Livro Diário (Ledger)\n\nNo modo Livro Diário, o saldo atual da conta é calculado automaticamente somando o saldo inicial e todas as transações associadas.\n\n- **Quando usar:** Para contas principais onde você registra cada gasto, receita ou transferência.\n- **Por que pode divergir:** Se faltar alguma transação ou se o saldo inicial configurado estiver incorreto.\n\n## Modo Saldo Manual\n\nNo modo Manual, você define diretamente qual é o saldo atual atualizando-o periodicamente.\n\n- **Quando usar:** Cartões de crédito, contas de investimento ou secundárias onde você não quer registrar pequenas compras.\n- **Transações no modo manual:** Você ainda pode registrar transações para somar aos orçamentos e relatórios, mas elas não alteram automaticamente o saldo manual.\n\n## Como alterar o modo\n\n1. Vá em **Saldos** ou **Configurações da Conta**.\n2. Clique na conta que deseja modificar.\n3. Selecione o modo de saldo preferido e salve as alterações.\n",
     },
     "private-accounts-and-views": {
       frontmatter: {
-        title: "Contas privadas e visibilidade de saldos",
+        title: "Por que meu parceiro e eu vemos totais diferentes? Contas privadas",
         slug: "private-accounts-and-views",
         category: "accounts",
         order: 2,
@@ -539,20 +1271,59 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
         {
           level: 2,
-          text: "Visões: Tudo, Minhas e Compartilhadas",
-          id: "vises-tudo-minhas-e-compartilhadas",
+          text: "Visualizações: Tudo, Minhas contas e Compartilhadas",
+          id: "visualizaes-tudo-minhas-contas-e-compartilhadas",
+        },
+        {
+          level: 2,
+          text: "Por que vemos totais diferentes?",
+          id: "por-que-vemos-totais-diferentes",
+        },
+        {
+          level: 2,
+          text: "Transações privadas em Orçamentos",
+          id: "transaes-privadas-em-oramentos",
         },
       ],
       content:
-        "\n# Contas privadas e visibilidade de saldos\n\nNo duobalance você escolhe quais contas são compartilhadas e quais são privadas.\n\n## Visões: Tudo, Minhas e Compartilhadas\n\n- **Compartilhada:** Ambos os parceiros podem ver saldo e movimentações.\n- **Privada (Minhas):** Apenas o proprietário visualiza detalhes do saldo.\n",
+        '\n# Contas privadas e visibilidade de saldos\n\nNo duobalance, você pode escolher quais contas são compartilhadas com o lar e quais permanecem privadas.\n\n## Visualizações: Tudo, Minhas contas e Compartilhadas\n\n- **Compartilhada:** Ambos os membros do lar podem ver o saldo, histórico e transações desta conta.\n- **Privada (Minhas):** Apenas o proprietário da conta pode ver o saldo detalhado e as transações individuais.\n\n## Por que vemos totais diferentes?\n\nSe você possui uma conta privada, seu total pessoal (visualização "Tudo" ou "Minhas") incluirá seus fundos privados, enquanto a visualização do seu parceiro não os incluirá. Isso garante a privacidade financeira individual no lar.\n\n## Transações privadas em Orçamentos\n\nTransações feitas a partir de uma conta privada ainda podem ser atribuídas aos orçamentos do lar se você decidir categorizá-las como despesa compartilhada.\n',
+    },
+    "transfers-arent-expenses": {
+      frontmatter: {
+        title: "Por que transferências não contam como despesas em orçamentos ou gráficos?",
+        slug: "transfers-arent-expenses",
+        category: "transactions",
+        order: 3,
+        related: ["who-spent-vs-who-typed", "recording-transaction-fast"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Por que transferências não são despesas?",
+          id: "por-que-transferncias-no-so-despesas",
+        },
+        {
+          level: 2,
+          text: "Impacto neutro no patrimônio",
+          id: "impacto-neutro-no-patrimnio",
+        },
+        {
+          level: 2,
+          text: "Como registrar uma transferência",
+          id: "como-registrar-uma-transferncia",
+        },
+      ],
+      content:
+        "\n# Por que transferências não são despesas?\n\nMover dinheiro entre duas contas do seu lar (por exemplo, da sua conta corrente para o cartão de crédito ou poupança) não diminui o patrimônio total do lar.\n\n## Impacto neutro no patrimônio\n\n- **Transferências entre contas:** Apenas movem fundos de um lugar para outro. Não são saídas reais de dinheiro e, portanto, não contam como despesas nem reduzem seus orçamentos.\n- **Despesas reais:** Ocorrem quando o dinheiro sai do lar para terceiros (supermercado, serviços, aluguel).\n\n## Como registrar uma transferência\n\nAo criar uma transação, selecione a aba **Transferência**, escolha a conta de origem e a conta de destino. Ambos os saldos serão atualizados sem afetar seus orçamentos mensais.\n",
     },
     "who-spent-vs-who-typed": {
       frontmatter: {
-        title: "Quem gastou vs. quem registrou?",
+        title: "Quem gastou o dinheiro vs. quem registrou?",
         slug: "who-spent-vs-who-typed",
         category: "transactions",
-        order: 3,
-        related: ["ledger-vs-manual-balance", "transfers-and-expenses"],
+        order: 4,
+        related: ["transfers-arent-expenses", "recording-transaction-fast"],
         updated: "2026-08-15",
       },
       headings: [
@@ -561,36 +1332,201 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Quem gastou vs. quem registrou?",
           id: "quem-gastou-vs-quem-registrou",
         },
+        {
+          level: 2,
+          text: "Por que essa distinção existe?",
+          id: "por-que-essa-distino-existe",
+        },
+        {
+          level: 2,
+          text: "Corrigindo a atribuição",
+          id: "corrigindo-a-atribuio",
+        },
       ],
       content:
-        "\n# Quem gastou vs. quem registrou?\n\nDistinguimos entre **Quem gastou (spent_by)** e **Quem registrou (entered_by)**.\n\n- **Gasto por:** Identifica de quem foi a despesa.\n- **Registrado por:** O usuário que criou o registro.\n",
+        '\n# Quem gastou vs. quem registrou?\n\nAo registrar uma transação no duobalance, distinguimos entre **Quem gastou (spent_by)** e **Quem registrou (entered_by)**.\n\n## Por que essa distinção existe?\n\nÉ comum que uma pessoa lance os recibos ou notas de ambas as pessoas no final do dia ou da semana.\n\n- **Gastador por (spent_by):** Indica de quem foi a compra ou responsabilidade. Usado para filtrar relatórios pessoais e orçamentos individuais.\n- **Registrado por (entered_by):** Atribuído automaticamente ao usuário ativo que criou o registro.\n\n## Corrigindo a atribuição\n\nVocê pode editar qualquer transação existente a qualquer momento para alterar o campo "Gastador por" se tiver sido atribuído incorretamente.\n',
+    },
+    "getting-started-creating-household": {
+      frontmatter: {
+        title: "Primeiros passos: como criar seu lar no duobalance",
+        slug: "getting-started-creating-household",
+        category: "general",
+        order: 5,
+        related: ["inviting-your-partner", "adding-accounts"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Primeiros passos: criando seu lar",
+          id: "primeiros-passos-criando-seu-lar",
+        },
+        {
+          level: 2,
+          text: "Configuração inicial",
+          id: "configurao-inicial",
+        },
+        {
+          level: 2,
+          text: "Próximos passos recomendados",
+          id: "prximos-passos-recomendados",
+        },
+      ],
+      content:
+        '\n# Primeiros passos: criando seu lar\n\nUm lar no duobalance é o espaço compartilhado onde você e seu parceiro gerenciam as finanças juntos.\n\n## Configuração inicial\n\n1. Crie sua conta com seu e-mail.\n2. Ao entrar pela primeira vez, dê um nome ao seu lar (ex: "Lar Silva & Souza").\n3. Selecione a **Moeda Base** do lar. Todos os relatórios consolidados exibirão os valores nesta moeda.\n\n## Próximos passos recomendados\n\n- Convide seu parceiro em **Configurações do Lar**.\n- Adicione suas primeiras contas bancárias ou em dinheiro em **Saldos**.\n- Configure seus orçamentos principais em **Orçamento**.\n',
+    },
+    "inviting-your-partner": {
+      frontmatter: {
+        title: "Como convidar seu parceiro para se juntar ao seu lar",
+        slug: "inviting-your-partner",
+        category: "general",
+        order: 6,
+        related: ["getting-started-creating-household", "privacy-what-we-can-and-cant-see"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Como convidar seu parceiro para o duobalance",
+          id: "como-convidar-seu-parceiro-para-o-duobalance",
+        },
+        {
+          level: 2,
+          text: "Passos para enviar o convite",
+          id: "passos-para-enviar-o-convite",
+        },
+        {
+          level: 2,
+          text: "Como seu parceiro entra",
+          id: "como-seu-parceiro-entra",
+        },
+      ],
+      content:
+        "\n# Como convidar seu parceiro para o duobalance\n\nO gerenciamento financeiro a dois funciona melhor quando ambos têm acesso ao mesmo espaço compartilhado.\n\n## Passos para enviar o convite\n\n1. Vá em **Configurações** e abra a seção **Membros do Lar**.\n2. Digite o e-mail do seu parceiro.\n3. Clique em **Enviar Convite**.\n\n## Como seu parceiro entra\n\n- Seu parceiro receberá um link de convite por e-mail.\n- Ao clicar no link e entrar ou se cadastrar, ele será vinculado automaticamente ao seu lar, tendo acesso imediato às contas e orçamentos compartilhados.\n",
+    },
+    "adding-accounts": {
+      frontmatter: {
+        title: "Como adicionar contas bancárias ou em dinheiro",
+        slug: "adding-accounts",
+        category: "accounts",
+        order: 7,
+        related: ["ledger-vs-manual-balance", "private-accounts-and-views"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Adicionando contas: tipos, moedas e privacidade",
+          id: "adicionando-contas-tipos-moedas-e-privacidade",
+        },
+        {
+          level: 2,
+          text: "Passos para criar uma conta",
+          id: "passos-para-criar-uma-conta",
+        },
+      ],
+      content:
+        '\n# Adicionando contas: tipos, moedas e privacidade\n\nVocê pode registrar contas bancárias, cartões de crédito, dinheiro físico e investimentos.\n\n## Passos para criar uma conta\n\n1. Vá em **Saldos** e clique em **+ Nova Conta**.\n2. Preencha os detalhes:\n   - **Nome:** Título descritivo (ex: "Conta Corrente Itaú" or "Carteira").\n   - **Tipo:** Conta corrente, poupança, cartão de crédito, dinheiro ou investimento.\n   - **Moeda:** Escolha a moeda nativa da conta.\n   - **Visibilidade:** Escolha **Compartilhada** (visível para o parceiro) ou **Privada**.\n   - **Modo de saldo:** Selecione **Livro diário** ou **Manual**.\n3. Insira o **Saldo Inicial** e salve.\n',
+    },
+    "recording-transaction-fast": {
+      frontmatter: {
+        title: "Como registrar uma transação rapidamente",
+        slug: "recording-transaction-fast",
+        category: "transactions",
+        order: 8,
+        related: ["who-spent-vs-who-typed", "categories-and-auto-rules"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Como registrar uma transação rapidamente",
+          id: "como-registrar-uma-transao-rapidamente",
+        },
+        {
+          level: 2,
+          text: "Fluxo de registro rápido",
+          id: "fluxo-de-registro-rpido",
+        },
+        {
+          level: 2,
+          text: "Dicas de agilidade",
+          id: "dicas-de-agilidade",
+        },
+      ],
+      content:
+        "\n# Como registrar uma transação rapidamente\n\nO duobalance foi otimizado para que o lançamento de despesas leve apenas alguns segundos no celular ou computador.\n\n## Fluxo de registro rápido\n\n1. Toque no botão **+** ou **Adicionar** na barra de navegação.\n2. Digite o valor da transação.\n3. Escolha o tipo: **Despesa**, **Receita** ou **Transferência**.\n4. Selecione a categoria e a conta utilizada.\n5. Defina **Gastador por** (quem fez a compra).\n6. Toque em **Salvar**.\n\n## Dicas de agilidade\n\n- O duobalance lembra suas últimas escolhas de conta e categoria.\n- Adicione notas curtas quando precisar detalhar algo para o parceiro.\n",
+    },
+    "categories-and-auto-rules": {
+      frontmatter: {
+        title: "Como funcionam as categorias e regras automáticas",
+        slug: "categories-and-auto-rules",
+        category: "transactions",
+        order: 9,
+        related: ["recording-transaction-fast", "household-vs-personal-budgets"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Categorias e regras de autocategorização",
+          id: "categorias-e-regras-de-autocategorizao",
+        },
+        {
+          level: 2,
+          text: "Categorias padrão e personalizadas",
+          id: "categorias-padro-e-personalizadas",
+        },
+        {
+          level: 2,
+          text: "Regras de autocategorização",
+          id: "regras-de-autocategorizao",
+        },
+      ],
+      content:
+        '\n# Categorias e regras de autocategorização\n\nAs categorias organizam suas transações para que os orçamentos e relatórios reflitam seus hábitos reais.\n\n## Categorias padrão e personalizadas\n\nO duobalance inclui categorias padrão como Alimentação, Serviços, Transporte e Moradia. Você pode adicionar ou editar categorias em **Configurações > Categorias**.\n\n## Regras de autocategorização\n\nAs regras automáticas permitem atribuir categorias com base na descrição ou estabelecimento:\n\n- **Criando regras:** Ao registrar um estabelecimento recorrente (ex: "Supermercado X"), você pode salvar uma regra automática para que lançamentos futuros com essa palavra-chave recebam a categoria correta automaticamente.\n',
     },
     "household-vs-personal-budgets": {
       frontmatter: {
-        title: "Orçamentos da casa vs. pessoais",
+        title: "Como gerenciar orçamentos do lar vs. pessoais",
         slug: "household-vs-personal-budgets",
         category: "budgets",
-        order: 4,
+        order: 10,
         related: ["private-accounts-and-views", "reading-the-charts"],
         updated: "2026-08-15",
       },
       headings: [
         {
           level: 1,
-          text: "Orçamentos da casa vs. pessoais",
-          id: "oramentos-da-casa-vs-pessoais",
+          text: "Orçamentos do lar vs. orçamentos pessoais",
+          id: "oramentos-do-lar-vs-oramentos-pessoais",
+        },
+        {
+          level: 2,
+          text: "Orçamentos do Lar",
+          id: "oramentos-do-lar",
+        },
+        {
+          level: 2,
+          text: "Orçamentos Pessoais",
+          id: "oramentos-pessoais",
+        },
+        {
+          level: 2,
+          text: "Alternando abas",
+          id: "alternando-abas",
         },
       ],
       content:
-        "\n# Orçamentos da casa vs. pessoais\n\nOs orçamentos são divididos em **Da Casa** e **Meus Orçamentos**.\n\n- **Da Casa:** Gastos compartilhados.\n- **Pessoais:** Privados para cada parceiro.\n",
+        "\n# Orçamentos do lar vs. orçamentos pessoais\n\nO duobalance permite organizar orçamentos em dois escopos: **Do Lar** e **Meus Orçamentos**.\n\n## Orçamentos do Lar\n\nAcompanham gastos compartilhados (como aluguel, mercado e contas da casa). Ambos contribuem para o limite e veem o progresso conjunto.\n\n## Orçamentos Pessoais\n\nPrivados para cada membro (ex: hobbies ou cuidados pessoais). Permitem controlar gastos individuais sem afetar o orçamento global do casal.\n\n## Alternando abas\n\nUse o seletor no topo da tela de Orçamentos para alternar entre as visões **Lar** e **Minhas**.\n",
     },
     "recurrence-and-marking-paid": {
       frontmatter: {
-        title: "Contas recorrentes e marcar como pago",
+        title: "Como gerenciar contas recorrentes e marcá-las como pagas",
         slug: "recurrence-and-marking-paid",
         category: "bills",
-        order: 5,
-        related: ["who-spent-vs-who-typed", "bill-reminders-troubleshooting"],
+        order: 11,
+        related: ["bill-reminders-not-arriving", "who-spent-vs-who-typed"],
         updated: "2026-08-15",
       },
       headings: [
@@ -601,39 +1537,88 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
         {
           level: 2,
-          text: "Marcar como pago",
-          id: "marcar-como-pago",
+          text: "Configurando recorrência",
+          id: "configurando-recorrncia",
+        },
+        {
+          level: 2,
+          text: "Marcando como pago",
+          id: "marcando-como-pago",
         },
       ],
       content:
-        "\n# Contas recorrentes e marcar como pago\n\nGerencie compromissos fixos e recorrentes como aluguel e contas de luz.\n\n## Marcar como pago\n\nAo pagar uma conta, marque como pago e crie automaticamente a transação correspondente.\n",
+        "\n# Contas recorrentes e marcar como pago\n\nA seção Contas ajuda a acompanhar compromissos fixos e periódicos, como aluguel, assinaturas ou contas de luz.\n\n## Configurando recorrência\n\nAo criar uma conta, escolha o ciclo de repetição (mensal, quinzenal, anual, etc.). O duobalance gerará automaticamente a fatura correspondente para cada período.\n\n## Marcando como pago\n\nQuando você pagar uma conta:\n\n1. Toque na conta pendente.\n2. Selecione **Marcar como Pago**.\n3. Escolha se deseja gerar automaticamente uma transação de despesa vinculada a uma de suas contas bancárias.\n",
     },
     "reading-the-charts": {
       frontmatter: {
-        title: "Como ler os gráficos e relatórios",
+        title: "Como interpretar os gráficos e relatórios do lar",
         slug: "reading-the-charts",
         category: "reports",
-        order: 6,
-        related: ["household-vs-personal-budgets", "multi-currency-exchange-rates"],
+        order: 12,
+        related: ["household-vs-personal-budgets", "multi-currency-and-exchange-rates"],
         updated: "2026-08-15",
       },
       headings: [
         {
           level: 1,
-          text: "Como ler os gráficos e relatórios",
-          id: "como-ler-os-grficos-e-relatrios",
+          text: "Como interpretar os gráficos e relatórios",
+          id: "como-interpretar-os-grficos-e-relatrios",
+        },
+        {
+          level: 2,
+          text: "Gráfico por Categoria",
+          id: "grfico-por-categoria",
+        },
+        {
+          level: 2,
+          text: "Evolução Mensal e Receita vs. Despesa",
+          id: "evoluo-mensal-e-receita-vs-despesa",
+        },
+        {
+          level: 2,
+          text: "Conversão de moeda em relatórios",
+          id: "converso-de-moeda-em-relatrios",
         },
       ],
       content:
-        "\n# Como ler os gráficos e relatórios\n\nAcompanhe os gastos por categoria e a evolução mensal de receitas vs. despesas.\n",
+        "\n# Como interpretar os gráficos e relatórios\n\nA seção de Relatórios transforma suas transações em uma visão financeira clara para o lar.\n\n## Gráfico por Categoria\n\nMostra em quais categorias se concentra a maior parte das suas despesas no período selecionado.\n\n## Evolução Mensal e Receita vs. Despesa\n\nCompara o fluxo total de entradas e saídas mês a mês.\n\n- **Barras verdes:** Receita total.\n- **Barras vermelhas:** Despesas totais.\n\n## Conversão de moeda em relatórios\n\nTodos os valores em moedas estrangeiras são convertidos para a moeda base do seu lar usando a taxa de câmbio da data de cada transação.\n",
+    },
+    "multi-currency-and-exchange-rates": {
+      frontmatter: {
+        title: "Como funciona o suporte a múltiplas moedas e taxas de câmbio",
+        slug: "multi-currency-and-exchange-rates",
+        category: "settings",
+        order: 13,
+        related: ["number-format-currency-timezone", "exchange-rates-stale"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Multimoedas e taxas de câmbio",
+          id: "multimoedas-e-taxas-de-cmbio",
+        },
+        {
+          level: 2,
+          text: "Taxas de câmbio automáticas",
+          id: "taxas-de-cmbio-automticas",
+        },
+        {
+          level: 2,
+          text: "Ajustes manuais de taxa",
+          id: "ajustes-manuais-de-taxa",
+        },
+      ],
+      content:
+        "\n# Multimoedas e taxas de câmbio\n\nO duobalance permite manter contas e lançamentos em diferentes moedas (USD, EUR, CLP, BRL, etc.) enquanto consolida os totais na moeda base do seu lar.\n\n## Taxas de câmbio automáticas\n\n- O duobalance atualiza diariamente as taxas de câmbio oficiais por meio de um serviço automatizado.\n- Cada transação armazena a taxa de câmbio vigente na data de sua realização.\n\n## Ajustes manuais de taxa\n\nSe você realizou um câmbio com uma taxa especial:\n\n1. Ao criar ou editar a transação em moeda estrangeira, ative a opção **Ajustar Taxa de Câmbio**.\n2. Digite manualmente a taxa negociada.\n",
     },
     "number-format-currency-timezone": {
       frontmatter: {
-        title: "Configurações de moeda, formato de números e fuso horário",
+        title: "Como alterar idioma, formato de números, fuso horário e moeda base",
         slug: "number-format-currency-timezone",
         category: "settings",
-        order: 7,
-        related: ["multi-currency-exchange-rates", "stale-exchange-rates"],
+        order: 14,
+        related: ["multi-currency-and-exchange-rates", "exporting-your-data"],
         updated: "2026-08-15",
       },
       headings: [
@@ -642,9 +1627,183 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Configurações de moeda, formato de números e fuso horário",
           id: "configuraes-de-moeda-formato-de-nmeros-e-fuso-horrio",
         },
+        {
+          level: 2,
+          text: "Moeda Base do Lar",
+          id: "moeda-base-do-lar",
+        },
+        {
+          level: 2,
+          text: "Formato de Números",
+          id: "formato-de-nmeros",
+        },
+        {
+          level: 2,
+          text: "Fuso Horário",
+          id: "fuso-horrio",
+        },
       ],
       content:
-        "\n# Configurações de moeda, formato de números e fuso horário\n\nPersonalize a moeda base da casa, o formato numérico e o fuso horário na tela de Configurações.\n",
+        "\n# Configurações de moeda, formato de números e fuso horário\n\nVocê pode personalizar como o duobalance exibe valores e datas em **Configurações**.\n\n## Moeda Base do Lar\n\nÉ a moeda principal usada para calcular os totais e relatórios do lar.\n\n## Formato de Números\n\nEscolha entre separadores por ponto (`1.234,56`) ou por vírgula (`1,234.56`) conforme sua preferência regional.\n\n## Fuso Horário\n\nGarante que os fechamentos de mês e vencimentos de contas sejam calculados de acordo com o seu horário local.\n",
+    },
+    "exporting-your-data": {
+      frontmatter: {
+        title: "Como exportar seus dados financeiros para CSV ou JSON",
+        slug: "exporting-your-data",
+        category: "settings",
+        order: 15,
+        related: ["privacy-what-we-can-and-cant-see", "number-format-currency-timezone"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Exportando seus dados financeiros",
+          id: "exportando-seus-dados-financeiros",
+        },
+        {
+          level: 2,
+          text: "Passos para exportar",
+          id: "passos-para-exportar",
+        },
+      ],
+      content:
+        "\n# Exportando seus dados financeiros\n\nSeus dados pertencem a você. Você pode baixar ou fazer backup do seu histórico completo de transações e contas a qualquer momento.\n\n## Passos para exportar\n\n1. Vá em **Configurações** e role até **Dados e Privacidade**.\n2. Selecione **Exportar Dados**.\n3. Escolha o formato desejado:\n   - **CSV:** Ideal para abrir em planilhas como Excel ou Google Sheets.\n   - **JSON:** Formato estruturado completo para backup.\n4. Clique em **Baixar Arquivo**.\n",
+    },
+    "privacy-what-we-can-and-cant-see": {
+      frontmatter: {
+        title: "Privacidade: o que o duobalance e seu parceiro podem e não podem ver",
+        slug: "privacy-what-we-can-and-cant-see",
+        category: "general",
+        order: 16,
+        related: ["private-accounts-and-views", "exporting-your-data"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Privacidade: o que podemos e não podemos ver",
+          id: "privacidade-o-que-podemos-e-no-podemos-ver",
+        },
+        {
+          level: 2,
+          text: "O que seu parceiro vê",
+          id: "o-que-seu-parceiro-v",
+        },
+        {
+          level: 2,
+          text: "O que a plataforma vê",
+          id: "o-que-a-plataforma-v",
+        },
+      ],
+      content:
+        "\n# Privacidade: o que podemos e não podemos ver\n\nNo duobalance, a privacidade financeira e a segurança dos seus dados são prioridades fundamentais.\n\n## O que seu parceiro vê\n\n- Seu parceiro vê apenas informações das contas configuradas como **Compartilhadas** e as transações associadas a elas.\n- Suas contas **Privadas** e o histórico delas permanecem invisíveis para o seu parceiro.\n\n## O que a plataforma vê\n\n- O duobalance utiliza criptografia e políticas de segurança em nível de banco de dados (RLS) para que apenas membros autorizados do seu lar acessem os dados.\n- Não vendemos nem compartilhamos seus dados financeiros com terceiros.\n",
+    },
+    "installing-on-mobile": {
+      frontmatter: {
+        title: "Como instalar o duobalance no iPhone ou Android",
+        slug: "installing-on-mobile",
+        category: "general",
+        order: 17,
+        related: ["getting-started-creating-household", "bill-reminders-not-arriving"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Como instalar o duobalance no iPhone ou Android",
+          id: "como-instalar-o-duobalance-no-iphone-ou-android",
+        },
+        {
+          level: 2,
+          text: "No iPhone (iOS)",
+          id: "no-iphone-ios",
+        },
+        {
+          level: 2,
+          text: "No Android",
+          id: "no-android",
+        },
+      ],
+      content:
+        "\n# Como instalar o duobalance no iPhone ou Android\n\nO duobalance funciona como um Aplicativo Web Progressivo (PWA), permitindo que você o instale na tela inicial sem precisar baixar de uma loja de aplicativos.\n\n## No iPhone (iOS)\n\n1. Abra o Safari e navegue até o duobalance.\n2. Toque no botão **Compartilhar** (ícone de quadrado com seta para cima).\n3. Role e selecione **Adicionar à Tela de Início**.\n\n## No Android\n\n1. Abra o Chrome ou outro navegador compatível.\n2. Toque no menu de três pontos no canto superior direito.\n3. Selecione **Instalar aplicativo** ou **Adicionar à tela inicial**.\n\nPara um guia completo, visite [/install](/install).\n",
+    },
+    "bill-reminders-not-arriving": {
+      frontmatter: {
+        title: "Por que não estou recebendo os lembretes de contas?",
+        slug: "bill-reminders-not-arriving",
+        category: "bills",
+        order: 18,
+        related: ["recurrence-and-marking-paid", "installing-on-mobile"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Por que os lembretes de contas não estão chegando?",
+          id: "por-que-os-lembretes-de-contas-no-esto-chegando",
+        },
+        {
+          level: 2,
+          text: "Requisitos para notificações no iOS",
+          id: "requisitos-para-notificaes-no-ios",
+        },
+        {
+          level: 2,
+          text: "Lembretes garantidos por e-mail",
+          id: "lembretes-garantidos-por-e-mail",
+        },
+      ],
+      content:
+        "\n# Por que os lembretes de contas não estão chegando?\n\nSe você configurou um lembrete de conta e não recebeu a notificação no celular ou e-mail, verifique os seguintes motivos.\n\n## Requisitos para notificações no iOS\n\nNo iOS, as notificações push via web exigem que o aplicativo esteja instalado como PWA na tela inicial e que o sistema seja o iOS 16.4 ou superior.\n\n- **Solução:** Siga o guia em [/install](/install) para adicionar o duobalance à tela inicial.\n\n## Lembretes garantidos por e-mail\n\nPara garantir que você nunca perca um vencimento, o duobalance também envia notificações por e-mail. Verifique sua caixa de spam e adicione os e-mails do duobalance aos seus contatos confiáveis.\n",
+    },
+    "balance-looks-wrong": {
+      frontmatter: {
+        title: "O que fazer se o saldo de uma conta parecer incorreto",
+        slug: "balance-looks-wrong",
+        category: "accounts",
+        order: 19,
+        related: ["ledger-vs-manual-balance", "adding-accounts"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "O que fazer se um saldo estiver incorreto",
+          id: "o-que-fazer-se-um-saldo-estiver-incorreto",
+        },
+        {
+          level: 2,
+          text: "Diagnóstico passo a passo",
+          id: "diagnstico-passo-a-passo",
+        },
+      ],
+      content:
+        "\n# O que fazer se um saldo estiver incorreto\n\nSe você notar uma divergência entre o saldo exibido no duobalance e o extrato do seu banco, siga estes passos de diagnóstico.\n\n## Diagnóstico passo a passo\n\n1. **Verifique o modo de saldo:** Confirme se a conta está no modo **Livro diário** ou **Manual**.\n2. **Confira o saldo inicial:** Vá em **Saldos**, edite a conta e verifique se o saldo inicial batia com a realidade na data de início.\n3. **Verifique transações ausentes:** Certifique-se de que nenhum lançamento recente foi omitido.\n4. **Verifique transferências:** Verifique se alguma transferência foi registrada por engano como despesa comum.\n",
+    },
+    "exchange-rates-stale": {
+      frontmatter: {
+        title: "Por que aparece um aviso de taxa de câmbio desatualizada?",
+        slug: "exchange-rates-stale",
+        category: "settings",
+        order: 20,
+        related: ["multi-currency-and-exchange-rates", "number-format-currency-timezone"],
+        updated: "2026-08-15",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Por que a taxa de câmbio mostra um aviso?",
+          id: "por-que-a-taxa-de-cmbio-mostra-um-aviso",
+        },
+        {
+          level: 2,
+          text: "O que o aviso significa",
+          id: "o-que-o-aviso-significa",
+        },
+      ],
+      content:
+        "\n# Por que a taxa de câmbio mostra um aviso?\n\nAo registrar transações em moedas diferentes da moeda base do seu lar, o duobalance aplica taxas de câmbio oficiais.\n\n## O que o aviso significa\n\nSe as taxas de câmbio não forem atualizadas há mais de 24 horas (como em finais de semana ou feriados bancários), um aviso informativo é exibido.\n\n- **Impacto:** Você pode continuar registrando transações normalmente.\n- **Resolução:** As taxas são atualizadas automaticamente no próximo ciclo diário, ou você pode alterar manualmente a taxa na tela da transação.\n",
     },
   },
 };

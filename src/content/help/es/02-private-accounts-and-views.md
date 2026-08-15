@@ -1,5 +1,5 @@
 ---
-title: "Cuentas privadas y visibilidad de saldos"
+title: "¿Por qué mi pareja y yo vemos totales diferentes? Cuentas privadas"
 slug: "private-accounts-and-views"
 category: "accounts"
 order: 2

@@ -3,7 +3,7 @@ title: "¿Por qué mi saldo no cuadra? Modo saldo manual vs. libro diario"
 slug: "ledger-vs-manual-balance"
 category: "accounts"
 order: 1
-related: ["private-accounts-and-views", "who-spent-vs-who-typed"]
+related: ["private-accounts-and-views", "balance-looks-wrong"]
 updated: "2026-08-15"
 ---
 

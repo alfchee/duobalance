@@ -1,8 +1,8 @@
 ---
-title: "Presupuestos del hogar vs. presupuestos personales"
+title: "¿Cómo administrar presupuestos del hogar vs. personales?"
 slug: "household-vs-personal-budgets"
 category: "budgets"
-order: 4
+order: 10
 related: ["private-accounts-and-views", "reading-the-charts"]
 updated: "2026-08-15"
 ---

@@ -1,15 +1,15 @@
 ---
-title: "Configuración de moneda, formato de números y zona horaria"
+title: "¿Cómo cambiar idioma, formato de números, zona horaria y moneda base?"
 slug: "number-format-currency-timezone"
 category: "settings"
-order: 7
-related: ["multi-currency-exchange-rates", "stale-exchange-rates"]
+order: 14
+related: ["multi-currency-and-exchange-rates", "exporting-your-data"]
 updated: "2026-08-15"
 ---
 
 # Configuración de moneda, formato de números y zona horaria
 
-Puedes personalizar la manera en que duobalance muestra los montos y fechas en la sección **Ajustes**.
+Puedes personalizar la manera en que duobalance muestra los montos y fechas en la sección **Configuración**.
 
 ## Moneda Base del Hogar
 

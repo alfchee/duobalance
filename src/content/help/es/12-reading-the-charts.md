@@ -1,9 +1,9 @@
 ---
-title: "¿Cómo interpretar los gráficos y reportes?"
+title: "¿Cómo interpretar los gráficos y reportes del hogar?"
 slug: "reading-the-charts"
 category: "reports"
-order: 6
-related: ["household-vs-personal-budgets", "multi-currency-exchange-rates"]
+order: 12
+related: ["household-vs-personal-budgets", "multi-currency-and-exchange-rates"]
 updated: "2026-08-15"
 ---
 

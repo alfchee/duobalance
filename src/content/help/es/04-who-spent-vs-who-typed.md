@@ -1,9 +1,9 @@
 ---
-title: "¿Quién gastó vs. quién lo registró?"
+title: "¿Quién gastó el dinero vs. quién lo registró?"
 slug: "who-spent-vs-who-typed"
 category: "transactions"
-order: 3
-related: ["ledger-vs-manual-balance", "transfers-and-expenses"]
+order: 4
+related: ["transfers-arent-expenses", "recording-transaction-fast"]
 updated: "2026-08-15"
 ---
 
