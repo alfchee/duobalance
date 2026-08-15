@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { BudgetScope, BudgetSort } from "@/lib/budgets/model";
 import { Button } from "@/components/ui/button";
+import { HelpButton } from "@/components/help/help-button";
 import { cn } from "@/lib/utils";
 
 type BudgetHeaderProps = {
@@ -51,7 +52,12 @@ export function BudgetHeader({
             <ChevronLeft />
           </Button>
           <div className="flex flex-col">
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{translations.title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+                {translations.title}
+              </h1>
+              <HelpButton article="household-vs-personal-budgets" />
+            </div>
             <p className="text-sm font-semibold text-muted-foreground">{monthLabel}</p>
           </div>
           <Button

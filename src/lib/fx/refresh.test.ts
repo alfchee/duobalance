@@ -4,12 +4,9 @@ import type { Database } from "@/lib/supabase/types";
 import { applyDailyRates } from "./refresh";
 import { daysSinceNewestRate } from "./staleness";
 
-type FakeClient = SupabaseClient<Database> & {
-  from: ReturnType<typeof vi.fn>;
-  upsert: ReturnType<typeof vi.fn>;
-};
+type FakeClient = SupabaseClient<Database> & { upsert: ReturnType<typeof vi.fn> };
 
-function makeClient(opts: { currencies?: string[]; existingRateCodes?: string[] }) {
+function makeClient(opts: { currencies?: string[] }) {
   const upsert = vi.fn().mockResolvedValue({ error: null });
   const from = vi.fn((table: string) => {
     if (table === "currencies") {
@@ -22,12 +19,6 @@ function makeClient(opts: { currencies?: string[]; existingRateCodes?: string[] 
     }
     if (table === "fx_rates") {
       return {
-        select: vi.fn(() => ({
-          eq: vi.fn().mockResolvedValue({
-            data: (opts.existingRateCodes ?? []).map((code) => ({ code })),
-            error: null,
-          }),
-        })),
         upsert,
       };
     }
@@ -37,14 +28,14 @@ function makeClient(opts: { currencies?: string[]; existingRateCodes?: string[] 
 }
 
 describe("applyDailyRates", () => {
-  it("upserts one row per known code and counts inserted/updated/skipped", async () => {
-    const client = makeClient({ currencies: ["USD", "CLP", "NIO"], existingRateCodes: ["USD"] });
+  it("upserts one row per known code and counts updated currencies and skipped codes", async () => {
+    const client = makeClient({ currencies: ["USD", "CLP", "NIO"] });
     const result = await applyDailyRates(
       client,
       { USD: 1, CLP: 950, NIO: 36.6, XXX: 123 },
       "2026-08-06",
     );
-    expect(result).toEqual({ inserted: 2, updated: 1, skipped: 1 });
+    expect(result).toEqual({ currenciesUpdated: 3, skipped: 1 });
     expect(client.upsert).toHaveBeenCalledWith(
       [
         { rate_date: "2026-08-06", code: "USD", usd_rate: 1 },
@@ -58,14 +49,14 @@ describe("applyDailyRates", () => {
   it("skips the upsert entirely when no code is known", async () => {
     const client = makeClient({ currencies: ["USD"] });
     const result = await applyDailyRates(client, { FOO: 1 }, "2026-08-06");
-    expect(result).toEqual({ inserted: 0, updated: 0, skipped: 1 });
+    expect(result).toEqual({ currenciesUpdated: 0, skipped: 1 });
     expect(client.upsert).not.toHaveBeenCalled();
   });
 
-  it("normalizes char(3) padding when counting existing codes", async () => {
-    const client = makeClient({ currencies: ["USD"], existingRateCodes: ["USD "] });
+  it("normalizes char(3) padding when filtering currency codes", async () => {
+    const client = makeClient({ currencies: ["USD "] });
     const result = await applyDailyRates(client, { USD: 1 }, "2026-08-06");
-    expect(result).toEqual({ inserted: 0, updated: 1, skipped: 0 });
+    expect(result).toEqual({ currenciesUpdated: 1, skipped: 0 });
   });
 
   it("propagates a database error", async () => {

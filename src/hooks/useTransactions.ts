@@ -94,7 +94,9 @@ export function useTransactionSummary(householdId: string | null, filters: Trans
   });
 }
 
-function createFilterOperations<
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function createFilterOperations<
   T extends {
     eq: (column: string, value: string) => T;
     gte: (column: string, value: string) => T;
@@ -109,7 +111,19 @@ function createFilterOperations<
 >(get: () => T, set: (query: T) => void): ActivityFilterOperations {
   return {
     accountIds: (ids) => set(get().in("account_id", ids)),
-    categoryIds: (ids) => set(get().in("category_id", ids)),
+    categoryIds: (ids) => {
+      const hasUncategorized = ids.includes("uncategorized") || ids.includes("null");
+      const regularIds = ids
+        .filter((id) => id !== "uncategorized" && id !== "null")
+        .filter((id) => UUID_PATTERN.test(id));
+      if (hasUncategorized && regularIds.length > 0) {
+        set(get().or(`category_id.is.null,category_id.in.(${regularIds.join(",")})`));
+      } else if (hasUncategorized) {
+        set(get().is("category_id", null));
+      } else if (regularIds.length > 0) {
+        set(get().in("category_id", regularIds));
+      }
+    },
     endDate: (date) => set(get().lte("occurred_on", date)),
     expense: () => set(get().lt("amount", 0).is("transfer_group_id", null)),
     income: () => set(get().gt("amount", 0).is("transfer_group_id", null)),
@@ -145,6 +159,7 @@ export function useTransactionMutations(householdId: string | null, memberId: st
     if (!key) return;
     void queryClient.invalidateQueries({ queryKey: key });
     void queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
+    void queryClient.invalidateQueries({ queryKey: ["reports", householdId] });
   };
 
   const create = useMutation({

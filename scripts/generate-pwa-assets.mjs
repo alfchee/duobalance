@@ -22,53 +22,109 @@ function chunk(type, data) {
   return Buffer.concat([length, typeBytes, data, checksum]);
 }
 
+// Minimal 5x7 font bitmasks for lowercase 'd' and 'b'
+const FONT_5X7 = {
+  d: [
+    [0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 1],
+    [0, 1, 1, 0, 1],
+    [1, 0, 0, 1, 1],
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 1, 1],
+    [0, 1, 1, 0, 1],
+  ],
+  b: [
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 1, 1, 0],
+    [1, 1, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+    [1, 1, 0, 0, 1],
+    [1, 0, 1, 1, 0],
+  ],
+};
+
 function createIcon(size, maskable) {
   const pixels = Buffer.alloc((size * 4 + 1) * size);
-  const radius = maskable ? 0 : Math.round(size * 0.21);
-  const inset = Math.round(size * (maskable ? 0.25 : 0.22));
-  const cardLeft = inset;
-  const cardTop = Math.round(size * 0.32);
-  const cardRight = size - inset;
-  const cardBottom = Math.round(size * 0.69);
+
+  // Background colors: Primary green (#9fe870 -> [159, 232, 112]), Dark text (#163300 -> [22, 51, 0])
+  const bgColor = [159, 232, 112, 255];
+  const fgColor = [22, 51, 0, 255];
+
+  // Circle dimensions
+  const center = (size - 1) / 2;
+  // Maskable icons use 40% radius (80% diameter) to stay within safe zone; standard icons use ~45% radius
+  const circleRadius = size * (maskable ? 0.4 : 0.45);
+
+  // Text scaling parameters
+  const fontGridHeight = 7;
+  const fontGridWidth = 5;
+  const letterSpacing = 1;
+
+  // Total text width in grid units: 5 ('d') + 1 (space) + 5 ('b') = 11 units
+  const totalGridWidth = fontGridWidth * 2 + letterSpacing;
+
+  // Scale pixels per font grid cell based on icon size
+  const scale = size * 0.055;
+  const textPixelWidth = totalGridWidth * scale;
+  const textPixelHeight = fontGridHeight * scale;
+
+  const textStartX = center - textPixelWidth / 2;
+  const textStartY = center - textPixelHeight / 2;
 
   for (let y = 0; y < size; y += 1) {
     const rowStart = y * (size * 4 + 1);
-    pixels[rowStart] = 0;
+    pixels[rowStart] = 0; // PNG filter byte (0 = None)
+
     for (let x = 0; x < size; x += 1) {
       const offset = rowStart + 1 + x * 4;
-      const inRoundedSquare =
-        radius === 0 ||
-        (x >= radius && x < size - radius) ||
-        (y >= radius && y < size - radius) ||
-        (x - radius) ** 2 + (y - radius) ** 2 <= radius ** 2 ||
-        (x - (size - radius - 1)) ** 2 + (y - radius) ** 2 <= radius ** 2 ||
-        (x - radius) ** 2 + (y - (size - radius - 1)) ** 2 <= radius ** 2 ||
-        (x - (size - radius - 1)) ** 2 + (y - (size - radius - 1)) ** 2 <= radius ** 2;
-      const inCard = x >= cardLeft && x <= cardRight && y >= cardTop && y <= cardBottom;
-      const inFirstLine =
-        x >= Math.round(size * 0.3) &&
-        x <= Math.round(size * 0.69) &&
-        y >= Math.round(size * 0.41) &&
-        y <= Math.round(size * 0.47);
-      const inSecondLine =
-        x >= Math.round(size * 0.3) &&
-        x <= Math.round(size * 0.55) &&
-        y >= Math.round(size * 0.54) &&
-        y <= Math.round(size * 0.6);
-      const inCircle =
-        (x - Math.round(size * 0.68)) ** 2 + (y - Math.round(size * 0.57)) ** 2 <=
-        Math.round(size * 0.06) ** 2;
-      const [red, green, blue, alpha] = inRoundedSquare
-        ? inCard
-          ? inFirstLine || inSecondLine || inCircle
-            ? [52, 120, 212, 255]
-            : [255, 255, 255, 255]
-          : [52, 120, 212, 255]
-        : [0, 0, 0, 0];
-      pixels[offset] = red;
-      pixels[offset + 1] = green;
-      pixels[offset + 2] = blue;
-      pixels[offset + 3] = alpha;
+
+      // Check distance from center for the green circle
+      const distFromCenterSq = (x - center) ** 2 + (y - center) ** 2;
+      const inCircle = distFromCenterSq <= circleRadius ** 2;
+
+      let isTextPixel = false;
+
+      if (
+        inCircle &&
+        x >= textStartX &&
+        x < textStartX + textPixelWidth &&
+        y >= textStartY &&
+        y < textStartY + textPixelHeight
+      ) {
+        const gridX = (x - textStartX) / scale;
+        const gridY = (y - textStartY) / scale;
+
+        const charRow = Math.floor(gridY);
+
+        if (charRow >= 0 && charRow < fontGridHeight) {
+          let charMatrix = null;
+          let colInChar = -1;
+
+          if (gridX < fontGridWidth) {
+            // Letter 'd'
+            charMatrix = FONT_5X7.d;
+            colInChar = Math.floor(gridX);
+          } else if (gridX >= fontGridWidth + letterSpacing && gridX < totalGridWidth) {
+            // Letter 'b'
+            charMatrix = FONT_5X7.b;
+            colInChar = Math.floor(gridX - (fontGridWidth + letterSpacing));
+          }
+
+          if (charMatrix && colInChar >= 0 && colInChar < fontGridWidth) {
+            if (charMatrix[charRow][colInChar] === 1) {
+              isTextPixel = true;
+            }
+          }
+        }
+      }
+
+      const [r, g, b, a] = inCircle ? (isTextPixel ? fgColor : bgColor) : [0, 0, 0, 0];
+
+      pixels[offset] = r;
+      pixels[offset + 1] = g;
+      pixels[offset + 2] = b;
+      pixels[offset + 3] = a;
     }
   }
 

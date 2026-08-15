@@ -3,13 +3,16 @@
 // Keeps es/en from silently diverging so untranslated UI never ships.
 // Also checks that language endonyms (the name of a language in its own
 // language) are identical in every file — those have only one correct value.
-import { readFileSync } from "node:fs";
+// Also checks help content files in src/content/help/{locale}/*.md.
+import { readdirSync, readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const messagesDir = path.resolve(dirname, "../src/messages");
+const helpContentDir = path.resolve(dirname, "../src/content/help");
 const FILES = ["es.json", "en.json", "pt-BR.json"];
+const LOCALES = ["es", "en", "pt-BR"];
 const ENDONYMS = ["settings.languages.es", "settings.languages.en", "settings.languages.pt-BR"];
 
 function flattenKeys(obj, prefix = "", out = []) {
@@ -67,9 +70,61 @@ for (const key of ENDONYMS) {
   }
 }
 
+// Help content files check
+function parseFrontmatterSlug(raw) {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return null;
+  const yaml = match[1];
+  for (const line of yaml.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("slug:")) {
+      let val = trimmed.slice(5).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      return val;
+    }
+  }
+  return null;
+}
+
+const helpSlugsByLocale = {};
+for (const loc of LOCALES) {
+  const locDir = path.join(helpContentDir, loc);
+  helpSlugsByLocale[loc] = new Set();
+  if (existsSync(locDir)) {
+    const files = readdirSync(locDir).filter((f) => f.endsWith(".md"));
+    for (const file of files) {
+      const content = readFileSync(path.join(locDir, file), "utf8");
+      const slug = parseFrontmatterSlug(content);
+      if (!slug) {
+        errors.push(`help article ${loc}/${file} is missing slug frontmatter`);
+      } else {
+        helpSlugsByLocale[loc].add(slug);
+      }
+    }
+  }
+}
+
+for (const loc of LOCALES) {
+  for (const otherLoc of LOCALES) {
+    if (loc === otherLoc) continue;
+    for (const slug of helpSlugsByLocale[loc]) {
+      if (!helpSlugsByLocale[otherLoc].has(slug)) {
+        errors.push(`help content ${loc} has slug "${slug}" but ${otherLoc} does not`);
+      }
+    }
+  }
+}
+
 if (errors.length > 0) {
-  console.error(`i18n key mismatch (${errors.length}):`);
+  console.error(`i18n key / help content mismatch (${errors.length}):`);
   for (const error of [...new Set(errors)]) console.error(`  ${error}`);
   process.exit(1);
 }
-console.log(`locale keys in sync: ${FILES.join(", ")}`);
+console.log(
+  `locale keys and help content in sync: ${FILES.join(", ")}, help locales: ${LOCALES.join(", ")}`,
+);

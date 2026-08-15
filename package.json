@@ -1,6 +1,6 @@
 {
   "name": "duobalance",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "license": "UNLICENSED",
   "engines": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "node scripts/generate-pwa-assets.mjs && node scripts/generate-ios-guide-screenshots.mjs && next build --turbopack && node scripts/generate-service-worker.mjs",
+    "build": "node scripts/build-help-content.mjs && node scripts/generate-pwa-assets.mjs && node scripts/generate-ios-guide-screenshots.mjs && next build --turbopack && node scripts/generate-service-worker.mjs",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
@@ -21,9 +21,10 @@
     "test:a11y": "playwright test --grep @a11y",
     "test:visual": "playwright test --grep @visual",
     "test:ui-validation": "npm run test:e2e",
+    "content:build": "node scripts/build-help-content.mjs",
     "locales:check": "node scripts/check-locales.mjs",
     "prepare": "husky",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run locales:check",
+    "check": "npm run content:build && npm run typecheck && npm run lint && npm run format:check && npm run test && npm run locales:check",
     "db:start": "supabase start",
     "db:migrate": "supabase migration up",
     "db:reset": "supabase db reset",

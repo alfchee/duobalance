@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeftRight,
+  BarChart3,
+  HelpCircle,
   LogOut,
   MoreHorizontal,
   PieChart,
@@ -20,6 +22,7 @@ const ITEMS = [
   { href: "/balances", labelKey: "balances", Icon: Wallet },
   { href: "/transactions", labelKey: "transactions", Icon: ArrowLeftRight },
   { href: "/budget", labelKey: "budget", Icon: PieChart },
+  { href: "/reports", labelKey: "reports", Icon: BarChart3 },
   { href: "/bills", labelKey: "bills", Icon: Receipt },
 ] as const;
 
@@ -41,8 +44,11 @@ export function AppSidebar() {
         href="/balances"
         className="mb-8 flex items-center gap-2 px-2 text-xl font-black tracking-tight"
       >
-        <span className="flex size-8 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-          <Wallet className="size-4" />
+        <span
+          aria-hidden
+          className="grid size-8 place-items-center rounded-2xl bg-primary text-sm font-black text-primary-foreground"
+        >
+          db
         </span>
         duobalance
       </Link>
@@ -78,6 +84,18 @@ export function AppSidebar() {
           <Plus className="size-5" />
           {t("newTransaction")}
         </button>
+        <Link
+          href="/help"
+          className={cn(
+            "flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            pathname === "/help" || pathname.startsWith("/help/")
+              ? "bg-primary/35 text-primary-foreground"
+              : "text-foreground hover:bg-secondary",
+          )}
+        >
+          <HelpCircle className="size-5" />
+          {t("help")}
+        </Link>
         <Link
           href="/settings"
           className={cn(

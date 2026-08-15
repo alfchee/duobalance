@@ -9,15 +9,102 @@
     "pageNotFound": "Esta página não existe.",
     "backHome": "Voltar ao início"
   },
+  "nav": {
+    "reports": "Relatórios",
+    "help": "Ajuda"
+  },
+  "reports": {
+    "title": "Relatórios",
+    "subtitle": "Acompanhe suas tendências de despesas e receitas ao longo do tempo.",
+    "loadError": "Não foi possível carregar os dados dos relatórios.",
+    "retry": "Tentar novamente",
+    "currencyNotice": "Valores em {currency}",
+    "dateRanges": {
+      "label": "Período",
+      "this_month": "Este mês",
+      "3m": "Últimos 3 meses",
+      "6m": "Últimos 6 meses",
+      "12m": "Últimos 12 meses",
+      "ytd": "Ano até o momento",
+      "custom": "Personalizado"
+    },
+    "customDates": {
+      "from": "De",
+      "to": "Até",
+      "incomplete": "Selecione uma data de início e de fim para ver este relatório."
+    },
+    "memberFilter": {
+      "label": "Por membro",
+      "all": "Todos os membros"
+    },
+    "reconciliation": {
+      "title": "Reconciliação",
+      "matching": "Total por categoria coincide com o total mensal ({amount})",
+      "mismatch": "Total por categoria ({catTotal}) difere do total mensal ({monthlyTotal})"
+    },
+    "charts": {
+      "expenseByCategory": {
+        "title": "Despesas por categoria",
+        "empty": "Nenhuma despesa encontrada para este período."
+      },
+      "incomeByCategory": {
+        "title": "Receitas por categoria",
+        "empty": "Nenhuma receita encontrada para este período."
+      },
+      "monthlyExpenses": {
+        "title": "Despesas mensais",
+        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
+      },
+      "monthlyIncomes": {
+        "title": "Receitas mensais",
+        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
+      },
+      "monthlyBalance": {
+        "title": "Balanço mensal",
+        "subtitle": "Economia líquida ao longo do tempo",
+        "rollingAvg": "Média móvel de 3 meses",
+        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
+      }
+    },
+    "uncategorized": "Sem categoria",
+    "transactionsCount": "{count, plural, =1 {1 transação} other {# transações}}"
+  },
   "settings": {
     "locale": {
       "title": "Idioma",
       "subtitle": "Idioma da interface."
     },
+    "numberFormat": {
+      "title": "Formato numérico",
+      "subtitle": "Escolha os separadores decimal e de milhares que você prefere.",
+      "options": {
+        "locale": "Usar formato do idioma",
+        "dot_decimal": "1,234.56",
+        "comma_decimal": "1.234,56"
+      }
+    },
     "languages": {
       "es": "Español",
       "en": "English",
       "pt-BR": "Português (Brasil)"
+    }
+  },
+  "help": {
+    "title": "Central de Ajuda",
+    "searchPlaceholder": "Buscar artigos de ajuda...",
+    "noResults": "Nenhum artigo encontrado.",
+    "openArticle": "Ver artigo de ajuda",
+    "backToHelp": "Voltar para Ajuda",
+    "relatedArticles": "Artigos relacionados",
+    "updatedOn": "Atualizado em {date}",
+    "categories": {
+      "accounts": "Contas e Saldos",
+      "transactions": "Transações",
+      "budgets": "Orçamentos",
+      "bills": "Contas e Pagamentos",
+      "reports": "Relatórios e Gráficos",
+      "settings": "Configurações",
+      "general": "Geral"
     }
   }
 }

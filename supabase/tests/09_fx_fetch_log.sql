@@ -1,13 +1,16 @@
--- Issue #17: fx_fetch_log run-outcome audit table. The cron + manual refresh
--- handlers write it with the service role; these tests prove it accepts runs,
--- enforces the outcome enum, and stays closed to the data API.
+-- Issue #17/#109: fx_fetch_log run-outcome audit table and the
+-- fx_refresh_claims serialization it backs. The cron handler writes both with
+-- the service role; these tests prove fx_fetch_log accepts runs, enforces the
+-- status enum, and stays closed to the data API, and that
+-- claim_fx_refresh/record_fx_refresh_success/record_fx_refresh_failure
+-- correctly serialize same-day refreshes and recover stranded claims.
 
 \set ON_ERROR_STOP on
 \i supabase/tests/_lib/helpers.sql
 
 begin;
 
-select plan(8);
+select plan(25);
 
 -- ============================================================================
 -- Shape: rows accept a run outcome with counts, reject unknown outcomes.
@@ -15,20 +18,20 @@ select plan(8);
 -- ============================================================================
 
 select lives_ok(
-  $$ insert into public.fx_fetch_log (rate_date, outcome, inserted, updated, skipped)
-     values ('2026-08-06', 'success', 30, 4, 2) $$,
-  'a success run with counts is accepted'
+  $$ insert into public.fx_fetch_log (fetch_date, status, currencies_updated)
+     values ('2026-08-06', 'success', 30) $$,
+  'a success run with updated currency count is accepted'
 );
 
 select results_eq(
-  $$ select rate_date::text, outcome, inserted, updated, skipped
-     from public.fx_fetch_log order by ran_at desc limit 1 $$,
-  $$ values ('2026-08-06', 'success', 30::int, 4::int, 2::int) $$,
+  $$ select fetch_date::text, status, currencies_updated
+     from public.fx_fetch_log order by fetched_at desc limit 1 $$,
+  $$ values ('2026-08-06', 'success', 30::int) $$,
   'the inserted run is readable back'
 );
 
 select throws_ok(
-  $$ insert into public.fx_fetch_log (rate_date, outcome)
+  $$ insert into public.fx_fetch_log (fetch_date, status)
      values ('2026-08-06', 'bogus') $$,
   '23514',
   null,
@@ -36,7 +39,7 @@ select throws_ok(
 );
 
 select lives_ok(
-  $$ insert into public.fx_fetch_log (rate_date, outcome, error)
+  $$ insert into public.fx_fetch_log (fetch_date, status, error)
      values ('2026-08-06', 'failed', 'provider returned HTTP 500') $$,
   'a failed run with an error message is accepted'
 );
@@ -55,7 +58,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$ insert into public.fx_fetch_log (rate_date, outcome)
+  $$ insert into public.fx_fetch_log (fetch_date, status)
      values ('2026-08-06', 'success') $$,
   '42501',
   null,
@@ -81,6 +84,145 @@ select results_eq(
      where schemaname = 'public' and tablename = 'fx_fetch_log' $$,
   $$ values (0::int) $$,
   'fx_fetch_log has zero RLS policies'
+);
+
+-- ============================================================================
+-- fx_refresh_claims is likewise closed to the data API: RLS enabled, no
+-- policies, and only service_role (not anon/authenticated) holds a grant.
+-- ============================================================================
+
+select tests.authenticate_as('e0e0e0e0-0000-0000-0000-000000000000');
+
+select throws_ok(
+  $$ select count(*) from public.fx_refresh_claims $$,
+  '42501',
+  null,
+  'authenticated has no SELECT grant on fx_refresh_claims'
+);
+
+select throws_ok(
+  $$ insert into public.fx_refresh_claims (fetch_date) values ('2026-08-06') $$,
+  '42501',
+  null,
+  'authenticated has no INSERT grant on fx_refresh_claims'
+);
+
+select throws_ok(
+  $$ update public.fx_refresh_claims set claimed_at = now() where fetch_date = '2026-08-06' $$,
+  '42501',
+  null,
+  'authenticated has no UPDATE grant on fx_refresh_claims'
+);
+
+select tests.authenticate_anon();
+
+select throws_ok(
+  $$ select count(*) from public.fx_refresh_claims $$,
+  '42501',
+  null,
+  'anon has no SELECT grant on fx_refresh_claims'
+);
+
+select results_eq(
+  $$ select count(*)::int from pg_policies
+     where schemaname = 'public' and tablename = 'fx_refresh_claims' $$,
+  $$ values (0::int) $$,
+  'fx_refresh_claims has zero RLS policies'
+);
+
+select tests.clear_auth();
+
+select lives_ok(
+  $$ select public.claim_fx_refresh('2026-08-07') $$,
+  'the first refresh claim succeeds'
+);
+
+-- This proves the fx_refresh_claims primary key rejects a same-session,
+-- same-date reclaim — not the advisory lock (which is re-entrant within one
+-- session/transaction and can't be exercised without a second concurrent
+-- connection, which pgTAP's single-transaction model doesn't provide).
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-07') $$,
+  $$ values (false) $$,
+  'a same-day refresh claim is skipped'
+);
+
+select results_eq(
+  $$ select count(*)::int from public.fx_fetch_log
+     where fetch_date = '2026-08-07' and status = 'skipped' $$,
+  $$ values (1::int) $$,
+  'a skipped claim is logged'
+);
+
+select results_eq(
+  $$ select public.record_fx_refresh_success('2026-08-07', 3) $$,
+  $$ values (true) $$,
+  'the first success is recorded'
+);
+
+select results_eq(
+  $$ select public.record_fx_refresh_success('2026-08-07', 99) $$,
+  $$ values (false) $$,
+  'a second success for the same day is a no-op'
+);
+
+select results_eq(
+  $$ select currencies_updated from public.fx_fetch_log
+     where fetch_date = '2026-08-07' and status = 'success' $$,
+  $$ values (3::int) $$,
+  'the no-op success does not overwrite the already-recorded currency count'
+);
+
+-- A day that already has a recorded success must not be reclaimable even
+-- once its claim row falls outside the reclaim window — otherwise a stray
+-- retry would re-fetch and re-apply rates for a day already done.
+update public.fx_refresh_claims
+set claimed_at = now() - interval '2 hours'
+where fetch_date = '2026-08-07';
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-07') $$,
+  $$ values (false) $$,
+  'a day with a recorded success cannot be reclaimed even past the reclaim window'
+);
+
+select results_eq(
+  $$ select count(*)::int from public.fx_fetch_log
+     where fetch_date = '2026-08-07' and status = 'skipped' $$,
+  $$ values (2::int) $$,
+  'the blocked reclaim attempt on an already-succeeded day is logged as skipped, alongside the earlier same-day skip'
+);
+
+-- Stranded-claim recovery: a claim whose claimed_at predates the 1-hour
+-- reclaim window is treated as abandoned (e.g. a process crashed after
+-- claiming but before calling record_fx_refresh_success/failure), so a
+-- later caller can take over the date instead of being blocked forever.
+insert into public.fx_refresh_claims (fetch_date, claimed_at)
+values ('2026-08-10', now() - interval '2 hours');
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-10') $$,
+  $$ values (true) $$,
+  'a stranded claim past the reclaim window can be reclaimed'
+);
+
+select set_config('role', 'service_role', true);
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-08') $$,
+  $$ values (true) $$,
+  'service_role can claim a refresh date'
+);
+
+select lives_ok(
+  $$ select public.record_fx_refresh_failure('2026-08-08', 'provider unavailable') $$,
+  'service_role can record a failure and release its refresh claim'
+);
+
+select results_eq(
+  $$ select public.claim_fx_refresh('2026-08-08') $$,
+  $$ values (true) $$,
+  'service_role can reclaim a date after a failed refresh'
 );
 
 select * from finish();
