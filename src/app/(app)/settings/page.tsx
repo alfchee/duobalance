@@ -9,6 +9,7 @@ import { useSession } from "@/hooks/useSession";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useAuthCommands } from "@/hooks/useAuthCommands";
 import { LocaleSwitcher } from "./locale-switcher";
+import { NumberFormatSwitcher } from "./number-format-switcher";
 import { MembersSection } from "./members-section";
 import { FxRatesSection } from "./fx-rates-section";
 import { FxOverridesSection } from "./fx-overrides-section";
@@ -68,6 +69,9 @@ export default function SettingsPage() {
       <SettingsGroup title={t("groups.preferences")}>
         <div className="border-b px-4 py-4">
           <LocaleSwitcher />
+        </div>
+        <div className="border-b px-4 py-4">
+          <NumberFormatSwitcher />
         </div>
         <div className="px-4 py-4">
           <InstallSection />

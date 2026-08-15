@@ -17,7 +17,13 @@ import { useHousehold } from "@/hooks/useHousehold";
 import { useAccountMutations } from "@/hooks/useAccounts";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { accountBalance, type AccountWithBalance } from "@/lib/accounts";
-import { formatMoney, maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import {
+  formatMoney,
+  formatMoneyInput,
+  maskMoneyInput,
+  parseMoneyInput,
+  roundToMinorUnit,
+} from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 
 export function ManualBalanceSheet() {
@@ -45,7 +51,7 @@ function ManualBalanceContent({
 }) {
   const t = useTranslations("accounts.manualBalanceSheet");
   const locale = useLocale();
-  const { householdId } = useHousehold();
+  const { householdId, numberFormat } = useHousehold();
   const { updateManualBalance } = useAccountMutations(householdId);
   const { data: currencies } = useCurrencies();
 
@@ -53,19 +59,19 @@ function ManualBalanceContent({
   const current = account ? accountBalance(account) : 0;
 
   const [value, setValue] = useState(() =>
-    account ? new Intl.NumberFormat(locale).format(current) : "",
+    account ? formatMoneyInput(current, locale, numberFormat) : "",
   );
   const [error, setError] = useState(false);
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     setError(false);
-    setValue(maskMoneyInput(e.target.value, locale, minorUnit));
+    setValue(maskMoneyInput(e.target.value, locale, minorUnit, numberFormat));
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!account) return;
-    const parsed = parseMoneyInput(value, locale);
+    const parsed = parseMoneyInput(value, locale, numberFormat);
     if (parsed == null) {
       setError(true);
       return;
@@ -92,7 +98,7 @@ function ManualBalanceContent({
         <div className="flex items-center justify-between rounded-md border px-3 py-2">
           <span className="text-sm text-muted-foreground">{t("current")}</span>
           <span className="text-sm font-medium tabular-nums">
-            {formatMoney(current, account?.currency ?? "USD", locale)}
+            {formatMoney(current, account?.currency ?? "USD", locale, numberFormat)}
           </span>
         </div>
 

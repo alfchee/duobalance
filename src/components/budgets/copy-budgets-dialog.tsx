@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { CopyBudgetDraft } from "@/lib/budgets/model";
 import { adjustCopyBudgetDrafts, replaceCopyBudgetDraftAmount } from "@/lib/budgets/model";
-import { parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { parseMoneyInput, roundToMinorUnit, type NumberFormatPref } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +20,7 @@ type CopyBudgetsDialogProps = {
   drafts: readonly CopyBudgetDraft[];
   locale: string;
   minorUnit: number;
+  numberFormat: NumberFormatPref;
   onClose: () => void;
   onCopy: (drafts: readonly CopyBudgetDraft[]) => Promise<void>;
   open: boolean;
@@ -39,6 +40,7 @@ export function CopyBudgetsDialog({
   drafts: initialDrafts,
   locale,
   minorUnit,
+  numberFormat,
   onClose,
   onCopy,
   open,
@@ -66,7 +68,7 @@ export function CopyBudgetsDialog({
   };
 
   const handleDraftAmountChange = (categoryId: string, value: string) => {
-    const amount = parseMoneyInput(value, locale);
+    const amount = parseMoneyInput(value, locale, numberFormat);
     if (amount === null || amount < 0) return;
     setDrafts((current) =>
       replaceCopyBudgetDraftAmount(current, categoryId, roundToMinorUnit(amount, minorUnit)),

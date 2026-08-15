@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ComponentProps } from "react";
-import { parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { parseMoneyInput, roundToMinorUnit, type NumberFormatPref } from "@/lib/money";
 import type { BudgetRow } from "@/lib/budgets/model";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ type BudgetEditorDialogProps = {
   initialCategoryId: string | null;
   locale: string;
   minorUnit: number;
+  numberFormat: NumberFormatPref;
   onClose: () => void;
   onSave: (draft: { amount: number; categoryId: string; rollover: boolean }) => Promise<void>;
   open: boolean;
@@ -62,6 +63,7 @@ export function BudgetEditorDialog({
   initialCategoryId,
   locale,
   minorUnit,
+  numberFormat,
   onClose,
   onSave,
   open,
@@ -79,7 +81,7 @@ export function BudgetEditorDialog({
 
   const handleSubmit = async (event: FormSubmitEvent) => {
     event.preventDefault();
-    const amount = parseMoneyInput(draft.amount, locale);
+    const amount = parseMoneyInput(draft.amount, locale, numberFormat);
     if (!draft.categoryId) return setError(translations.validationCategory);
     if (amount === null || amount < 0) return setError(translations.validationAmount);
     setError(null);

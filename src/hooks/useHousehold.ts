@@ -13,6 +13,7 @@ export function useHousehold() {
     householdId: active?.householdId ?? null,
     memberId: active?.memberId ?? null,
     role: active?.role ?? null,
+    numberFormat: active?.numberFormat ?? "locale",
     baseCurrency: active?.household.baseCurrency ?? null,
     timezone: active?.household.timezone ?? null,
     locale: active?.household.locale ?? null,

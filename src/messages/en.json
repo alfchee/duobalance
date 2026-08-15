@@ -720,6 +720,15 @@
       "title": "Language",
       "subtitle": "Interface language."
     },
+    "numberFormat": {
+      "title": "Number format",
+      "subtitle": "Choose the decimal and thousands separators you read most easily.",
+      "options": {
+        "locale": "Use language default",
+        "dot_decimal": "1,234.56",
+        "comma_decimal": "1.234,56"
+      }
+    },
     "fx": {
       "title": "Exchange rates",
       "subtitle": "Daily rates from ExchangeRate-API.",

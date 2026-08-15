@@ -60,10 +60,17 @@ import { formatMoney, formatMoneyInput } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { useBillsUiStore } from "@/store/bills";
 
-function draftFromBill(bill: BillWithInstances, locale: string): BillEditorDraft {
+function draftFromBill(
+  bill: BillWithInstances,
+  locale: string,
+  numberFormat: import("@/lib/money").NumberFormatPref,
+): BillEditorDraft {
   return {
     accountId: bill.account_id ?? "none",
-    amount: bill.default_amount != null ? formatMoneyInput(bill.default_amount, locale) : "",
+    amount:
+      bill.default_amount != null
+        ? formatMoneyInput(bill.default_amount, locale, numberFormat)
+        : "",
     categoryId: bill.category_id ?? "none",
     currency: bill.currency,
     endsOn: bill.ends_on ?? "",
@@ -95,7 +102,7 @@ function statusTone(status: string | null): string {
 export function BillsView() {
   const locale = useLocale();
   const t = useTranslations("bills");
-  const { baseCurrency, householdId, memberId, timezone } = useHousehold();
+  const { baseCurrency, householdId, memberId, numberFormat, timezone } = useHousehold();
   const today = todayInHousehold(timezone ?? "UTC");
   const [month, setMonth] = useState(today.slice(0, 7));
   const {
@@ -174,7 +181,7 @@ export function BillsView() {
     openCreateEditor();
   };
   const beginEdit = (bill: BillWithInstances) => {
-    setDraft(draftFromBill(bill, locale));
+    setDraft(draftFromBill(bill, locale, numberFormat));
     setActionError(null);
     openEdit(bill.id);
   };
@@ -182,14 +189,16 @@ export function BillsView() {
     if (!value.instance.id) return;
     setSkipReason("");
     setInstanceAmount(
-      value.instance.amount != null ? formatMoneyInput(value.instance.amount, locale) : "",
+      value.instance.amount != null
+        ? formatMoneyInput(value.instance.amount, locale, numberFormat)
+        : "",
     );
     setActionError(null);
     selectInstance(value.instance.id);
   };
   const beginPay = () => {
     if (selected?.instance.amount === null || selected?.instance.amount === undefined) return;
-    setAmount(formatMoneyInput(selected.instance.amount, locale));
+    setAmount(formatMoneyInput(selected.instance.amount, locale, numberFormat));
     setPaidOn(today);
     setPaidByMemberId(memberId ?? "");
     setCreateTransaction(true);
@@ -197,7 +206,7 @@ export function BillsView() {
     openPaymentSheet();
   };
   const saveBill = async () => {
-    const result = createBillWriteInput(draft, locale, minorUnit);
+    const result = createBillWriteInput(draft, locale, minorUnit, numberFormat);
     if (!result.ok) return;
     try {
       if (editorBillId) await update.mutateAsync({ id: editorBillId, input: result.value });
@@ -209,7 +218,12 @@ export function BillsView() {
   };
   const confirmPay = async () => {
     if (!selected || !paidByMemberId) return;
-    const parsedAmount = parseBillAmount(amount, locale, minorUnitFor(selected.bill.currency));
+    const parsedAmount = parseBillAmount(
+      amount,
+      locale,
+      minorUnitFor(selected.bill.currency),
+      numberFormat,
+    );
     if (parsedAmount === null) return;
     try {
       await pay.mutateAsync({
@@ -233,6 +247,7 @@ export function BillsView() {
       instanceAmount,
       locale,
       minorUnitFor(selected.bill.currency),
+      numberFormat,
     );
     if (parsedAmount === null) return;
     try {
@@ -474,7 +489,7 @@ export function BillsView() {
                               instance.effective_status === "overdue" && "text-red-600",
                             )}
                           >
-                            {formatMoney(instance.amount ?? 0, bill.currency, locale)}
+                            {formatMoney(instance.amount ?? 0, bill.currency, locale, numberFormat)}
                           </span>
                           <span className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
                             <Clock3 className="size-3" />
@@ -704,7 +719,12 @@ export function BillsView() {
           {selected && (
             <div className="space-y-3 p-4">
               <p className="text-2xl font-semibold">
-                {formatMoney(selected.instance.amount ?? 0, selected.bill.currency, locale)}
+                {formatMoney(
+                  selected.instance.amount ?? 0,
+                  selected.bill.currency,
+                  locale,
+                  numberFormat,
+                )}
               </p>
               {selected.instance.effective_status !== "paid" &&
                 selected.instance.effective_status !== "skipped" && (

@@ -29,7 +29,7 @@ export function BudgetView() {
   const locale = useLocale();
   const t = useTranslations("budget");
   const copyDialogT = useTranslations("budget.copyDialog");
-  const { baseCurrency, householdId, memberId, timezone } = useHousehold();
+  const { baseCurrency, householdId, memberId, numberFormat, timezone } = useHousehold();
   const {
     closeEditor,
     copyOpen,
@@ -128,6 +128,7 @@ export function BudgetView() {
           currency={currency}
           leftLabel={t("left", { amount: "" }).trim()}
           locale={locale}
+          numberFormat={numberFormat}
           ofBudget={(values) => t("ofBudget", values)}
           spent={spent}
           totalBudget={totalBudget}
@@ -143,6 +144,7 @@ export function BudgetView() {
         <BudgetCategoryList
           currency={currency}
           locale={locale}
+          numberFormat={numberFormat}
           periodMonth={periodMonth}
           rows={rows}
           visibleToHousehold={scope === "household"}
@@ -173,6 +175,7 @@ export function BudgetView() {
         drafts={previousDrafts}
         locale={locale}
         minorUnit={minorUnit}
+        numberFormat={numberFormat}
         open={copyOpen}
         pending={copy.isPending}
         onClose={() => setCopyOpen(false)}
@@ -200,6 +203,7 @@ export function BudgetView() {
         initialCategoryId={createCategoryId}
         locale={locale}
         minorUnit={minorUnit}
+        numberFormat={numberFormat}
         open={editorOpen}
         pending={create.isPending || update.isPending}
         onClose={closeEditor}

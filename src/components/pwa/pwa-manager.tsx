@@ -49,6 +49,13 @@ export function PwaManager({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
 
+    // sw.js's activate handler calls clients.claim(), so controllerchange
+    // fires on every fresh visit (uncontrolled -> controlled), not just when
+    // a new version replaces one that was already running. Reloading on that
+    // first claim would interrupt whatever the user is doing for no reason —
+    // only reload when an existing controller is being swapped out.
+    const hadController = navigator.serviceWorker.controller !== null;
+
     const register = async () => {
       try {
         const nextRegistration = await navigator.serviceWorker.register("/sw.js");
@@ -69,7 +76,9 @@ export function PwaManager({ children }: { children: ReactNode }) {
     };
 
     void register();
-    const reload = () => window.location.reload();
+    const reload = () => {
+      if (hadController) window.location.reload();
+    };
     navigator.serviceWorker.addEventListener("controllerchange", reload);
     return () => navigator.serviceWorker.removeEventListener("controllerchange", reload);
   }, []);

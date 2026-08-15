@@ -17,6 +17,7 @@ const ACTIVE: Membership = {
   householdId: "h1",
   role: "owner",
   displayName: "Ana",
+  numberFormat: "locale",
   household: {
     name: "Casa 123",
     country: "CL",

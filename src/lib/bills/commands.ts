@@ -1,4 +1,4 @@
-import { parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { parseMoneyInput, roundToMinorUnit, type NumberFormatPref } from "@/lib/money";
 import type { Database } from "@/lib/supabase/types";
 import { serializeBillRecurrence, type BillEditorDraft } from "@/lib/bills/recurrence";
 
@@ -9,8 +9,9 @@ export function createBillWriteInput(
   draft: BillEditorDraft,
   locale: string,
   minorUnit: number,
+  numberFormat: NumberFormatPref = "locale",
 ): ValidationResult<BillWriteInput> {
-  const parsedAmount = draft.amount ? parseMoneyInput(draft.amount, locale) : null;
+  const parsedAmount = draft.amount ? parseMoneyInput(draft.amount, locale, numberFormat) : null;
   const reminderDays = Number(draft.reminderDays);
   if (!draft.name.trim() || !draft.startsOn || (draft.amount && parsedAmount === null)) {
     return { ok: false };
@@ -36,7 +37,12 @@ export function createBillWriteInput(
   };
 }
 
-export function parseBillAmount(value: string, locale: string, minorUnit: number): number | null {
-  const amount = parseMoneyInput(value, locale);
+export function parseBillAmount(
+  value: string,
+  locale: string,
+  minorUnit: number,
+  numberFormat: NumberFormatPref = "locale",
+): number | null {
+  const amount = parseMoneyInput(value, locale, numberFormat);
   return amount === null ? null : roundToMinorUnit(amount, minorUnit);
 }
