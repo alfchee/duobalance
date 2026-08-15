@@ -19,6 +19,7 @@ import type { AccountWithBalance } from "@/lib/accounts";
 import type { BalanceSectionId } from "@/lib/balances";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/money";
+import { useHousehold } from "@/hooks/useHousehold";
 import { BalancesRow } from "./balances-row";
 
 const SECTION_IDS: BalanceSectionId[] = ["cash", "credit", "savings", "loans"];
@@ -44,6 +45,7 @@ export function BalancesSection({
 }) {
   const t = useTranslations("balances");
   const locale = useLocale();
+  const { numberFormat } = useHousehold();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -63,7 +65,9 @@ export function BalancesSection({
             subtotal != null && subtotal < 0 && "text-destructive",
           )}
         >
-          {baseCurrency && subtotal != null ? formatMoney(subtotal, baseCurrency, locale) : "—"}
+          {baseCurrency && subtotal != null
+            ? formatMoney(subtotal, baseCurrency, locale, numberFormat)
+            : "—"}
         </p>
       </header>
       <DndContext

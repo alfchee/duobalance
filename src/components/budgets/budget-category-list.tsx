@@ -5,12 +5,14 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import type { BudgetRow } from "@/lib/budgets/model";
 import { buildBudgetTransactionsHref, getBudgetProgress } from "@/lib/budgets/model";
 import { formatMoney } from "@/lib/money";
+import type { NumberFormatPref } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 type BudgetCategoryListProps = {
   currency: string;
   locale: string;
+  numberFormat: NumberFormatPref;
   periodMonth: string;
   rows: readonly BudgetRow[];
   translations: {
@@ -30,6 +32,7 @@ type BudgetCategoryListProps = {
 export function BudgetCategoryList({
   currency,
   locale,
+  numberFormat,
   periodMonth,
   rows,
   translations,
@@ -55,6 +58,7 @@ export function BudgetCategoryList({
             key={`${row.categoryId}-${row.id ?? "spend"}`}
             currency={currency}
             locale={locale}
+            numberFormat={numberFormat}
             periodMonth={periodMonth}
             row={row}
             translations={translations}
@@ -72,6 +76,7 @@ export function BudgetCategoryList({
 type BudgetCategoryRowProps = {
   currency: string;
   locale: string;
+  numberFormat: NumberFormatPref;
   periodMonth: string;
   row: BudgetRow;
   translations: Omit<BudgetCategoryListProps["translations"], "categories" | "visibleToYou">;
@@ -84,6 +89,7 @@ type BudgetCategoryRowProps = {
 function BudgetCategoryRow({
   currency,
   locale,
+  numberFormat,
   periodMonth,
   row,
   translations,
@@ -113,11 +119,11 @@ function BudgetCategoryRow({
             </div>
             <div className="flex shrink-0 items-baseline gap-1 text-lg font-semibold tabular-nums">
               <span className={overBudget ? "text-destructive" : "text-foreground"}>
-                {formatMoney(row.spent, currency, locale)}
+                {formatMoney(row.spent, currency, locale, numberFormat)}
               </span>
               <span className="text-muted-foreground">/</span>
               <span className={overBudget ? "text-destructive" : "text-muted-foreground"}>
-                {formatMoney(Math.max(row.amount, 0), currency, locale)}
+                {formatMoney(Math.max(row.amount, 0), currency, locale, numberFormat)}
               </span>
             </div>
             {row.id ? (
@@ -170,7 +176,7 @@ function BudgetCategoryRow({
           {overBudget ? (
             <p className="mt-2 text-xs font-semibold text-destructive">
               {translations.overBy({
-                amount: formatMoney(Math.abs(row.remaining), currency, locale),
+                amount: formatMoney(Math.abs(row.remaining), currency, locale, numberFormat),
               })}
             </p>
           ) : row.amount === 0 ? (

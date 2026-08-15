@@ -30,7 +30,7 @@ import {
   type Account,
   type AccountKind,
 } from "@/lib/accounts";
-import { maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { formatMoneyInput, maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 import { CurrencyPicker } from "./currency-picker";
 
@@ -53,10 +53,6 @@ type FormError =
   | "balanceRequired"
   | "privateNeedsOwner"
   | "generic";
-
-function formatInputAmount(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale).format(value);
-}
 
 export function AccountForm() {
   const { formOpen, editingAccount, closeForm } = useAccountsUiStore();
@@ -91,11 +87,15 @@ function AccountFormContent({
     kind: (account?.kind as AccountKind) ?? "checking",
     currency: account?.currency ?? baseCurrency,
     balanceMode: account?.balance_mode === "manual" ? "manual" : "ledger",
-    openingBalance: account ? formatInputAmount(account.opening_balance, locale) : "0",
+    openingBalance: account ? formatMoneyInput(account.opening_balance, locale, numberFormat) : "0",
     manualBalance:
-      account?.manual_balance != null ? formatInputAmount(account.manual_balance, locale) : "",
+      account?.manual_balance != null
+        ? formatMoneyInput(account.manual_balance, locale, numberFormat)
+        : "",
     creditLimit:
-      account?.credit_limit != null ? formatInputAmount(account.credit_limit, locale) : "",
+      account?.credit_limit != null
+        ? formatMoneyInput(account.credit_limit, locale, numberFormat)
+        : "",
     isShared: account?.is_shared ?? true,
     ownerIsMine: account ? account.owner_member_id != null : false,
   }));

@@ -34,7 +34,7 @@ export function BalancesHeader({
   const t = useTranslations("balances");
   const tSettings = useTranslations("settings.overrides");
   const locale = useLocale();
-  const { householdId, baseCurrency, memberId } = useHousehold();
+  const { householdId, baseCurrency, memberId, numberFormat } = useHousehold();
   const { data: members } = useHouseholdMembers(householdId);
   const [open, setOpen] = useState(false);
 
@@ -80,7 +80,7 @@ export function BalancesHeader({
               )}
             >
               {baseCurrency && netWorth != null
-                ? formatMoney(netWorth, baseCurrency, locale)
+                ? formatMoney(netWorth, baseCurrency, locale, numberFormat)
                 : t("netWorthLoading")}
             </span>
           </button>
@@ -93,6 +93,7 @@ export function BalancesHeader({
             netWorth={netWorth}
             sourceLabelOverride={tSettings}
             locale={locale}
+            numberFormat={numberFormat}
             onClose={() => setOpen(false)}
           />
         </PopoverContent>
@@ -142,6 +143,7 @@ function CurrencyBreakdown({
   netWorth,
   sourceLabelOverride,
   locale,
+  numberFormat,
   onClose,
 }: {
   base: string;
@@ -150,6 +152,7 @@ function CurrencyBreakdown({
   netWorth: number | null;
   sourceLabelOverride: (key: string) => string;
   locale: string;
+  numberFormat: import("@/lib/money").NumberFormatPref;
   onClose: () => void;
 }) {
   const t = useTranslations("balances");
@@ -160,7 +163,7 @@ function CurrencyBreakdown({
           {t("breakdownTitle")}
         </p>
         <p className="text-lg font-semibold tabular-nums">
-          {netWorth != null ? formatMoney(netWorth, base, locale) : "—"}
+          {netWorth != null ? formatMoney(netWorth, base, locale, numberFormat) : "—"}
         </p>
         {baseRateDate ? (
           <p className="text-xs text-muted-foreground">
@@ -193,10 +196,10 @@ function CurrencyBreakdown({
               </div>
               <div className="text-right">
                 <p className="font-medium tabular-nums">
-                  {formatMoney(line.amount, line.code, locale)}
+                  {formatMoney(line.amount, line.code, locale, numberFormat)}
                 </p>
                 <p className="text-xs text-muted-foreground tabular-nums">
-                  ≈ {formatMoney(line.baseAmount, base, locale)}
+                  ≈ {formatMoney(line.baseAmount, base, locale, numberFormat)}
                 </p>
               </div>
             </li>

@@ -16,7 +16,7 @@ export function AccountRow({ account }: { account: AccountWithBalance }) {
   const t = useTranslations("accounts.row");
   const tModes = useTranslations("accounts.balanceModes");
   const locale = useLocale();
-  const { memberId } = useHousehold();
+  const { memberId, numberFormat } = useHousehold();
   const { openEdit, openManualBalance } = useAccountsUiStore();
 
   // RLS update gating (accounts_update, #19): joint or my own accounts are
@@ -80,7 +80,7 @@ export function AccountRow({ account }: { account: AccountWithBalance }) {
           balance < 0 && "text-destructive",
         )}
       >
-        {formatMoney(balance, account.currency, locale)}
+        {formatMoney(balance, account.currency, locale, numberFormat)}
       </p>
 
       {canManage ? (
