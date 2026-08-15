@@ -12,20 +12,29 @@ function requireSupabase() {
 
 export type ReportCategoryKind = "expense" | "income";
 
+const hexColorSchema = z
+  .string()
+  .regex(/^#[0-9a-f]{6}$/i)
+  .default("#9ca3af");
+
 export const reportCategoryTotalSchema = z.object({
   category_id: z.string().nullable(),
   category_name: z.string().nullable(),
-  color_hex: z.string().default("#9ca3af"),
-  total: z.coerce.number().nonnegative().default(0),
-  txn_count: z.coerce.number().default(0),
+  color_hex: hexColorSchema,
+  total: z.coerce.number().nonnegative(),
+  txn_count: z.coerce.number(),
 });
 
-export const reportMonthlyTotalSchema = z.object({
-  period_month: z.string(),
-  income: z.coerce.number().default(0),
-  expense: z.coerce.number().default(0),
-  net: z.coerce.number().default(0),
-});
+export const reportMonthlyTotalSchema = z
+  .object({
+    period_month: z.string(),
+    income: z.coerce.number(),
+    expense: z.coerce.number(),
+    net: z.coerce.number(),
+  })
+  .refine((row) => Math.abs(row.net - (row.income - row.expense)) < 0.01, {
+    message: "net must equal income minus expense",
+  });
 
 export type ReportCategoryTotal = z.infer<typeof reportCategoryTotalSchema>;
 export type ReportMonthlyTotal = z.infer<typeof reportMonthlyTotalSchema>;

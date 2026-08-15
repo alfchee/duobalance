@@ -130,6 +130,9 @@ describe("activity query", () => {
       expect(calls).toEqual([{ method: "is", args: ["category_id", null] }]);
     });
 
+    const FOOD_ID = "11111111-1111-1111-1111-111111111111";
+    const RENT_ID = "22222222-2222-2222-2222-222222222222";
+
     it("filters regular category IDs when only regular IDs are passed", () => {
       const { builder, calls } = createMockQueryBuilder();
       let query = builder;
@@ -140,8 +143,8 @@ describe("activity query", () => {
         },
       );
 
-      ops.categoryIds(["food", "rent"]);
-      expect(calls).toEqual([{ method: "in", args: ["category_id", ["food", "rent"]] }]);
+      ops.categoryIds([FOOD_ID, RENT_ID]);
+      expect(calls).toEqual([{ method: "in", args: ["category_id", [FOOD_ID, RENT_ID]] }]);
     });
 
     it("uses OR condition when both uncategorized and regular category IDs are passed", () => {
@@ -154,10 +157,24 @@ describe("activity query", () => {
         },
       );
 
-      ops.categoryIds(["uncategorized", "food", "rent"]);
+      ops.categoryIds(["uncategorized", FOOD_ID, RENT_ID]);
       expect(calls).toEqual([
-        { method: "or", args: ["category_id.is.null,category_id.in.(food,rent)"] },
+        { method: "or", args: [`category_id.is.null,category_id.in.(${FOOD_ID},${RENT_ID})`] },
       ]);
+    });
+
+    it("silently drops a non-UUID category id instead of interpolating it raw into the filter", () => {
+      const { builder, calls } = createMockQueryBuilder();
+      let query = builder;
+      const ops = createFilterOperations(
+        () => query,
+        (next) => {
+          query = next;
+        },
+      );
+
+      ops.categoryIds([FOOD_ID, "x),amount.gt.0"]);
+      expect(calls).toEqual([{ method: "in", args: ["category_id", [FOOD_ID]] }]);
     });
   });
 });

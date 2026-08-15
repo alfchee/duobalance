@@ -6,7 +6,7 @@ import { SlidersHorizontal, CheckCircle2, AlertCircle, RefreshCw } from "lucide-
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
 import { useReportCategoryTotals, useReportMonthlyTotals } from "@/hooks/useReports";
-import { getReportDateRange } from "@/lib/reports";
+import { densifyMonthlyTotals, getReportDateRange } from "@/lib/reports";
 import type { DatePreset } from "@/lib/reports";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,8 @@ export function ReportsView() {
     customTo,
   );
 
+  const isDateRangeIncomplete = datePreset === "custom" && (!from || !to);
+
   // Category total RPCs
   const expenseQuery = useReportCategoryTotals(householdId, from, to, "expense", memberFilter);
   const incomeQuery = useReportCategoryTotals(householdId, from, to, "income", memberFilter);
@@ -52,8 +54,14 @@ export function ReportsView() {
 
   const expenseCategories = expenseQuery.data ?? [];
   const incomeCategories = incomeQuery.data ?? [];
-  const monthlyFiltered = monthlyFilteredQuery.data ?? [];
-  const monthlyAll = monthlyAllQuery.data ?? [];
+  const emptyMonthlyTotal = { income: 0, expense: 0, net: 0 };
+  const monthlyFiltered = densifyMonthlyTotals(
+    monthlyFilteredQuery.data ?? [],
+    from,
+    to,
+    emptyMonthlyTotal,
+  );
+  const monthlyAll = densifyMonthlyTotals(monthlyAllQuery.data ?? [], from, to, emptyMonthlyTotal);
 
   const isLoading =
     expenseQuery.isLoading ||
@@ -173,8 +181,17 @@ export function ReportsView() {
         )}
       </div>
 
+      {/* Incomplete custom date range: don't fall through to the loaded/empty state below */}
+      {isDateRangeIncomplete && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+            <p className="text-sm font-semibold text-foreground">{t("customDates.incomplete")}</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Error state */}
-      {isError && (
+      {!isDateRangeIncomplete && isError && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardContent className="flex flex-col items-center justify-center p-6 text-center">
             <AlertCircle className="size-8 text-destructive mb-2" />
@@ -194,7 +211,7 @@ export function ReportsView() {
       )}
 
       {/* Loading state skeleton */}
-      {isLoading && !isError && (
+      {!isDateRangeIncomplete && isLoading && !isError && (
         <div className="space-y-6" aria-busy="true">
           <Skeleton className="h-64 w-full rounded-2xl" />
           <div className="grid gap-6 md:grid-cols-2">
@@ -209,7 +226,7 @@ export function ReportsView() {
       )}
 
       {/* Reconciliation Callout */}
-      {!isLoading && !isError && showReconciliation && (
+      {!isDateRangeIncomplete && !isLoading && !isError && showReconciliation && (
         <div
           className={cn(
             "flex items-center gap-3 rounded-xl border p-3.5 text-xs font-semibold transition-colors",
@@ -246,7 +263,7 @@ export function ReportsView() {
         </div>
       )}
 
-      {!isLoading && !isError && (
+      {!isDateRangeIncomplete && !isLoading && !isError && (
         <>
           {/* Monthly Balance Chart (Top feature chart) */}
           <MonthlyBalanceChart
@@ -254,7 +271,6 @@ export function ReportsView() {
             currency={activeCurrency}
             locale={activeLocale}
             numberFormat={numberFormat}
-            timezone={activeTimezone}
           />
 
           {/* Category Breakdown Charts Grid */}
@@ -292,7 +308,6 @@ export function ReportsView() {
               currency={activeCurrency}
               locale={activeLocale}
               numberFormat={numberFormat}
-              timezone={activeTimezone}
             />
             <MonthlyBarChart
               title={t("charts.monthlyIncomes.title")}
@@ -301,7 +316,6 @@ export function ReportsView() {
               currency={activeCurrency}
               locale={activeLocale}
               numberFormat={numberFormat}
-              timezone={activeTimezone}
             />
           </div>
         </>

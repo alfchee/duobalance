@@ -30,7 +30,8 @@
     },
     "customDates": {
       "from": "De",
-      "to": "Até"
+      "to": "Até",
+      "incomplete": "Selecione uma data de início e de fim para ver este relatório."
     },
     "memberFilter": {
       "label": "Por membro",

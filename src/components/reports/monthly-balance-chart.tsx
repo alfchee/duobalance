@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSignedMoney } from "@/lib/money";
 import type { NumberFormatPref } from "@/lib/money";
 import type { ReportMonthlyTotal } from "@/hooks/useReports";
-import { calculateRolling3MonthAverage } from "@/lib/reports";
+import { calculateRolling3MonthAverage, formatReportMonthLabel } from "@/lib/reports";
 import { cn } from "@/lib/utils";
 
 interface MonthlyBalanceChartProps {
@@ -13,16 +13,6 @@ interface MonthlyBalanceChartProps {
   currency: string;
   locale: string;
   numberFormat: NumberFormatPref;
-  timezone: string;
-}
-
-function formatMonthLabel(periodMonth: string, locale: string, timezone: string): string {
-  const date = new Date(`${periodMonth}T00:00:00Z`);
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: timezone,
-    month: "short",
-    year: "2-digit",
-  }).format(date);
 }
 
 export function MonthlyBalanceChart({
@@ -30,7 +20,6 @@ export function MonthlyBalanceChart({
   currency,
   locale,
   numberFormat,
-  timezone,
 }: MonthlyBalanceChartProps) {
   const t = useTranslations("reports");
 
@@ -103,7 +92,7 @@ export function MonthlyBalanceChart({
               const rollingVal = rolling3m[index] ?? 0;
               const barHeightPercent = Math.min((Math.abs(netVal) / maxAbs) * 100, 100);
               const isPositive = netVal >= 0;
-              const monthLabel = formatMonthLabel(item.period_month, locale, timezone);
+              const monthLabel = formatReportMonthLabel(item.period_month, locale);
 
               return (
                 <div

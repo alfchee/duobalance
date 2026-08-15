@@ -94,6 +94,8 @@ export function useTransactionSummary(householdId: string | null, filters: Trans
   });
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function createFilterOperations<
   T extends {
     eq: (column: string, value: string) => T;
@@ -111,7 +113,9 @@ export function createFilterOperations<
     accountIds: (ids) => set(get().in("account_id", ids)),
     categoryIds: (ids) => {
       const hasUncategorized = ids.includes("uncategorized") || ids.includes("null");
-      const regularIds = ids.filter((id) => id !== "uncategorized" && id !== "null");
+      const regularIds = ids
+        .filter((id) => id !== "uncategorized" && id !== "null")
+        .filter((id) => UUID_PATTERN.test(id));
       if (hasUncategorized && regularIds.length > 0) {
         set(get().or(`category_id.is.null,category_id.in.(${regularIds.join(",")})`));
       } else if (hasUncategorized) {

@@ -433,7 +433,7 @@ export function BillsView() {
                     locale,
                   )}
                 </span>
-                <span>{calculateBillWeekTotal(items, locale)}</span>
+                <span>{calculateBillWeekTotal(items, locale, numberFormat)}</span>
               </div>
               <div className="overflow-hidden rounded-2xl border bg-background shadow-ring">
                 <div className="divide-y">

@@ -11,13 +11,9 @@ import {
 } from "@/components/ui/select";
 import { useHousehold } from "@/hooks/useHousehold";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
-import type { NumberFormatPref } from "@/lib/money";
+import { isNumberFormatPref, type NumberFormatPref } from "@/lib/money";
 
 const NUMBER_FORMATS: readonly NumberFormatPref[] = ["locale", "dot_decimal", "comma_decimal"];
-
-function isNumberFormatPref(value: string): value is NumberFormatPref {
-  return (NUMBER_FORMATS as readonly string[]).includes(value);
-}
 
 export function NumberFormatSwitcher() {
   const t = useTranslations("settings.numberFormat");

@@ -46,6 +46,11 @@ describe("bills model", () => {
     expect(calculateBillWeekTotal(values, "en")).toBe("$20.00");
   });
 
+  it("honors the household's number format preference", () => {
+    const values = [instance({ amount: 1234.5 })];
+    expect(calculateBillWeekTotal(values, "en", "comma_decimal")).toBe("$1.234,50");
+  });
+
   it("normalizes unknown statuses and safely ignores undated instances", () => {
     expect(getBillStatus("unknown")).toBe("due");
     expect(getBillStatus(null)).toBe("due");

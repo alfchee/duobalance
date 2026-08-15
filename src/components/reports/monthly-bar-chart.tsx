@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
 import type { NumberFormatPref } from "@/lib/money";
+import { formatReportMonthLabel } from "@/lib/reports";
 import type { ReportCategoryKind, ReportMonthlyTotal } from "@/hooks/useReports";
 
 interface MonthlyBarChartProps {
@@ -13,16 +14,6 @@ interface MonthlyBarChartProps {
   currency: string;
   locale: string;
   numberFormat: NumberFormatPref;
-  timezone: string;
-}
-
-function formatMonthLabel(periodMonth: string, locale: string, timezone: string): string {
-  const date = new Date(`${periodMonth}T00:00:00Z`);
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: timezone,
-    month: "short",
-    year: "2-digit",
-  }).format(date);
 }
 
 export function MonthlyBarChart({
@@ -32,7 +23,6 @@ export function MonthlyBarChart({
   currency,
   locale,
   numberFormat,
-  timezone,
 }: MonthlyBarChartProps) {
   const t = useTranslations("reports");
 
@@ -70,7 +60,7 @@ export function MonthlyBarChart({
           {data.map((item) => {
             const val = Number(item[field]);
             const heightPercent = maxValue > 0 ? (val / maxValue) * 100 : 0;
-            const monthLabel = formatMonthLabel(item.period_month, locale, timezone);
+            const monthLabel = formatReportMonthLabel(item.period_month, locale);
 
             return (
               <div

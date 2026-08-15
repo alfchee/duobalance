@@ -53,8 +53,10 @@ export function PwaManager({ children }: { children: ReactNode }) {
     // fires on every fresh visit (uncontrolled -> controlled), not just when
     // a new version replaces one that was already running. Reloading on that
     // first claim would interrupt whatever the user is doing for no reason —
-    // only reload when an existing controller is being swapped out.
-    const hadController = navigator.serviceWorker.controller !== null;
+    // only reload when an existing controller is being swapped out. Mutable
+    // so a page's very first visit (no controller yet) still reloads on a
+    // later same-session update, once a controller is in place.
+    let hadController = navigator.serviceWorker.controller !== null;
 
     const register = async () => {
       try {
@@ -78,6 +80,7 @@ export function PwaManager({ children }: { children: ReactNode }) {
     void register();
     const reload = () => {
       if (hadController) window.location.reload();
+      hadController = true;
     };
     navigator.serviceWorker.addEventListener("controllerchange", reload);
     return () => navigator.serviceWorker.removeEventListener("controllerchange", reload);

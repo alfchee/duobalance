@@ -780,7 +780,8 @@
     },
     "customDates": {
       "from": "Desde",
-      "to": "Hasta"
+      "to": "Hasta",
+      "incomplete": "Selecciona una fecha de inicio y de fin para ver este reporte."
     },
     "memberFilter": {
       "label": "Por miembro",
