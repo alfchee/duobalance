@@ -1428,6 +1428,36 @@ export type Database = {
         Args: { refresh_date: string; updated_currencies: number }
         Returns: boolean
       }
+      report_category_totals: {
+        Args: {
+          p_from: string
+          p_household: string
+          p_kind: string
+          p_member?: string
+          p_to: string
+        }
+        Returns: {
+          category_id: string
+          category_name: string
+          color_hex: string
+          total: number
+          txn_count: number
+        }[]
+      }
+      report_monthly_totals: {
+        Args: {
+          p_from: string
+          p_household: string
+          p_member?: string
+          p_to: string
+        }
+        Returns: {
+          expense: number
+          income: number
+          net: number
+          period_month: string
+        }[]
+      }
       seed_default_categories: {
         Args: { p_household_id: string; p_locale: string }
         Returns: undefined
