@@ -127,11 +127,13 @@ describe("GET /api/export", () => {
   it("rejects callers who are not members of the requested household", async () => {
     const client = makeClient(null);
     vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(makeClient(null) as never);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const response = await GET(request());
 
     expect(response.status).toBe(403);
+    expect(createSupabaseServiceRoleClient).toHaveBeenCalledOnce();
   });
 
   it("allows removed members to export past data via service role fallback with cutoff and privacy filters", async () => {
