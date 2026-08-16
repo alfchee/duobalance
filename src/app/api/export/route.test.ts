@@ -13,7 +13,12 @@ vi.mock("@/app/api/_shared", () => ({
   getAuthedUser: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServiceRoleClient: vi.fn(),
+}));
+
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { GET } from "./route";
 
 const householdId = "10000000-0000-4000-8000-000000000001";
@@ -73,6 +78,8 @@ function request(format = "json") {
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(createSupabaseServiceRoleClient).mockReset();
+  vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(makeClient(null) as never);
   delete process.env.BUILD_TARGET;
 });
 
@@ -109,6 +116,21 @@ describe("GET /api/export", () => {
     const response = await GET(request());
 
     expect(response.status).toBe(403);
+  });
+
+  it("allows removed members to export past data via service role fallback", async () => {
+    const client = makeClient(null);
+    const admin = makeClient({ households: { id: householdId, name: "Past Home" } });
+    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(admin as never);
+    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      household: { id: householdId, name: "Past Home" },
+    });
   });
 
   it("returns a non-cacheable JSON backup, ordering every table by id except fx_overrides", async () => {
