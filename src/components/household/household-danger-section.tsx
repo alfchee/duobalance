@@ -40,9 +40,9 @@ export function HouseholdDangerSection() {
   const [isPending, setIsPending] = useState(false);
 
   const isOwner = role === "owner";
-  const activeMembers = (members.data ?? []).filter((m) => m.role !== undefined);
-  const activeCount = activeMembers.length > 0 ? activeMembers.length : 1;
-  const isOwnerWithOthers = isOwner && activeCount > 1;
+  const activeMembers = members.data ?? [];
+  const activeCount = members.data ? activeMembers.length : 1;
+  const isOwnerWithOthers = isOwner && (members.isPending || activeCount > 1);
 
   async function downloadExport(format: ExportFormat) {
     if (!householdId) return;

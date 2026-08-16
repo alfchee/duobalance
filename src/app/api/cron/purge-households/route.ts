@@ -80,8 +80,6 @@ async function handle(request: Request) {
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    return request.headers.get("authorization") === `Bearer ${secret}`;
-  }
-  return request.headers.get("user-agent") === "vercel-cron/1.0";
+  if (!secret) return false;
+  return request.headers.get("authorization") === `Bearer ${secret}`;
 }
