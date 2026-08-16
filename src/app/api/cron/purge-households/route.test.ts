@@ -22,9 +22,11 @@ function makeClient(opts: {
       return {
         select: vi.fn().mockReturnValue({
           not: vi.fn().mockReturnValue({
-            lt: vi.fn().mockResolvedValue({
-              data: opts.selectError ? null : (opts.households ?? []),
-              error: opts.selectError ?? null,
+            lt: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue({
+                data: opts.selectError ? null : (opts.households ?? []),
+                error: opts.selectError ?? null,
+              }),
             }),
           }),
         }),

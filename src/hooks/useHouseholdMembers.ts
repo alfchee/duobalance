@@ -26,6 +26,7 @@ export function useHouseholdMembers(householdId: string | null) {
         .from("household_members")
         .select("id, user_id, display_name, role, joined_at, color_hex")
         .eq("household_id", householdId!)
+        .is("removed_at", null)
         .order("joined_at");
       if (error) throw error;
       return data;

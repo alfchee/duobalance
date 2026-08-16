@@ -25,7 +25,8 @@ async function handle(request: Request) {
       .from("households")
       .select("id, name, deleted_at")
       .not("deleted_at", "is", null)
-      .lt("deleted_at", cutoff);
+      .lt("deleted_at", cutoff)
+      .limit(PURGE_SANITY_CAP + 1);
 
     if (selectError) {
       console.error("purge-households: lookup failed", selectError);
@@ -54,12 +55,12 @@ async function handle(request: Request) {
       return Response.json({ purgedCount: 0, households: [] });
     }
 
-    console.info(
-      "purge-households: purging soft-deleted households (>30 days old)",
-      householdsToPurge,
-    );
-
     const idsToPurge = householdsToPurge.map((h) => h.id);
+
+    console.info("purge-households: purging soft-deleted households (>30 days old)", {
+      count: idsToPurge.length,
+      ids: idsToPurge,
+    });
 
     const { error: deleteError } = await supabase.from("households").delete().in("id", idsToPurge);
 

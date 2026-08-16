@@ -25,6 +25,8 @@ type ExportFormat = "json" | "csv";
 export function HouseholdDangerSection() {
   const t = useTranslations("settings.actions");
   const tErrors = useTranslations("settings.actions.errors");
+  const tCommon = useTranslations("common");
+  const tExport = useTranslations("settings.export");
   const { householdId, householdName, role } = useHousehold();
   const members = useHouseholdMembers(householdId);
   const { removeHousehold, leave } = useHouseholdCommands();
@@ -175,7 +177,7 @@ export function HouseholdDangerSection() {
 
           <DialogFooter className="gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setLeaveOpen(false)} disabled={isPending}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             {!isOwnerWithOthers ? (
               <Button variant="destructive" onClick={handleConfirmLeave} disabled={isPending}>
@@ -211,7 +213,7 @@ export function HouseholdDangerSection() {
                   onClick={() => void downloadExport("csv")}
                 >
                   <Download className="size-3" aria-hidden />
-                  {exportPending === "csv" ? "Exporting…" : t("delete.exportCsv")}
+                  {exportPending === "csv" ? tExport("exporting") : t("delete.exportCsv")}
                 </Button>
                 <Button
                   variant="outline"
@@ -221,7 +223,7 @@ export function HouseholdDangerSection() {
                   onClick={() => void downloadExport("json")}
                 >
                   <Download className="size-3" aria-hidden />
-                  {exportPending === "json" ? "Exporting…" : t("delete.exportJson")}
+                  {exportPending === "json" ? tExport("exporting") : t("delete.exportJson")}
                 </Button>
               </div>
               {exportError ? (
@@ -254,7 +256,7 @@ export function HouseholdDangerSection() {
 
           <DialogFooter className="gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={isPending}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               variant="destructive"
