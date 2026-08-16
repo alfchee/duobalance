@@ -754,12 +754,47 @@
       "pt-BR": "Português (Brasil)"
     },
     "export": {
-      "title": "Exportar respaldo",
+      "title": "Copia de respaldo",
       "description": "Descarga los datos de tu hogar para guardarlos o usarlos en una hoja de cálculo.",
       "json": "Descargar JSON",
       "csv": "Descargar CSV",
       "exporting": "Preparando…",
-      "error": "No se pudo crear la exportación. Inténtalo de nuevo."
+      "error": "No se pudo crear la exportación. Intenta de nuevo."
+    },
+    "actions": {
+      "title": "Acciones del hogar",
+      "leave": {
+        "title": "Salir del hogar",
+        "description": "Abandona este hogar. Si eres el último miembro activo, al salir se cerrará el hogar.",
+        "button": "Salir del hogar",
+        "dialogTitle": "¿Salir del hogar?",
+        "ownerNotice": "Eres propietario de este hogar. Un hogar debe tener al menos un propietario activo. Transfiere la propiedad a otro miembro antes de salir.",
+        "lastMemberNotice": "Como eres el último miembro activo, salir cerrará y eliminará temporalmente este hogar. Los datos se podrán recuperar durante 30 días.",
+        "partnerNotice": "¿Estás seguro de que deseas salir de {name}? Perderás el acceso a todos los registros financieros de este hogar.",
+        "confirmButton": "Confirmar y salir",
+        "leaving": "Saliendo…"
+      },
+      "delete": {
+        "title": "Eliminar hogar",
+        "description": "Elimina este hogar de forma blanda y revoca el acceso a todos sus miembros.",
+        "button": "Eliminar hogar",
+        "dialogTitle": "¿Eliminar {name}?",
+        "recoverableNotice": "Los datos se pueden recuperar durante 30 días; luego se eliminarán permanentemente.",
+        "exportFirst": "Exporta los registros de tu hogar antes de eliminarlo:",
+        "exportCsv": "Exportar CSV",
+        "exportJson": "Exportar JSON",
+        "confirmPrompt": "Escribe el nombre del hogar {name} para confirmar:",
+        "confirmPlaceholder": "Escribe el nombre del hogar",
+        "confirmButton": "Eliminar hogar permanentemente",
+        "deleting": "Eliminando…"
+      },
+      "errors": {
+        "ownerTransferRequired": "Transfiere la propiedad a otro miembro antes de salir de este hogar.",
+        "notOwner": "Solo un propietario activo puede eliminar este hogar.",
+        "notMember": "No eres un miembro activo de este hogar.",
+        "exportFailed": "No se pudo generar el archivo de exportación.",
+        "generic": "Algo salió mal. Intenta de nuevo."
+      }
     },
     "logout": "Cerrar sesión"
   },

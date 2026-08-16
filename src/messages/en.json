@@ -761,6 +761,41 @@
       "exporting": "Preparing…",
       "error": "Couldn't create your export. Try again."
     },
+    "actions": {
+      "title": "Household actions",
+      "leave": {
+        "title": "Leave household",
+        "description": "Leave this household. If you are the last active member, leaving closes the household.",
+        "button": "Leave household",
+        "dialogTitle": "Leave household?",
+        "ownerNotice": "You are an owner of this household. A household must always have at least one active owner. Please transfer ownership to another member before leaving.",
+        "lastMemberNotice": "Since you are the last active member, leaving will close and soft-delete this household. Data will be recoverable for 30 days.",
+        "partnerNotice": "Are you sure you want to leave {name}? You will lose access to all financial records in this household.",
+        "confirmButton": "Confirm and leave",
+        "leaving": "Leaving…"
+      },
+      "delete": {
+        "title": "Delete household",
+        "description": "Soft-delete this household and revoke access for all members.",
+        "button": "Delete household",
+        "dialogTitle": "Delete {name}?",
+        "recoverableNotice": "Data is recoverable for 30 days, then permanently deleted.",
+        "exportFirst": "Export your household records before deleting:",
+        "exportCsv": "Export CSV",
+        "exportJson": "Export JSON",
+        "confirmPrompt": "Type the household name {name} to confirm:",
+        "confirmPlaceholder": "Type household name",
+        "confirmButton": "Permanently delete household",
+        "deleting": "Deleting…"
+      },
+      "errors": {
+        "ownerTransferRequired": "Please transfer ownership to another member before leaving this household.",
+        "notOwner": "Only an active owner can delete this household.",
+        "notMember": "You are not an active member of this household.",
+        "exportFailed": "Failed to generate export file.",
+        "generic": "Something went wrong. Try again."
+      }
+    },
     "logout": "Log out"
   },
   "reports": {
