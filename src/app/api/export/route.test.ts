@@ -13,42 +13,63 @@ vi.mock("@/app/api/_shared", () => ({
   getAuthedUser: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServiceRoleClient: vi.fn(),
+}));
+
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { GET } from "./route";
 
 const householdId = "10000000-0000-4000-8000-000000000001";
 
 function makeClient(
-  member: { households: { id: string; name: string } } | null,
+  member: {
+    id?: string;
+    removed_at?: string | null;
+    households: { id: string; name: string };
+  } | null,
   tablePages: Record<string, unknown[][]> = {},
   errorTables: ReadonlySet<string> = new Set(),
 ) {
   const orderCalls: Array<{ table: string; column: string }> = [];
   const rangeCalls: Array<{ table: string; from: number; to: number }> = [];
   const fromCalls: string[] = [];
-  // fetchAllRows calls .from().select().eq() fresh on every page iteration, so
-  // the page cursor must persist across repeated .eq() calls for the same
-  // table — scoped per-table here, not recreated inside tableChain().
+  const lteCalls: Array<{ table: string; column: string; value: string }> = [];
+  const orCalls: Array<{ table: string; expression: string }> = [];
+
   const callCounts = new Map<string, number>();
 
   function tableChain(table: string) {
     const pages = tablePages[table] ?? [[]];
-    const chain = {
-      order: vi.fn((column: string) => {
-        orderCalls.push({ table, column });
-        return chain;
-      }),
-      range: vi.fn((from: number, to: number) => {
-        rangeCalls.push({ table, from, to });
-        if (errorTables.has(table)) {
-          return Promise.resolve({ data: null, error: { message: "boom" } });
-        }
-        const call = callCounts.get(table) ?? 0;
-        callCounts.set(table, call + 1);
-        const data = pages[call] ?? [];
-        return Promise.resolve({ data, error: null });
-      }),
-    };
+    const chain: Record<string, unknown> = {};
+
+    chain.order = vi.fn((column: string) => {
+      orderCalls.push({ table, column });
+      return chain;
+    });
+
+    chain.lte = vi.fn((column: string, value: string) => {
+      lteCalls.push({ table, column, value });
+      return chain;
+    });
+
+    chain.or = vi.fn((expression: string) => {
+      orCalls.push({ table, expression });
+      return chain;
+    });
+
+    chain.range = vi.fn((from: number, to: number) => {
+      rangeCalls.push({ table, from, to });
+      if (errorTables.has(table)) {
+        return Promise.resolve({ data: null, error: { message: "boom" } });
+      }
+      const call = callCounts.get(table) ?? 0;
+      callCounts.set(table, call + 1);
+      const data = pages[call] ?? [];
+      return Promise.resolve({ data, error: null });
+    });
+
     return chain;
   }
 
@@ -63,7 +84,7 @@ function makeClient(
     return { select: vi.fn(() => ({ eq: vi.fn(() => tableChain(table)) })) };
   });
 
-  return { from, orderCalls, rangeCalls, fromCalls };
+  return { from, orderCalls, rangeCalls, fromCalls, lteCalls, orCalls };
 }
 
 function request(format = "json") {
@@ -73,6 +94,8 @@ function request(format = "json") {
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(createSupabaseServiceRoleClient).mockReset();
+  vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(makeClient(null) as never);
   delete process.env.BUILD_TARGET;
 });
 
@@ -104,11 +127,43 @@ describe("GET /api/export", () => {
   it("rejects callers who are not members of the requested household", async () => {
     const client = makeClient(null);
     vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(makeClient(null) as never);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const response = await GET(request());
 
     expect(response.status).toBe(403);
+    expect(createSupabaseServiceRoleClient).toHaveBeenCalledOnce();
+  });
+
+  it("allows removed members to export past data via service role fallback with cutoff and privacy filters", async () => {
+    const client = makeClient(null);
+    const removedAt = "2026-08-01T12:00:00Z";
+    const admin = makeClient({
+      id: "member-1",
+      removed_at: removedAt,
+      households: { id: householdId, name: "Past Home" },
+    });
+    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(admin as never);
+    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      household: { id: householdId, name: "Past Home" },
+    });
+
+    expect(admin.lteCalls).toContainEqual({
+      table: "transactions",
+      column: "created_at",
+      value: removedAt,
+    });
+    expect(admin.orCalls).toContainEqual({
+      table: "accounts",
+      expression: "is_shared.eq.true,owner_member_id.eq.member-1",
+    });
   });
 
   it("returns a non-cacheable JSON backup, ordering every table by id except fx_overrides", async () => {

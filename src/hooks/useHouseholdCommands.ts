@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { apiFetch } from "@/lib/api-fetch";
 import {
   acceptInvite,
   clearActiveHouseholdId,
@@ -10,7 +11,9 @@ import {
   deleteHousehold,
   leaveHousehold,
   readActiveHouseholdId,
+  removeMemberWorkflow,
   saveActiveHouseholdId,
+  transferOwnership as transferOwnershipWorkflow,
   type HouseholdResult,
 } from "@/lib/household/workflows";
 
@@ -106,5 +109,65 @@ export function useHouseholdCommands() {
     [queryClient],
   );
 
-  return { create, accept, removeHousehold, leave };
+  const transferOwnership = useCallback(
+    async (
+      householdId: string,
+      newOwnerMemberId: string,
+      demoteSelf = false,
+    ): Promise<HouseholdResult<undefined>> => {
+      const supabase = createSupabaseBrowser();
+      const result = await transferOwnershipWorkflow(
+        supabase
+          ? async (values) => {
+              const { error } = await supabase.rpc("transfer_ownership", values);
+              return { error };
+            }
+          : null,
+        householdId,
+        newOwnerMemberId,
+        demoteSelf,
+      );
+      if (result.ok) {
+        await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
+        await queryClient.invalidateQueries({ queryKey: ["household-members"] });
+      }
+      return result;
+    },
+    [queryClient],
+  );
+
+  const removeMember = useCallback(
+    async (
+      householdId: string,
+      memberId: string,
+      accountDisposition: Record<string, "transfer" | "joint"> = {},
+    ): Promise<HouseholdResult<undefined>> => {
+      const result = await removeMemberWorkflow(
+        async (values) => {
+          try {
+            await apiFetch("/api/members/remove", {
+              method: "POST",
+              body: JSON.stringify(values),
+            });
+            return { error: null };
+          } catch (err) {
+            return { error: err };
+          }
+        },
+        householdId,
+        memberId,
+        accountDisposition,
+      );
+      if (result.ok) {
+        await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
+        await queryClient.invalidateQueries({ queryKey: ["household_members"] });
+        await queryClient.invalidateQueries({ queryKey: ["accounts"] });
+        await queryClient.invalidateQueries({ queryKey: ["bills"] });
+      }
+      return result;
+    },
+    [queryClient],
+  );
+
+  return { create, accept, removeHousehold, leave, transferOwnership, removeMember };
 }

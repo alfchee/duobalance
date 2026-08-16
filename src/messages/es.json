@@ -708,13 +708,34 @@
       "expired": "Vencida",
       "resend": "Reenviar",
       "revoke": "Revocar",
+      "transferOwnership": "Transferir propiedad",
+      "removeMember": "Remover miembro",
+      "transferDialog": {
+        "title": "¿Transferir propiedad a {name}?",
+        "description": "Esto promoverá a {name} a propietario de este hogar.",
+        "demoteSelf": "También cambiar mi rol a integrante",
+        "confirm": "Confirmar transferencia",
+        "transferring": "Transfiriendo…"
+      },
+      "removeDialog": {
+        "title": "¿Remover a {name}?",
+        "ownedAccountsHeader": "{name} es titular de {count, plural, one {# cuenta} other {# cuentas}}. Elige qué hacer antes de removerle:",
+        "transferToMe": "Transferir a mí",
+        "makeJoint": "Hacer conjunta",
+        "confirmationNotice": "{name} perderá acceso a este hogar. Sus transacciones pasadas permanecerán en tus registros. Mantiene sus propios datos y podrá exportarlos.",
+        "confirm": "Remover a {name}",
+        "removing": "Removiendo…"
+      },
       "roles": {
         "owner": "Propietario"
       },
       "errors": {
         "rateLimited": "Enviaste demasiadas invitaciones recientemente. Intenta de nuevo más tarde.",
         "emailFailed": "No pudimos enviar el correo de la invitación. Intenta de nuevo.",
-        "notOwner": "Solo el propietario del hogar puede invitar miembros.",
+        "notOwner": "Solo el propietario del hogar puede realizar esta acción.",
+        "unresolvedAccounts": "Todas las cuentas deben ser reasignadas antes de remover al miembro.",
+        "targetNotFound": "Miembro no encontrado en este hogar.",
+        "selfRemovalForbidden": "Los propietarios no pueden removerse a sí mismos. Transfiere la propiedad o abandona el hogar.",
         "generic": "Algo salió mal. Intenta de nuevo."
       }
     },

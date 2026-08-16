@@ -13,7 +13,14 @@ const HOUSEHOLD_RPC_ERROR_KEYS: Record<string, string> = {
   "owners cannot leave a household with remaining members; transfer ownership first":
     "ownerTransferRequired",
   "only active owners can delete a household": "notOwner",
+  "only active owners can transfer ownership": "notOwner",
+  "only active owners can remove members": "notOwner",
   "not an active member of this household": "notMember",
+  "target member not found or not active in this household": "targetNotFound",
+  "owners cannot remove themselves; use transfer_ownership or leave_household":
+    "selfRemovalForbidden",
+  "unresolved owned accounts": "unresolvedAccounts",
+  "household must retain at least one active owner": "ownerTransferRequired",
 };
 
 export type HouseholdErrorResult = { ok: false; errorKey: string };
@@ -34,6 +41,18 @@ export type AcceptInvitePort = (input: {
 export type DeleteHouseholdPort = (input: { p_household: string }) => Promise<{ error: unknown }>;
 
 export type LeaveHouseholdPort = (input: { p_household: string }) => Promise<{ error: unknown }>;
+
+export type TransferOwnershipPort = (input: {
+  p_household: string;
+  p_new_owner: string;
+  p_demote_self?: boolean;
+}) => Promise<{ error: unknown }>;
+
+export type RemoveMemberPort = (input: {
+  household_id: string;
+  member_id: string;
+  account_disposition: Record<string, "transfer" | "joint">;
+}) => Promise<{ error?: unknown }>;
 
 export function readActiveHouseholdId(storage: Storage): string | null {
   return storage.getItem(ACTIVE_HOUSEHOLD_STORAGE_KEY);
@@ -111,6 +130,38 @@ export async function leaveHousehold(
 ): Promise<HouseholdResult<undefined>> {
   if (!port) return { ok: false, errorKey: "generic" };
   const { error } = await port({ p_household: householdId });
+  if (error) return { ok: false, errorKey: getHouseholdActionErrorKey(error) };
+  return { ok: true, value: undefined };
+}
+
+export async function transferOwnership(
+  port: TransferOwnershipPort | null,
+  householdId: string,
+  newOwnerMemberId: string,
+  demoteSelf = false,
+): Promise<HouseholdResult<undefined>> {
+  if (!port) return { ok: false, errorKey: "generic" };
+  const { error } = await port({
+    p_household: householdId,
+    p_new_owner: newOwnerMemberId,
+    p_demote_self: demoteSelf,
+  });
+  if (error) return { ok: false, errorKey: getHouseholdActionErrorKey(error) };
+  return { ok: true, value: undefined };
+}
+
+export async function removeMemberWorkflow(
+  port: RemoveMemberPort | null,
+  householdId: string,
+  memberId: string,
+  accountDisposition: Record<string, "transfer" | "joint"> = {},
+): Promise<HouseholdResult<undefined>> {
+  if (!port) return { ok: false, errorKey: "generic" };
+  const { error } = await port({
+    household_id: householdId,
+    member_id: memberId,
+    account_disposition: accountDisposition,
+  });
   if (error) return { ok: false, errorKey: getHouseholdActionErrorKey(error) };
   return { ok: true, value: undefined };
 }
