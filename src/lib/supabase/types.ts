@@ -1710,6 +1710,14 @@ export type Database = {
         Args: { refresh_date: string; updated_currencies: number }
         Returns: boolean
       }
+      remove_member: {
+        Args: {
+          p_account_disposition?: Json
+          p_household: string
+          p_member: string
+        }
+        Returns: undefined
+      }
       report_category_totals: {
         Args: {
           p_from: string
@@ -1768,6 +1776,14 @@ export type Database = {
       todo_start:
         | { Args: never; Returns: boolean[] }
         | { Args: { "": string }; Returns: boolean[] }
+      transfer_ownership: {
+        Args: {
+          p_demote_self?: boolean
+          p_household: string
+          p_new_owner: string
+        }
+        Returns: undefined
+      }
       unmark_bill_instance_paid: {
         Args: { p_instance_id: string }
         Returns: undefined

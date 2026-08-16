@@ -1,13 +1,7 @@
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 
-// `revalidate = 1` (a positive number, not `dynamic = "force-static"`) satisfies
-// the Tauri static-export build without Next stripping cookies/searchParams
-// from real requests on the web build — see cron/fx-refresh/route.ts for the
-// full story. `revalidate = 0` does NOT satisfy the Tauri build's check
-// (`isStaticGenEnabled` requires `revalidate > 0`); reading `cookies()` here
-// still makes Next render this fully dynamically per-request regardless of
-// the revalidate value (verified: two requests with different session
-// cookies never see each other's response).
 export const revalidate = 1;
 
 const EXPORT_TABLES = [
@@ -30,9 +24,6 @@ const EXPORT_CACHE_HEADERS = {
 type ExportTable = (typeof EXPORT_TABLES)[number];
 type ExportData = Record<ExportTable, unknown[]>;
 
-// Every export table has an `id` primary key except `fx_overrides`, which is
-// keyed by (household_id, code, rate_date) — ordering it by "id" throws
-// Postgres error 42703 ("column does not exist") and fails the whole export.
 const EXPORT_ORDER_COLUMNS: Record<ExportTable, readonly string[]> = {
   accounts: ["id"],
   transactions: ["id"],
@@ -91,7 +82,7 @@ function safeFilenamePart(value: string): string {
 }
 
 async function fetchAllRows(
-  supabase: Awaited<ReturnType<typeof createRouteContext>>,
+  supabase: SupabaseClient<Database>,
   table: ExportTable,
   householdId: string,
 ): Promise<unknown[]> {
@@ -133,18 +124,47 @@ export async function GET(request: Request) {
   }
   if (!householdId) return Response.json({ error: "householdId is required" }, { status: 400 });
 
+  // First check using authenticated client (active membership)
   const { data: membership, error: membershipError } = await supabase
     .from("household_members")
     .select("household_id, households(id, name)")
     .eq("user_id", user.id)
     .eq("household_id", householdId)
     .maybeSingle();
+
+  let resolvedMembership = membership;
+  let fetchClient: SupabaseClient<Database> = supabase;
+
+  // Fallback for removed member exporting past data via service role (if available)
+  if (!resolvedMembership && !membershipError) {
+    try {
+      const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
+      const admin = createSupabaseServiceRoleClient();
+      const { data: adminMembership } = await admin
+        .from("household_members")
+        .select("household_id, households(id, name)")
+        .eq("user_id", user.id)
+        .eq("household_id", householdId)
+        .maybeSingle();
+
+      if (adminMembership) {
+        resolvedMembership = adminMembership;
+        fetchClient = admin;
+      }
+    } catch {
+      // Ignored if service role client is not configured
+    }
+  }
+
   if (membershipError) throw membershipError;
-  if (!membership)
+  if (!resolvedMembership)
     return Response.json({ error: "household membership required" }, { status: 403 });
 
-  const household = membership.households;
-  if (!household || Array.isArray(household)) {
+  const household = Array.isArray(resolvedMembership.households)
+    ? resolvedMembership.households[0]
+    : resolvedMembership.households;
+
+  if (!household) {
     return Response.json({ error: "household not found" }, { status: 404 });
   }
 
@@ -154,7 +174,7 @@ export async function GET(request: Request) {
   if (format === "csv") {
     let transactions: unknown[];
     try {
-      transactions = await fetchAllRows(supabase, "transactions", household.id);
+      transactions = await fetchAllRows(fetchClient, "transactions", household.id);
     } catch (error) {
       console.error("export: failed to fetch transactions", { householdId, error });
       return Response.json({ error: "export failed" }, { status: 502 });
@@ -171,7 +191,7 @@ export async function GET(request: Request) {
   const data = {} as ExportData;
   try {
     for (const table of EXPORT_TABLES) {
-      data[table] = await fetchAllRows(supabase, table, household.id);
+      data[table] = await fetchAllRows(fetchClient, table, household.id);
     }
   } catch (error) {
     console.error("export: failed to fetch household data", { householdId, error });

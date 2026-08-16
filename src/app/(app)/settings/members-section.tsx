@@ -1,15 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { ShieldAlert, UserMinus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { ApiError } from "@/lib/api-fetch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAccounts } from "@/hooks/useAccounts";
 import { useHousehold } from "@/hooks/useHousehold";
-import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
+import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
+import { useHouseholdMembers, type HouseholdMember } from "@/hooks/useHouseholdMembers";
 import { useInviteMutations, usePendingInvites } from "@/hooks/useInvites";
 
 function dateFormatter(locale: string) {
@@ -17,20 +28,35 @@ function dateFormatter(locale: string) {
 }
 
 export function MembersSection({ embedded = false }: { embedded?: boolean }) {
-  const { householdId, role } = useHousehold();
+  const { householdId, role, memberId } = useHousehold();
   const t = useTranslations("settings.members");
   const tErrors = useTranslations("settings.members.errors");
+  const tCommon = useTranslations("common");
   const locale = useLocale();
 
   const isOwner = role === "owner";
 
   const members = useHouseholdMembers(householdId);
+  const accounts = useAccounts(householdId);
   const invites = usePendingInvites(householdId);
   const { create, revoke, resend } = useInviteMutations(householdId);
+  const { transferOwnership, removeMember } = useHouseholdCommands();
 
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Transfer Ownership state
+  const [transferTarget, setTransferTarget] = useState<HouseholdMember | null>(null);
+  const [demoteSelf, setDemoteSelf] = useState(false);
+  const [transferPending, setTransferPending] = useState(false);
+  const [transferError, setTransferError] = useState<string | null>(null);
+
+  // Remove Member state
+  const [removeTarget, setRemoveTarget] = useState<HouseholdMember | null>(null);
+  const [dispositions, setDispositions] = useState<Record<string, "transfer" | "joint">>({});
+  const [removePending, setRemovePending] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   const fmt = dateFormatter(locale);
 
@@ -62,8 +88,6 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
     try {
       await revoke.mutateAsync(inviteId);
     } catch (err) {
-      // List is refreshed via query invalidation; a failed revoke leaves the
-      // invite visible so the owner can retry.
       setActionError(inviteErrorKey(err));
     }
   }
@@ -73,10 +97,68 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
     try {
       await resend.mutateAsync(inviteId);
     } catch (err) {
-      // Same as revoke — keep the row so the owner can retry.
       setActionError(inviteErrorKey(err));
     }
   }
+
+  function handleOpenTransfer(member: HouseholdMember) {
+    setTransferError(null);
+    setDemoteSelf(false);
+    setTransferTarget(member);
+  }
+
+  function handleOpenRemove(member: HouseholdMember) {
+    setRemoveError(null);
+    // Find all shared accounts owned by member and default disposition to "transfer"
+    const targetOwned =
+      accounts.data?.filter((a) => a.is_shared && a.owner_member_id === member.id) ?? [];
+    const initDisp: Record<string, "transfer" | "joint"> = {};
+    for (const acc of targetOwned) {
+      initDisp[acc.id] = "transfer";
+    }
+    setDispositions(initDisp);
+    setRemoveTarget(member);
+  }
+
+  async function handleConfirmTransfer() {
+    if (!householdId || !transferTarget) return;
+    setTransferError(null);
+    setTransferPending(true);
+    try {
+      const res = await transferOwnership(householdId, transferTarget.id, demoteSelf);
+      if (!res.ok) {
+        setTransferError(res.errorKey);
+      } else {
+        setTransferTarget(null);
+      }
+    } catch {
+      setTransferError("generic");
+    } finally {
+      setTransferPending(false);
+    }
+  }
+
+  async function handleConfirmRemove() {
+    if (!householdId || !removeTarget) return;
+    setRemoveError(null);
+    setRemovePending(true);
+    try {
+      const res = await removeMember(householdId, removeTarget.id, dispositions);
+      if (!res.ok) {
+        setRemoveError(res.errorKey);
+      } else {
+        setRemoveTarget(null);
+      }
+    } catch {
+      setRemoveError("generic");
+    } finally {
+      setRemovePending(false);
+    }
+  }
+
+  const targetAccounts = removeTarget
+    ? (accounts.data?.filter((a) => a.is_shared && a.owner_member_id === removeTarget.id) ?? [])
+    : [];
 
   const content = (
     <div className="space-y-6 p-4">
@@ -89,19 +171,52 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
           </div>
         ) : (
           <ul className="divide-y">
-            {(members.data ?? []).map((member) => (
-              <li key={member.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="font-medium">{member.display_name}</span>
-                <span className="flex items-center gap-3 text-muted-foreground">
-                  {member.role === "owner" ? (
-                    <span className="rounded-full border px-2 py-0.5 text-xs">
-                      {t("roles.owner")}
-                    </span>
-                  ) : null}
-                  <time dateTime={member.joined_at}>{fmt.format(new Date(member.joined_at))}</time>
-                </span>
-              </li>
-            ))}
+            {(members.data ?? []).map((member) => {
+              const isSelf = member.id === memberId;
+              const isPartner = member.role === "partner";
+              const canManageMember = isOwner && !isSelf;
+
+              return (
+                <li
+                  key={member.id}
+                  className="flex flex-wrap items-center justify-between py-2 text-sm gap-2"
+                >
+                  <span className="font-medium">{member.display_name}</span>
+                  <div className="flex items-center gap-3">
+                    {member.role === "owner" ? (
+                      <span className="rounded-full border px-2 py-0.5 text-xs">
+                        {t("roles.owner")}
+                      </span>
+                    ) : null}
+                    <time dateTime={member.joined_at} className="text-muted-foreground">
+                      {fmt.format(new Date(member.joined_at))}
+                    </time>
+                    {canManageMember ? (
+                      <div className="flex items-center gap-1.5 ml-2">
+                        {isPartner ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => handleOpenTransfer(member)}
+                          >
+                            {t("transferOwnership")}
+                          </Button>
+                        ) : null}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleOpenRemove(member)}
+                        >
+                          {t("removeMember")}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -203,6 +318,145 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
           </ul>
         )}
       </section>
+
+      {/* Transfer Ownership Modal */}
+      <Dialog
+        open={transferTarget !== null}
+        onOpenChange={(open) => !open && setTransferTarget(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+              <ShieldAlert className="size-5 text-amber-500" />
+              {t("transferDialog.title", { name: transferTarget?.display_name ?? "" })}
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              {t("transferDialog.description", { name: transferTarget?.display_name ?? "" })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer font-medium">
+              <input
+                type="checkbox"
+                checked={demoteSelf}
+                onChange={(e) => setDemoteSelf(e.target.checked)}
+                className="rounded border"
+              />
+              {t("transferDialog.demoteSelf")}
+            </label>
+
+            {transferError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {tErrors(transferError)}
+              </p>
+            ) : null}
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setTransferTarget(null)}
+              disabled={transferPending}
+            >
+              {tCommon("cancel")}
+            </Button>
+            <Button onClick={handleConfirmTransfer} disabled={transferPending}>
+              {transferPending ? t("transferDialog.transferring") : t("transferDialog.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Member Modal */}
+      <Dialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold text-destructive">
+              <UserMinus className="size-5" />
+              {t("removeDialog.title", { name: removeTarget?.display_name ?? "" })}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {targetAccounts.length > 0 ? (
+              <div className="space-y-3 rounded-lg border p-3 text-xs bg-muted/30">
+                <p className="font-medium text-foreground">
+                  {t("removeDialog.ownedAccountsHeader", {
+                    name: removeTarget?.display_name ?? "",
+                    count: targetAccounts.length,
+                  })}
+                </p>
+                <div className="space-y-2">
+                  {targetAccounts.map((acc) => (
+                    <div
+                      key={acc.id}
+                      className="flex flex-col gap-1 rounded border bg-background p-2"
+                    >
+                      <span className="font-medium text-foreground">{acc.name}</span>
+                      <div className="flex gap-4 pt-1">
+                        <label className="flex items-center gap-1.5 cursor-pointer text-xs">
+                          <input
+                            type="radio"
+                            name={`disp-${acc.id}`}
+                            checked={dispositions[acc.id] === "transfer"}
+                            onChange={() =>
+                              setDispositions((prev) => ({ ...prev, [acc.id]: "transfer" }))
+                            }
+                          />
+                          {t("removeDialog.transferToMe")}
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer text-xs">
+                          <input
+                            type="radio"
+                            name={`disp-${acc.id}`}
+                            checked={dispositions[acc.id] === "joint"}
+                            onChange={() =>
+                              setDispositions((prev) => ({ ...prev, [acc.id]: "joint" }))
+                            }
+                          />
+                          {t("removeDialog.makeJoint")}
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1 text-muted-foreground">
+              <p>
+                {t("removeDialog.confirmationNotice", { name: removeTarget?.display_name ?? "" })}
+              </p>
+            </div>
+
+            {removeError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {tErrors(removeError)}
+              </p>
+            ) : null}
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setRemoveTarget(null)}
+              disabled={removePending}
+            >
+              {tCommon("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmRemove}
+              disabled={removePending || targetAccounts.some((acc) => !dispositions[acc.id])}
+            >
+              {removePending
+                ? t("removeDialog.removing")
+                : t("removeDialog.confirm", { name: removeTarget?.display_name ?? "" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 

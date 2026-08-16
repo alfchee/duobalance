@@ -708,13 +708,34 @@
       "expired": "Expired",
       "resend": "Resend",
       "revoke": "Revoke",
+      "transferOwnership": "Transfer ownership",
+      "removeMember": "Remove member",
+      "transferDialog": {
+        "title": "Transfer ownership to {name}?",
+        "description": "This will promote {name} to owner of this household.",
+        "demoteSelf": "Also demote myself to partner",
+        "confirm": "Confirm transfer",
+        "transferring": "Transferring…"
+      },
+      "removeDialog": {
+        "title": "Remove {name}?",
+        "ownedAccountsHeader": "{name} owns {count, plural, one {# account} other {# accounts}}. Choose what happens before removing them:",
+        "transferToMe": "Transfer to me",
+        "makeJoint": "Make joint",
+        "confirmationNotice": "{name} will lose access to this household. Their past transactions stay in your records. They keep their own data and can export it.",
+        "confirm": "Remove {name}",
+        "removing": "Removing…"
+      },
       "roles": {
         "owner": "Owner"
       },
       "errors": {
         "rateLimited": "You've sent too many invitations recently. Try again later.",
         "emailFailed": "We couldn't send the invitation email. Try again.",
-        "notOwner": "Only the household owner can invite members.",
+        "notOwner": "Only the household owner can perform this action.",
+        "unresolvedAccounts": "All owned accounts must be assigned before removing.",
+        "targetNotFound": "Member not found in this household.",
+        "selfRemovalForbidden": "Owners cannot remove themselves. Transfer ownership or leave instead.",
         "generic": "Something went wrong. Try again."
       }
     },
