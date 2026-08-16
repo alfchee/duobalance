@@ -1627,6 +1627,7 @@ export type Database = {
         Args: { p_instance_id: string }
         Returns: undefined
       }
+      delete_household: { Args: { p_household: string }; Returns: undefined }
       delete_transfer: {
         Args: { p_transaction_id: string }
         Returns: undefined
@@ -1680,6 +1681,7 @@ export type Database = {
       is_member: { Args: { household: string }; Returns: boolean }
       is_owner: { Args: { household: string }; Returns: boolean }
       isnt_empty: { Args: { "": string }; Returns: string }
+      leave_household: { Args: { p_household: string }; Returns: undefined }
       lives_ok: { Args: { "": string }; Returns: string }
       no_plan: { Args: never; Returns: boolean[] }
       num_failed: { Args: never; Returns: number }

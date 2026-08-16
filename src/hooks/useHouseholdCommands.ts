@@ -5,7 +5,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import {
   acceptInvite,
+  clearActiveHouseholdId,
   createHousehold,
+  deleteHousehold,
+  leaveHousehold,
+  readActiveHouseholdId,
   saveActiveHouseholdId,
   type HouseholdResult,
 } from "@/lib/household/workflows";
@@ -54,5 +58,53 @@ export function useHouseholdCommands() {
     [queryClient],
   );
 
-  return { create, accept };
+  const removeHousehold = useCallback(
+    async (householdId: string): Promise<HouseholdResult<undefined>> => {
+      const supabase = createSupabaseBrowser();
+      const result = await deleteHousehold(
+        supabase
+          ? async (values) => {
+              const { error } = await supabase.rpc("delete_household", values);
+              return { error };
+            }
+          : null,
+        householdId,
+      );
+      if (result.ok) {
+        if (typeof window !== "undefined") {
+          const current = readActiveHouseholdId(localStorage);
+          if (current === householdId) clearActiveHouseholdId(localStorage);
+        }
+        await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
+      }
+      return result;
+    },
+    [queryClient],
+  );
+
+  const leave = useCallback(
+    async (householdId: string): Promise<HouseholdResult<undefined>> => {
+      const supabase = createSupabaseBrowser();
+      const result = await leaveHousehold(
+        supabase
+          ? async (values) => {
+              const { error } = await supabase.rpc("leave_household", values);
+              return { error };
+            }
+          : null,
+        householdId,
+      );
+      if (result.ok) {
+        if (typeof window !== "undefined") {
+          const current = readActiveHouseholdId(localStorage);
+          if (current === householdId) clearActiveHouseholdId(localStorage);
+        }
+        await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
+      }
+      return result;
+    },
+    [queryClient],
+  );
+
+  return { create, accept, removeHousehold, leave };
 }
