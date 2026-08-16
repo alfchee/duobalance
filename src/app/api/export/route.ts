@@ -81,15 +81,44 @@ function safeFilenamePart(value: string): string {
   );
 }
 
+type ScopeFilter = {
+  removedMemberId?: string;
+  removedAt?: string;
+};
+
 async function fetchAllRows(
   supabase: SupabaseClient<Database>,
   table: ExportTable,
   householdId: string,
+  filter?: ScopeFilter,
 ): Promise<unknown[]> {
   const pageSize = 1_000;
   const rows: unknown[] = [];
   for (let from = 0; ; from += pageSize) {
     let query = supabase.from(table).select("*").eq("household_id", householdId);
+
+    // Apply cutoff filter for removed members
+    if (filter?.removedAt) {
+      if (
+        table === "transactions" ||
+        table === "categorization_rules" ||
+        table === "budgets" ||
+        table === "bills" ||
+        table === "bill_instances" ||
+        table === "import_profiles" ||
+        table === "import_batches" ||
+        table === "accounts" ||
+        table === "categories"
+      ) {
+        query = query.lte("created_at", filter.removedAt);
+      }
+    }
+
+    // Apply privacy filter on accounts for removed members
+    if (filter?.removedMemberId && table === "accounts") {
+      query = query.or(`is_shared.eq.true,owner_member_id.eq.${filter.removedMemberId}`);
+    }
+
     for (const column of EXPORT_ORDER_COLUMNS[table]) {
       query = query.order(column, { ascending: true });
     }
@@ -127,13 +156,14 @@ export async function GET(request: Request) {
   // First check using authenticated client (active membership)
   const { data: membership, error: membershipError } = await supabase
     .from("household_members")
-    .select("household_id, households(id, name)")
+    .select("id, household_id, removed_at, households(id, name)")
     .eq("user_id", user.id)
     .eq("household_id", householdId)
     .maybeSingle();
 
   let resolvedMembership = membership;
   let fetchClient: SupabaseClient<Database> = supabase;
+  let scopeFilter: ScopeFilter | undefined;
 
   // Fallback for removed member exporting past data via service role (if available)
   if (!resolvedMembership && !membershipError) {
@@ -142,7 +172,7 @@ export async function GET(request: Request) {
       const admin = createSupabaseServiceRoleClient();
       const { data: adminMembership } = await admin
         .from("household_members")
-        .select("household_id, households(id, name)")
+        .select("id, household_id, removed_at, households(id, name)")
         .eq("user_id", user.id)
         .eq("household_id", householdId)
         .maybeSingle();
@@ -150,6 +180,10 @@ export async function GET(request: Request) {
       if (adminMembership) {
         resolvedMembership = adminMembership;
         fetchClient = admin;
+        scopeFilter = {
+          removedMemberId: adminMembership.id,
+          removedAt: adminMembership.removed_at ?? undefined,
+        };
       }
     } catch {
       // Ignored if service role client is not configured
@@ -174,7 +208,7 @@ export async function GET(request: Request) {
   if (format === "csv") {
     let transactions: unknown[];
     try {
-      transactions = await fetchAllRows(fetchClient, "transactions", household.id);
+      transactions = await fetchAllRows(fetchClient, "transactions", household.id, scopeFilter);
     } catch (error) {
       console.error("export: failed to fetch transactions", { householdId, error });
       return Response.json({ error: "export failed" }, { status: 502 });
@@ -191,7 +225,7 @@ export async function GET(request: Request) {
   const data = {} as ExportData;
   try {
     for (const table of EXPORT_TABLES) {
-      data[table] = await fetchAllRows(fetchClient, table, household.id);
+      data[table] = await fetchAllRows(fetchClient, table, household.id, scopeFilter);
     }
   } catch (error) {
     console.error("export: failed to fetch household data", { householdId, error });

@@ -129,7 +129,7 @@ export function useHouseholdCommands() {
       );
       if (result.ok) {
         await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
-        await queryClient.invalidateQueries({ queryKey: ["household_members"] });
+        await queryClient.invalidateQueries({ queryKey: ["household-members"] });
       }
       return result;
     },

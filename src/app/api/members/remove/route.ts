@@ -25,16 +25,20 @@ export async function POST(request: Request) {
 
   const { household_id, member_id, account_disposition } = parsed.data;
 
-  // Look up target member info before removal
+  // Look up active target member info before removal
   const { data: targetMember } = await admin
     .from("household_members")
     .select("id, display_name, user_id, households(id, name, locale)")
     .eq("id", member_id)
     .eq("household_id", household_id)
+    .is("removed_at", null)
     .maybeSingle();
 
   if (!targetMember) {
-    return Response.json({ error: "not an active member of this household" }, { status: 404 });
+    return Response.json(
+      { error: "target member not found or not active in this household" },
+      { status: 404 },
+    );
   }
 
   // Get target user email from auth admin API

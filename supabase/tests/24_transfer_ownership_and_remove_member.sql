@@ -57,7 +57,7 @@ begin
 end
 $$;
 
-select plan(15);
+select plan(16);
 
 -- ============================================================================
 -- 1. transfer_ownership tests
@@ -123,7 +123,13 @@ select throws_ok(
   'owner self-removal directed to transfer or leave'
 );
 
--- Owner removing Bob with empty disposition when Bob owns a shared account is rejected
+-- Owner removing non-existent or inactive member is rejected
+select throws_ok(
+  $$ select public.remove_member('81000000-0000-0000-0000-000000000001'::uuid, '81000000-0000-0000-0000-000000000099'::uuid) $$,
+  'P0001',
+  'target member not found or not active in this household',
+  'removing non-existent member raises target member not found'
+);
 select throws_ok(
   $$ select public.remove_member('81000000-0000-0000-0000-000000000001'::uuid, '81000000-0000-0000-0000-000000000005'::uuid, '{}'::jsonb) $$,
   'P0001',
