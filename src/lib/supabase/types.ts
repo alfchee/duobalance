@@ -766,7 +766,6 @@ export type Database = {
           household_id: string
           id: string
           joined_at: string
-          number_format: string
           removal_reason: string | null
           removed_at: string | null
           removed_by: string | null
@@ -780,7 +779,6 @@ export type Database = {
           household_id: string
           id?: string
           joined_at?: string
-          number_format?: string
           removal_reason?: string | null
           removed_at?: string | null
           removed_by?: string | null
@@ -794,7 +792,6 @@ export type Database = {
           household_id?: string
           id?: string
           joined_at?: string
-          number_format?: string
           removal_reason?: string | null
           removed_at?: string | null
           removed_by?: string | null
@@ -1250,6 +1247,30 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          locale: string | null
+          number_format: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          locale?: string | null
+          number_format?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          locale?: string | null
+          number_format?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       account_balances: {
@@ -1314,7 +1335,6 @@ export type Database = {
           household_id: string | null
           id: string | null
           joined_at: string | null
-          number_format: string | null
           removal_reason: string | null
           removed_at: string | null
           removed_by: string | null
@@ -1608,7 +1628,6 @@ export type Database = {
           household_id: string
           id: string
           joined_at: string
-          number_format: string
           removal_reason: string | null
           removed_at: string | null
           removed_by: string | null
@@ -1786,10 +1805,6 @@ export type Database = {
       }
       unmark_bill_instance_paid: {
         Args: { p_instance_id: string }
-        Returns: undefined
-      }
-      update_my_number_format: {
-        Args: { member_id: string; new_number_format: string }
         Returns: undefined
       }
     }

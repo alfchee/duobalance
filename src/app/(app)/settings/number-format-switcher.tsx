@@ -17,21 +17,24 @@ const NUMBER_FORMATS: readonly NumberFormatPref[] = ["locale", "dot_decimal", "c
 
 export function NumberFormatSwitcher() {
   const t = useTranslations("settings.numberFormat");
-  const { memberId, numberFormat } = useHousehold();
+  const { householdId, numberFormat } = useHousehold();
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (value: NumberFormatPref) => {
       const supabase = createSupabaseBrowser();
-      if (!supabase || !memberId) throw new Error("No active membership");
-      const { error } = await supabase.rpc("update_my_number_format", {
-        member_id: memberId,
-        new_number_format: value,
-      });
+      if (!supabase) throw new Error("Supabase is unavailable");
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+      const { error } = await supabase
+        .from("user_preferences")
+        .upsert({ user_id: user.id, number_format: value }, { onConflict: "user_id" });
       if (error) throw error;
       return value;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["households", "memberships"] });
+      queryClient.invalidateQueries({ queryKey: ["user-preferences"] });
     },
   });
 
@@ -43,7 +46,7 @@ export function NumberFormatSwitcher() {
       </div>
       <Select
         value={numberFormat}
-        disabled={!memberId || mutation.isPending}
+        disabled={!householdId || mutation.isPending}
         onValueChange={(value) => {
           if (isNumberFormatPref(value)) mutation.mutate(value);
         }}

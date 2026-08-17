@@ -30,8 +30,6 @@ export function mergeMessages(base: Record<string, unknown>, overrides: Record<s
 const MESSAGES = { es, en, "pt-BR": mergeMessages(en, ptBR) } as const;
 export type SupportedLocale = keyof typeof MESSAGES;
 
-const STORAGE_KEY = "duobalance:locale";
-
 export function toSupportedLocale(locale: string | null | undefined): SupportedLocale {
   const language = locale?.toLowerCase().split("-")[0];
   if (language === "pt") return "pt-BR";
@@ -45,29 +43,17 @@ function detectBrowserLocale(): SupportedLocale {
 
 type LocaleContextValue = {
   locale: SupportedLocale;
-  hasStoredPreference: boolean;
   setLocale: (locale: SupportedLocale) => void;
 };
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<SupportedLocale>("es");
-  const [hasStoredPreference, setHasStoredPreference] = useState(false);
+  const [locale, setLocaleState] = useState<SupportedLocale>(detectBrowserLocale);
 
   // Avoids next-intl's ENVIRONMENT_FALLBACK timezone warning. Business dates
   // are computed with the household timezone via lib/dates.ts, never here.
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "es" || stored === "en" || stored === "pt-BR") {
-      setLocaleState(stored);
-      setHasStoredPreference(true);
-    } else {
-      setLocaleState(detectBrowserLocale());
-    }
-  }, []);
 
   // Keep <html lang> in sync so screen readers announce in the right language.
   useEffect(() => {
@@ -76,12 +62,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   function setLocale(next: SupportedLocale) {
     setLocaleState(next);
-    setHasStoredPreference(true);
-    localStorage.setItem(STORAGE_KEY, next);
   }
 
   return (
-    <LocaleContext.Provider value={{ locale, hasStoredPreference, setLocale }}>
+    <LocaleContext.Provider value={{ locale, setLocale }}>
       <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]} timeZone={timeZone}>
         {children}
       </NextIntlClientProvider>
