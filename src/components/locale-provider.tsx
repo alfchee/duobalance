@@ -49,11 +49,15 @@ type LocaleContextValue = {
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<SupportedLocale>(detectBrowserLocale);
+  const [locale, setLocaleState] = useState<SupportedLocale>("es");
 
   // Avoids next-intl's ENVIRONMENT_FALLBACK timezone warning. Business dates
   // are computed with the household timezone via lib/dates.ts, never here.
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  useEffect(() => {
+    setLocaleState(detectBrowserLocale());
+  }, []);
 
   // Keep <html lang> in sync so screen readers announce in the right language.
   useEffect(() => {

@@ -45,6 +45,20 @@ drop function if exists public.update_my_number_format(uuid, text);
 alter table public.household_members
   drop column number_format;
 
+create or replace function public.current_member(household uuid)
+returns public.household_members
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select m.*
+  from public.active_membership m
+  where household_id = household
+    and user_id = auth.uid()
+  limit 1;
+$$;
+
 grant select, insert, update, delete on public.user_preferences to anon, authenticated;
 
 alter table public.user_preferences enable row level security;

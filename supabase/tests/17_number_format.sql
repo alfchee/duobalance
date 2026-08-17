@@ -11,7 +11,7 @@ begin
 end
 $$;
 
-select plan(8);
+select plan(9);
 
 select tests.authenticate_as('18181818-1818-1818-1818-181818181818');
 select is_empty(
@@ -31,6 +31,12 @@ select results_eq(
 select lives_ok(
   $$ update public.user_preferences set number_format = 'comma_decimal' $$,
   'a user can update their own preference row'
+);
+select throws_ok(
+  $$ update public.user_preferences set number_format = 'invalid' $$,
+  '23514',
+  null,
+  'invalid number formats are rejected by the constraint'
 );
 
 select tests.authenticate_as('19191919-1919-1919-1919-191919191919');
