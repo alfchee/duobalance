@@ -1,13 +1,19 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { toSupportedLocale, useLocaleContext } from "@/components/locale-provider";
 import type { Database } from "@/lib/supabase/types";
-import { readActiveHouseholdId, saveActiveHouseholdId } from "@/lib/household/workflows";
+import {
+  clearActiveHouseholdId,
+  readActiveHouseholdId,
+  saveActiveHouseholdId,
+} from "@/lib/household/workflows";
 import { isNumberFormatPref, type NumberFormatPref } from "@/lib/money";
+import { resetHouseholdScopedState } from "@/store";
 
 type MemberRole = Database["public"]["Enums"]["household_member_role"];
 
@@ -88,6 +94,8 @@ async function fetchUserPreferences(userId: string) {
 export function HouseholdProvider({ children }: { children: ReactNode }) {
   const { user, loading: sessionLoading } = useSession();
   const { setLocale } = useLocaleContext();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeHouseholdId, setActiveHouseholdId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -134,13 +142,30 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   }, [list, activeHouseholdId]);
 
   useEffect(() => {
+    if (
+      list.length > 1 &&
+      activeHouseholdId &&
+      !list.some((membership) => membership.householdId === activeHouseholdId)
+    ) {
+      clearActiveHouseholdId(localStorage);
+      setActiveHouseholdId(null);
+    }
+  }, [activeHouseholdId, list]);
+
+  useEffect(() => {
     const preferredLocale = preferences?.locale ?? active?.household.locale;
     if (preferredLocale) setLocale(toSupportedLocale(preferredLocale));
   }, [active?.household.locale, preferences?.locale, setLocale]);
 
   function selectHousehold(householdId: string) {
+    if (householdId === activeHouseholdId) return;
+    resetHouseholdScopedState();
+    queryClient.removeQueries({
+      predicate: (query) => query.queryKey.includes(activeHouseholdId),
+    });
     saveActiveHouseholdId(localStorage, householdId);
     setActiveHouseholdId(householdId);
+    router.replace("/balances");
   }
 
   const loading =

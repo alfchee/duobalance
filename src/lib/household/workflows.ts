@@ -10,6 +10,7 @@ const INVITE_RPC_ERROR_KEYS: Record<string, string> = {
 };
 
 const HOUSEHOLD_RPC_ERROR_KEYS: Record<string, string> = {
+  "household limit reached": "householdLimitReached",
   "owners cannot leave a household with remaining members; transfer ownership first":
     "ownerTransferRequired",
   "only active owners can delete a household": "notOwner",
@@ -32,7 +33,7 @@ export type CreateHouseholdPort = (input: {
   p_country: string;
   p_base_currency: string;
   p_display_name: string;
-}) => Promise<{ error: unknown }>;
+}) => Promise<{ data: string | null; error: unknown }>;
 
 export type AcceptInvitePort = (input: {
   p_token: string;
@@ -93,15 +94,17 @@ export function getHouseholdActionErrorKey(error: unknown): string {
 export async function createHousehold(
   port: CreateHouseholdPort | null,
   input: { name: string; country: string; baseCurrency: string; displayName: string },
-): Promise<HouseholdResult<undefined>> {
+): Promise<HouseholdResult<{ householdId: string }>> {
   if (!port) return { ok: false, errorKey: "generic" };
-  const { error } = await port({
+  const { data, error } = await port({
     p_name: input.name.trim(),
     p_country: input.country,
     p_base_currency: input.baseCurrency,
     p_display_name: input.displayName.trim(),
   });
-  return error ? { ok: false, errorKey: "generic" } : { ok: true, value: undefined };
+  return error || !data
+    ? { ok: false, errorKey: getHouseholdActionErrorKey(error) }
+    : { ok: true, value: { householdId: data } };
 }
 
 export async function acceptInvite(

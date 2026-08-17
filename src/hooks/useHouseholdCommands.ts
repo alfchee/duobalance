@@ -28,13 +28,16 @@ export function useHouseholdCommands() {
       const result = await createHousehold(
         supabase
           ? async (values) => {
-              const { error } = await supabase.rpc("create_household", values);
-              return { error };
+              const { data, error } = await supabase.rpc("create_household", values);
+              return { data, error };
             }
           : null,
         input,
       );
-      if (result.ok) await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
+      if (result.ok) {
+        saveActiveHouseholdId(localStorage, result.value.householdId);
+        await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
+      }
       return result;
     },
     [queryClient],

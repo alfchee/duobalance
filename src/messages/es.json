@@ -269,6 +269,24 @@
     },
     "loading": "Cargando tu hogar…",
     "empty": "No encontramos un hogar para tu cuenta.",
+    "switcher": {
+      "title": "Cambiar de hogar",
+      "subtitle": "Elige un hogar o agrega otro.",
+      "change": "Cambiar",
+      "active": "Activo",
+      "create": "Crear hogar",
+      "creating": "Creando hogar…",
+      "join": "Unirse con invitación",
+      "joining": "Uniéndose al hogar…",
+      "householdName": "Nombre del hogar",
+      "displayName": "Tu nombre",
+      "country": "País",
+      "currency": "Moneda base",
+      "inviteToken": "Código de invitación",
+      "required": "Completa todos los campos obligatorios.",
+      "createError": "No pudimos crear el hogar. Es posible que hayas alcanzado el límite de cinco hogares.",
+      "joinError": "No pudimos unirte a ese hogar. Revisa el código de invitación e inténtalo de nuevo."
+    },
     "onboarding": {
       "title": "Configura tu hogar compartido",
       "subtitle": "Crea un hogar nuevo para ti y tu pareja, o únete a uno al que te hayan invitado.",
@@ -293,6 +311,7 @@
         "householdNameRequired": "Ingresa un nombre para el hogar.",
         "countryRequired": "Elige un país.",
         "baseCurrencyRequired": "Elige una moneda base.",
+        "householdLimitReached": "Puedes crear hasta cinco hogares.",
         "tokenRequired": "Pega el código de invitación.",
         "generic": "Algo salió mal. Intenta de nuevo."
       },

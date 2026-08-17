@@ -13,6 +13,26 @@
     "reports": "Relatórios",
     "help": "Ajuda"
   },
+  "household": {
+    "switcher": {
+      "title": "Trocar grupo",
+      "subtitle": "Escolha um grupo ou adicione outro.",
+      "change": "Trocar",
+      "active": "Ativo",
+      "create": "Criar grupo",
+      "creating": "Criando grupo…",
+      "join": "Entrar com convite",
+      "joining": "Entrando no grupo…",
+      "householdName": "Nome do grupo",
+      "displayName": "Seu nome",
+      "country": "País",
+      "currency": "Moeda base",
+      "inviteToken": "Código do convite",
+      "required": "Preencha todos os campos obrigatórios.",
+      "createError": "Não foi possível criar o grupo. Você pode ter atingido o limite de cinco grupos.",
+      "joinError": "Não foi possível entrar nesse grupo. Verifique o código do convite e tente novamente."
+    }
+  },
   "reports": {
     "title": "Relatórios",
     "subtitle": "Acompanhe suas tendências de despesas e receitas ao longo do tempo.",

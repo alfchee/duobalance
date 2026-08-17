@@ -16,6 +16,7 @@ type AccountsUiState = {
   openManualBalance: (account: AccountWithBalance) => void;
   closeManualBalance: () => void;
   setShowArchived: (show: boolean) => void;
+  reset: () => void;
 };
 
 export const useAccountsUiStore = create<AccountsUiState>((set) => ({
@@ -29,4 +30,6 @@ export const useAccountsUiStore = create<AccountsUiState>((set) => ({
   openManualBalance: (account) => set({ manualBalanceAccount: account }),
   closeManualBalance: () => set({ manualBalanceAccount: null }),
   setShowArchived: (show) => set({ showArchived: show }),
+  reset: () =>
+    set({ formOpen: false, editingAccount: null, manualBalanceAccount: null, showArchived: false }),
 }));

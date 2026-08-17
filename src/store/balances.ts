@@ -13,6 +13,7 @@ type BalancesUiState = {
   tab: BalanceTab;
   setTab: (tab: BalanceTab) => void;
   hydrate: () => void;
+  reset: () => void;
 };
 
 function readStoredTab(): BalanceTab {
@@ -33,6 +34,12 @@ export const useBalancesUiStore = create<BalancesUiState>((set) => ({
   // always show "all" then jump to the saved value, which is a visible flash
   // on back-navigation to /balances.
   hydrate: () => set({ tab: readStoredTab() }),
+  reset: () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+    set({ tab: "all" });
+  },
 }));
 
 export { BALANCE_TABS };
