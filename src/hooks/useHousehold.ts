@@ -6,14 +6,14 @@ import { useHouseholdContext } from "@/components/household-provider";
 // timezone, locale. `null` fields mean no active household is resolved yet
 // (loading, no membership, or a pending picker — check `loading`/`needsPicker`).
 export function useHousehold() {
-  const { active, loading, needsPicker, memberships, error, selectHousehold } =
+  const { active, loading, needsPicker, memberships, error, numberFormat, selectHousehold } =
     useHouseholdContext();
 
   return {
     householdId: active?.householdId ?? null,
     memberId: active?.memberId ?? null,
     role: active?.role ?? null,
-    numberFormat: active?.numberFormat ?? "locale",
+    numberFormat,
     baseCurrency: active?.household.baseCurrency ?? null,
     timezone: active?.household.timezone ?? null,
     locale: active?.household.locale ?? null,

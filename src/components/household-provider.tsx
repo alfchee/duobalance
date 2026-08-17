@@ -16,7 +16,6 @@ export type Membership = {
   householdId: string;
   role: MemberRole;
   displayName: string;
-  numberFormat: NumberFormatPref;
   household: {
     name: string;
     country: string;
@@ -32,6 +31,7 @@ type HouseholdContextValue = {
   memberships: Membership[];
   active: Membership | null;
   needsPicker: boolean;
+  numberFormat: NumberFormatPref;
   selectHousehold: (householdId: string) => void;
 };
 
@@ -44,7 +44,7 @@ async function fetchMemberships(userId: string): Promise<Membership[]> {
   const { data, error } = await supabase
     .from("household_members")
     .select(
-      "id, household_id, role, display_name, number_format, households(name, country, base_currency, timezone, locale)",
+      "id, household_id, role, display_name, households(name, country, base_currency, timezone, locale)",
     )
     .eq("user_id", userId);
 
@@ -59,7 +59,6 @@ async function fetchMemberships(userId: string): Promise<Membership[]> {
         householdId: row.household_id,
         role: row.role,
         displayName: row.display_name,
-        numberFormat: isNumberFormatPref(row.number_format) ? row.number_format : "locale",
         household: {
           name: household.name,
           country: household.country,
@@ -72,9 +71,23 @@ async function fetchMemberships(userId: string): Promise<Membership[]> {
   });
 }
 
+async function fetchUserPreferences(userId: string) {
+  const supabase = createSupabaseBrowser();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("user_preferences")
+    .select("number_format, locale")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
 export function HouseholdProvider({ children }: { children: ReactNode }) {
   const { user, loading: sessionLoading } = useSession();
-  const { hasStoredPreference, setLocale } = useLocaleContext();
+  const { setLocale } = useLocaleContext();
   const [activeHouseholdId, setActiveHouseholdId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -90,6 +103,16 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   } = useQuery({
     queryKey: ["households", "memberships", user?.id],
     queryFn: () => fetchMemberships(user?.id as string),
+    enabled: !!user?.id && hydrated,
+  });
+
+  const {
+    data: preferences,
+    error: preferencesError,
+    isLoading: preferencesLoading,
+  } = useQuery({
+    queryKey: ["user-preferences", user?.id],
+    queryFn: () => fetchUserPreferences(user?.id as string),
     enabled: !!user?.id && hydrated,
   });
 
@@ -110,30 +133,32 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     }
   }, [list, activeHouseholdId]);
 
-  // Locale resolution order (household -> browser -> es, per #16): only
-  // adopt the household's locale when the user has never made an explicit
-  // choice, so a manual override (once #16 ships a switcher) always wins.
   useEffect(() => {
-    if (active && !hasStoredPreference) {
-      setLocale(toSupportedLocale(active.household.locale));
-    }
-  }, [active, hasStoredPreference, setLocale]);
+    const preferredLocale = preferences?.locale ?? active?.household.locale;
+    if (preferredLocale) setLocale(toSupportedLocale(preferredLocale));
+  }, [active?.household.locale, preferences?.locale, setLocale]);
 
   function selectHousehold(householdId: string) {
     saveActiveHouseholdId(localStorage, householdId);
     setActiveHouseholdId(householdId);
   }
 
-  const loading = sessionLoading || (!!user && (!hydrated || membershipsLoading));
+  const loading =
+    sessionLoading || (!!user && (!hydrated || membershipsLoading || preferencesLoading));
+  const preferenceNumberFormat = preferences?.number_format;
+  const numberFormat: NumberFormatPref = isNumberFormatPref(preferenceNumberFormat ?? "")
+    ? (preferenceNumberFormat as NumberFormatPref)
+    : "locale";
 
   return (
     <HouseholdContext.Provider
       value={{
         loading,
-        error: error as Error | null,
+        error: (error ?? preferencesError) as Error | null,
         memberships: list,
         active,
         needsPicker: !loading && list.length > 1 && !active,
+        numberFormat,
         selectHousehold,
       }}
     >
