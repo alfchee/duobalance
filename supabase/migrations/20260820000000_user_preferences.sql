@@ -36,6 +36,7 @@ revoke all on public.active_membership from public, anon, authenticated;
 insert into public.user_preferences (user_id, number_format)
 select distinct on (user_id) user_id, number_format
 from public.household_members
+where removed_at is null
 order by user_id, joined_at, id
 on conflict (user_id) do nothing;
 
