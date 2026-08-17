@@ -18,6 +18,11 @@ begin
     raise exception 'authentication required';
   end if;
 
+  perform 1
+  from auth.users
+  where id = auth.uid()
+  for update;
+
   if (
     select count(*)
     from public.household_members

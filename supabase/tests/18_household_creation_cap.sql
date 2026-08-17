@@ -28,8 +28,17 @@ begin
 end
 $$;
 
-select plan(1);
+select plan(2);
 select tests.authenticate_as('f1f1f1f1-1111-1111-1111-111111111111', 'cap@test.local');
+
+select results_eq(
+  $$ select count(*)::int
+     from pg_get_functiondef('public.create_household(text, text, text, text, text, text)'::regprocedure)
+     where pg_get_functiondef('public.create_household(text, text, text, text, text, text)'::regprocedure)
+       like '%from auth.users%' $$,
+  $$ values (1::int) $$,
+  'create_household locks the authenticated user before counting memberships'
+);
 
 select throws_ok(
   $$ select public.create_household('One Too Many', 'CL', 'CLP', 'Cap User') $$,
