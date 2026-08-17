@@ -47,7 +47,9 @@ function makeClient(
       if (table === "household_members") {
         return {
           select: vi.fn(() => ({
-            in: vi.fn(() => Promise.resolve({ data: members, error: null })),
+            in: vi.fn(() => ({
+              is: vi.fn(() => Promise.resolve({ data: members, error: null })),
+            })),
             eq: vi.fn(() => ({
               select: vi.fn(() => Promise.resolve({ data: members, error: null })),
             })),

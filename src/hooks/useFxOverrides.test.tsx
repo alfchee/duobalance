@@ -17,7 +17,6 @@ const ACTIVE: Membership = {
   householdId: "h1",
   role: "owner",
   displayName: "Ana",
-  numberFormat: "locale",
   household: {
     name: "Casa 123",
     country: "CL",
@@ -75,6 +74,7 @@ describe("useFxOverrides", () => {
       needsPicker: false,
       memberships: [ACTIVE],
       error: null,
+      numberFormat: "locale",
       selectHousehold: vi.fn(),
     });
     mockSupabaseForFx({
@@ -108,6 +108,7 @@ describe("useFxOverrides", () => {
       needsPicker: false,
       memberships: [ACTIVE],
       error: null,
+      numberFormat: "locale",
       selectHousehold: vi.fn(),
     });
     mockSupabaseForFx({
@@ -140,6 +141,7 @@ describe("useFxOverrides", () => {
       needsPicker: true,
       memberships: [],
       error: null,
+      numberFormat: "locale",
       selectHousehold: vi.fn(),
     });
     const { from } = mockSupabaseForFx({ newestDate: "2026-07-30", feed: [] });

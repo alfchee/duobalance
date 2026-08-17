@@ -14,7 +14,6 @@ const ACTIVE: Membership = {
   householdId: "h1",
   role: "owner",
   displayName: "Ana",
-  numberFormat: "locale",
   household: {
     name: "Casa 123",
     country: "CL",
@@ -33,6 +32,7 @@ function context(overrides: Partial<ReturnType<typeof useHouseholdContext>>) {
     memberships: [ACTIVE],
     active: ACTIVE,
     needsPicker: false,
+    numberFormat: "locale" as const,
     selectHousehold,
     ...overrides,
   };
@@ -58,6 +58,13 @@ describe("useHousehold", () => {
       error: null,
       selectHousehold,
     });
+  });
+
+  it("uses the user-scoped number format regardless of active household", () => {
+    contextMock.mockReturnValue(context({ numberFormat: "comma_decimal" }));
+    const { result } = renderHook(() => useHousehold());
+
+    expect(result.current.numberFormat).toBe("comma_decimal");
   });
 
   it("yields null household fields when nothing is active", () => {

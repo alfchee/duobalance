@@ -13,6 +13,24 @@
     "reports": "Relatórios",
     "help": "Ajuda"
   },
+  "household": {
+    "switcher": {
+      "title": "Trocar grupo",
+      "subtitle": "Escolha um grupo ou adicione outro.",
+      "change": "Trocar",
+      "active": "Ativo",
+      "create": "Criar grupo",
+      "creating": "Criando grupo…",
+      "join": "Entrar com convite",
+      "joining": "Entrando no grupo…",
+      "householdName": "Nome do grupo",
+      "displayName": "Seu nome",
+      "country": "País",
+      "currency": "Moeda base",
+      "inviteToken": "Código do convite",
+      "required": "Preencha todos os campos obrigatórios."
+    }
+  },
   "reports": {
     "title": "Relatórios",
     "subtitle": "Acompanhe suas tendências de despesas e receitas ao longo do tempo.",
@@ -87,6 +105,49 @@
       "es": "Español",
       "en": "English",
       "pt-BR": "Português (Brasil)"
+    },
+    "export": {
+      "title": "Cópia de segurança",
+      "description": "Baixe os dados do seu grupo para ter um backup ou usar em planilhas.",
+      "json": "Baixar JSON",
+      "csv": "Baixar CSV",
+      "exporting": "Preparando…",
+      "error": "Não foi possível criar a exportação. Tente novamente."
+    },
+    "actions": {
+      "title": "Ações do grupo",
+      "leave": {
+        "title": "Sair do grupo",
+        "description": "Sair deste grupo. Se você for o último membro ativo, o grupo será fechado.",
+        "button": "Sair do grupo",
+        "dialogTitle": "Sair do grupo?",
+        "ownerNotice": "Você é o proprietário deste grupo. O grupo precisa ter pelo menos um proprietário ativo. Transfira a propriedade antes de sair.",
+        "lastMemberNotice": "Como você é o último membro ativo, sair fechará e excluirá temporariamente este grupo. Os dados poderão ser recuperados em até 30 dias.",
+        "partnerNotice": "Tem certeza de que deseja sair de {name}? Você perderá o acesso aos registros financeiros deste grupo.",
+        "confirmButton": "Confirmar e sair",
+        "leaving": "Saindo…"
+      },
+      "delete": {
+        "title": "Excluir grupo",
+        "description": "Exclua temporariamente este grupo e remova o acesso de todos os membros.",
+        "button": "Excluir grupo",
+        "dialogTitle": "Excluir {name}?",
+        "recoverableNotice": "Os dados poderão ser recuperados por 30 dias; depois serão excluídos permanentemente.",
+        "exportFirst": "Exporte os registros do grupo antes de excluir:",
+        "exportCsv": "Exportar CSV",
+        "exportJson": "Exportar JSON",
+        "confirmPrompt": "Digite o nome do grupo {name} para confirmar:",
+        "confirmPlaceholder": "Digite o nome do grupo",
+        "confirmButton": "Excluir grupo permanentemente",
+        "deleting": "Excluindo…"
+      },
+      "errors": {
+        "ownerTransferRequired": "Transfira a propriedade para outro membro antes de sair deste grupo.",
+        "notOwner": "Apenas um proprietário ativo pode excluir este grupo.",
+        "notMember": "Você não é um membro ativo deste grupo.",
+        "exportFailed": "Falha ao gerar o arquivo de exportação.",
+        "generic": "Algo deu errado. Tente novamente."
+      }
     }
   },
   "help": {

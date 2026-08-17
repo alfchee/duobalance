@@ -269,6 +269,22 @@
     },
     "loading": "Loading your household…",
     "empty": "We couldn't find a household for your account.",
+    "switcher": {
+      "title": "Switch household",
+      "subtitle": "Choose a household or add another one.",
+      "change": "Change",
+      "active": "Active",
+      "create": "Create household",
+      "creating": "Creating household…",
+      "join": "Join with invite",
+      "joining": "Joining household…",
+      "householdName": "Household name",
+      "displayName": "Your name",
+      "country": "Country",
+      "currency": "Base currency",
+      "inviteToken": "Invitation code",
+      "required": "Complete all required fields."
+    },
     "onboarding": {
       "title": "Set up your shared household",
       "subtitle": "Create a new household for you and a partner, or join one you've been invited to.",
@@ -293,6 +309,7 @@
         "householdNameRequired": "Enter a household name.",
         "countryRequired": "Choose a country.",
         "baseCurrencyRequired": "Choose a base currency.",
+        "householdLimitReached": "You can create up to five households.",
         "tokenRequired": "Paste the invitation code.",
         "generic": "Something went wrong. Try again."
       },
@@ -708,13 +725,37 @@
       "expired": "Expired",
       "resend": "Resend",
       "revoke": "Revoke",
+      "transferOwnership": "Transfer ownership",
+      "removeMember": "Remove member",
+      "transferDialog": {
+        "title": "Transfer ownership to {name}?",
+        "description": "This will promote {name} to owner of this household.",
+        "demoteSelf": "Also demote myself to partner",
+        "confirm": "Confirm transfer",
+        "transferring": "Transferring…"
+      },
+      "removeDialog": {
+        "title": "Remove {name}?",
+        "ownedAccountsHeader": "{name} owns {count, plural, one {# account} other {# accounts}}. Choose what happens before removing them:",
+        "transferToMe": "Transfer to me",
+        "makeJoint": "Make joint",
+        "confirmationNotice": "{name} will lose access to this household. Their past transactions stay in your records. They keep their own data and can export it.",
+        "confirm": "Remove {name}",
+        "removing": "Removing…"
+      },
       "roles": {
         "owner": "Owner"
       },
       "errors": {
         "rateLimited": "You've sent too many invitations recently. Try again later.",
         "emailFailed": "We couldn't send the invitation email. Try again.",
-        "notOwner": "Only the household owner can invite members.",
+        "notOwner": "Only the household owner can perform this action.",
+        "notMember": "You are not an active member of this household.",
+        "unresolvedAccounts": "All owned accounts must be assigned before removing.",
+        "targetNotFound": "Member not found in this household.",
+        "targetIsOwner": "Cannot remove another owner. Transfer ownership before removing them.",
+        "selfRemovalForbidden": "Owners cannot remove themselves. Transfer ownership or leave instead.",
+        "ownerTransferRequired": "Please transfer ownership to another member first.",
         "generic": "Something went wrong. Try again."
       }
     },
@@ -760,6 +801,41 @@
       "csv": "Download CSV",
       "exporting": "Preparing…",
       "error": "Couldn't create your export. Try again."
+    },
+    "actions": {
+      "title": "Household actions",
+      "leave": {
+        "title": "Leave household",
+        "description": "Leave this household. If you are the last active member, leaving closes the household.",
+        "button": "Leave household",
+        "dialogTitle": "Leave household?",
+        "ownerNotice": "You are an owner of this household. A household must always have at least one active owner. Please transfer ownership to another member before leaving.",
+        "lastMemberNotice": "Since you are the last active member, leaving will close and soft-delete this household. Data will be recoverable for 30 days.",
+        "partnerNotice": "Are you sure you want to leave {name}? You will lose access to all financial records in this household.",
+        "confirmButton": "Confirm and leave",
+        "leaving": "Leaving…"
+      },
+      "delete": {
+        "title": "Delete household",
+        "description": "Soft-delete this household and revoke access for all members.",
+        "button": "Delete household",
+        "dialogTitle": "Delete {name}?",
+        "recoverableNotice": "Data is recoverable for 30 days, then permanently deleted.",
+        "exportFirst": "Export your household records before deleting:",
+        "exportCsv": "Export CSV",
+        "exportJson": "Export JSON",
+        "confirmPrompt": "Type the household name {name} to confirm:",
+        "confirmPlaceholder": "Type household name",
+        "confirmButton": "Permanently delete household",
+        "deleting": "Deleting…"
+      },
+      "errors": {
+        "ownerTransferRequired": "Please transfer ownership to another member before leaving this household.",
+        "notOwner": "Only an active owner can delete this household.",
+        "notMember": "You are not an active member of this household.",
+        "exportFailed": "Failed to generate export file.",
+        "generic": "Something went wrong. Try again."
+      }
     },
     "logout": "Log out"
   },

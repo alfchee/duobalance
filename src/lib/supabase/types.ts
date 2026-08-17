@@ -111,6 +111,13 @@ export type Database = {
             foreignKeyName: "accounts_owner_member_id_fkey"
             columns: ["owner_member_id"]
             isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_owner_member_id_fkey"
+            columns: ["owner_member_id"]
+            isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
@@ -208,6 +215,13 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_instances_paid_by_member_id_fkey"
+            columns: ["paid_by_member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
             referencedColumns: ["id"]
           },
           {
@@ -325,6 +339,13 @@ export type Database = {
             foreignKeyName: "bills_responsible_member_id_fkey"
             columns: ["responsible_member_id"]
             isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_responsible_member_id_fkey"
+            columns: ["responsible_member_id"]
+            isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
@@ -371,6 +392,13 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_owner_member_id_fkey"
+            columns: ["owner_member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
             referencedColumns: ["id"]
           },
           {
@@ -718,6 +746,13 @@ export type Database = {
             foreignKeyName: "household_invites_invited_by_fkey"
             columns: ["invited_by"]
             isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
@@ -731,7 +766,9 @@ export type Database = {
           household_id: string
           id: string
           joined_at: string
-          number_format: string
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -742,7 +779,9 @@ export type Database = {
           household_id: string
           id?: string
           joined_at?: string
-          number_format?: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -753,7 +792,9 @@ export type Database = {
           household_id?: string
           id?: string
           joined_at?: string
-          number_format?: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           role?: Database["public"]["Enums"]["household_member_role"]
           user_id?: string
         }
@@ -765,6 +806,20 @@ export type Database = {
             referencedRelation: "households"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "household_members_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_members_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
         ]
       }
       households: {
@@ -772,6 +827,7 @@ export type Database = {
           base_currency: string
           country: string
           created_at: string
+          deleted_at: string | null
           id: string
           locale: string
           name: string
@@ -782,6 +838,7 @@ export type Database = {
           base_currency: string
           country: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           locale: string
           name: string
@@ -792,6 +849,7 @@ export type Database = {
           base_currency?: string
           country?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           locale?: string
           name?: string
@@ -874,6 +932,13 @@ export type Database = {
             columns: ["import_profile_id"]
             isOneToOne: false
             referencedRelation: "import_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_batches_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
             referencedColumns: ["id"]
           },
           {
@@ -1017,6 +1082,13 @@ export type Database = {
             foreignKeyName: "push_subscriptions_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
@@ -1135,6 +1207,13 @@ export type Database = {
             foreignKeyName: "transactions_entered_by_fkey"
             columns: ["entered_by"]
             isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
@@ -1156,10 +1235,41 @@ export type Database = {
             foreignKeyName: "transactions_spent_by_fkey"
             columns: ["spent_by"]
             isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_spent_by_fkey"
+            columns: ["spent_by"]
+            isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          locale: string | null
+          number_format: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          locale?: string | null
+          number_format?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          locale?: string | null
+          number_format?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -1205,6 +1315,51 @@ export type Database = {
             foreignKeyName: "accounts_owner_member_id_fkey"
             columns: ["owner_member_id"]
             isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_owner_member_id_fkey"
+            columns: ["owner_member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      active_membership: {
+        Row: {
+          avatar_url: string | null
+          color_hex: string | null
+          display_name: string | null
+          household_id: string | null
+          id: string | null
+          joined_at: string | null
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
+          role: Database["public"]["Enums"]["household_member_role"] | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_members_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_members_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
           },
@@ -1237,6 +1392,13 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_instances_paid_by_member_id_fkey"
+            columns: ["paid_by_member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
             referencedColumns: ["id"]
           },
           {
@@ -1280,6 +1442,13 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_owner_member_id_fkey"
+            columns: ["owner_member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
             referencedColumns: ["id"]
           },
           {
@@ -1368,7 +1537,9 @@ export type Database = {
           household_id: string
           id: string
           joined_at: string
-          number_format: string
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
           role: Database["public"]["Enums"]["household_member_role"]
           user_id: string
         }
@@ -1384,6 +1555,7 @@ export type Database = {
         Args: { p_instance_id: string }
         Returns: undefined
       }
+      delete_household: { Args: { p_household: string }; Returns: undefined }
       delete_transfer: {
         Args: { p_transaction_id: string }
         Returns: undefined
@@ -1410,6 +1582,7 @@ export type Database = {
       }
       is_member: { Args: { household: string }; Returns: boolean }
       is_owner: { Args: { household: string }; Returns: boolean }
+      leave_household: { Args: { p_household: string }; Returns: undefined }
       pay_bill_instance: {
         Args: {
           p_amount: number
@@ -1427,6 +1600,14 @@ export type Database = {
       record_fx_refresh_success: {
         Args: { refresh_date: string; updated_currencies: number }
         Returns: boolean
+      }
+      remove_member: {
+        Args: {
+          p_account_disposition?: Json
+          p_household: string
+          p_member: string
+        }
+        Returns: undefined
       }
       report_category_totals: {
         Args: {
@@ -1470,12 +1651,16 @@ export type Database = {
         Args: { p_household_id: string; p_locale: string }
         Returns: undefined
       }
-      unmark_bill_instance_paid: {
-        Args: { p_instance_id: string }
+      transfer_ownership: {
+        Args: {
+          p_demote_self?: boolean
+          p_household: string
+          p_new_owner: string
+        }
         Returns: undefined
       }
-      update_my_number_format: {
-        Args: { member_id: string; new_number_format: string }
+      unmark_bill_instance_paid: {
+        Args: { p_instance_id: string }
         Returns: undefined
       }
     }

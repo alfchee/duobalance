@@ -57,6 +57,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .select("id")
     .eq("household_id", bill.household_id)
     .eq("user_id", user.id)
+    .is("removed_at", null)
     .maybeSingle();
 
   if (!membership) {

@@ -18,6 +18,7 @@ type BudgetUiState = {
   requestDelete: (budgetId: string | null) => void;
   setScope: (scope: BudgetScope) => void;
   setSort: (sort: BudgetSort) => void;
+  reset: () => void;
 };
 
 export const useBudgetUiStore = create<BudgetUiState>((set) => ({
@@ -35,5 +36,15 @@ export const useBudgetUiStore = create<BudgetUiState>((set) => ({
   requestDelete: (deleteBudgetId) => set({ deleteBudgetId }),
   setScope: (scope) => set({ scope }),
   setSort: (sort) => set({ sort }),
+  reset: () =>
+    set({
+      copyOpen: false,
+      createCategoryId: null,
+      deleteBudgetId: null,
+      editingBudgetId: null,
+      editorOpen: false,
+      scope: "household",
+      sort: "spent",
+    }),
   sort: "spent",
 }));

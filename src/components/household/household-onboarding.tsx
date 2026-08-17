@@ -7,6 +7,7 @@ import { useSession } from "@/hooks/useSession";
 import { useCountries } from "@/hooks/useCountries";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
+import { useHousehold } from "@/hooks/useHousehold";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ export function HouseholdOnboarding() {
   const locale = useLocale();
   const router = useRouter();
   const { session } = useSession();
+  const { selectHousehold } = useHousehold();
   const { create: createHousehold, accept: acceptInvite } = useHouseholdCommands();
 
   const countries = useCountries({ enabled: !!session });
@@ -91,6 +93,7 @@ export function HouseholdOnboarding() {
       setCreateError(result.errorKey);
       return;
     }
+    selectHousehold(result.value.householdId);
     router.replace("/balances");
   }
 
@@ -113,6 +116,7 @@ export function HouseholdOnboarding() {
       );
       return;
     }
+    if (result.value.householdId) selectHousehold(result.value.householdId);
     router.replace("/balances");
   }
 
