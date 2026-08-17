@@ -40,8 +40,8 @@ export function BudgetHeader({
 }: BudgetHeaderProps) {
   return (
     <>
-      <header className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex items-center gap-1 sm:gap-3">
           <Button
             variant="ghost"
             size="icon"
@@ -51,9 +51,9 @@ export function BudgetHeader({
           >
             <ChevronLeft />
           </Button>
-          <div className="flex flex-col">
+          <div className="min-w-0 flex flex-1 flex-col">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+              <h1 className="truncate text-2xl font-black tracking-tight sm:text-3xl">
                 {translations.title}
               </h1>
               <HelpButton article="household-vs-personal-budgets" />
@@ -75,7 +75,7 @@ export function BudgetHeader({
         </label>
         <select
           id="budget-sort"
-          className="rounded-full border bg-background px-4 py-2 text-sm font-semibold shadow-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full rounded-full border bg-background px-4 py-2 text-sm font-semibold shadow-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
           value={sort}
           onChange={(event) => onSortChange(event.target.value as BudgetSort)}
         >

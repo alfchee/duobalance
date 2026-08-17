@@ -121,7 +121,7 @@ export function BudgetView() {
           title: t("title"),
         }}
       />
-      <section className="rounded-[24px] bg-secondary/70 p-10 text-center sm:p-14">
+      <section className="overflow-hidden rounded-[24px] bg-secondary/70 p-6 text-center sm:p-14">
         <BudgetRing
           ariaLabel={t("chartAria", { total: spent.toString() })}
           chartCenter={t("chartCenter")}

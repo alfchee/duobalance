@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { CurrencyPicker } from "@/components/accounts/currency-picker";
@@ -466,6 +466,7 @@ function TransactionEntryContent({
   const [error, setError] = useState<string | null>(null);
   const [categoryOverridden, setCategoryOverridden] = useState(transaction !== null);
   const [fxRateOverridden, setFxRateOverridden] = useState(transaction !== null);
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
   const amountRef = useRef<HTMLInputElement>(null);
   const selectedAccount = accounts.find((account) => account.id === draft.accountId) ?? null;
   const minorUnit = findMinorUnit(currencies, draft.currency || null);
@@ -487,6 +488,17 @@ function TransactionEntryContent({
   );
   const effectiveRate = effectiveRates.find((rate) => rate.code === draft.currency);
   const isTransfer = transaction?.transfer_group_id != null;
+  const descriptionSuggestions = useMemo(() => {
+    const query = draft.description.trim().toLocaleLowerCase(locale);
+    if (query.length < 2) return [];
+    return descriptions
+      .filter(
+        (description) =>
+          description !== draft.description &&
+          description.toLocaleLowerCase(locale).includes(query),
+      )
+      .slice(0, 6);
+  }, [descriptions, draft.description, locale]);
 
   useEffect(() => {
     if (!draft.accountId && usableAccounts[0]) {
@@ -717,7 +729,10 @@ function TransactionEntryContent({
         </div>
         <SheetDescription>{t("form.description")}</SheetDescription>
       </SheetHeader>
-      <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-8 pt-2">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2"
+      >
         <div className="grid grid-cols-2 rounded-full bg-secondary p-1">
           <Button
             type="button"
@@ -779,23 +794,38 @@ function TransactionEntryContent({
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="relative space-y-2">
           <Label htmlFor="transaction-description">{t("form.descriptionLabel")}</Label>
           <Input
             id="transaction-description"
             value={draft.description}
             maxLength={200}
-            list="transaction-descriptions"
             placeholder={t("form.descriptionPlaceholder")}
+            onFocus={() => setDescriptionFocused(true)}
+            onBlur={() => setDescriptionFocused(false)}
             onChange={(event) =>
               setDraft((current) => ({ ...current, description: event.target.value }))
             }
           />
-          <datalist id="transaction-descriptions">
-            {descriptions.map((description) => (
-              <option key={description} value={description} />
-            ))}
-          </datalist>
+          {descriptionFocused && descriptionSuggestions.length > 0 ? (
+            <ul className="absolute inset-x-0 bottom-full z-20 mb-2 max-h-48 overflow-y-auto rounded-2xl border bg-popover p-1 shadow-raised">
+              {descriptionSuggestions.map((description) => (
+                <li key={description}>
+                  <button
+                    type="button"
+                    className="min-h-11 w-full truncate rounded-xl px-3 py-2 text-left text-sm font-medium hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setDraft((current) => ({ ...current, description }));
+                      setDescriptionFocused(false);
+                    }}
+                  >
+                    {description}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
 
         <div className="space-y-2">
