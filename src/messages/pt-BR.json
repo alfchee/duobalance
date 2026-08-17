@@ -28,9 +28,7 @@
       "country": "País",
       "currency": "Moeda base",
       "inviteToken": "Código do convite",
-      "required": "Preencha todos os campos obrigatórios.",
-      "createError": "Não foi possível criar o grupo. Você pode ter atingido o limite de cinco grupos.",
-      "joinError": "Não foi possível entrar nesse grupo. Verifique o código do convite e tente novamente."
+      "required": "Preencha todos os campos obrigatórios."
     }
   },
   "reports": {

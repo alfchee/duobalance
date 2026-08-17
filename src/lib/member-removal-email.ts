@@ -10,21 +10,30 @@ const FROM = process.env.RESEND_FROM ?? "duobalance <notifications@resend.dev>";
 
 export class MemberRemovalEmailError extends Error {}
 
+const SUPPORTED_EMAIL_LOCALES = ["es", "en"] as const;
+export type MemberRemovalEmailLocale = (typeof SUPPORTED_EMAIL_LOCALES)[number];
+
+export function isSupportedEmailLocale(
+  value: string | null | undefined,
+): value is MemberRemovalEmailLocale {
+  return (SUPPORTED_EMAIL_LOCALES as readonly string[]).includes(value ?? "");
+}
+
 export type MemberRemovalEmailParams = {
   to: string;
   memberName: string;
   householdName: string;
   householdId: string;
-  locale: string;
+  locale: MemberRemovalEmailLocale;
 };
 
-const SUBJECTS: Record<string, string> = {
+const SUBJECTS: Record<MemberRemovalEmailLocale, string> = {
   es: "Has sido removido del hogar {householdName}",
   en: "You have been removed from {householdName}",
 };
 
 const BODY: Record<
-  string,
+  MemberRemovalEmailLocale,
   (p: Omit<MemberRemovalEmailParams, "to">) => { html: string; text: string }
 > = {
   es: ({ memberName, householdName }) => ({
@@ -76,13 +85,9 @@ export async function sendMemberRemovalEmail(params: MemberRemovalEmailParams): 
     throw new MemberRemovalEmailError("APP_URL is not set — cannot build export link");
   }
 
-  const locale = params.locale in BODY ? params.locale : "en";
-  const subject = (SUBJECTS[locale] ?? (SUBJECTS.en as string)).replaceAll(
-    "{householdName}",
-    params.householdName,
-  );
+  const subject = SUBJECTS[params.locale].replaceAll("{householdName}", params.householdName);
 
-  const { html, text } = BODY[locale]!(params);
+  const { html, text } = BODY[params.locale](params);
 
   const exportUrl = `${APP_URL.replace(/\/+$/, "")}/api/export?format=json&householdId=${params.householdId}`;
   const htmlBody = html.replaceAll("{exportUrl}", exportUrl);

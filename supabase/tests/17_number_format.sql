@@ -11,7 +11,7 @@ begin
 end
 $$;
 
-select plan(9);
+select plan(11);
 
 select tests.authenticate_as('18181818-1818-1818-1818-181818181818');
 select is_empty(
@@ -63,6 +63,28 @@ select throws_ok(
   '42501',
   null,
   'another user cannot create a preference row on their behalf'
+);
+select results_eq(
+  $$ with deleted as (
+       delete from public.user_preferences
+         where user_id = '18181818-1818-1818-1818-181818181818'
+         returning 1
+     )
+     select count(*)::int from deleted $$,
+  $$ values (0::int) $$,
+  'another user cannot delete the preference row (RLS blocks)'
+);
+
+select tests.authenticate_as('18181818-1818-1818-1818-181818181818');
+select results_eq(
+  $$ with deleted as (
+       delete from public.user_preferences
+         where user_id = '18181818-1818-1818-1818-181818181818'
+         returning 1
+     )
+     select count(*)::int from deleted $$,
+  $$ values (1::int) $$,
+  'a user can delete their own preference row'
 );
 
 select * from finish();

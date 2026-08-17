@@ -52,7 +52,8 @@ async function fetchMemberships(userId: string): Promise<Membership[]> {
     .select(
       "id, household_id, role, display_name, households(name, country, base_currency, timezone, locale)",
     )
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("removed_at", null);
 
   if (error) throw error;
 

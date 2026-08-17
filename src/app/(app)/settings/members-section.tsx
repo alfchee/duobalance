@@ -131,7 +131,8 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
       } else {
         setTransferTarget(null);
       }
-    } catch {
+    } catch (err) {
+      console.error("members-section: unexpected error transferring ownership", err);
       setTransferError("generic");
     } finally {
       setTransferPending(false);
@@ -149,7 +150,8 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
       } else {
         setRemoveTarget(null);
       }
-    } catch {
+    } catch (err) {
+      console.error("members-section: unexpected error removing member", err);
       setRemoveError("generic");
     } finally {
       setRemovePending(false);
@@ -175,6 +177,9 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
               const isSelf = member.id === memberId;
               const isPartner = member.role === "partner";
               const canManageMember = isOwner && !isSelf;
+              // remove_member (RPC) rejects removing another owner —
+              // ownership changes go through transferOwnership instead.
+              const canRemoveMember = canManageMember && isPartner;
 
               return (
                 <li
@@ -191,7 +196,7 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
                     <time dateTime={member.joined_at} className="text-muted-foreground">
                       {fmt.format(new Date(member.joined_at))}
                     </time>
-                    {canManageMember ? (
+                    {canManageMember && isPartner ? (
                       <div className="flex items-center gap-1.5 ml-2">
                         {isPartner ? (
                           <Button
@@ -203,14 +208,16 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
                             {t("transferOwnership")}
                           </Button>
                         ) : null}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleOpenRemove(member)}
-                        >
-                          {t("removeMember")}
-                        </Button>
+                        {canRemoveMember ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleOpenRemove(member)}
+                          >
+                            {t("removeMember")}
+                          </Button>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>

@@ -17,7 +17,7 @@ const PARAMS = {
   householdName: "Casa Duo",
   householdId: "hh-123-uuid",
   locale: "es",
-};
+} as const;
 
 async function loadEmail(env: Partial<Record<(typeof ENV_KEYS)[number], string>>) {
   for (const key of ENV_KEYS) {
@@ -78,6 +78,13 @@ describe("sendMemberRemovalEmail", () => {
     await expect(sendMemberRemovalEmail(PARAMS)).rejects.toBeInstanceOf(MemberRemovalEmailError);
   });
 
+  it("throws MemberRemovalEmailError when APP_URL is missing", async () => {
+    const { sendMemberRemovalEmail, MemberRemovalEmailError } = await loadEmail({
+      RESEND_API_KEY: "re_secret",
+    });
+    await expect(sendMemberRemovalEmail(PARAMS)).rejects.toBeInstanceOf(MemberRemovalEmailError);
+  });
+
   it("throws MemberRemovalEmailError when Resend reports an error", async () => {
     const { sendMemberRemovalEmail, MemberRemovalEmailError } = await loadEmail({
       RESEND_API_KEY: "re_secret",
@@ -85,5 +92,33 @@ describe("sendMemberRemovalEmail", () => {
     });
     mockSend.mockResolvedValue({ error: { message: "resend error" } });
     await expect(sendMemberRemovalEmail(PARAMS)).rejects.toBeInstanceOf(MemberRemovalEmailError);
+  });
+
+  it("escapes HTML-significant characters in memberName and householdName", async () => {
+    const { sendMemberRemovalEmail } = await loadEmail({
+      RESEND_API_KEY: "re_secret",
+      APP_URL: "https://app.example.test",
+    });
+    mockSend.mockResolvedValue({ error: null });
+    await sendMemberRemovalEmail({
+      ...PARAMS,
+      memberName: `<img src=x onerror=alert(1)>`,
+      householdName: `Bob & Alice's "Home"`,
+    });
+    const { html } = mockSend.mock.calls[0]![0] as { html: string; text: string };
+    expect(html).not.toContain("<img");
+    expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
+    expect(html).toContain("Bob &amp; Alice&#39;s &quot;Home&quot;");
+  });
+});
+
+describe("isSupportedEmailLocale", () => {
+  it("accepts only the locales with a template", async () => {
+    const { isSupportedEmailLocale } = await loadEmail({});
+    expect(isSupportedEmailLocale("es")).toBe(true);
+    expect(isSupportedEmailLocale("en")).toBe(true);
+    expect(isSupportedEmailLocale("pt-BR")).toBe(false);
+    expect(isSupportedEmailLocale(null)).toBe(false);
+    expect(isSupportedEmailLocale(undefined)).toBe(false);
   });
 });

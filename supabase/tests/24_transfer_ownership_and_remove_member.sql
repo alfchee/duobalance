@@ -57,7 +57,7 @@ begin
 end
 $$;
 
-select plan(16);
+select plan(18);
 
 -- ============================================================================
 -- 1. transfer_ownership tests
@@ -190,4 +190,54 @@ select lives_ok(
   'remaining member can write to previously-owned shared account'
 );
 
+-- ============================================================================
+-- 3. remove_member cannot remove another owner (#128 review finding)
+-- ============================================================================
+
+select tests.clear_auth();
+
+do $$
+declare
+  hh3_id      uuid := '83000000-0000-0000-0000-000000000001';
+  owner_a     uuid := '83000000-0000-0000-0000-000000000002';
+  owner_a_mem uuid := '83000000-0000-0000-0000-000000000003';
+  owner_b     uuid := '83000000-0000-0000-0000-000000000004';
+  owner_b_mem uuid := '83000000-0000-0000-0000-000000000005';
+begin
+  insert into auth.users (id, email) values
+    (owner_a, 'ownera24@test.local'),
+    (owner_b, 'ownerb24@test.local');
+
+  insert into public.households (id, name, country, base_currency, timezone) values
+    (hh3_id, 'HH3 Two Owners', 'CL', 'CLP', 'America/Santiago');
+
+  insert into public.household_members (id, household_id, user_id, role, display_name) values
+    (owner_a_mem, hh3_id, owner_a, 'owner', 'Owner A'),
+    (owner_b_mem, hh3_id, owner_b, 'owner', 'Owner B');
+end
+$$;
+
+select tests.authenticate_as('83000000-0000-0000-0000-000000000002', 'ownera24@test.local');
+select throws_ok(
+  $$ select public.remove_member('83000000-0000-0000-0000-000000000001'::uuid, '83000000-0000-0000-0000-000000000005'::uuid) $$,
+  'P0001',
+  'cannot remove another owner; transfer ownership before removal',
+  'owner cannot remove a co-owner via remove_member'
+);
+
+-- ============================================================================
+-- 4. removed_at / removal_reason consistency constraint (#128 review finding)
+-- ============================================================================
+
+select tests.clear_auth();
+select throws_ok(
+  $$ update public.household_members
+       set removed_at = now()
+       where id = '83000000-0000-0000-0000-000000000005' $$,
+  '23514',
+  null,
+  'removed_at cannot be set without removal_reason'
+);
+
+select * from finish();
 rollback;

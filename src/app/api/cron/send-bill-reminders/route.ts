@@ -80,7 +80,8 @@ async function handle(request: Request) {
     const { data: allMembers, error: allMembersError } = await supabase
       .from("household_members")
       .select("id, user_id, display_name, household_id")
-      .in("id", Array.from(responsibleMemberIds));
+      .in("id", Array.from(responsibleMemberIds))
+      .is("removed_at", null);
 
     if (allMembersError) {
       console.error("send-bill-reminders: member lookup failed", allMembersError);
@@ -99,7 +100,8 @@ async function handle(request: Request) {
     const { data: allHouseholdMembers, error: allHouseholdMembersError } = await supabase
       .from("household_members")
       .select("id, user_id, display_name, household_id")
-      .in("household_id", allHouseholdIds);
+      .in("household_id", allHouseholdIds)
+      .is("removed_at", null);
 
     if (allHouseholdMembersError) {
       console.error(
