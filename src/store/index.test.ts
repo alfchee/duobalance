@@ -16,6 +16,7 @@ describe("resetHouseholdScopedState", () => {
     useAccountsUiStore.getState().openCreate();
     useAccountsUiStore.getState().setShowArchived(true);
     useBalancesUiStore.getState().setTab("mine");
+    window.localStorage.setItem("duobalance:lastTransactionAccountId", "account-1");
     useBillsUiStore.getState().openCreate();
     useBillsUiStore.getState().openPay();
     useBudgetUiStore.getState().openCreate("category-1");
@@ -27,6 +28,7 @@ describe("resetHouseholdScopedState", () => {
     expect(useAccountsUiStore.getState()).toMatchObject({ formOpen: false, showArchived: false });
     expect(useBalancesUiStore.getState().tab).toBe("all");
     expect(window.localStorage.getItem("duobalance:balancesTab")).toBeNull();
+    expect(window.localStorage.getItem("duobalance:lastTransactionAccountId")).toBeNull();
     expect(useBillsUiStore.getState()).toMatchObject({ editorOpen: false, payOpen: false });
     expect(useBudgetUiStore.getState()).toMatchObject({ editorOpen: false, scope: "household" });
     expect(useTransactionsUiStore.getState()).toMatchObject({

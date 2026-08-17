@@ -30,7 +30,7 @@ export function HouseholdSwitcher() {
   const { householdId, householdName, memberships, selectHousehold } = useHousehold();
   const [open, setOpen] = useState(false);
 
-  if (memberships.length < 2 || !householdId || !householdName) return null;
+  if (!householdId || !householdName) return null;
 
   return (
     <div className="border-b bg-background px-4 py-2">
@@ -46,22 +46,24 @@ export function HouseholdSwitcher() {
             <DialogTitle>{t("title")}</DialogTitle>
             <DialogDescription>{t("subtitle")}</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2">
-            {memberships.map((membership) => (
-              <Button
-                key={membership.householdId}
-                variant={membership.householdId === householdId ? "secondary" : "outline"}
-                className="justify-between"
-                onClick={() => {
-                  setOpen(false);
-                  selectHousehold(membership.householdId);
-                }}
-              >
-                {membership.household.name}
-                {membership.householdId === householdId ? t("active") : null}
-              </Button>
-            ))}
-          </div>
+          {memberships.length > 1 ? (
+            <div className="flex flex-col gap-2">
+              {memberships.map((membership) => (
+                <Button
+                  key={membership.householdId}
+                  variant={membership.householdId === householdId ? "secondary" : "outline"}
+                  className="justify-between"
+                  onClick={() => {
+                    setOpen(false);
+                    selectHousehold(membership.householdId);
+                  }}
+                >
+                  {membership.household.name}
+                  {membership.householdId === householdId ? t("active") : null}
+                </Button>
+              ))}
+            </div>
+          ) : null}
           <HouseholdActions onComplete={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
