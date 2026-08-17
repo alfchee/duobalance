@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { apiFetch } from "@/lib/api-fetch";
+import { ApiError, apiFetch } from "@/lib/api-fetch";
 import {
   acceptInvite,
   clearActiveHouseholdId,
@@ -150,11 +150,24 @@ export function useHouseholdCommands() {
           try {
             await apiFetch("/api/members/remove", {
               method: "POST",
-              body: JSON.stringify(values),
+              body: values,
             });
             return { error: null };
           } catch (err) {
-            return { error: err };
+            // The route reports the real Postgres error message in the JSON
+            // body (`{ error: "..." }`), not in ApiError.message (which is
+            // just "POST /api/members/remove → 400") — read the body so
+            // getHouseholdActionErrorKey can actually match it against
+            // HOUSEHOLD_RPC_ERROR_KEYS instead of always falling through to
+            // "generic".
+            const body = err instanceof ApiError ? err.body : null;
+            const message =
+              body && typeof body === "object" && "error" in body && typeof body.error === "string"
+                ? body.error
+                : err instanceof Error
+                  ? err.message
+                  : "generic";
+            return { error: { message } };
           }
         },
         householdId,
@@ -163,7 +176,7 @@ export function useHouseholdCommands() {
       );
       if (result.ok) {
         await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
-        await queryClient.invalidateQueries({ queryKey: ["household_members"] });
+        await queryClient.invalidateQueries({ queryKey: ["household-members"] });
         await queryClient.invalidateQueries({ queryKey: ["accounts"] });
         await queryClient.invalidateQueries({ queryKey: ["bills"] });
       }

@@ -6,7 +6,7 @@
 
 begin;
 
-select plan(16);
+select plan(17);
 
 do $$
 declare
@@ -156,6 +156,24 @@ select is_empty(
      where instance_id = 'f6000000-0000-0000-0000-000000000001' $$,
   'reminded instances are excluded from due_for_reminder'
 );
+
+-- A soft-deleted household must stop generating reminders immediately —
+-- otherwise members keep getting emails/push for the full 30-day purge
+-- window (#128 review finding).
+update public.households
+  set deleted_at = now()
+  where id = 'f0000000-0000-0000-0000-000000000001';
+
+-- 13b: due_for_reminder excludes instances of a soft-deleted household
+select is_empty(
+  $$ select * from public.bill_instances_due_for_reminder()
+     where household_id = 'f0000000-0000-0000-0000-000000000001' $$,
+  'soft-deleted households are excluded from due_for_reminder'
+);
+
+update public.households
+  set deleted_at = null
+  where id = 'f0000000-0000-0000-0000-000000000001';
 
 -- Test ends_on behavior: create a bill with ends_on in the past
 do $$

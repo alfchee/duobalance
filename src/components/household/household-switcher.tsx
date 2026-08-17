@@ -73,6 +73,8 @@ export function HouseholdSwitcher() {
 
 function HouseholdActions({ onComplete }: { onComplete: () => void }) {
   const t = useTranslations("household.switcher");
+  const tErrors = useTranslations("household.onboarding.errors");
+  const tInviteErrors = useTranslations("household.onboarding.errorsInvite");
   const locale = useLocale();
   const { selectHousehold } = useHousehold();
   const { create, accept } = useHouseholdCommands();
@@ -98,7 +100,7 @@ function HouseholdActions({ onComplete }: { onComplete: () => void }) {
     const result = await create({ name, displayName, country, baseCurrency: currency });
     setPending(false);
     if (!result.ok) {
-      setError(t("createError"));
+      setError(tErrors(result.errorKey));
       return;
     }
     onComplete();
@@ -115,7 +117,7 @@ function HouseholdActions({ onComplete }: { onComplete: () => void }) {
     const result = await accept(token);
     setPending(false);
     if (!result.ok) {
-      setError(t("joinError"));
+      setError(result.errorKey === "generic" ? tErrors("generic") : tInviteErrors(result.errorKey));
       return;
     }
     onComplete();

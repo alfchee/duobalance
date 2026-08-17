@@ -84,6 +84,7 @@ function safeFilenamePart(value: string): string {
 type ScopeFilter = {
   removedMemberId?: string;
   removedAt?: string;
+  allowedAccountIds?: string[];
 };
 
 async function fetchAllRows(
@@ -117,6 +118,15 @@ async function fetchAllRows(
     // Apply privacy filter on accounts for removed members
     if (filter?.removedMemberId && table === "accounts") {
       query = query.or(`is_shared.eq.true,owner_member_id.eq.${filter.removedMemberId}`);
+    }
+
+    // Transactions have no is_shared/owner_member_id of their own — RLS
+    // normally scopes them via `account_id in (select id from accounts)`,
+    // but this branch runs on the service role (RLS bypassed), so the same
+    // scoping must be replicated explicitly here or a removed member's
+    // export would include their ex-partner's private-account transactions.
+    if (filter?.allowedAccountIds && table === "transactions") {
+      query = query.in("account_id", filter.allowedAccountIds);
     }
 
     for (const column of EXPORT_ORDER_COLUMNS[table]) {
@@ -153,12 +163,17 @@ export async function GET(request: Request) {
   }
   if (!householdId) return Response.json({ error: "householdId is required" }, { status: 400 });
 
-  // First check using authenticated client (active membership)
+  // First check using authenticated client (active membership). Filtering
+  // removed_at here is required, not just an optimization: a re-invited
+  // member can have both an old removed row and a fresh active row for the
+  // same (user_id, household_id) pair (the partial unique index allows that
+  // coexistence), and maybeSingle() throws on more than one match.
   const { data: membership, error: membershipError } = await supabase
     .from("household_members")
-    .select("id, household_id, removed_at, households(id, name)")
+    .select("id, household_id, removed_at, households(id, name, deleted_at)")
     .eq("user_id", user.id)
     .eq("household_id", householdId)
+    .is("removed_at", null)
     .maybeSingle();
 
   let resolvedMembership = membership;
@@ -170,19 +185,38 @@ export async function GET(request: Request) {
     try {
       const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
       const admin = createSupabaseServiceRoleClient();
-      const { data: adminMembership } = await admin
+      // Order so an active row (removed_at is null) — meaning the reason
+      // the authenticated lookup above failed was a soft-deleted household,
+      // not a removed membership — is preferred over a past removal.
+      const { data: adminMemberships } = await admin
         .from("household_members")
-        .select("id, household_id, removed_at, households(id, name)")
+        .select("id, household_id, removed_at, households(id, name, deleted_at)")
         .eq("user_id", user.id)
         .eq("household_id", householdId)
-        .maybeSingle();
+        .order("removed_at", { ascending: false, nullsFirst: true })
+        .limit(1);
+      const adminMembership = adminMemberships?.[0];
 
       if (adminMembership) {
         resolvedMembership = adminMembership;
         fetchClient = admin;
+        const household = Array.isArray(adminMembership.households)
+          ? adminMembership.households[0]
+          : adminMembership.households;
+        // Cutoff is whichever happened first: the member's own removal, or
+        // the household being soft-deleted out from under an active member.
+        const cutoff = adminMembership.removed_at ?? household?.deleted_at ?? undefined;
+
+        const { data: allowedAccounts } = await admin
+          .from("accounts")
+          .select("id")
+          .eq("household_id", householdId)
+          .or(`is_shared.eq.true,owner_member_id.eq.${adminMembership.id}`);
+
         scopeFilter = {
           removedMemberId: adminMembership.id,
-          removedAt: adminMembership.removed_at ?? undefined,
+          removedAt: cutoff,
+          allowedAccountIds: (allowedAccounts ?? []).map((a) => a.id),
         };
       }
     } catch {

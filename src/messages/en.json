@@ -283,9 +283,7 @@
       "country": "Country",
       "currency": "Base currency",
       "inviteToken": "Invitation code",
-      "required": "Complete all required fields.",
-      "createError": "We couldn't create the household. You may have reached the five-household limit.",
-      "joinError": "We couldn't join that household. Check the invitation code and try again."
+      "required": "Complete all required fields."
     },
     "onboarding": {
       "title": "Set up your shared household",
@@ -752,9 +750,12 @@
         "rateLimited": "You've sent too many invitations recently. Try again later.",
         "emailFailed": "We couldn't send the invitation email. Try again.",
         "notOwner": "Only the household owner can perform this action.",
+        "notMember": "You are not an active member of this household.",
         "unresolvedAccounts": "All owned accounts must be assigned before removing.",
         "targetNotFound": "Member not found in this household.",
+        "targetIsOwner": "Cannot remove another owner. Transfer ownership before removing them.",
         "selfRemovalForbidden": "Owners cannot remove themselves. Transfer ownership or leave instead.",
+        "ownerTransferRequired": "Please transfer ownership to another member first.",
         "generic": "Something went wrong. Try again."
       }
     },

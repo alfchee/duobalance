@@ -22,6 +22,7 @@ const HOUSEHOLD_RPC_ERROR_KEYS: Record<string, string> = {
     "selfRemovalForbidden",
   "unresolved owned accounts": "unresolvedAccounts",
   "household must retain at least one active owner": "ownerTransferRequired",
+  "cannot remove another owner; transfer ownership before removal": "targetIsOwner",
 };
 
 export type HouseholdErrorResult = { ok: false; errorKey: string };

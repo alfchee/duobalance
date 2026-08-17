@@ -27,7 +27,7 @@ function makeClient(
   member: {
     id?: string;
     removed_at?: string | null;
-    households: { id: string; name: string };
+    households: { id: string; name: string; deleted_at?: string | null };
   } | null,
   tablePages: Record<string, unknown[][]> = {},
   errorTables: ReadonlySet<string> = new Set(),
@@ -37,6 +37,7 @@ function makeClient(
   const fromCalls: string[] = [];
   const lteCalls: Array<{ table: string; column: string; value: string }> = [];
   const orCalls: Array<{ table: string; expression: string }> = [];
+  const inCalls: Array<{ table: string; column: string; values: unknown[] }> = [];
 
   const callCounts = new Map<string, number>();
 
@@ -59,6 +60,11 @@ function makeClient(
       return chain;
     });
 
+    chain.in = vi.fn((column: string, values: unknown[]) => {
+      inCalls.push({ table, column, values });
+      return chain;
+    });
+
     chain.range = vi.fn((from: number, to: number) => {
       rangeCalls.push({ table, from, to });
       if (errorTables.has(table)) {
@@ -70,11 +76,23 @@ function makeClient(
       return Promise.resolve({ data, error: null });
     });
 
+    // The account-allowlist lookup (service-role fallback) awaits the chain
+    // directly after `.select("id").eq(...).or(...)` — it never calls
+    // `.range()`, unlike every fetchAllRows() query. Making the chain itself
+    // thenable lets both usages share this same builder.
+    chain.then = (
+      resolve: (value: { data: unknown[]; error: null }) => void,
+      reject?: (reason: unknown) => void,
+    ) => Promise.resolve({ data: pages[0] ?? [], error: null }).then(resolve, reject);
+
     return chain;
   }
 
   const membershipMaybeSingle = vi.fn().mockResolvedValue({ data: member, error: null });
-  const membershipEqHousehold = vi.fn(() => ({ maybeSingle: membershipMaybeSingle }));
+  const membershipList = vi.fn().mockResolvedValue({ data: member ? [member] : [], error: null });
+  const membershipIs = vi.fn(() => ({ maybeSingle: membershipMaybeSingle }));
+  const membershipOrder = vi.fn(() => ({ limit: membershipList }));
+  const membershipEqHousehold = vi.fn(() => ({ is: membershipIs, order: membershipOrder }));
   const membershipEqUser = vi.fn(() => ({ eq: membershipEqHousehold }));
   const membershipSelect = vi.fn(() => ({ eq: membershipEqUser }));
 
@@ -84,7 +102,7 @@ function makeClient(
     return { select: vi.fn(() => ({ eq: vi.fn(() => tableChain(table)) })) };
   });
 
-  return { from, orderCalls, rangeCalls, fromCalls, lteCalls, orCalls };
+  return { from, orderCalls, rangeCalls, fromCalls, lteCalls, orCalls, inCalls };
 }
 
 function request(format = "json") {
@@ -163,6 +181,51 @@ describe("GET /api/export", () => {
     expect(admin.orCalls).toContainEqual({
       table: "accounts",
       expression: "is_shared.eq.true,owner_member_id.eq.member-1",
+    });
+  });
+
+  it("scopes a removed member's transaction export to their allowed accounts", async () => {
+    const client = makeClient(null);
+    const admin = makeClient(
+      {
+        id: "member-1",
+        removed_at: "2026-08-01T12:00:00Z",
+        households: { id: householdId, name: "Past Home" },
+      },
+      { accounts: [[{ id: "acc-shared" }, { id: "acc-own-private" }]] },
+    );
+    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(admin as never);
+    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+    expect(admin.inCalls).toContainEqual({
+      table: "transactions",
+      column: "account_id",
+      values: ["acc-shared", "acc-own-private"],
+    });
+  });
+
+  it("uses the household's deleted_at as the export cutoff for an active member of a soft-deleted household", async () => {
+    const client = makeClient(null);
+    const admin = makeClient({
+      id: "member-1",
+      removed_at: null,
+      households: { id: householdId, name: "Past Home", deleted_at: "2026-08-05T00:00:00Z" },
+    });
+    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(admin as never);
+    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+    expect(admin.lteCalls).toContainEqual({
+      table: "transactions",
+      column: "created_at",
+      value: "2026-08-05T00:00:00Z",
     });
   });
 

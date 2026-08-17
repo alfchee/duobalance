@@ -45,6 +45,7 @@ async function requireOwnMember(
     .eq("id", memberId)
     .eq("household_id", householdId)
     .eq("user_id", user.id)
+    .is("removed_at", null)
     .maybeSingle();
   if (!member) return Response.json({ error: "forbidden" }, { status: 403 });
 

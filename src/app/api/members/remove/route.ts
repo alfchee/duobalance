@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createInviteRouteContext, getAuthedUser, HttpError } from "@/app/api/invites/_shared";
-import { sendMemberRemovalEmail } from "@/lib/member-removal-email";
+import { isSupportedEmailLocale, sendMemberRemovalEmail } from "@/lib/member-removal-email";
 
 const bodySchema = z.object({
   household_id: z.string().uuid(),
@@ -42,7 +42,12 @@ export async function POST(request: Request) {
   }
 
   // Get target user email from auth admin API
-  const { data: authUserData } = await admin.auth.admin.getUserById(targetMember.user_id);
+  const { data: authUserData, error: authUserError } = await admin.auth.admin.getUserById(
+    targetMember.user_id,
+  );
+  if (authUserError) {
+    console.error("members/remove: failed to look up target user email", authUserError);
+  }
   const targetEmail = authUserData?.user?.email;
 
   // Execute removal RPC as the authenticated caller
@@ -53,17 +58,25 @@ export async function POST(request: Request) {
   });
 
   if (rpcError) {
-    const status = rpcError.message.includes("unresolved owned accounts") ? 400 : 403;
+    // Matches the pre-check 404 above for the same underlying condition —
+    // this branch only fires under a TOCTOU race (target removed between
+    // the pre-check and the RPC call).
+    const status = rpcError.message.includes("unresolved owned accounts")
+      ? 400
+      : rpcError.message.includes("target member not found or not active in this household")
+        ? 404
+        : 403;
     return Response.json({ error: rpcError.message }, { status });
   }
 
   // Queue/send notification email if target email is available
+  let notified = false;
   if (targetEmail) {
     const household = Array.isArray(targetMember.households)
       ? targetMember.households[0]
       : targetMember.households;
     const householdName = household?.name ?? "duobalance";
-    const locale = household?.locale ?? "en";
+    const locale = isSupportedEmailLocale(household?.locale) ? household.locale : "en";
 
     try {
       await sendMemberRemovalEmail({
@@ -73,10 +86,11 @@ export async function POST(request: Request) {
         householdId: household_id,
         locale,
       });
+      notified = true;
     } catch (err) {
-      console.warn("failed to send member removal email", err);
+      console.error("members/remove: failed to send member removal email", err);
     }
   }
 
-  return Response.json({ ok: true }, { status: 200 });
+  return Response.json({ ok: true, notified }, { status: 200 });
 }

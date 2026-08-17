@@ -43,8 +43,13 @@ export function HouseholdDangerSection() {
 
   const isOwner = role === "owner";
   const activeMembers = members.data ?? [];
-  const activeCount = members.data ? activeMembers.length : 1;
+  const activeCount = activeMembers.length;
+  const membersLoaded = !members.isPending;
   const isOwnerWithOthers = isOwner && (members.isPending || activeCount > 1);
+  // Non-owners don't get the isOwnerWithOthers branch below, so while
+  // members are still loading, activeCount is 0 — don't show "you are the
+  // last member" until we actually know that.
+  const isLastMember = membersLoaded && activeCount <= 1;
 
   async function downloadExport(format: ExportFormat) {
     if (!householdId) return;
@@ -79,7 +84,8 @@ export function HouseholdDangerSection() {
       } else {
         setLeaveOpen(false);
       }
-    } catch {
+    } catch (err) {
+      console.error("household-danger-section: unexpected error leaving household", err);
       setActionError("generic");
     } finally {
       setIsPending(false);
@@ -98,7 +104,8 @@ export function HouseholdDangerSection() {
       } else {
         setDeleteOpen(false);
       }
-    } catch {
+    } catch (err) {
+      console.error("household-danger-section: unexpected error deleting household", err);
       setActionError("generic");
     } finally {
       setIsPending(false);
@@ -163,9 +170,11 @@ export function HouseholdDangerSection() {
             <DialogDescription className="text-sm">
               {isOwnerWithOthers
                 ? t("leave.ownerNotice")
-                : activeCount === 1
-                  ? t("leave.lastMemberNotice")
-                  : t("leave.partnerNotice", { name: householdName ?? "" })}
+                : !membersLoaded
+                  ? null
+                  : isLastMember
+                    ? t("leave.lastMemberNotice")
+                    : t("leave.partnerNotice", { name: householdName ?? "" })}
             </DialogDescription>
           </DialogHeader>
 
@@ -180,7 +189,11 @@ export function HouseholdDangerSection() {
               {tCommon("cancel")}
             </Button>
             {!isOwnerWithOthers ? (
-              <Button variant="destructive" onClick={handleConfirmLeave} disabled={isPending}>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmLeave}
+                disabled={isPending || !membersLoaded}
+              >
                 {isPending ? t("leave.leaving") : t("leave.confirmButton")}
               </Button>
             ) : null}
