@@ -12,6 +12,7 @@ import { AppSidebar } from "@/components/nav/app-sidebar";
 import { TransactionEntrySheet } from "@/components/transactions/transaction-entry-sheet";
 import { FullPageSpinner } from "@/components/full-page-spinner";
 import { RealtimeStatus } from "@/components/realtime-status";
+import { HouseholdSwitcher } from "@/components/household/household-switcher";
 
 // AC (#14): auth guarding happens client-side here, never in middleware.ts —
 // middleware doesn't exist in a static export (architecture rule #1).
@@ -58,6 +59,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <AppSidebar />
       <div className="min-w-0 flex-1">
         <RealtimeStatus>
+          <HouseholdSwitcher />
           <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">{children}</div>
           <TransactionEntrySheet />
           {!keyboardOpen ? <BottomNav /> : null}

@@ -269,6 +269,24 @@
     },
     "loading": "Loading your household…",
     "empty": "We couldn't find a household for your account.",
+    "switcher": {
+      "title": "Switch household",
+      "subtitle": "Choose a household or add another one.",
+      "change": "Change",
+      "active": "Active",
+      "create": "Create household",
+      "creating": "Creating household…",
+      "join": "Join with invite",
+      "joining": "Joining household…",
+      "householdName": "Household name",
+      "displayName": "Your name",
+      "country": "Country",
+      "currency": "Base currency",
+      "inviteToken": "Invitation code",
+      "required": "Complete all required fields.",
+      "createError": "We couldn't create the household. You may have reached the five-household limit.",
+      "joinError": "We couldn't join that household. Check the invitation code and try again."
+    },
     "onboarding": {
       "title": "Set up your shared household",
       "subtitle": "Create a new household for you and a partner, or join one you've been invited to.",
@@ -293,6 +311,7 @@
         "householdNameRequired": "Enter a household name.",
         "countryRequired": "Choose a country.",
         "baseCurrencyRequired": "Choose a base currency.",
+        "householdLimitReached": "You can create up to five households.",
         "tokenRequired": "Paste the invitation code.",
         "generic": "Something went wrong. Try again."
       },

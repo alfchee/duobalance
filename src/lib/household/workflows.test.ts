@@ -12,7 +12,7 @@ beforeEach(() => localStorage.clear());
 
 describe("household workflows", () => {
   it("normalizes household input before the RPC boundary", async () => {
-    const port = vi.fn().mockResolvedValue({ error: null });
+    const port = vi.fn().mockResolvedValue({ data: "household-1", error: null });
     await expect(
       createHousehold(port, {
         name: " Home ",
@@ -20,7 +20,7 @@ describe("household workflows", () => {
         baseCurrency: "CLP",
         displayName: " Partner ",
       }),
-    ).resolves.toEqual({ ok: true, value: undefined });
+    ).resolves.toEqual({ ok: true, value: { householdId: "household-1" } });
     expect(port).toHaveBeenCalledWith({
       p_name: "Home",
       p_country: "CL",
