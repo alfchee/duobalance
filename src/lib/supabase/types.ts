@@ -1510,6 +1510,7 @@ export type Database = {
           p_display_name: string
           p_locale?: string
           p_name: string
+          p_signup_source?: string
           p_timezone?: string
         }
         Returns: string
@@ -1804,4 +1805,3 @@ export const Constants = {
     },
   },
 } as const
-

@@ -16,6 +16,16 @@ const baseAssets = [
   "/install/ios-share.png",
   "/install/ios-add-to-home-screen.png",
   "/install/ios-home-screen.png",
+  "/splash/apple-splash-1290-2796.png",
+  "/splash/apple-splash-1179-2556.png",
+  "/splash/apple-splash-1284-2778.png",
+  "/splash/apple-splash-1170-2532.png",
+  "/splash/apple-splash-1125-2436.png",
+  "/splash/apple-splash-1242-2688.png",
+  "/splash/apple-splash-828-1792.png",
+  "/splash/apple-splash-750-1334.png",
+  "/splash/apple-splash-2048-2732.png",
+  "/splash/apple-splash-1668-2388.png",
 ];
 
 async function listFiles(directory) {

@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main, dev, "INT-*"]
   pull_request:
     types: [opened, synchronize]
     branches: [main, dev, "INT-*"]

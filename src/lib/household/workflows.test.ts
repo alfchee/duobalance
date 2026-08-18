@@ -34,6 +34,19 @@ describe("household workflows", () => {
     });
   });
 
+  it("passes signup source to the household RPC when supplied", async () => {
+    const port = vi.fn().mockResolvedValue({ data: "household-1", error: null });
+    await createHousehold(port, {
+      name: "Home",
+      country: "CL",
+      baseCurrency: "CLP",
+      displayName: "Partner",
+      signupSource: "blogger_2026",
+    });
+
+    expect(port).toHaveBeenCalledWith(expect.objectContaining({ p_signup_source: "blogger_2026" }));
+  });
+
   it("maps invite domain failures to stable UI keys", async () => {
     await expect(
       acceptInvite(

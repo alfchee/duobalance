@@ -7,7 +7,8 @@ import { Resend } from "resend";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const APP_URL = process.env.APP_URL;
-const FROM = process.env.RESEND_FROM ?? "duobalance <invites@resend.dev>";
+const FROM = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>";
+const REPLY_TO = process.env.RESEND_REPLY_TO;
 
 export class InviteEmailError extends Error {}
 
@@ -32,7 +33,7 @@ const BODY: Record<
     html: `
       <div style="font-family: system-ui, sans-serif; line-height: 1.6; color: #111; max-width: 480px; margin: 0 auto;">
         <p>Hola,</p>
-        <p>${escapeHtml(inviterName)} te invitó a unirse al hogar <strong>${escapeHtml(householdName)}</strong> en duobalance.</p>
+        <p>${escapeHtml(inviterName)} te invitó a unirse al hogar <strong>${escapeHtml(householdName)}</strong> en DuoBalance.</p>
         <p>Para aceptar la invitación, abre el siguiente enlace:</p>
         <p style="margin: 24px 0;">
           <a href="{acceptUrl}" style="display: inline-block; padding: 12px 24px; background: #0f766e; color: #fff; text-decoration: none; border-radius: 8px;">Aceptar invitación</a>
@@ -41,13 +42,13 @@ const BODY: Record<
         <p style="color: #666; font-size: 14px; word-break: break-all;">{acceptUrl}</p>
       </div>
     `,
-    text: `${inviterName} te invitó a unirse al hogar ${householdName} en duobalance.\n\nAcepta la invitación abriendo este enlace:\n{acceptUrl}`,
+    text: `${inviterName} te invitó a unirse al hogar ${householdName} en DuoBalance.\n\nAcepta la invitación abriendo este enlace:\n{acceptUrl}`,
   }),
   en: ({ inviterName, householdName }) => ({
     html: `
       <div style="font-family: system-ui, sans-serif; line-height: 1.6; color: #111; max-width: 480px; margin: 0 auto;">
         <p>Hi,</p>
-        <p>${escapeHtml(inviterName)} invited you to join the household <strong>${escapeHtml(householdName)}</strong> on duobalance.</p>
+        <p>${escapeHtml(inviterName)} invited you to join the household <strong>${escapeHtml(householdName)}</strong> on DuoBalance.</p>
         <p>To accept the invitation, open the link below:</p>
         <p style="margin: 24px 0;">
           <a href="{acceptUrl}" style="display: inline-block; padding: 12px 24px; background: #0f766e; color: #fff; text-decoration: none; border-radius: 8px;">Accept invitation</a>
@@ -56,7 +57,7 @@ const BODY: Record<
         <p style="color: #666; font-size: 14px; word-break: break-all;">{acceptUrl}</p>
       </div>
     `,
-    text: `${inviterName} invited you to join the household ${householdName} on duobalance.\n\nAccept the invitation by opening this link:\n{acceptUrl}`,
+    text: `${inviterName} invited you to join the household ${householdName} on DuoBalance.\n\nAccept the invitation by opening this link:\n{acceptUrl}`,
   }),
 };
 
@@ -97,6 +98,7 @@ export async function sendInviteEmail(params: InviteEmailParams): Promise<void> 
     subject,
     html: htmlBody,
     text: textBody,
+    ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
   });
 
   if (error) {

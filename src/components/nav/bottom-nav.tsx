@@ -70,7 +70,7 @@ export function BottomNav() {
             >
               db
             </span>
-            duobalance
+            DuoBalance
           </SheetTitle>
           <SheetDescription className="sr-only">{t("settings")}</SheetDescription>
         </SheetHeader>

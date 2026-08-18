@@ -105,6 +105,7 @@ npm run db:push                   # cloud only — apply local migrations to rem
 - **Generated `src/lib/supabase/types.ts`** is auto-generated. Don't hand-edit; regenerate. It is excluded from eslint and prettier via `eslint.config.mjs` and `.prettierignore`.
 - **Service-role-key leak guard** lives in `.github/workflows/ci.yml` as two steps: a source grep (`src/`) and a bundle grep (`.next/static/`). Both must pass. If you need to add a file that legitimately references the key, it must live under `app/api/**` or in `lib/supabase/server.ts` — the guard's allowlist is the source of truth.
 - **`'use client'` at the top of every component file** under `src/components/` and `src/app/`. Even if a file doesn't currently use hooks, the directive keeps it portable to components that do.
+- **No cookie banner needed.** DuoBalance uses strictly necessary essential cookies for auth sessions and UI preferences only (no third-party tracking or ads). See `docs/cookie-policy-note.md`.
 
 ## When adding a new feature
 

@@ -6,7 +6,8 @@ import { Resend } from "resend";
 import { formatMoney } from "@/lib/money";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.RESEND_FROM ?? "duobalance <reminders@resend.dev>";
+const FROM = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>";
+const REPLY_TO = process.env.RESEND_REPLY_TO;
 
 export class ReminderEmailError extends Error {}
 
@@ -109,6 +110,7 @@ export async function sendReminderDigest(params: ReminderDigestParams): Promise<
     subject,
     html,
     text,
+    ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
   });
 
   if (error) {

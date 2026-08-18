@@ -44,7 +44,37 @@ describe("auth flows", () => {
     expect(port).toHaveBeenCalledWith({
       email: "partner@example.com",
       password: "secret",
-      options: { data: { display_name: "Partner" } },
+      options: {
+        data: {
+          display_name: "Partner",
+          legal_consent_version: "1.0",
+          legal_consent_at: expect.any(String),
+        },
+      },
+    });
+  });
+
+  it("passes custom legal consent version when provided", async () => {
+    const port = vi.fn().mockResolvedValue({ data: { session: null }, error: null });
+    await expect(
+      signUp(port, {
+        displayName: "Partner",
+        email: "partner@example.com",
+        password: "secret",
+        pendingInvitePath: null,
+        legalConsentVersion: "2.0",
+      }),
+    ).resolves.toEqual({ ok: true, value: { nextStep: "check-email", redirectTo: null } });
+    expect(port).toHaveBeenCalledWith({
+      email: "partner@example.com",
+      password: "secret",
+      options: {
+        data: {
+          display_name: "Partner",
+          legal_consent_version: "2.0",
+          legal_consent_at: expect.any(String),
+        },
+      },
     });
   });
 

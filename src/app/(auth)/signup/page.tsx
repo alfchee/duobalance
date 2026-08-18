@@ -29,6 +29,7 @@ import { useCurrencies } from "@/hooks/useCurrencies";
 import { getPasswordStrength } from "@/lib/auth/flows";
 import { useAuthCommands } from "@/hooks/useAuthCommands";
 import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
+import { captureReferral } from "@/lib/referral";
 
 type Step = "credentials" | "household" | "check-email";
 
@@ -56,6 +57,7 @@ export default function SignupPage() {
   const countryNames = new Intl.DisplayNames(locale, { type: "region" });
 
   useEffect(() => {
+    captureReferral(window.location.search, localStorage);
     if (!loading && session && step === "credentials") {
       // An invite in progress beats the default destination, mirroring the
       // submit handler below — both peek so they can't clobber each other.
@@ -235,6 +237,30 @@ export default function SignupPage() {
               {strength ? t(`passwordStrength.${strength}`) : t("passwordHint")}
             </p>
           </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {t.rich("consentNotice", {
+              terms: (chunks) => (
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-foreground underline-offset-4 hover:underline"
+                >
+                  {chunks}
+                </Link>
+              ),
+              privacy: (chunks) => (
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-foreground underline-offset-4 hover:underline"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </p>
           {credentialsError ? (
             <p role="alert" className="text-sm text-destructive">
               {tErrors(credentialsError)}
