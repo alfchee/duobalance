@@ -217,7 +217,8 @@ await Promise.all([
     join(publicDirectory, "favicon.ico"),
     createIco(faviconSizes.map((size) => ({ size, png: createIcon(size, false) }))),
   ),
-  ...splashSizes.map(([w, h]) =>
-    writeFile(join(splashDirectory, `apple-splash-${w}-${h}.png`), createSplash(w, h)),
-  ),
 ]);
+
+for (const [w, h] of splashSizes) {
+  await writeFile(join(splashDirectory, `apple-splash-${w}-${h}.png`), createSplash(w, h));
+}

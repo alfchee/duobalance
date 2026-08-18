@@ -100,16 +100,20 @@ describe("sendInviteEmail", () => {
     expect(html).not.toContain("<img");
   });
 
-  it("uses RESEND_FROM when set", async () => {
+  it("uses RESEND_FROM and RESEND_REPLY_TO when set", async () => {
     const { sendInviteEmail } = await loadEmail({
       RESEND_API_KEY: "re_secret",
       APP_URL: "https://app.example.test",
       RESEND_FROM: "duobalance <invites@example.com>",
+      RESEND_REPLY_TO: "support@example.com",
     });
     mockSend.mockResolvedValue({ error: null });
     await sendInviteEmail(PARAMS);
     expect(mockSend).toHaveBeenCalledWith(
-      expect.objectContaining({ from: "duobalance <invites@example.com>" }),
+      expect.objectContaining({
+        from: "duobalance <invites@example.com>",
+        replyTo: "support@example.com",
+      }),
     );
   });
 

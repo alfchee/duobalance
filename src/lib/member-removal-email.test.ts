@@ -94,6 +94,23 @@ describe("sendMemberRemovalEmail", () => {
     await expect(sendMemberRemovalEmail(PARAMS)).rejects.toBeInstanceOf(MemberRemovalEmailError);
   });
 
+  it("uses RESEND_FROM and RESEND_REPLY_TO when set", async () => {
+    const { sendMemberRemovalEmail } = await loadEmail({
+      RESEND_API_KEY: "re_secret",
+      APP_URL: "https://app.example.test",
+      RESEND_FROM: "duobalance <notifications@example.com>",
+      RESEND_REPLY_TO: "support@example.com",
+    });
+    mockSend.mockResolvedValue({ error: null });
+    await sendMemberRemovalEmail(PARAMS);
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: "duobalance <notifications@example.com>",
+        replyTo: "support@example.com",
+      }),
+    );
+  });
+
   it("escapes HTML-significant characters in memberName and householdName", async () => {
     const { sendMemberRemovalEmail } = await loadEmail({
       RESEND_API_KEY: "re_secret",
