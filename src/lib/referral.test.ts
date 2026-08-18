@@ -22,4 +22,26 @@ describe("referral", () => {
 
     expect(readReferral(localStorage)).toBeNull();
   });
+
+  it("handles storage throwing errors gracefully", () => {
+    const throwingStorage = {
+      getItem: () => {
+        throw new Error("SecurityError");
+      },
+      setItem: () => {
+        throw new Error("SecurityError");
+      },
+      removeItem: () => {
+        throw new Error("SecurityError");
+      },
+      length: 0,
+      clear: () => {},
+      key: () => null,
+    } as unknown as Storage;
+
+    expect(() => saveReferral(throwingStorage, "code")).not.toThrow();
+    expect(() => captureReferral("?ref=code", throwingStorage)).not.toThrow();
+    expect(readReferral(throwingStorage)).toBeNull();
+    expect(() => clearReferral(throwingStorage)).not.toThrow();
+  });
 });
