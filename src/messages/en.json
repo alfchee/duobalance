@@ -14,6 +14,148 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
   },
+  "landing": {
+    "nav": { "login": "Log in", "signup": "Start free" },
+    "hero": {
+      "eyebrow": "Designed for shared and personal finances",
+      "title": "Your finances should work the way your life does.",
+      "description": "DuoBalance brings clarity to the money you manage alone, share with a partner, or coordinate with your household.",
+      "primaryCta": "Start free",
+      "secondaryCta": "See how it works"
+    },
+    "showcase": {
+      "eyebrow": "A closer look",
+      "title": "One shared financial language",
+      "tabsLabel": "Product preview",
+      "balances": {
+        "title": "Balances and accounts",
+        "description": "A clear view of your accounts, whether they are personal, shared, or both."
+      },
+      "entry": {
+        "title": "Fast entry",
+        "description": "Record an expense in seconds with an optimized number pad."
+      },
+      "budget": {
+        "title": "Monthly budget",
+        "description": "Set category limits and follow the spending that matters to you."
+      },
+      "bills": {
+        "title": "Bill calendar",
+        "description": "Keep recurring payments visible, for yourself or the people you share them with."
+      }
+    },
+    "preview": {
+      "netWorth": "Combined net worth",
+      "exchangeRate": "Exchange rate: 1 USD = C$ 36.65 NIO",
+      "jointAccount": "Household spending",
+      "cash": "Elena's cash",
+      "card": "Platinum card",
+      "newExpense": "New expense",
+      "concept": "Concept",
+      "lunch": "Lunch",
+      "account": "Account",
+      "category": "Category",
+      "restaurants": "Restaurants",
+      "spent": "Spent",
+      "monthlyBudget": "Monthly budget",
+      "of": "of",
+      "groceries": "Groceries",
+      "fuel": "Fuel",
+      "fun": "Entertainment",
+      "august": "August 2026",
+      "pendingBills": "3 pending this month",
+      "internet": "Home internet",
+      "dueToday": "Due today"
+    },
+    "story": {
+      "eyebrow": "Independent makers",
+      "title": "Built from a real need",
+      "first": "DuoBalance began with a familiar question: how can people manage shared money without losing clarity or personal space?",
+      "second": "Many finance apps are built around one person, while others blur every boundary. Neither reflects how people actually handle money: sometimes independently, sometimes together.",
+      "quote": "“Good money tools make room for what is personal, what is shared, and everything in between.”",
+      "third": "That is why DuoBalance supports personal accounts alongside shared finances, so it remains useful whether you manage money solo, with a partner, or as part of a household."
+    },
+    "differences": {
+      "eyebrow": "Why DuoBalance",
+      "title": "The difference starts with the structure",
+      "together": {
+        "title": "Flexible by design",
+        "description": "Use it independently, link profiles when you share finances, and keep clear boundaries either way."
+      },
+      "currency": {
+        "title": "Real multi-currency",
+        "description": "Track córdobas and dollars side by side, built for real Latin American lives and households."
+      },
+      "privacy": {
+        "title": "Privacy by default",
+        "description": "No ads, no tracking, and your data is always yours to export."
+      },
+      "manualEntry": {
+        "title": "Deliberately manual",
+        "description": "Record transactions in seconds for more awareness, privacy, and reliability than fragile bank connections."
+      }
+    },
+    "manual": {
+      "eyebrow": "No marketing filter",
+      "title": "Why no bank connection?",
+      "description": "Automatic bank connections are fragile across Latin America: they disconnect, require frequent verification, and can duplicate transactions.",
+      "descriptionTwo": "Manual entry gives you active awareness. Recording each expense takes a moment and helps you make better decisions, on your own or together.",
+      "forYouTitle": "This app is for you if:",
+      "forYouOne": "You want a clearer relationship with your spending, alone or together.",
+      "forYouTwo": "You value accuracy over unreliable automation.",
+      "forYouThree": "You regularly manage cash and multiple currencies.",
+      "notForYouTitle": "This app is not for you if:",
+      "notForYouOne": "You cannot spend a few seconds logging purchases.",
+      "notForYouTwo": "Manual transaction entry is a deal-breaker."
+    },
+    "pricing": {
+      "eyebrow": "Simple, honest pricing",
+      "title": "No surprises or confusing subscriptions",
+      "badge": "Current phase",
+      "plan": "Free during beta",
+      "price": "$0",
+      "description": "Join the first people and households helping us refine every part of the app, with full access at no cost.",
+      "future": "When DuoBalance is stable, we will introduce a fair, low flat fee to cover independent development and servers. Your data will remain exportable.",
+      "cta": "Sign up free"
+    },
+    "faq": {
+      "eyebrow": "Straight answers",
+      "title": "Frequently asked questions",
+      "safe": {
+        "question": "Is my information safe?",
+        "answer": "Yes. Data is encrypted in transit and at rest. Since we do not connect to your bank, we never hold your bank credentials."
+      },
+      "bank": {
+        "question": "Why is there no automatic bank connection?",
+        "answer": "For stability, privacy, and awareness. Banking integrations in Latin America are unreliable, and manual entry keeps you connected to your spending, whether you manage it alone or with others."
+      },
+      "data": {
+        "question": "What happens to my data if I stop using the app?",
+        "answer": "Your data belongs to you. You can export your accounts, budgets, and transactions whenever you need to."
+      },
+      "export": {
+        "question": "Can I export my transaction history?",
+        "answer": "Yes. Download your history for use in a spreadsheet or another tool whenever you choose."
+      },
+      "currencies": {
+        "question": "Which countries and currencies are supported?",
+        "answer": "You can set up a household in Argentina, Bolivia, Brazil, Chile, Colombia, Costa Rica, Cuba, the Dominican Republic, Ecuador, El Salvador, Guatemala, Honduras, Mexico, Nicaragua, Panama, Paraguay, Peru, Puerto Rico, Uruguay, Venezuela, the United States, or Spain. DuoBalance provides exchange rates for the supported currency setup, including córdobas and US dollars."
+      }
+    },
+    "footer": {
+      "description": "Honest, transparent finance for individuals, couples, and households.",
+      "product": "Product",
+      "howItWorks": "How it works",
+      "pricing": "Beta pricing",
+      "faq": "FAQ",
+      "company": "Company",
+      "story": "Our story",
+      "contact": "Contact",
+      "legal": "Legal",
+      "terms": "Terms",
+      "privacy": "Privacy"
+    }
+  },
   "nav": {
     "balances": "Balances",
     "transactions": "Transactions",
