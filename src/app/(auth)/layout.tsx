@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           >
             db
           </span>
-          duobalance
+          DuoBalance
         </Link>
         {children}
       </div>

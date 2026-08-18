@@ -50,7 +50,7 @@ export function AppSidebar() {
         >
           db
         </span>
-        duobalance
+        DuoBalance
       </Link>
       <nav aria-label={t("settings")}>
         <ul className="space-y-2">

@@ -6,7 +6,8 @@ import { Resend } from "resend";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const APP_URL = process.env.APP_URL;
-const FROM = process.env.RESEND_FROM ?? "duobalance <notifications@resend.dev>";
+const FROM = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>";
+const REPLY_TO = process.env.RESEND_REPLY_TO;
 
 export class MemberRemovalEmailError extends Error {}
 
@@ -40,7 +41,7 @@ const BODY: Record<
     html: `
       <div style="font-family: system-ui, sans-serif; line-height: 1.6; color: #111; max-width: 480px; margin: 0 auto;">
         <p>Hola ${escapeHtml(memberName)},</p>
-        <p>Has sido removido del hogar <strong>${escapeHtml(householdName)}</strong> en duobalance.</p>
+        <p>Has sido removido del hogar <strong>${escapeHtml(householdName)}</strong> en DuoBalance.</p>
         <p>Tus datos personales y registros pasados se mantienen intactos. Puedes descargar una copia de tus datos usando el siguiente enlace:</p>
         <p style="margin: 24px 0;">
           <a href="{exportUrl}" style="display: inline-block; padding: 12px 24px; background: #0f766e; color: #fff; text-decoration: none; border-radius: 8px;">Exportar tus datos</a>
@@ -49,13 +50,13 @@ const BODY: Record<
         <p style="color: #666; font-size: 14px; word-break: break-all;">{exportUrl}</p>
       </div>
     `,
-    text: `Hola ${memberName},\n\nHas sido removido del hogar ${householdName} en duobalance.\n\nPuedes exportar tus datos desde este enlace:\n{exportUrl}`,
+    text: `Hola ${memberName},\n\nHas sido removido del hogar ${householdName} en DuoBalance.\n\nPuedes exportar tus datos desde este enlace:\n{exportUrl}`,
   }),
   en: ({ memberName, householdName }) => ({
     html: `
       <div style="font-family: system-ui, sans-serif; line-height: 1.6; color: #111; max-width: 480px; margin: 0 auto;">
         <p>Hi ${escapeHtml(memberName)},</p>
-        <p>You have been removed from the household <strong>${escapeHtml(householdName)}</strong> on duobalance.</p>
+        <p>You have been removed from the household <strong>${escapeHtml(householdName)}</strong> on DuoBalance.</p>
         <p>Your personal data and past records are intact. You can download a copy of your data using the link below:</p>
         <p style="margin: 24px 0;">
           <a href="{exportUrl}" style="display: inline-block; padding: 12px 24px; background: #0f766e; color: #fff; text-decoration: none; border-radius: 8px;">Export your data</a>
@@ -64,7 +65,7 @@ const BODY: Record<
         <p style="color: #666; font-size: 14px; word-break: break-all;">{exportUrl}</p>
       </div>
     `,
-    text: `Hi ${memberName},\n\nYou have been removed from the household ${householdName} on duobalance.\n\nYou can export your data using this link:\n{exportUrl}`,
+    text: `Hi ${memberName},\n\nYou have been removed from the household ${householdName} on DuoBalance.\n\nYou can export your data using this link:\n{exportUrl}`,
   }),
 };
 
@@ -100,6 +101,7 @@ export async function sendMemberRemovalEmail(params: MemberRemovalEmailParams): 
     subject,
     html: htmlBody,
     text: textBody,
+    ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
   });
 
   if (error) {
