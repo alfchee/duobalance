@@ -10,7 +10,7 @@ vi.mock("resend", () => {
   return { Resend: MockResend };
 });
 
-const ENV_KEYS = ["RESEND_API_KEY", "APP_URL", "RESEND_FROM"] as const;
+const ENV_KEYS = ["RESEND_API_KEY", "APP_URL", "RESEND_FROM", "RESEND_REPLY_TO"] as const;
 const PARAMS = {
   to: "bob@example.com",
   memberName: "Bob",
@@ -48,7 +48,7 @@ describe("sendMemberRemovalEmail", () => {
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "duobalance <notifications@resend.dev>",
+        from: "DuoBalance <hola@duobalance.app>",
         to: "bob@example.com",
         subject: "Has sido removido del hogar Casa Duo",
       }),

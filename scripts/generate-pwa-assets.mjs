@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { deflateSync } from "node:zlib";
 
 const outputDirectory = join(process.cwd(), "public", "icons");
+const splashDirectory = join(process.cwd(), "public", "splash");
 const publicDirectory = join(process.cwd(), "public");
 
 function crc32(bytes) {
@@ -63,7 +64,8 @@ function createIcon(size, maskable) {
         for (let sampleX = 0; sampleX < samples; sampleX += 1) {
           const sampledX = x + (sampleX + 0.5) / samples;
           const sampledY = y + (sampleY + 0.5) / samples;
-          const inCircle = (sampledX - center) ** 2 + (sampledY - center) ** 2 <= circleRadius ** 2;
+          const inCircle =
+            maskable || (sampledX - center) ** 2 + (sampledY - center) ** 2 <= circleRadius ** 2;
           if (inCircle) {
             backgroundCoverage += 1;
             if (insideMark(sampledX, sampledY, size)) foregroundCoverage += 1;
@@ -98,6 +100,73 @@ function createIcon(size, maskable) {
   ]);
 }
 
+function createSplash(width, height) {
+  const pixels = Buffer.alloc((width * 4 + 1) * height);
+  const bgColor = [159, 232, 112, 255];
+  const fgColor = [22, 51, 0, 255];
+  const markSize = Math.min(width, height) * 0.25;
+  const centerX = (width - 1) / 2;
+  const centerY = (height - 1) / 2;
+  const markTopLeftX = centerX - markSize / 2;
+  const markTopLeftY = centerY - markSize / 2;
+  const samples = 2;
+
+  for (let y = 0; y < height; y += 1) {
+    const rowStart = y * (width * 4 + 1);
+    pixels[rowStart] = 0;
+
+    const rowInMark = Math.abs(y - centerY) <= markSize / 2 + 2;
+
+    for (let x = 0; x < width; x += 1) {
+      const offset = rowStart + 1 + x * 4;
+
+      if (!rowInMark || Math.abs(x - centerX) > markSize / 2 + 2) {
+        pixels[offset] = bgColor[0];
+        pixels[offset + 1] = bgColor[1];
+        pixels[offset + 2] = bgColor[2];
+        pixels[offset + 3] = bgColor[3];
+        continue;
+      }
+
+      let foregroundCoverage = 0;
+      for (let sampleY = 0; sampleY < samples; sampleY += 1) {
+        for (let sampleX = 0; sampleX < samples; sampleX += 1) {
+          const sampledX = x + (sampleX + 0.5) / samples;
+          const sampledY = y + (sampleY + 0.5) / samples;
+          const relX = sampledX - markTopLeftX;
+          const relY = sampledY - markTopLeftY;
+          if (insideMark(relX, relY, markSize)) {
+            foregroundCoverage += 1;
+          }
+        }
+      }
+
+      const coverage = samples ** 2;
+      const foregroundRatio = foregroundCoverage / coverage;
+      const [r, g, b] = bgColor.map((value, index) =>
+        Math.round(value * (1 - foregroundRatio) + fgColor[index] * foregroundRatio),
+      );
+
+      pixels[offset] = r;
+      pixels[offset + 1] = g;
+      pixels[offset + 2] = b;
+      pixels[offset + 3] = bgColor[3];
+    }
+  }
+
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 6;
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk("IHDR", header),
+    chunk("IDAT", deflateSync(pixels)),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
 function createIco(images) {
   const header = Buffer.alloc(6);
   header.writeUInt16LE(0, 0);
@@ -122,8 +191,23 @@ function createIco(images) {
 }
 
 await mkdir(outputDirectory, { recursive: true });
+await mkdir(splashDirectory, { recursive: true });
 await mkdir(publicDirectory, { recursive: true });
+
 const faviconSizes = [16, 32, 48, 64, 128, 256];
+const splashSizes = [
+  [1290, 2796],
+  [1179, 2556],
+  [1284, 2778],
+  [1170, 2532],
+  [1125, 2436],
+  [1242, 2688],
+  [828, 1792],
+  [750, 1334],
+  [2048, 2732],
+  [1668, 2388],
+];
+
 await Promise.all([
   writeFile(join(outputDirectory, "icon-192.png"), createIcon(192, false)),
   writeFile(join(outputDirectory, "icon-512.png"), createIcon(512, false)),
@@ -132,5 +216,8 @@ await Promise.all([
   writeFile(
     join(publicDirectory, "favicon.ico"),
     createIco(faviconSizes.map((size) => ({ size, png: createIcon(size, false) }))),
+  ),
+  ...splashSizes.map(([w, h]) =>
+    writeFile(join(splashDirectory, `apple-splash-${w}-${h}.png`), createSplash(w, h)),
   ),
 ]);

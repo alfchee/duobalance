@@ -21,7 +21,7 @@ export default function Home() {
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col items-center justify-center gap-6 p-6">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>duobalance</CardTitle>
+          <CardTitle>DuoBalance</CardTitle>
           <CardDescription>{t("scaffoldDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">

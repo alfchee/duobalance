@@ -13,7 +13,7 @@ vi.mock("resend", () => {
   return { Resend: MockResend };
 });
 
-const ENV_KEYS = ["RESEND_API_KEY", "RESEND_FROM"] as const;
+const ENV_KEYS = ["RESEND_API_KEY", "RESEND_FROM", "RESEND_REPLY_TO"] as const;
 
 const ITEM = { billName: "Rent", dueOn: "2026-08-15", amount: 1234, currency: "USD" };
 
@@ -54,7 +54,7 @@ describe("sendReminderDigest", () => {
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "duobalance <reminders@resend.dev>",
+        from: "DuoBalance <hola@duobalance.app>",
         to: ["partner@example.com"],
         subject: "Tienes 1 factura(s) por pagar en Casa 123",
       }),

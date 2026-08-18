@@ -13,7 +13,7 @@ vi.mock("resend", () => {
   return { Resend: MockResend };
 });
 
-const ENV_KEYS = ["RESEND_API_KEY", "APP_URL", "RESEND_FROM"] as const;
+const ENV_KEYS = ["RESEND_API_KEY", "APP_URL", "RESEND_FROM", "RESEND_REPLY_TO"] as const;
 const PARAMS = {
   to: "partner@example.com",
   inviterName: "Ana",
@@ -53,7 +53,7 @@ describe("sendInviteEmail", () => {
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "duobalance <invites@resend.dev>",
+        from: "DuoBalance <hola@duobalance.app>",
         to: "partner@example.com",
         subject: "Ana te invitó a Casa 123",
       }),
