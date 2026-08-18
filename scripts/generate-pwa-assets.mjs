@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { deflateSync } from "node:zlib";
 
 const outputDirectory = join(process.cwd(), "public", "icons");
+const publicDirectory = join(process.cwd(), "public");
 
 function crc32(bytes) {
   let value = 0xffffffff;
@@ -22,55 +23,32 @@ function chunk(type, data) {
   return Buffer.concat([length, typeBytes, data, checksum]);
 }
 
-// Minimal 5x7 font bitmasks for lowercase 'd' and 'b'
-const FONT_5X7 = {
-  d: [
-    [0, 0, 0, 0, 1],
-    [0, 0, 0, 0, 1],
-    [0, 1, 1, 0, 1],
-    [1, 0, 0, 1, 1],
-    [1, 0, 0, 0, 1],
-    [1, 0, 0, 1, 1],
-    [0, 1, 1, 0, 1],
-  ],
-  b: [
-    [1, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0],
-    [1, 0, 1, 1, 0],
-    [1, 1, 0, 0, 1],
-    [1, 0, 0, 0, 1],
-    [1, 1, 0, 0, 1],
-    [1, 0, 1, 1, 0],
-  ],
-};
+function insideRoundedRect(x, y, left, top, right, bottom, radius) {
+  const clampedX = Math.max(left + radius, Math.min(x, right - radius));
+  const clampedY = Math.max(top + radius, Math.min(y, bottom - radius));
+  return (x - clampedX) ** 2 + (y - clampedY) ** 2 <= radius ** 2;
+}
+
+function insideMark(x, y, size) {
+  const scale = size / 2;
+  const normalizedX = (x + 0.5 - scale) / scale;
+  const normalizedY = (y + 0.5 - scale) / scale;
+  const dBowl = (normalizedX + 0.28) ** 2 + (normalizedY - 0.08) ** 2;
+  const bBowl = (normalizedX - 0.28) ** 2 + (normalizedY - 0.08) ** 2;
+  const dRing = dBowl <= 0.2 ** 2 && dBowl >= 0.105 ** 2;
+  const bRing = bBowl <= 0.2 ** 2 && bBowl >= 0.105 ** 2;
+  const dStem = insideRoundedRect(normalizedX, normalizedY, -0.13, -0.36, -0.03, 0.3, 0.05);
+  const bStem = insideRoundedRect(normalizedX, normalizedY, 0.03, -0.36, 0.13, 0.3, 0.05);
+  return dRing || bRing || dStem || bStem;
+}
 
 function createIcon(size, maskable) {
   const pixels = Buffer.alloc((size * 4 + 1) * size);
-
-  // Background colors: Primary green (#9fe870 -> [159, 232, 112]), Dark text (#163300 -> [22, 51, 0])
   const bgColor = [159, 232, 112, 255];
   const fgColor = [22, 51, 0, 255];
-
-  // Circle dimensions
   const center = (size - 1) / 2;
-  // Maskable icons use 40% radius (80% diameter) to stay within safe zone; standard icons use ~45% radius
-  const circleRadius = size * (maskable ? 0.4 : 0.45);
-
-  // Text scaling parameters
-  const fontGridHeight = 7;
-  const fontGridWidth = 5;
-  const letterSpacing = 1;
-
-  // Total text width in grid units: 5 ('d') + 1 (space) + 5 ('b') = 11 units
-  const totalGridWidth = fontGridWidth * 2 + letterSpacing;
-
-  // Scale pixels per font grid cell based on icon size
-  const scale = size * 0.055;
-  const textPixelWidth = totalGridWidth * scale;
-  const textPixelHeight = fontGridHeight * scale;
-
-  const textStartX = center - textPixelWidth / 2;
-  const textStartY = center - textPixelHeight / 2;
+  const circleRadius = size * (maskable ? 0.5 : 0.46);
+  const samples = 4;
 
   for (let y = 0; y < size; y += 1) {
     const rowStart = y * (size * 4 + 1);
@@ -79,52 +57,31 @@ function createIcon(size, maskable) {
     for (let x = 0; x < size; x += 1) {
       const offset = rowStart + 1 + x * 4;
 
-      // Check distance from center for the green circle
-      const distFromCenterSq = (x - center) ** 2 + (y - center) ** 2;
-      const inCircle = distFromCenterSq <= circleRadius ** 2;
-
-      let isTextPixel = false;
-
-      if (
-        inCircle &&
-        x >= textStartX &&
-        x < textStartX + textPixelWidth &&
-        y >= textStartY &&
-        y < textStartY + textPixelHeight
-      ) {
-        const gridX = (x - textStartX) / scale;
-        const gridY = (y - textStartY) / scale;
-
-        const charRow = Math.floor(gridY);
-
-        if (charRow >= 0 && charRow < fontGridHeight) {
-          let charMatrix = null;
-          let colInChar = -1;
-
-          if (gridX < fontGridWidth) {
-            // Letter 'd'
-            charMatrix = FONT_5X7.d;
-            colInChar = Math.floor(gridX);
-          } else if (gridX >= fontGridWidth + letterSpacing && gridX < totalGridWidth) {
-            // Letter 'b'
-            charMatrix = FONT_5X7.b;
-            colInChar = Math.floor(gridX - (fontGridWidth + letterSpacing));
-          }
-
-          if (charMatrix && colInChar >= 0 && colInChar < fontGridWidth) {
-            if (charMatrix[charRow][colInChar] === 1) {
-              isTextPixel = true;
-            }
+      let backgroundCoverage = 0;
+      let foregroundCoverage = 0;
+      for (let sampleY = 0; sampleY < samples; sampleY += 1) {
+        for (let sampleX = 0; sampleX < samples; sampleX += 1) {
+          const sampledX = x + (sampleX + 0.5) / samples;
+          const sampledY = y + (sampleY + 0.5) / samples;
+          const inCircle = (sampledX - center) ** 2 + (sampledY - center) ** 2 <= circleRadius ** 2;
+          if (inCircle) {
+            backgroundCoverage += 1;
+            if (insideMark(sampledX, sampledY, size)) foregroundCoverage += 1;
           }
         }
       }
 
-      const [r, g, b, a] = inCircle ? (isTextPixel ? fgColor : bgColor) : [0, 0, 0, 0];
+      const coverage = samples ** 2;
+      const alpha = Math.round((backgroundCoverage / coverage) * 255);
+      const foregroundRatio = foregroundCoverage / coverage;
+      const [r, g, b] = bgColor.map((value, index) =>
+        Math.round(value * (1 - foregroundRatio) + fgColor[index] * foregroundRatio),
+      );
 
       pixels[offset] = r;
       pixels[offset + 1] = g;
       pixels[offset + 2] = b;
-      pixels[offset + 3] = a;
+      pixels[offset + 3] = alpha;
     }
   }
 
@@ -141,10 +98,39 @@ function createIcon(size, maskable) {
   ]);
 }
 
+function createIco(images) {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(images.length, 4);
+  const directorySize = images.length * 16;
+  let offset = header.length + directorySize;
+  const entries = images.map(({ size, png }) => {
+    const entry = Buffer.alloc(16);
+    entry[0] = size === 256 ? 0 : size;
+    entry[1] = size === 256 ? 0 : size;
+    entry[2] = 0;
+    entry[3] = 0;
+    entry.writeUInt16LE(1, 4);
+    entry.writeUInt16LE(32, 6);
+    entry.writeUInt32LE(png.length, 8);
+    entry.writeUInt32LE(offset, 12);
+    offset += png.length;
+    return entry;
+  });
+  return Buffer.concat([header, ...entries, ...images.map(({ png }) => png)]);
+}
+
 await mkdir(outputDirectory, { recursive: true });
+await mkdir(publicDirectory, { recursive: true });
+const faviconSizes = [16, 32, 48, 64, 128, 256];
 await Promise.all([
   writeFile(join(outputDirectory, "icon-192.png"), createIcon(192, false)),
   writeFile(join(outputDirectory, "icon-512.png"), createIcon(512, false)),
   writeFile(join(outputDirectory, "icon-512-maskable.png"), createIcon(512, true)),
   writeFile(join(outputDirectory, "apple-touch-icon.png"), createIcon(180, false)),
+  writeFile(
+    join(publicDirectory, "favicon.ico"),
+    createIco(faviconSizes.map((size) => ({ size, png: createIcon(size, false) }))),
+  ),
 ]);
