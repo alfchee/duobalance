@@ -4,6 +4,8 @@ alter table public.households
 alter table public.households
   add constraint households_signup_source_length check (char_length(signup_source) <= 64);
 
+drop function if exists public.create_household(text, text, text, text, text, text);
+
 create or replace function public.create_household(
   p_name text,
   p_country text,

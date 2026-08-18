@@ -16,7 +16,7 @@ import {
   UsersRound,
   WalletCards,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { captureReferral } from "@/lib/referral";
 import { cn } from "@/lib/utils";
@@ -522,6 +522,15 @@ function BudgetPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
 }
 
 function BillsPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  const locale = useLocale();
+  const weekdayFormatter = new Intl.DateTimeFormat(locale, {
+    weekday: "narrow",
+    timeZone: "UTC",
+  });
+  const weekdays = [10, 11, 12, 13, 14, 15, 16].map((day) =>
+    weekdayFormatter.format(new Date(Date.UTC(2026, 7, day))),
+  );
+
   return (
     <div className="pt-7">
       <div className="flex items-center justify-between">
@@ -532,8 +541,8 @@ function BillsPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
         <CalendarDays className="size-5 text-muted-foreground" />
       </div>
       <div className="mt-6 grid grid-cols-7 gap-2 text-center text-xs text-muted-foreground">
-        {["L", "M", "X", "J", "V", "S", "D"].map((day) => (
-          <span key={day}>{day}</span>
+        {weekdays.map((day, index) => (
+          <span key={index}>{day}</span>
         ))}
         {[10, 11, 12, 13, 14, 15, 16].map((day) => (
           <span

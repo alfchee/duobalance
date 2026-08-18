@@ -53,8 +53,8 @@ select tests.authenticate_as('f1f1f1f1-1111-1111-1111-111111111111', 'cap@test.l
 
 select results_eq(
   $$ select count(*)::int
-     from pg_get_functiondef('public.create_household(text, text, text, text, text, text)'::regprocedure)
-     where pg_get_functiondef('public.create_household(text, text, text, text, text, text)'::regprocedure)
+     from pg_get_functiondef('public.create_household(text, text, text, text, text, text, text)'::regprocedure)
+     where pg_get_functiondef('public.create_household(text, text, text, text, text, text, text)'::regprocedure)
        like '%from auth.users%for update%' $$,
   $$ values (1::int) $$,
   'create_household locks (for update) the authenticated user before counting memberships'
