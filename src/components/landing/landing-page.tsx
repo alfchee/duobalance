@@ -9,10 +9,10 @@ import {
   CalendarDays,
   Check,
   CircleDollarSign,
+  Keyboard,
   Landmark,
   ReceiptText,
   ShieldCheck,
-  TriangleAlert,
   UsersRound,
   WalletCards,
 } from "lucide-react";
@@ -58,10 +58,19 @@ export function LandingPage() {
         </div>
       </nav>
 
-      <header className="border-b border-border bg-secondary/45">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-          <div className="flex flex-col items-start text-left">
-            <p className="rounded-full bg-background px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground shadow-ring">
+      <header className="relative isolate overflow-hidden border-b border-border bg-secondary/45">
+        <Image
+          src="/landing/hero.jpg"
+          alt=""
+          fill
+          priority
+          aria-hidden
+          className="-z-20 object-cover object-center"
+        />
+        <div className="absolute inset-0 -z-10 bg-background/68 backdrop-blur-[0.5px]" />
+        <div className="mx-auto flex max-w-5xl flex-col items-start px-5 py-20 text-left sm:px-8 sm:py-28">
+          <div className="max-w-4xl">
+            <p className=" px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground ">
               {t("hero.eyebrow")}
             </p>
             <h1 className="mt-6 max-w-4xl text-4xl font-black leading-[0.96] tracking-[-0.05em] sm:text-6xl">
@@ -80,22 +89,7 @@ export function LandingPage() {
                 <a href="#how-it-works">{t("hero.secondaryCta")}</a>
               </Button>
             </div>
-            <div className="mt-10 flex max-w-3xl gap-3 rounded-2xl border border-warning/30 bg-background p-4 text-left shadow-ring sm:p-5">
-              <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
-              <p className="text-sm leading-6 text-muted-foreground">
-                <strong className="text-foreground">{t("hero.noticeTitle")}</strong>{" "}
-                {t("hero.notice")}
-              </p>
-            </div>
           </div>
-          <Image
-            src="/landing/hero.jpg"
-            alt={t("hero.imageAlt")}
-            width={1408}
-            height={768}
-            priority
-            className="w-full rounded-[2rem] border border-border object-cover shadow-raised"
-          />
         </div>
       </header>
 
@@ -160,7 +154,7 @@ export function LandingPage() {
 
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
         <SectionHeading eyebrow={t("differences.eyebrow")} title={t("differences.title")} />
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Difference
             icon={UsersRound}
             title={t("differences.together.title")}
@@ -175,6 +169,11 @@ export function LandingPage() {
             icon={ShieldCheck}
             title={t("differences.privacy.title")}
             description={t("differences.privacy.description")}
+          />
+          <Difference
+            icon={Keyboard}
+            title={t("differences.manualEntry.title")}
+            description={t("differences.manualEntry.description")}
           />
         </div>
       </section>

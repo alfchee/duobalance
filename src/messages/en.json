@@ -20,11 +20,8 @@
       "eyebrow": "Designed for shared and personal finances",
       "title": "Your finances should work the way your life does.",
       "description": "DuoBalance brings clarity to the money you manage alone, share with a partner, or coordinate with your household.",
-      "imageAlt": "A calm workspace for planning personal and shared finances",
       "primaryCta": "Start free",
-      "secondaryCta": "See how it works",
-      "noticeTitle": "No bank sync.",
-      "notice": "You record transactions manually. It takes seconds, encourages awareness, and avoids unreliable connections. If automatic sync is essential to you, DuoBalance is not the right fit."
+      "secondaryCta": "See how it works"
     },
     "showcase": {
       "eyebrow": "A closer look",
@@ -92,6 +89,10 @@
       "privacy": {
         "title": "Privacy by default",
         "description": "No ads, no tracking, and your data is always yours to export."
+      },
+      "manualEntry": {
+        "title": "Deliberately manual",
+        "description": "Record transactions in seconds for more awareness, privacy, and reliability than fragile bank connections."
       }
     },
     "manual": {
