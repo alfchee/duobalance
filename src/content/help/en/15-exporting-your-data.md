@@ -4,7 +4,7 @@ slug: "exporting-your-data"
 category: "settings"
 order: 15
 related: ["privacy-what-we-can-and-cant-see", "number-format-currency-timezone"]
-updated: "2026-08-15"
+updated: "2026-08-18"
 ---
 
 # Exporting your financial data
@@ -19,3 +19,5 @@ Your data belongs to you. You can export or back up your complete transaction an
    - **CSV:** Best for opening in spreadsheets like Excel or Google Sheets.
    - **JSON:** Complete structured backup format.
 4. Click **Download File**.
+
+If you plan to delete a household, download an export from the deletion confirmation first. Former members can export only the historical data they are still allowed to access; this does not restore household access.

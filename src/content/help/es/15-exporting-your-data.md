@@ -4,7 +4,7 @@ slug: "exporting-your-data"
 category: "settings"
 order: 15
 related: ["privacy-what-we-can-and-cant-see", "number-format-currency-timezone"]
-updated: "2026-08-15"
+updated: "2026-08-18"
 ---
 
 # Exportar tus datos financieros
@@ -19,3 +19,5 @@ Tus datos son siempre tuyos. Puedes respaldar o descargar el historial de transa
    - **CSV:** Ideal para abrir en hojas de cálculo como Excel o Google Sheets.
    - **JSON:** Formato completo estructurado para respaldos de datos.
 4. Presiona **Descargar archivo**.
+
+Si planeas eliminar un hogar, descarga una exportación desde la confirmación de eliminación primero. Los antiguos miembros solo pueden exportar los datos históricos a los que todavía tienen permiso de acceder; esto no restaura el acceso al hogar.

@@ -3,8 +3,8 @@ title: "Getting started: how to create your household in duobalance"
 slug: "getting-started-creating-household"
 category: "general"
 order: 5
-related: ["inviting-your-partner", "adding-accounts"]
-updated: "2026-08-15"
+related: ["inviting-your-partner", "adding-accounts", "managing-households-and-members"]
+updated: "2026-08-18"
 ---
 
 # Getting started: creating your household
@@ -19,6 +19,10 @@ A household in duobalance is the shared workspace where you and your partner man
 
 ## Recommended next steps
 
-- Invite your partner under **Household Settings**.
+- Invite your partner in **Settings** under **Household Members**.
 - Add your main bank or cash accounts under **Balances**.
 - Set up core category limits under **Budget**.
+
+## More than one household
+
+Use the household name at the top of the app to create, join, or switch households later. Each household keeps its data separate. See [managing households and members](/help/managing-households-and-members) for the full workflow.

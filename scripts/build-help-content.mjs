@@ -16,13 +16,26 @@ function parseFrontmatter(raw) {
   const yaml = match[1];
   const content = match[2];
   const data = {};
-  for (const line of yaml.split(/\r?\n/)) {
+  const lines = yaml.split(/\r?\n/);
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
     const colonIdx = trimmed.indexOf(":");
     if (colonIdx === -1) continue;
     const key = trimmed.slice(0, colonIdx).trim();
     let val = trimmed.slice(colonIdx + 1).trim();
+    if (!val && lines[index + 1]?.trim().startsWith("[")) {
+      const arrayLines = [];
+      index += 1;
+      while (index < lines.length) {
+        const arrayLine = lines[index].trim();
+        arrayLines.push(arrayLine);
+        if (arrayLine.endsWith("]")) break;
+        index += 1;
+      }
+      val = arrayLines.join("");
+    }
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     } else if (val.startsWith("[") && val.endsWith("]")) {

@@ -4,7 +4,7 @@ slug: "privacy-what-we-can-and-cant-see"
 category: "general"
 order: 16
 related: ["private-accounts-and-views", "exporting-your-data"]
-updated: "2026-08-15"
+updated: "2026-08-18"
 ---
 
 # Privacidade: o que podemos e não podemos ver
@@ -15,6 +15,7 @@ No duobalance, a privacidade financeira e a segurança dos seus dados são prior
 
 - Seu parceiro vê apenas informações das contas configuradas como **Compartilhadas** e as transações associadas a elas.
 - Suas contas **Privadas** e o histórico delas permanecem invisíveis para o seu parceiro.
+- Uma pessoa que sai ou é removida perde o acesso a esse lar. Seus lançamentos históricos permanecem nos registros do lar para manter a continuidade.
 
 ## O que a plataforma vê
 

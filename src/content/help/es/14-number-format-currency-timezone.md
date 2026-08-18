@@ -4,7 +4,7 @@ slug: "number-format-currency-timezone"
 category: "settings"
 order: 14
 related: ["multi-currency-and-exchange-rates", "exporting-your-data"]
-updated: "2026-08-15"
+updated: "2026-08-18"
 ---
 
 # Configuración de moneda, formato de números y zona horaria
@@ -18,6 +18,8 @@ Es la moneda principal en la que se calculan los totales y reportes del hogar.
 ## Formato de Números
 
 Elige entre separadores con punto (`1.234,56`) o con coma (`1,234.56`) según tus preferencias regionales.
+
+Las opciones de idioma y formato de números pertenecen a tu perfil de usuario, no al hogar. Te acompañan al cambiar de hogar y no modifican lo que ve tu pareja.
 
 ## Zona Horaria
 
