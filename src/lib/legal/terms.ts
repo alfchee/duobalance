@@ -25,7 +25,7 @@ Al crear una cuenta, acceder o utilizar **DuoBalance** ("el Servicio"), usted ac
 
 1. **Aviso de Fase Beta:** DuoBalance se encuentra actualmente en fase de desarrollo y pruebas de versión **Beta**. El servicio se proporciona **"TAL CUAL" ("AS IS")** y **"SEGÚN DISPONIBILIDAD" ("AS AVAILABLE")**.
 2. **Sin Garantías:** En la máxima medida permitida por la ley aplicable, el equipo de DuoBalance no otorga garantías explícitas ni implícitas sobre el funcionamiento ininterrumpido, libre de errores, o la idoneidad del servicio para un propósito contable o legal específico.
-3. **Mantenimiento de Registros Propios:** **Se aconseja expresamente a los usuarios mantener sus propios registros contables y respaldos independientes de sus datos financieros.** DuoBalance no asume responsabilidad alguna por pérdidas accidental de datos o interrupciones temporales del servicio durante esta etapa de prueba.
+3. **Mantenimiento de Registros Propios:** **Se aconseja expresamente a los usuarios mantener sus propios registros contables y respaldos independientes de sus datos financieros.** DuoBalance no asume responsabilidad alguna por pérdida accidental de datos o interrupciones temporales del servicio durante esta etapa de prueba.
 
 ---
 

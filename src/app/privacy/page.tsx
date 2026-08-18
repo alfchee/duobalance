@@ -58,7 +58,9 @@ export default function PrivacyPage() {
       <Card className="border-0 shadow-raised sm:border sm:shadow-sm">
         <CardHeader className="gap-2 p-6 pb-4 sm:p-8 sm:pb-6">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-muted-foreground">
-            <span>Versión {doc.version}</span>
+            <span>
+              {selectedLang === "es" ? "Versión" : "Version"} {doc.version}
+            </span>
             <span>{doc.effectiveDate}</span>
           </div>
           <CardTitle className="text-3xl font-black tracking-tight">{doc.title}</CardTitle>

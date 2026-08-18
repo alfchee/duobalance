@@ -241,6 +241,7 @@ export default function SignupPage() {
                 <Link
                   href="/terms"
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="font-semibold text-foreground underline-offset-4 hover:underline"
                 >
                   {chunks}
@@ -250,6 +251,7 @@ export default function SignupPage() {
                 <Link
                   href="/privacy"
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="font-semibold text-foreground underline-offset-4 hover:underline"
                 >
                   {chunks}
