@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Select,
@@ -9,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLocaleContext, type SupportedLocale } from "@/components/locale-provider";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
 
 const LOCALES: SupportedLocale[] = ["es", "en", "pt-BR"];
 
@@ -22,6 +24,26 @@ export function LocaleSwitcher() {
   const t = useTranslations("settings.locale");
   const tLanguages = useTranslations("settings.languages");
   const { locale, setLocale } = useLocaleContext();
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: async (value: SupportedLocale) => {
+      const supabase = createSupabaseBrowser();
+      if (!supabase) throw new Error("Supabase is unavailable");
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+      const { error } = await supabase
+        .from("user_preferences")
+        .upsert({ user_id: user.id, locale: value }, { onConflict: "user_id" });
+      if (error) throw error;
+      return value;
+    },
+    onSuccess: (value) => {
+      setLocale(value);
+      queryClient.invalidateQueries({ queryKey: ["user-preferences"] });
+    },
+  });
 
   return (
     <div className="flex items-center justify-between gap-4">
@@ -31,8 +53,9 @@ export function LocaleSwitcher() {
       </div>
       <Select
         value={locale}
+        disabled={mutation.isPending}
         onValueChange={(value) => {
-          if (isSupportedLocale(value)) setLocale(value);
+          if (isSupportedLocale(value)) mutation.mutate(value);
         }}
       >
         <SelectTrigger className="w-32">

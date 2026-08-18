@@ -4,52 +4,87 @@
 begin;
 
 do $$
-declare
-  household_id uuid := '17171717-1717-1717-1717-171717171717';
-  owner_id uuid := '18181818-1818-1818-1818-181818181818';
-  partner_id uuid := '19191919-1919-1919-1919-191919191919';
-  owner_member_id uuid := '11111111-1111-1111-1111-111111111111';
-  partner_member_id uuid := '22222222-2222-2222-2222-222222222222';
 begin
   insert into auth.users (id, email) values
-    (owner_id, 'number-owner@test.local'),
-    (partner_id, 'number-partner@test.local');
-  insert into public.households (id, name, country, base_currency, timezone) values
-    (household_id, 'Number formats', 'NI', 'NIO', 'America/Managua');
-  insert into public.household_members (id, household_id, user_id, role, display_name) values
-    (owner_member_id, household_id, owner_id, 'owner', 'Owner'),
-    (partner_member_id, household_id, partner_id, 'partner', 'Partner');
+    ('18181818-1818-1818-1818-181818181818', 'number-owner@test.local'),
+    ('19191919-1919-1919-1919-191919191919', 'number-partner@test.local');
 end
 $$;
 
-select plan(5);
+select plan(11);
 
 select tests.authenticate_as('18181818-1818-1818-1818-181818181818');
+select is_empty(
+  $$ select * from public.user_preferences $$,
+  'a missing row represents the default preferences'
+);
 select lives_ok(
-  $$ select public.update_my_number_format('11111111-1111-1111-1111-111111111111', 'dot_decimal') $$,
-  'a member can update their own number format'
+  $$ insert into public.user_preferences (user_id, number_format, locale)
+     values ('18181818-1818-1818-1818-181818181818', 'dot_decimal', 'en') $$,
+  'a user can create their own preference row'
 );
 select results_eq(
-  $$ select number_format from public.household_members where id = '11111111-1111-1111-1111-111111111111' $$,
-  $$ values ('dot_decimal'::text) $$,
-  'owner preference is stored'
+  $$ select number_format, locale from public.user_preferences $$,
+  $$ values ('dot_decimal'::text, 'en'::text) $$,
+  'the user preference stores number format and locale together'
+);
+select lives_ok(
+  $$ update public.user_preferences set number_format = 'comma_decimal' $$,
+  'a user can update their own preference row'
+);
+select throws_ok(
+  $$ update public.user_preferences set number_format = 'invalid' $$,
+  '23514',
+  null,
+  'invalid number formats are rejected by the constraint'
+);
+
+select tests.authenticate_as('19191919-1919-1919-1919-191919191919');
+select is_empty(
+  $$ select * from public.user_preferences $$,
+  'another user cannot read the preference row'
+);
+select lives_ok(
+  $$ update public.user_preferences set locale = 'pt-BR'
+     where user_id = '18181818-1818-1818-1818-181818181818' $$,
+  'another user cannot update the preference row'
+);
+select tests.clear_auth();
+select results_eq(
+  $$ select locale from public.user_preferences
+     where user_id = '18181818-1818-1818-1818-181818181818' $$,
+  $$ values ('en'::text) $$,
+  'an unauthorized update leaves the preference unchanged'
+);
+select tests.authenticate_as('19191919-1919-1919-1919-191919191919');
+select throws_ok(
+  $$ insert into public.user_preferences (user_id, locale)
+     values ('18181818-1818-1818-1818-181818181818', 'es') $$,
+  '42501',
+  null,
+  'another user cannot create a preference row on their behalf'
 );
 select results_eq(
-  $$ select number_format from public.household_members where id = '22222222-2222-2222-2222-222222222222' $$,
-  $$ values ('locale'::text) $$,
-  'partner retains an independent default preference'
+  $$ with deleted as (
+       delete from public.user_preferences
+         where user_id = '18181818-1818-1818-1818-181818181818'
+         returning 1
+     )
+     select count(*)::int from deleted $$,
+  $$ values (0::int) $$,
+  'another user cannot delete the preference row (RLS blocks)'
 );
-select throws_ok(
-  $$ select public.update_my_number_format('22222222-2222-2222-2222-222222222222', 'comma_decimal') $$,
-  'P0001',
-  'membership not found',
-  'member cannot update another member preference'
-);
-select throws_ok(
-  $$ select public.update_my_number_format('22222222-2222-2222-2222-222222222222', 'invalid') $$,
-  'P0001',
-  'invalid number format',
-  'invalid preferences are rejected'
+
+select tests.authenticate_as('18181818-1818-1818-1818-181818181818');
+select results_eq(
+  $$ with deleted as (
+       delete from public.user_preferences
+         where user_id = '18181818-1818-1818-1818-181818181818'
+         returning 1
+     )
+     select count(*)::int from deleted $$,
+  $$ values (1::int) $$,
+  'a user can delete their own preference row'
 );
 
 select * from finish();

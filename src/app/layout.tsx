@@ -12,6 +12,11 @@ export const metadata: Metadata = {
     title: "DuoBalance",
   },
   icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
     apple: "/icons/apple-touch-icon.png",
   },
 };
@@ -20,7 +25,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#3478d4",
+  themeColor: "#9fe870",
 };
 
 export default function RootLayout({

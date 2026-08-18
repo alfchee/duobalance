@@ -4,7 +4,7 @@ slug: "privacy-what-we-can-and-cant-see"
 category: "general"
 order: 16
 related: ["private-accounts-and-views", "exporting-your-data"]
-updated: "2026-08-15"
+updated: "2026-08-18"
 ---
 
 # Privacy: what we can and cannot see
@@ -15,6 +15,7 @@ At duobalance, financial privacy and data security are foundational principles.
 
 - Your partner can only see accounts set as **Shared** and transactions associated with those accounts.
 - Your **Private** accounts and their detailed transaction histories remain invisible to your partner.
+- A member who leaves or is removed loses access to that household. Their historical entries remain in the household records for continuity.
 
 ## What the platform sees
 

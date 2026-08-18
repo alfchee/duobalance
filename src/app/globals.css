@@ -93,6 +93,7 @@
     font-family: Arial, Helvetica, ui-sans-serif, system-ui, sans-serif;
     font-feature-settings: "calt" 1;
     overscroll-behavior: none;
+    overflow-x: hidden;
   }
   button,
   a,

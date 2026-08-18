@@ -35,6 +35,7 @@ export async function requireOwner(
     .select("id, role, display_name, households(name, locale)")
     .eq("household_id", householdId)
     .eq("user_id", userId)
+    .is("removed_at", null)
     .maybeSingle();
 
   if (error) throw error;

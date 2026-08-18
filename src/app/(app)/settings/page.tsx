@@ -17,6 +17,7 @@ import { FxOverridesSection } from "./fx-overrides-section";
 import { InstallSection } from "@/components/pwa/install-section";
 import { PushNotificationsSection } from "@/components/pwa/push-notifications-section";
 import { ExportSection } from "@/components/household/export-section";
+import { HouseholdDangerSection } from "@/components/household/household-danger-section";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-6 p-6">
+    <main className="mx-auto w-full max-w-2xl space-y-6 p-4 sm:p-6">
       <header className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
@@ -103,6 +104,8 @@ export default function SettingsPage() {
       <SettingsGroup title={t("groups.data")}>
         <ExportSection />
       </SettingsGroup>
+
+      <HouseholdDangerSection />
 
       <Button
         variant="outline"

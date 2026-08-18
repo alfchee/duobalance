@@ -33,6 +33,8 @@ export const ALL_HELP_SLUGS: string[] = [
   "installing-on-mobile",
   "inviting-your-partner",
   "ledger-vs-manual-balance",
+  "managing-households-and-members",
+  "mobile-navigation-and-quick-entry",
   "multi-currency-and-exchange-rates",
   "number-format-currency-timezone",
   "privacy-what-we-can-and-cant-see",
@@ -178,8 +180,8 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "getting-started-creating-household",
         category: "general",
         order: 5,
-        related: ["inviting-your-partner", "adding-accounts"],
-        updated: "2026-08-15",
+        related: ["inviting-your-partner", "adding-accounts", "managing-households-and-members"],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -197,9 +199,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Siguientes pasos recomendados",
           id: "siguientes-pasos-recomendados",
         },
+        {
+          level: 2,
+          text: "Más de un hogar",
+          id: "ms-de-un-hogar",
+        },
       ],
       content:
-        '\n# Primeros pasos: cómo crear tu hogar\n\nUn hogar en duobalance es el espacio compartido donde tú y tu pareja administran sus finanzas.\n\n## Registro inicial\n\n1. Crea tu cuenta con tu correo electrónico.\n2. Al iniciar sesión por primera vez, dale un nombre a tu hogar (por ejemplo, "Hogar García-López").\n3. Selecciona la **Moneda Base** del hogar. Todos los reportes globales consolidarán los montos en esta moneda.\n\n## Siguientes pasos recomendados\n\n- Invita a tu pareja desde **Ajustes del Hogar**.\n- Agrega tus primeras cuentas bancarias o de efectivo en **Saldos**.\n- Configura tus presupuestos principales en **Presupuesto**.\n',
+        '\n# Primeros pasos: cómo crear tu hogar\n\nUn hogar en duobalance es el espacio compartido donde tú y tu pareja administran sus finanzas.\n\n## Registro inicial\n\n1. Crea tu cuenta con tu correo electrónico.\n2. Al iniciar sesión por primera vez, dale un nombre a tu hogar (por ejemplo, "Hogar García-López").\n3. Selecciona la **Moneda Base** del hogar. Todos los reportes globales consolidarán los montos en esta moneda.\n\n## Siguientes pasos recomendados\n\n- Invita a tu pareja desde **Configuración**, en **Miembros del hogar**.\n- Agrega tus primeras cuentas bancarias o de efectivo en **Saldos**.\n- Configura tus presupuestos principales en **Presupuesto**.\n\n## Más de un hogar\n\nUsa el nombre del hogar en la parte superior de la aplicación para crear, unirte o cambiar de hogar más adelante. Cada hogar conserva sus datos separados. Consulta [cómo cambiar de hogar y administrar miembros](/help/managing-households-and-members) para conocer el flujo completo.\n',
     },
     "inviting-your-partner": {
       frontmatter: {
@@ -207,8 +214,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "inviting-your-partner",
         category: "general",
         order: 6,
-        related: ["getting-started-creating-household", "privacy-what-we-can-and-cant-see"],
-        updated: "2026-08-15",
+        related: [
+          "getting-started-creating-household",
+          "privacy-what-we-can-and-cant-see",
+          "managing-households-and-members",
+        ],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -226,9 +237,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Cómo acepta tu pareja",
           id: "cmo-acepta-tu-pareja",
         },
+        {
+          level: 2,
+          text: "Administrar una invitación",
+          id: "administrar-una-invitacin",
+        },
       ],
       content:
-        "\n# ¿Cómo invitar a tu pareja a duobalance?\n\nAdministrar el presupuesto en pareja requiere que ambos tengan acceso al mismo hogar.\n\n## Pasos para enviar la invitación\n\n1. Ve a **Configuración** y selecciona la sección **Miembros del Hogar**.\n2. Ingresa el correo electrónico de tu pareja.\n3. Haz clic en **Enviar invitación**.\n\n## Cómo acepta tu pareja\n\n- Tu pareja recibirá un enlace de invitación por correo electrónico.\n- Al abrir el enlace e iniciar sesión o registrarse, se vinculará automáticamente a tu hogar y ambos verán la misma información compartida inmediatamente.\n",
+        "\n# ¿Cómo invitar a tu pareja a duobalance?\n\nAdministrar el presupuesto en pareja requiere que ambos tengan acceso al mismo hogar.\n\n## Pasos para enviar la invitación\n\n1. Ve a **Configuración** y selecciona la sección **Miembros del hogar**. Solo un propietario puede administrar invitaciones.\n2. Ingresa el correo electrónico de tu pareja.\n3. Haz clic en **Enviar invitación**.\n\n## Cómo acepta tu pareja\n\n- Tu pareja recibirá un enlace de invitación por correo electrónico.\n- Al abrir el enlace e iniciar sesión o registrarse, se vinculará automáticamente a tu hogar y ambos verán la misma información compartida inmediatamente.\n\n## Administrar una invitación\n\nLos propietarios pueden reenviar una invitación o revocarla antes de que se acepte. Una persona que ya es miembro activo no puede aceptar otra invitación al mismo hogar.\n",
     },
     "adding-accounts": {
       frontmatter: {
@@ -260,8 +276,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "recording-transaction-fast",
         category: "transactions",
         order: 8,
-        related: ["who-spent-vs-who-typed", "categories-and-auto-rules"],
-        updated: "2026-08-15",
+        related: [
+          "who-spent-vs-who-typed",
+          "categories-and-auto-rules",
+          "mobile-navigation-and-quick-entry",
+        ],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -281,7 +301,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Cómo registrar un movimiento rápidamente\n\nduobalance está diseñado para que registrar un gasto te tome solo unos segundos desde tu teléfono o computador.\n\n## Registro rápido\n\n1. Presiona el botón flotante **+** o **Agregar** en la barra de navegación.\n2. Ingresa el monto del movimiento.\n3. Elige el tipo: **Gasto**, **Ingreso** o **Transferencia**.\n4. Selecciona la categoría y la cuenta utilizada.\n5. Selecciona **Gastado por** (quién hizo el gasto).\n6. Presiona **Guardar**.\n\n## Consejos de rapidez\n\n- Si usas la misma categoría o cuenta frecuentemente, duobalance recordará tus elecciones recientes.\n- Puedes agregar notas cortas si necesitas aclarar un detalle específico.\n",
+        "\n# Cómo registrar un movimiento rápidamente\n\nduobalance está diseñado para que registrar un gasto te tome solo unos segundos desde tu teléfono o computador.\n\n## Registro rápido\n\n1. En escritorio, usa **Nuevo movimiento** en la barra lateral. En móvil, abre el botón redondo de menú y elige **Nuevo movimiento**.\n2. Ingresa el monto del movimiento.\n3. Elige el tipo: **Gasto**, **Ingreso** o **Transferencia**.\n4. Selecciona la categoría y la cuenta utilizada.\n5. Selecciona **Gastado por** (quién hizo el gasto).\n6. Presiona **Guardar**.\n\n## Consejos de rapidez\n\n- Si usas la misma categoría o cuenta frecuentemente, duobalance recordará tus elecciones recientes.\n- Comienza a escribir una descripción anterior para reutilizarla desde las sugerencias. Estas empiezan después de dos caracteres y muestran como máximo seis coincidencias.\n- Puedes agregar notas cortas si necesitas aclarar un detalle específico.\n",
     },
     "categories-and-auto-rules": {
       frontmatter: {
@@ -445,7 +465,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "settings",
         order: 14,
         related: ["multi-currency-and-exchange-rates", "exporting-your-data"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -470,7 +490,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Configuración de moneda, formato de números y zona horaria\n\nPuedes personalizar la manera en que duobalance muestra los montos y fechas en la sección **Configuración**.\n\n## Moneda Base del Hogar\n\nEs la moneda principal en la que se calculan los totales y reportes del hogar.\n\n## Formato de Números\n\nElige entre separadores con punto (`1.234,56`) o con coma (`1,234.56`) según tus preferencias regionales.\n\n## Zona Horaria\n\nAsegura que los cierres de mes y las fechas de facturas se calculen según tu hora local.\n",
+        "\n# Configuración de moneda, formato de números y zona horaria\n\nPuedes personalizar la manera en que duobalance muestra los montos y fechas en la sección **Configuración**.\n\n## Moneda Base del Hogar\n\nEs la moneda principal en la que se calculan los totales y reportes del hogar.\n\n## Formato de Números\n\nElige entre separadores con punto (`1.234,56`) o con coma (`1,234.56`) según tus preferencias regionales.\n\nLas opciones de idioma y formato de números pertenecen a tu perfil de usuario, no al hogar. Te acompañan al cambiar de hogar y no modifican lo que ve tu pareja.\n\n## Zona Horaria\n\nAsegura que los cierres de mes y las fechas de facturas se calculen según tu hora local.\n",
     },
     "exporting-your-data": {
       frontmatter: {
@@ -479,7 +499,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "settings",
         order: 15,
         related: ["privacy-what-we-can-and-cant-see", "number-format-currency-timezone"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -494,7 +514,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Exportar tus datos financieros\n\nTus datos son siempre tuyos. Puedes respaldar o descargar el historial de transacciones y cuentas en cualquier momento.\n\n## Pasos para realizar una exportación\n\n1. Dirígete a **Configuración** y desplázate hasta **Datos y Privacidad**.\n2. Selecciona **Exportar datos**.\n3. Elige el formato deseado:\n   - **CSV:** Ideal para abrir en hojas de cálculo como Excel o Google Sheets.\n   - **JSON:** Formato completo estructurado para respaldos de datos.\n4. Presiona **Descargar archivo**.\n",
+        "\n# Exportar tus datos financieros\n\nTus datos son siempre tuyos. Puedes respaldar o descargar el historial de transacciones y cuentas en cualquier momento.\n\n## Pasos para realizar una exportación\n\n1. Dirígete a **Configuración** y desplázate hasta **Datos y Privacidad**.\n2. Selecciona **Exportar datos**.\n3. Elige el formato deseado:\n   - **CSV:** Ideal para abrir en hojas de cálculo como Excel o Google Sheets.\n   - **JSON:** Formato completo estructurado para respaldos de datos.\n4. Presiona **Descargar archivo**.\n\nSi planeas eliminar un hogar, descarga una exportación desde la confirmación de eliminación primero. Los antiguos miembros solo pueden exportar los datos históricos a los que todavía tienen permiso de acceder; esto no restaura el acceso al hogar.\n",
     },
     "privacy-what-we-can-and-cant-see": {
       frontmatter: {
@@ -503,7 +523,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "general",
         order: 16,
         related: ["private-accounts-and-views", "exporting-your-data"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -523,7 +543,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Privacidad: qué podemos y qué no podemos ver\n\nEn duobalance la privacidad financiera y la seguridad de tus datos son prioridades fundamentales.\n\n## Lo que ve tu pareja\n\n- Tu pareja ve únicamente la información de las cuentas que configures como **Compartidas** y las transacciones asociadas a ellas.\n- Tus cuentas **Privadas** y sus detalles individuales son invisibles para tu pareja.\n\n## Lo que ve la plataforma\n\n- duobalance utiliza cifrado y políticas de seguridad a nivel de base de datos (RLS) para que solo los miembros autorizados de tu hogar accedan a tu información.\n- No vendemos ni compartimos tus datos con anunciantes ni terceros.\n",
+        "\n# Privacidad: qué podemos y qué no podemos ver\n\nEn duobalance la privacidad financiera y la seguridad de tus datos son prioridades fundamentales.\n\n## Lo que ve tu pareja\n\n- Tu pareja ve únicamente la información de las cuentas que configures como **Compartidas** y las transacciones asociadas a ellas.\n- Tus cuentas **Privadas** y sus detalles individuales son invisibles para tu pareja.\n- Una persona que sale o es eliminada pierde el acceso a ese hogar. Sus movimientos históricos permanecen en los registros del hogar para mantener la continuidad.\n\n## Lo que ve la plataforma\n\n- duobalance utiliza cifrado y políticas de seguridad a nivel de base de datos (RLS) para que solo los miembros autorizados de tu hogar accedan a tu información.\n- No vendemos ni compartimos tus datos con anunciantes ni terceros.\n",
     },
     "installing-on-mobile": {
       frontmatter: {
@@ -630,6 +650,73 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# ¿Por qué la tasa de cambio muestra una advertencia?\n\nCuando registras movimientos en una moneda distinta a la moneda base de tu hogar, duobalance utiliza tasas de cambio oficiales.\n\n## ¿Qué significa la advertencia?\n\nSi la tasa de cambio no se ha actualizado en las últimas 24 horas (por ejemplo, durante fines de semana o feriados bancarios), el sistema muestra un indicador de aviso.\n\n- **Efecto:** Puedes continuar registrando transacciones sin inconvenientes.\n- **Solución:** Las tasas se actualizarán automáticamente en la siguiente ejecución del proceso diario, o bien puedes ajustar manualmente la tasa en la pantalla de la transacción.\n",
+    },
+    "managing-households-and-members": {
+      frontmatter: {
+        title: "Cómo cambiar de hogar y administrar miembros",
+        slug: "managing-households-and-members",
+        category: "general",
+        order: 21,
+        related: [
+          "getting-started-creating-household",
+          "inviting-your-partner",
+          "exporting-your-data",
+        ],
+        updated: "2026-08-18",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Cómo cambiar de hogar y administrar miembros",
+          id: "cmo-cambiar-de-hogar-y-administrar-miembros",
+        },
+        {
+          level: 2,
+          text: "Cambiar o crear un hogar",
+          id: "cambiar-o-crear-un-hogar",
+        },
+        {
+          level: 2,
+          text: "Invitar y administrar miembros",
+          id: "invitar-y-administrar-miembros",
+        },
+        {
+          level: 2,
+          text: "Salir o eliminar un hogar",
+          id: "salir-o-eliminar-un-hogar",
+        },
+      ],
+      content:
+        "\n# Cómo cambiar de hogar y administrar miembros\n\nPuedes pertenecer a más de un hogar. Cada hogar tiene sus propias cuentas, movimientos, presupuestos, cuentas por pagar, miembros y ajustes.\n\n## Cambiar o crear un hogar\n\n1. Toca el nombre del hogar actual en la parte superior de la aplicación.\n2. Selecciona otro hogar para abrir sus datos.\n3. En la misma ventana, elige **Crear hogar** para iniciar otro espacio o **Unirse con invitación** para entrar con un código de invitación.\n\nLa aplicación limpia las pantallas y selecciones temporales del hogar anterior al cambiar, para que nunca se mezclen los datos. Puedes crear hasta cinco hogares.\n\n## Invitar y administrar miembros\n\nLas personas propietarias pueden abrir **Configuración** y usar **Miembros del hogar** para enviar, reenviar o revocar invitaciones. También pueden transferir la propiedad a su pareja y decidir si seguirán como propietario o pasarán a ser pareja.\n\nSolo un propietario puede eliminar a una pareja. Antes de confirmar, decide qué ocurrirá con cada cuenta compartida que pertenezca a esa persona: transferirla a ti o convertirla en conjunta. La persona eliminada pierde acceso al hogar; sus movimientos históricos permanecen disponibles para el hogar.\n\n## Salir o eliminar un hogar\n\nAbre **Configuración** y desplázate hasta la zona de peligro para salir de un hogar. Un propietario debe transferir la propiedad antes de salir si quedan otros miembros. El último miembro puede salir.\n\nLas personas propietarias también pueden eliminar un hogar. Escribe el nombre exacto para confirmar. La eliminación se puede recuperar durante 30 días, pero exporta el hogar antes si necesitas una copia personal.\n",
+    },
+    "mobile-navigation-and-quick-entry": {
+      frontmatter: {
+        title: "Cómo usar el menú móvil y el registro rápido de movimientos",
+        slug: "mobile-navigation-and-quick-entry",
+        category: "transactions",
+        order: 22,
+        related: ["recording-transaction-fast", "installing-on-mobile"],
+        updated: "2026-08-18",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Cómo usar el menú móvil y el registro rápido de movimientos",
+          id: "cmo-usar-el-men-mvil-y-el-registro-rpido-de-movimientos",
+        },
+        {
+          level: 2,
+          text: "Sugerencias de descripción",
+          id: "sugerencias-de-descripcin",
+        },
+        {
+          level: 2,
+          text: "Guardar un movimiento",
+          id: "guardar-un-movimiento",
+        },
+      ],
+      content:
+        "\n# Cómo usar el menú móvil y el registro rápido de movimientos\n\nEn un teléfono, toca el botón redondo de menú en la esquina inferior izquierda para abrir el panel de navegación. Incluye Saldos, Movimientos, Presupuesto, Análisis, Cuentas, Configuración, Ayuda y cerrar sesión. Usa **Nuevo movimiento** al final del panel para abrir el registro rápido.\n\n## Sugerencias de descripción\n\nAl escribir la descripción de un movimiento, aparecen sugerencias después de ingresar al menos dos caracteres. Elige una descripción anterior coincidente para reutilizarla o sigue escribiendo para crear una nueva. Se muestran hasta seis sugerencias encima del campo para que el teclado en pantalla no las cubra.\n\n## Guardar un movimiento\n\nIngresa el monto, la descripción, la cuenta, la categoría y quién realizó el gasto; luego guarda. Aún puedes agregar notas u otros detalles cuando lo necesites.\n",
     },
   },
   en: {
@@ -765,8 +852,8 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "getting-started-creating-household",
         category: "general",
         order: 5,
-        related: ["inviting-your-partner", "adding-accounts"],
-        updated: "2026-08-15",
+        related: ["inviting-your-partner", "adding-accounts", "managing-households-and-members"],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -784,9 +871,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Recommended next steps",
           id: "recommended-next-steps",
         },
+        {
+          level: 2,
+          text: "More than one household",
+          id: "more-than-one-household",
+        },
       ],
       content:
-        '\n# Getting started: creating your household\n\nA household in duobalance is the shared workspace where you and your partner manage finances together.\n\n## Initial setup\n\n1. Create your account with your email address.\n2. Upon first signing in, name your household (e.g., "Taylor & Alex Household").\n3. Select your household\'s **Base Currency**. All aggregate reports will consolidate totals into this currency.\n\n## Recommended next steps\n\n- Invite your partner under **Household Settings**.\n- Add your main bank or cash accounts under **Balances**.\n- Set up core category limits under **Budget**.\n',
+        '\n# Getting started: creating your household\n\nA household in duobalance is the shared workspace where you and your partner manage finances together.\n\n## Initial setup\n\n1. Create your account with your email address.\n2. Upon first signing in, name your household (e.g., "Taylor & Alex Household").\n3. Select your household\'s **Base Currency**. All aggregate reports will consolidate totals into this currency.\n\n## Recommended next steps\n\n- Invite your partner in **Settings** under **Household Members**.\n- Add your main bank or cash accounts under **Balances**.\n- Set up core category limits under **Budget**.\n\n## More than one household\n\nUse the household name at the top of the app to create, join, or switch households later. Each household keeps its data separate. See [managing households and members](/help/managing-households-and-members) for the full workflow.\n',
     },
     "inviting-your-partner": {
       frontmatter: {
@@ -794,8 +886,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "inviting-your-partner",
         category: "general",
         order: 6,
-        related: ["getting-started-creating-household", "privacy-what-we-can-and-cant-see"],
-        updated: "2026-08-15",
+        related: [
+          "getting-started-creating-household",
+          "privacy-what-we-can-and-cant-see",
+          "managing-households-and-members",
+        ],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -813,9 +909,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "How your partner joins",
           id: "how-your-partner-joins",
         },
+        {
+          level: 2,
+          text: "Managing an invitation",
+          id: "managing-an-invitation",
+        },
       ],
       content:
-        "\n# How to invite your partner to duobalance\n\nManaging household finances works best when both partners have access to the same household workspace.\n\n## Steps to send an invitation\n\n1. Navigate to **Settings** and open **Household Members**.\n2. Enter your partner's email address.\n3. Click **Send Invitation**.\n\n## How your partner joins\n\n- Your partner will receive an email invitation link.\n- Clicking the link and signing in or registering will automatically link them to your household, granting access to shared accounts and budgets immediately.\n",
+        "\n# How to invite your partner to duobalance\n\nManaging household finances works best when both partners have access to the same household workspace.\n\n## Steps to send an invitation\n\n1. Navigate to **Settings** and open **Household Members**. Only an owner can manage invitations.\n2. Enter your partner's email address.\n3. Click **Send Invitation**.\n\n## How your partner joins\n\n- Your partner will receive an email invitation link.\n- Clicking the link and signing in or registering will automatically link them to your household, granting access to shared accounts and budgets immediately.\n\n## Managing an invitation\n\nOwners can resend an invitation or revoke it before it is accepted. Someone who is already an active member cannot accept another invitation to the same household.\n",
     },
     "adding-accounts": {
       frontmatter: {
@@ -847,8 +948,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "recording-transaction-fast",
         category: "transactions",
         order: 8,
-        related: ["who-spent-vs-who-typed", "categories-and-auto-rules"],
-        updated: "2026-08-15",
+        related: [
+          "who-spent-vs-who-typed",
+          "categories-and-auto-rules",
+          "mobile-navigation-and-quick-entry",
+        ],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -868,7 +973,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# How to record a transaction quickly\n\nduobalance is optimized so logging expenses takes just a few seconds on desktop or mobile.\n\n## Quick entry workflow\n\n1. Tap the **+** or **Add** button in the navigation bar.\n2. Enter the transaction amount.\n3. Choose the type: **Expense**, **Income**, or **Transfer**.\n4. Pick the category and account used.\n5. Set **Spent by** (who incurred the expense).\n6. Tap **Save**.\n\n## Speed tips\n\n- duobalance remembers your recent account and category selections.\n- Add short notes whenever you need to record extra context for your partner.\n",
+        "\n# How to record a transaction quickly\n\nduobalance is optimized so logging expenses takes just a few seconds on desktop or mobile.\n\n## Quick entry workflow\n\n1. On desktop, use **New transaction** in the sidebar. On mobile, open the round menu button and choose **New transaction**.\n2. Enter the transaction amount.\n3. Choose the type: **Expense**, **Income**, or **Transfer**.\n4. Pick the category and account used.\n5. Set **Spent by** (who incurred the expense).\n6. Tap **Save**.\n\n## Speed tips\n\n- duobalance remembers your recent account and category selections.\n- Start typing a previous description to reuse it from the suggestions. Suggestions begin after two characters and show at most six matches.\n- Add short notes whenever you need to record extra context for your partner.\n",
     },
     "categories-and-auto-rules": {
       frontmatter: {
@@ -1032,7 +1137,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "settings",
         order: 14,
         related: ["multi-currency-and-exchange-rates", "exporting-your-data"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1057,7 +1162,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Currency, number format, and timezone settings\n\nYou can customize how duobalance displays amounts and dates under **Settings**.\n\n## Household Base Currency\n\nThe primary currency used to calculate household totals and summary reports.\n\n## Number Formatting\n\nChoose between period separators (`1,234.56`) or comma separators (`1.234,56`) based on your regional preferences.\n\n## Timezone\n\nEnsures month-end cutoffs and bill due dates are calculated according to your local time.\n",
+        "\n# Currency, number format, and timezone settings\n\nYou can customize how duobalance displays amounts and dates under **Settings**.\n\n## Household Base Currency\n\nThe primary currency used to calculate household totals and summary reports.\n\n## Number Formatting\n\nChoose between period separators (`1,234.56`) or comma separators (`1.234,56`) based on your regional preferences.\n\nLanguage and number-format choices belong to your user profile, not the household. They follow you when you switch households and do not change what your partner sees.\n\n## Timezone\n\nEnsures month-end cutoffs and bill due dates are calculated according to your local time.\n",
     },
     "exporting-your-data": {
       frontmatter: {
@@ -1066,7 +1171,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "settings",
         order: 15,
         related: ["privacy-what-we-can-and-cant-see", "number-format-currency-timezone"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1081,7 +1186,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Exporting your financial data\n\nYour data belongs to you. You can export or back up your complete transaction and account history at any time.\n\n## Steps to export\n\n1. Go to **Settings** and scroll down to **Data & Privacy**.\n2. Select **Export Data**.\n3. Choose your desired format:\n   - **CSV:** Best for opening in spreadsheets like Excel or Google Sheets.\n   - **JSON:** Complete structured backup format.\n4. Click **Download File**.\n",
+        "\n# Exporting your financial data\n\nYour data belongs to you. You can export or back up your complete transaction and account history at any time.\n\n## Steps to export\n\n1. Go to **Settings** and scroll down to **Data & Privacy**.\n2. Select **Export Data**.\n3. Choose your desired format:\n   - **CSV:** Best for opening in spreadsheets like Excel or Google Sheets.\n   - **JSON:** Complete structured backup format.\n4. Click **Download File**.\n\nIf you plan to delete a household, download an export from the deletion confirmation first. Former members can export only the historical data they are still allowed to access; this does not restore household access.\n",
     },
     "privacy-what-we-can-and-cant-see": {
       frontmatter: {
@@ -1090,7 +1195,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "general",
         order: 16,
         related: ["private-accounts-and-views", "exporting-your-data"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1110,7 +1215,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Privacy: what we can and cannot see\n\nAt duobalance, financial privacy and data security are foundational principles.\n\n## What your partner sees\n\n- Your partner can only see accounts set as **Shared** and transactions associated with those accounts.\n- Your **Private** accounts and their detailed transaction histories remain invisible to your partner.\n\n## What the platform sees\n\n- duobalance uses encryption and database-level Row Level Security (RLS) policies so only authorized members of your household can access your data.\n- We do not sell or share your personal financial data with advertisers or third parties.\n",
+        "\n# Privacy: what we can and cannot see\n\nAt duobalance, financial privacy and data security are foundational principles.\n\n## What your partner sees\n\n- Your partner can only see accounts set as **Shared** and transactions associated with those accounts.\n- Your **Private** accounts and their detailed transaction histories remain invisible to your partner.\n- A member who leaves or is removed loses access to that household. Their historical entries remain in the household records for continuity.\n\n## What the platform sees\n\n- duobalance uses encryption and database-level Row Level Security (RLS) policies so only authorized members of your household can access your data.\n- We do not sell or share your personal financial data with advertisers or third parties.\n",
     },
     "installing-on-mobile": {
       frontmatter: {
@@ -1217,6 +1322,73 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Why does an exchange rate show a warning?\n\nWhen logging transactions in currencies different from your base currency, duobalance applies official exchange rates.\n\n## What the warning means\n\nIf exchange rates haven't been refreshed in over 24 hours (for instance, over weekends or banking holidays), an informational badge appears.\n\n- **Impact:** You can continue logging transactions normally.\n- **Resolution:** Rates refresh automatically on the next daily background job, or you can manually override the exchange rate on any transaction.\n",
+    },
+    "managing-households-and-members": {
+      frontmatter: {
+        title: "How to switch households and manage members",
+        slug: "managing-households-and-members",
+        category: "general",
+        order: 21,
+        related: [
+          "getting-started-creating-household",
+          "inviting-your-partner",
+          "exporting-your-data",
+        ],
+        updated: "2026-08-18",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "How to switch households and manage members",
+          id: "how-to-switch-households-and-manage-members",
+        },
+        {
+          level: 2,
+          text: "Switching or creating a household",
+          id: "switching-or-creating-a-household",
+        },
+        {
+          level: 2,
+          text: "Inviting and managing members",
+          id: "inviting-and-managing-members",
+        },
+        {
+          level: 2,
+          text: "Leaving or deleting a household",
+          id: "leaving-or-deleting-a-household",
+        },
+      ],
+      content:
+        "\n# How to switch households and manage members\n\nYou can belong to more than one household. Each household has its own accounts, transactions, budgets, bills, members, and settings.\n\n## Switching or creating a household\n\n1. Tap the current household name at the top of the app.\n2. Select another household to open its data.\n3. In the same window, choose **Create household** to start another workspace or **Join with invitation** to enter one with an invitation code.\n\nThe app clears the previous household's temporary screens and selections when you switch, so data is never mixed between households. You can create up to five households.\n\n## Inviting and managing members\n\nOwners can open **Settings** and use **Household Members** to send, resend, or revoke invitations. An owner can also transfer ownership to a partner. Choose whether to remain an owner or become a partner after the transfer.\n\nOnly an owner can remove a partner. Before confirming removal, decide what happens to each shared account owned by that partner: transfer it to yourself or make it joint. The removed member loses access to the household; their historical entries stay available to the household.\n\n## Leaving or deleting a household\n\nOpen **Settings** and scroll to the danger zone to leave a household. An owner must transfer ownership before leaving while other members remain. The final member can leave.\n\nOwners can also delete a household. Type its exact name to confirm. Deletion is recoverable for 30 days, but export the household first if you need a personal copy.\n",
+    },
+    "mobile-navigation-and-quick-entry": {
+      frontmatter: {
+        title: "Using the mobile menu and quick transaction entry",
+        slug: "mobile-navigation-and-quick-entry",
+        category: "transactions",
+        order: 22,
+        related: ["recording-transaction-fast", "installing-on-mobile"],
+        updated: "2026-08-18",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Using the mobile menu and quick transaction entry",
+          id: "using-the-mobile-menu-and-quick-transaction-entry",
+        },
+        {
+          level: 2,
+          text: "Description suggestions",
+          id: "description-suggestions",
+        },
+        {
+          level: 2,
+          text: "Save a transaction",
+          id: "save-a-transaction",
+        },
+      ],
+      content:
+        "\n# Using the mobile menu and quick transaction entry\n\nOn a phone, tap the round menu button in the lower-left corner to open the navigation drawer. It includes Balances, Transactions, Budget, Reports, Bills, Settings, Help, and sign out. Use **New transaction** at the bottom of the drawer to open quick entry.\n\n## Description suggestions\n\nWhen entering a transaction description, suggestions appear after you type at least two characters. Choose a matching previous description to reuse it, or keep typing to enter a new one. Up to six suggestions are shown above the field so the on-screen keyboard does not cover them.\n\n## Save a transaction\n\nEnter the amount, description, account, category, and who spent it, then save. You can still add notes or other details when needed.\n",
     },
   },
   "pt-BR": {
@@ -1352,8 +1524,8 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "getting-started-creating-household",
         category: "general",
         order: 5,
-        related: ["inviting-your-partner", "adding-accounts"],
-        updated: "2026-08-15",
+        related: ["inviting-your-partner", "adding-accounts", "managing-households-and-members"],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1371,9 +1543,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Próximos passos recomendados",
           id: "prximos-passos-recomendados",
         },
+        {
+          level: 2,
+          text: "Mais de um lar",
+          id: "mais-de-um-lar",
+        },
       ],
       content:
-        '\n# Primeiros passos: criando seu lar\n\nUm lar no duobalance é o espaço compartilhado onde você e seu parceiro gerenciam as finanças juntos.\n\n## Configuração inicial\n\n1. Crie sua conta com seu e-mail.\n2. Ao entrar pela primeira vez, dê um nome ao seu lar (ex: "Lar Silva & Souza").\n3. Selecione a **Moeda Base** do lar. Todos os relatórios consolidados exibirão os valores nesta moeda.\n\n## Próximos passos recomendados\n\n- Convide seu parceiro em **Configurações do Lar**.\n- Adicione suas primeiras contas bancárias ou em dinheiro em **Saldos**.\n- Configure seus orçamentos principais em **Orçamento**.\n',
+        '\n# Primeiros passos: criando seu lar\n\nUm lar no duobalance é o espaço compartilhado onde você e seu parceiro gerenciam as finanças juntos.\n\n## Configuração inicial\n\n1. Crie sua conta com seu e-mail.\n2. Ao entrar pela primeira vez, dê um nome ao seu lar (ex: "Lar Silva & Souza").\n3. Selecione a **Moeda Base** do lar. Todos os relatórios consolidados exibirão os valores nesta moeda.\n\n## Próximos passos recomendados\n\n- Convide seu parceiro em **Configurações**, em **Membros do Lar**.\n- Adicione suas primeiras contas bancárias ou em dinheiro em **Saldos**.\n- Configure seus orçamentos principais em **Orçamento**.\n\n## Mais de um lar\n\nUse o nome do lar no topo do aplicativo para criar, entrar ou alternar entre lares depois. Cada lar mantém seus dados separados. Consulte [como alternar entre lares e gerenciar membros](/help/managing-households-and-members) para conhecer o fluxo completo.\n',
     },
     "inviting-your-partner": {
       frontmatter: {
@@ -1381,8 +1558,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "inviting-your-partner",
         category: "general",
         order: 6,
-        related: ["getting-started-creating-household", "privacy-what-we-can-and-cant-see"],
-        updated: "2026-08-15",
+        related: [
+          "getting-started-creating-household",
+          "privacy-what-we-can-and-cant-see",
+          "managing-households-and-members",
+        ],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1400,9 +1581,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Como seu parceiro entra",
           id: "como-seu-parceiro-entra",
         },
+        {
+          level: 2,
+          text: "Gerenciar um convite",
+          id: "gerenciar-um-convite",
+        },
       ],
       content:
-        "\n# Como convidar seu parceiro para o duobalance\n\nO gerenciamento financeiro a dois funciona melhor quando ambos têm acesso ao mesmo espaço compartilhado.\n\n## Passos para enviar o convite\n\n1. Vá em **Configurações** e abra a seção **Membros do Lar**.\n2. Digite o e-mail do seu parceiro.\n3. Clique em **Enviar Convite**.\n\n## Como seu parceiro entra\n\n- Seu parceiro receberá um link de convite por e-mail.\n- Ao clicar no link e entrar ou se cadastrar, ele será vinculado automaticamente ao seu lar, tendo acesso imediato às contas e orçamentos compartilhados.\n",
+        "\n# Como convidar seu parceiro para o duobalance\n\nO gerenciamento financeiro a dois funciona melhor quando ambos têm acesso ao mesmo espaço compartilhado.\n\n## Passos para enviar o convite\n\n1. Vá em **Configurações** e abra a seção **Membros do Lar**. Apenas um proprietário pode gerenciar convites.\n2. Digite o e-mail do seu parceiro.\n3. Clique em **Enviar Convite**.\n\n## Como seu parceiro entra\n\n- Seu parceiro receberá um link de convite por e-mail.\n- Ao clicar no link e entrar ou se cadastrar, ele será vinculado automaticamente ao seu lar, tendo acesso imediato às contas e orçamentos compartilhados.\n\n## Gerenciar um convite\n\nProprietários podem reenviar um convite ou revogá-lo antes de sua aceitação. Uma pessoa que já é membro ativo não pode aceitar outro convite para o mesmo lar.\n",
     },
     "adding-accounts": {
       frontmatter: {
@@ -1434,8 +1620,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         slug: "recording-transaction-fast",
         category: "transactions",
         order: 8,
-        related: ["who-spent-vs-who-typed", "categories-and-auto-rules"],
-        updated: "2026-08-15",
+        related: [
+          "who-spent-vs-who-typed",
+          "categories-and-auto-rules",
+          "mobile-navigation-and-quick-entry",
+        ],
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1455,7 +1645,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Como registrar uma transação rapidamente\n\nO duobalance foi otimizado para que o lançamento de despesas leve apenas alguns segundos no celular ou computador.\n\n## Fluxo de registro rápido\n\n1. Toque no botão **+** ou **Adicionar** na barra de navegação.\n2. Digite o valor da transação.\n3. Escolha o tipo: **Despesa**, **Receita** ou **Transferência**.\n4. Selecione a categoria e a conta utilizada.\n5. Defina **Gastador por** (quem fez a compra).\n6. Toque em **Salvar**.\n\n## Dicas de agilidade\n\n- O duobalance lembra suas últimas escolhas de conta e categoria.\n- Adicione notas curtas quando precisar detalhar algo para o parceiro.\n",
+        "\n# Como registrar uma transação rapidamente\n\nO duobalance foi otimizado para que o lançamento de despesas leve apenas alguns segundos no celular ou computador.\n\n## Fluxo de registro rápido\n\n1. No computador, use **Novo movimento** na barra lateral. No celular, abra o botão redondo de menu e escolha **Novo movimento**.\n2. Digite o valor da transação.\n3. Escolha o tipo: **Despesa**, **Receita** ou **Transferência**.\n4. Selecione a categoria e a conta utilizada.\n5. Defina **Gastador por** (quem fez a compra).\n6. Toque em **Salvar**.\n\n## Dicas de agilidade\n\n- O duobalance lembra suas últimas escolhas de conta e categoria.\n- Comece a digitar uma descrição anterior para reutilizá-la nas sugestões. Elas aparecem após dois caracteres e exibem no máximo seis correspondências.\n- Adicione notas curtas quando precisar detalhar algo para o parceiro.\n",
     },
     "categories-and-auto-rules": {
       frontmatter: {
@@ -1619,7 +1809,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "settings",
         order: 14,
         related: ["multi-currency-and-exchange-rates", "exporting-your-data"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1644,7 +1834,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Configurações de moeda, formato de números e fuso horário\n\nVocê pode personalizar como o duobalance exibe valores e datas em **Configurações**.\n\n## Moeda Base do Lar\n\nÉ a moeda principal usada para calcular os totais e relatórios do lar.\n\n## Formato de Números\n\nEscolha entre separadores por ponto (`1.234,56`) ou por vírgula (`1,234.56`) conforme sua preferência regional.\n\n## Fuso Horário\n\nGarante que os fechamentos de mês e vencimentos de contas sejam calculados de acordo com o seu horário local.\n",
+        "\n# Configurações de moeda, formato de números e fuso horário\n\nVocê pode personalizar como o duobalance exibe valores e datas em **Configurações**.\n\n## Moeda Base do Lar\n\nÉ a moeda principal usada para calcular os totais e relatórios do lar.\n\n## Formato de Números\n\nEscolha entre separadores por ponto (`1.234,56`) ou por vírgula (`1,234.56`) conforme sua preferência regional.\n\nAs opções de idioma e formato de números pertencem ao seu perfil de usuário, não ao lar. Elas acompanham você ao alternar entre lares e não mudam o que seu parceiro vê.\n\n## Fuso Horário\n\nGarante que os fechamentos de mês e vencimentos de contas sejam calculados de acordo com o seu horário local.\n",
     },
     "exporting-your-data": {
       frontmatter: {
@@ -1653,7 +1843,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "settings",
         order: 15,
         related: ["privacy-what-we-can-and-cant-see", "number-format-currency-timezone"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1668,7 +1858,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Exportando seus dados financeiros\n\nSeus dados pertencem a você. Você pode baixar ou fazer backup do seu histórico completo de transações e contas a qualquer momento.\n\n## Passos para exportar\n\n1. Vá em **Configurações** e role até **Dados e Privacidade**.\n2. Selecione **Exportar Dados**.\n3. Escolha o formato desejado:\n   - **CSV:** Ideal para abrir em planilhas como Excel ou Google Sheets.\n   - **JSON:** Formato estruturado completo para backup.\n4. Clique em **Baixar Arquivo**.\n",
+        "\n# Exportando seus dados financeiros\n\nSeus dados pertencem a você. Você pode baixar ou fazer backup do seu histórico completo de transações e contas a qualquer momento.\n\n## Passos para exportar\n\n1. Vá em **Configurações** e role até **Dados e Privacidade**.\n2. Selecione **Exportar Dados**.\n3. Escolha o formato desejado:\n   - **CSV:** Ideal para abrir em planilhas como Excel ou Google Sheets.\n   - **JSON:** Formato estruturado completo para backup.\n4. Clique em **Baixar Arquivo**.\n\nSe você pretende excluir um lar, baixe uma exportação na confirmação de exclusão primeiro. Ex-membros só podem exportar os dados históricos aos quais ainda têm permissão de acesso; isso não restaura o acesso ao lar.\n",
     },
     "privacy-what-we-can-and-cant-see": {
       frontmatter: {
@@ -1677,7 +1867,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         category: "general",
         order: 16,
         related: ["private-accounts-and-views", "exporting-your-data"],
-        updated: "2026-08-15",
+        updated: "2026-08-18",
       },
       headings: [
         {
@@ -1697,7 +1887,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         },
       ],
       content:
-        "\n# Privacidade: o que podemos e não podemos ver\n\nNo duobalance, a privacidade financeira e a segurança dos seus dados são prioridades fundamentais.\n\n## O que seu parceiro vê\n\n- Seu parceiro vê apenas informações das contas configuradas como **Compartilhadas** e as transações associadas a elas.\n- Suas contas **Privadas** e o histórico delas permanecem invisíveis para o seu parceiro.\n\n## O que a plataforma vê\n\n- O duobalance utiliza criptografia e políticas de segurança em nível de banco de dados (RLS) para que apenas membros autorizados do seu lar acessem os dados.\n- Não vendemos nem compartilhamos seus dados financeiros com terceiros.\n",
+        "\n# Privacidade: o que podemos e não podemos ver\n\nNo duobalance, a privacidade financeira e a segurança dos seus dados são prioridades fundamentais.\n\n## O que seu parceiro vê\n\n- Seu parceiro vê apenas informações das contas configuradas como **Compartilhadas** e as transações associadas a elas.\n- Suas contas **Privadas** e o histórico delas permanecem invisíveis para o seu parceiro.\n- Uma pessoa que sai ou é removida perde o acesso a esse lar. Seus lançamentos históricos permanecem nos registros do lar para manter a continuidade.\n\n## O que a plataforma vê\n\n- O duobalance utiliza criptografia e políticas de segurança em nível de banco de dados (RLS) para que apenas membros autorizados do seu lar acessem os dados.\n- Não vendemos nem compartilhamos seus dados financeiros com terceiros.\n",
     },
     "installing-on-mobile": {
       frontmatter: {
@@ -1804,6 +1994,73 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Por que a taxa de câmbio mostra um aviso?\n\nAo registrar transações em moedas diferentes da moeda base do seu lar, o duobalance aplica taxas de câmbio oficiais.\n\n## O que o aviso significa\n\nSe as taxas de câmbio não forem atualizadas há mais de 24 horas (como em finais de semana ou feriados bancários), um aviso informativo é exibido.\n\n- **Impacto:** Você pode continuar registrando transações normalmente.\n- **Resolução:** As taxas são atualizadas automaticamente no próximo ciclo diário, ou você pode alterar manualmente a taxa na tela da transação.\n",
+    },
+    "managing-households-and-members": {
+      frontmatter: {
+        title: "Como alternar entre lares e gerenciar membros",
+        slug: "managing-households-and-members",
+        category: "general",
+        order: 21,
+        related: [
+          "getting-started-creating-household",
+          "inviting-your-partner",
+          "exporting-your-data",
+        ],
+        updated: "2026-08-18",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Como alternar entre lares e gerenciar membros",
+          id: "como-alternar-entre-lares-e-gerenciar-membros",
+        },
+        {
+          level: 2,
+          text: "Alternar ou criar um lar",
+          id: "alternar-ou-criar-um-lar",
+        },
+        {
+          level: 2,
+          text: "Convidar e gerenciar membros",
+          id: "convidar-e-gerenciar-membros",
+        },
+        {
+          level: 2,
+          text: "Sair ou excluir um lar",
+          id: "sair-ou-excluir-um-lar",
+        },
+      ],
+      content:
+        "\n# Como alternar entre lares e gerenciar membros\n\nVocê pode participar de mais de um lar. Cada lar tem suas próprias contas, lançamentos, orçamentos, contas a pagar, membros e configurações.\n\n## Alternar ou criar um lar\n\n1. Toque no nome do lar atual na parte superior do aplicativo.\n2. Selecione outro lar para abrir seus dados.\n3. Na mesma janela, escolha **Criar lar** para iniciar outro espaço ou **Entrar com convite** para usar um código de convite.\n\nO aplicativo limpa as telas e seleções temporárias do lar anterior ao alternar, para que os dados nunca sejam misturados. Você pode criar até cinco lares.\n\n## Convidar e gerenciar membros\n\nProprietários podem abrir **Configurações** e usar **Membros do lar** para enviar, reenviar ou revogar convites. Também podem transferir a propriedade para o parceiro e escolher permanecer como proprietário ou se tornar parceiro depois da transferência.\n\nSomente um proprietário pode remover um parceiro. Antes de confirmar, escolha o destino de cada conta compartilhada da pessoa: transferi-la para você ou torná-la conjunta. A pessoa removida perde o acesso ao lar; seus lançamentos históricos permanecem disponíveis para o lar.\n\n## Sair ou excluir um lar\n\nAbra **Configurações** e role até a zona de perigo para sair de um lar. Um proprietário deve transferir a propriedade antes de sair enquanto houver outros membros. O último membro pode sair.\n\nProprietários também podem excluir um lar. Digite o nome exato para confirmar. A exclusão pode ser recuperada por 30 dias, mas exporte o lar antes se precisar de uma cópia pessoal.\n",
+    },
+    "mobile-navigation-and-quick-entry": {
+      frontmatter: {
+        title: "Como usar o menu móvel e o lançamento rápido",
+        slug: "mobile-navigation-and-quick-entry",
+        category: "transactions",
+        order: 22,
+        related: ["recording-transaction-fast", "installing-on-mobile"],
+        updated: "2026-08-18",
+      },
+      headings: [
+        {
+          level: 1,
+          text: "Como usar o menu móvel e o lançamento rápido",
+          id: "como-usar-o-menu-mvel-e-o-lanamento-rpido",
+        },
+        {
+          level: 2,
+          text: "Sugestões de descrição",
+          id: "sugestes-de-descrio",
+        },
+        {
+          level: 2,
+          text: "Salvar um movimento",
+          id: "salvar-um-movimento",
+        },
+      ],
+      content:
+        "\n# Como usar o menu móvel e o lançamento rápido\n\nNo celular, toque no botão redondo de menu no canto inferior esquerdo para abrir o painel de navegação. Ele inclui Saldos, Movimentos, Orçamento, Relatórios, Contas, Configurações, Ajuda e sair. Use **Novo movimento** no fim do painel para abrir o lançamento rápido.\n\n## Sugestões de descrição\n\nAo inserir uma descrição de movimento, as sugestões aparecem depois de digitar pelo menos dois caracteres. Escolha uma descrição anterior correspondente para reutilizá-la ou continue digitando para criar uma nova. Até seis sugestões aparecem acima do campo para que o teclado virtual não as cubra.\n\n## Salvar um movimento\n\nInforme o valor, a descrição, a conta, a categoria e quem fez o gasto; depois salve. Você ainda pode adicionar notas ou outros detalhes quando precisar.\n",
     },
   },
 };

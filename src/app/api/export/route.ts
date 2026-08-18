@@ -1,13 +1,7 @@
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 
-// `revalidate = 1` (a positive number, not `dynamic = "force-static"`) satisfies
-// the Tauri static-export build without Next stripping cookies/searchParams
-// from real requests on the web build — see cron/fx-refresh/route.ts for the
-// full story. `revalidate = 0` does NOT satisfy the Tauri build's check
-// (`isStaticGenEnabled` requires `revalidate > 0`); reading `cookies()` here
-// still makes Next render this fully dynamically per-request regardless of
-// the revalidate value (verified: two requests with different session
-// cookies never see each other's response).
 export const revalidate = 1;
 
 const EXPORT_TABLES = [
@@ -30,9 +24,6 @@ const EXPORT_CACHE_HEADERS = {
 type ExportTable = (typeof EXPORT_TABLES)[number];
 type ExportData = Record<ExportTable, unknown[]>;
 
-// Every export table has an `id` primary key except `fx_overrides`, which is
-// keyed by (household_id, code, rate_date) — ordering it by "id" throws
-// Postgres error 42703 ("column does not exist") and fails the whole export.
 const EXPORT_ORDER_COLUMNS: Record<ExportTable, readonly string[]> = {
   accounts: ["id"],
   transactions: ["id"],
@@ -90,15 +81,54 @@ function safeFilenamePart(value: string): string {
   );
 }
 
+type ScopeFilter = {
+  removedMemberId?: string;
+  removedAt?: string;
+  allowedAccountIds?: string[];
+};
+
 async function fetchAllRows(
-  supabase: Awaited<ReturnType<typeof createRouteContext>>,
+  supabase: SupabaseClient<Database>,
   table: ExportTable,
   householdId: string,
+  filter?: ScopeFilter,
 ): Promise<unknown[]> {
   const pageSize = 1_000;
   const rows: unknown[] = [];
   for (let from = 0; ; from += pageSize) {
     let query = supabase.from(table).select("*").eq("household_id", householdId);
+
+    // Apply cutoff filter for removed members
+    if (filter?.removedAt) {
+      if (
+        table === "transactions" ||
+        table === "categorization_rules" ||
+        table === "budgets" ||
+        table === "bills" ||
+        table === "bill_instances" ||
+        table === "import_profiles" ||
+        table === "import_batches" ||
+        table === "accounts" ||
+        table === "categories"
+      ) {
+        query = query.lte("created_at", filter.removedAt);
+      }
+    }
+
+    // Apply privacy filter on accounts for removed members
+    if (filter?.removedMemberId && table === "accounts") {
+      query = query.or(`is_shared.eq.true,owner_member_id.eq.${filter.removedMemberId}`);
+    }
+
+    // Transactions have no is_shared/owner_member_id of their own — RLS
+    // normally scopes them via `account_id in (select id from accounts)`,
+    // but this branch runs on the service role (RLS bypassed), so the same
+    // scoping must be replicated explicitly here or a removed member's
+    // export would include their ex-partner's private-account transactions.
+    if (filter?.allowedAccountIds && table === "transactions") {
+      query = query.in("account_id", filter.allowedAccountIds);
+    }
+
     for (const column of EXPORT_ORDER_COLUMNS[table]) {
       query = query.order(column, { ascending: true });
     }
@@ -133,18 +163,76 @@ export async function GET(request: Request) {
   }
   if (!householdId) return Response.json({ error: "householdId is required" }, { status: 400 });
 
+  // First check using authenticated client (active membership). Filtering
+  // removed_at here is required, not just an optimization: a re-invited
+  // member can have both an old removed row and a fresh active row for the
+  // same (user_id, household_id) pair (the partial unique index allows that
+  // coexistence), and maybeSingle() throws on more than one match.
   const { data: membership, error: membershipError } = await supabase
     .from("household_members")
-    .select("household_id, households(id, name)")
+    .select("id, household_id, removed_at, households(id, name, deleted_at)")
     .eq("user_id", user.id)
     .eq("household_id", householdId)
+    .is("removed_at", null)
     .maybeSingle();
+
+  let resolvedMembership = membership;
+  let fetchClient: SupabaseClient<Database> = supabase;
+  let scopeFilter: ScopeFilter | undefined;
+
+  // Fallback for removed member exporting past data via service role (if available)
+  if (!resolvedMembership && !membershipError) {
+    try {
+      const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
+      const admin = createSupabaseServiceRoleClient();
+      // Order so an active row (removed_at is null) — meaning the reason
+      // the authenticated lookup above failed was a soft-deleted household,
+      // not a removed membership — is preferred over a past removal.
+      const { data: adminMemberships } = await admin
+        .from("household_members")
+        .select("id, household_id, removed_at, households(id, name, deleted_at)")
+        .eq("user_id", user.id)
+        .eq("household_id", householdId)
+        .order("removed_at", { ascending: false, nullsFirst: true })
+        .limit(1);
+      const adminMembership = adminMemberships?.[0];
+
+      if (adminMembership) {
+        resolvedMembership = adminMembership;
+        fetchClient = admin;
+        const household = Array.isArray(adminMembership.households)
+          ? adminMembership.households[0]
+          : adminMembership.households;
+        // Cutoff is whichever happened first: the member's own removal, or
+        // the household being soft-deleted out from under an active member.
+        const cutoff = adminMembership.removed_at ?? household?.deleted_at ?? undefined;
+
+        const { data: allowedAccounts } = await admin
+          .from("accounts")
+          .select("id")
+          .eq("household_id", householdId)
+          .or(`is_shared.eq.true,owner_member_id.eq.${adminMembership.id}`);
+
+        scopeFilter = {
+          removedMemberId: adminMembership.id,
+          removedAt: cutoff,
+          allowedAccountIds: (allowedAccounts ?? []).map((a) => a.id),
+        };
+      }
+    } catch {
+      // Ignored if service role client is not configured
+    }
+  }
+
   if (membershipError) throw membershipError;
-  if (!membership)
+  if (!resolvedMembership)
     return Response.json({ error: "household membership required" }, { status: 403 });
 
-  const household = membership.households;
-  if (!household || Array.isArray(household)) {
+  const household = Array.isArray(resolvedMembership.households)
+    ? resolvedMembership.households[0]
+    : resolvedMembership.households;
+
+  if (!household) {
     return Response.json({ error: "household not found" }, { status: 404 });
   }
 
@@ -154,7 +242,7 @@ export async function GET(request: Request) {
   if (format === "csv") {
     let transactions: unknown[];
     try {
-      transactions = await fetchAllRows(supabase, "transactions", household.id);
+      transactions = await fetchAllRows(fetchClient, "transactions", household.id, scopeFilter);
     } catch (error) {
       console.error("export: failed to fetch transactions", { householdId, error });
       return Response.json({ error: "export failed" }, { status: 502 });
@@ -171,7 +259,7 @@ export async function GET(request: Request) {
   const data = {} as ExportData;
   try {
     for (const table of EXPORT_TABLES) {
-      data[table] = await fetchAllRows(supabase, table, household.id);
+      data[table] = await fetchAllRows(fetchClient, table, household.id, scopeFilter);
     }
   } catch (error) {
     console.error("export: failed to fetch household data", { householdId, error });

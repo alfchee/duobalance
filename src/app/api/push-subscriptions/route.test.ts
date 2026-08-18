@@ -21,7 +21,9 @@ const payload = {
 function makeRouteHandlerClient(options: { user?: { id: string } | null; member?: unknown } = {}) {
   const member = options.member === undefined ? { id: payload.memberId } : options.member;
   const memberEqUser = vi.fn(() => ({
-    maybeSingle: vi.fn().mockResolvedValue({ data: member, error: null }),
+    is: vi.fn(() => ({
+      maybeSingle: vi.fn().mockResolvedValue({ data: member, error: null }),
+    })),
   }));
   const memberEqHousehold = vi.fn(() => ({ eq: memberEqUser }));
   const memberEqId = vi.fn(() => ({ eq: memberEqHousehold }));
