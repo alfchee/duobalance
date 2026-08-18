@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,6 +43,17 @@ export default function Home() {
           </Button>
         </CardFooter>
       </Card>
+      <footer className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+        <span>© {new Date().getFullYear()} DuoBalance</span>
+        <span>•</span>
+        <Link href="/privacy" className="hover:underline">
+          {t("privacy")}
+        </Link>
+        <span>•</span>
+        <Link href="/terms" className="hover:underline">
+          {t("terms")}
+        </Link>
+      </footer>
     </main>
   );
 }

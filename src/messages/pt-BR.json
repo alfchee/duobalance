@@ -7,7 +7,9 @@
     "somethingWrong": "Algo deu errado.",
     "unknownError": "Erro desconhecido",
     "pageNotFound": "Esta página não existe.",
-    "backHome": "Voltar ao início"
+    "backHome": "Voltar ao início",
+    "privacy": "Política de Privacidade",
+    "terms": "Termos de Serviço"
   },
   "nav": {
     "reports": "Relatórios",

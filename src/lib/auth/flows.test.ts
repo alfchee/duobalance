@@ -44,7 +44,13 @@ describe("auth flows", () => {
     expect(port).toHaveBeenCalledWith({
       email: "partner@example.com",
       password: "secret",
-      options: { data: { display_name: "Partner" } },
+      options: {
+        data: {
+          display_name: "Partner",
+          legal_consent_version: "1.0",
+          legal_consent_at: expect.any(String),
+        },
+      },
     });
   });
 

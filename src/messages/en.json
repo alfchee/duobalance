@@ -10,7 +10,9 @@
     "backHome": "Back home",
     "placeholder": "Placeholder — populated by Phase 1.",
     "scaffoldDescription": "Scaffolded. Every later issue (#9, #10, #14, #15, #16) builds on this shell.",
-    "moneyFormatSmokeTest": "Money formatting smoke test: {clp} / {usd} / {brl}"
+    "moneyFormatSmokeTest": "Money formatting smoke test: {clp} / {usd} / {brl}",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
   },
   "nav": {
     "balances": "Balances",
@@ -168,6 +170,7 @@
       "creatingHousehold": "Creating household…",
       "haveAccount": "Already have an account?",
       "loginLink": "Log in",
+      "consentNotice": "By signing up, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.",
       "checkEmailTitle": "Check your email",
       "checkEmailBody": "We sent you a link to confirm your account. Come back and log in once confirmed."
     },
@@ -687,7 +690,18 @@
       "household": "Household",
       "preferences": "Preferences",
       "configuration": "Categories & rules",
-      "data": "Your data"
+      "data": "Your data",
+      "legal": "Legal & Privacy"
+    },
+    "legal": {
+      "privacy": {
+        "title": "Privacy Policy",
+        "description": "Learn how we protect and manage your personal data."
+      },
+      "terms": {
+        "title": "Terms of Service",
+        "description": "Terms of use, Beta phase notice, and warranties disclaimer."
+      }
     },
     "navigation": {
       "categories": {
