@@ -10,7 +10,9 @@
     "backHome": "Volver al inicio",
     "placeholder": "Marcador — se completará en la Fase 1.",
     "scaffoldDescription": "Andamiaje. Cada issue posterior (#9, #10, #14, #15, #16) se construye sobre este caparazón.",
-    "moneyFormatSmokeTest": "Prueba de formato de dinero: {clp} / {usd} / {brl}"
+    "moneyFormatSmokeTest": "Prueba de formato de dinero: {clp} / {usd} / {brl}",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio"
   },
   "nav": {
     "balances": "Saldos",
@@ -168,6 +170,7 @@
       "creatingHousehold": "Creando hogar…",
       "haveAccount": "¿Ya tienes cuenta?",
       "loginLink": "Iniciar sesión",
+      "consentNotice": "Al registrarte, aceptas nuestros <terms>Términos de Servicio</terms> y <privacy>Política de Privacidad</privacy>.",
       "checkEmailTitle": "Revisa tu correo",
       "checkEmailBody": "Te enviamos un enlace para confirmar tu cuenta. Vuelve e inicia sesión luego de confirmar."
     },
@@ -687,7 +690,18 @@
       "household": "Hogar",
       "preferences": "Preferencias",
       "configuration": "Categorías y reglas",
-      "data": "Tus datos"
+      "data": "Tus datos",
+      "legal": "Legal y Privacidad"
+    },
+    "legal": {
+      "privacy": {
+        "title": "Política de Privacidad",
+        "description": "Consulta cómo protegemos y gestionamos tus datos personales."
+      },
+      "terms": {
+        "title": "Términos de Servicio",
+        "description": "Términos de uso, aviso de fase Beta y ausencia de garantías."
+      }
     },
     "navigation": {
       "categories": {

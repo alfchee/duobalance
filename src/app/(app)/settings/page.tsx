@@ -105,6 +105,19 @@ export default function SettingsPage() {
         <ExportSection />
       </SettingsGroup>
 
+      <SettingsGroup title={t("groups.legal")}>
+        <SettingsLinkRow
+          href="/privacy"
+          title={t("legal.privacy.title")}
+          description={t("legal.privacy.description")}
+        />
+        <SettingsLinkRow
+          href="/terms"
+          title={t("legal.terms.title")}
+          description={t("legal.terms.description")}
+        />
+      </SettingsGroup>
+
       <HouseholdDangerSection />
 
       <Button

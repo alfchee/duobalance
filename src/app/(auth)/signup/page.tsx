@@ -235,6 +235,30 @@ export default function SignupPage() {
               {strength ? t(`passwordStrength.${strength}`) : t("passwordHint")}
             </p>
           </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {t.rich("consentNotice", {
+              terms: (chunks) => (
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-foreground underline-offset-4 hover:underline"
+                >
+                  {chunks}
+                </Link>
+              ),
+              privacy: (chunks) => (
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-foreground underline-offset-4 hover:underline"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </p>
           {credentialsError ? (
             <p role="alert" className="text-sm text-destructive">
               {tErrors(credentialsError)}
