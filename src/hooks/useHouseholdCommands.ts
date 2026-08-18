@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { ApiError, apiFetch } from "@/lib/api-fetch";
+import { clearReferral, readReferral } from "@/lib/referral";
 import {
   acceptInvite,
   clearActiveHouseholdId,
@@ -25,6 +26,7 @@ export function useHouseholdCommands() {
   const create = useCallback(
     async (input: { name: string; country: string; baseCurrency: string; displayName: string }) => {
       const supabase = createSupabaseBrowser();
+      const signupSource = readReferral(localStorage);
       const result = await createHousehold(
         supabase
           ? async (values) => {
@@ -32,9 +34,10 @@ export function useHouseholdCommands() {
               return { data, error };
             }
           : null,
-        input,
+        signupSource ? { ...input, signupSource } : input,
       );
       if (result.ok) {
+        clearReferral(localStorage);
         saveActiveHouseholdId(localStorage, result.value.householdId);
         await queryClient.invalidateQueries({ queryKey: MEMBERSHIP_QUERY_KEY });
       }

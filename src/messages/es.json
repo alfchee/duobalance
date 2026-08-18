@@ -10,7 +10,151 @@
     "backHome": "Volver al inicio",
     "placeholder": "Marcador — se completará en la Fase 1.",
     "scaffoldDescription": "Andamiaje. Cada issue posterior (#9, #10, #14, #15, #16) se construye sobre este caparazón.",
-    "moneyFormatSmokeTest": "Prueba de formato de dinero: {clp} / {usd} / {brl}"
+    "moneyFormatSmokeTest": "Prueba de formato de dinero: {clp} / {usd} / {brl}",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio"
+  },
+  "landing": {
+    "nav": { "login": "Iniciar sesión", "signup": "Comenzar gratis" },
+    "hero": {
+      "eyebrow": "Para finanzas personales y compartidas",
+      "title": "Tus finanzas deben funcionar como funciona tu vida.",
+      "description": "DuoBalance da claridad al dinero que manejas a solas, compartes con tu pareja o coordinas con tu hogar.",
+      "primaryCta": "Comenzar gratis",
+      "secondaryCta": "Ver cómo funciona"
+    },
+    "showcase": {
+      "eyebrow": "Vista previa",
+      "title": "Un mismo idioma financiero",
+      "tabsLabel": "Vista previa del producto",
+      "balances": {
+        "title": "Saldos y cuentas",
+        "description": "Una vista clara de tus cuentas, sean personales, compartidas o ambas."
+      },
+      "entry": {
+        "title": "Registro rápido",
+        "description": "Anoten un gasto en segundos con un teclado numérico optimizado."
+      },
+      "budget": {
+        "title": "Presupuesto mensual",
+        "description": "Define límites por categoría y sigue el gasto que te importa."
+      },
+      "bills": {
+        "title": "Calendario de facturas",
+        "description": "Mantén los pagos recurrentes visibles, para ti o para las personas con quienes los compartes."
+      }
+    },
+    "preview": {
+      "netWorth": "Patrimonio neto combinado",
+      "exchangeRate": "Tipo de cambio: 1 USD = C$ 36.65 NIO",
+      "jointAccount": "Gastos del hogar",
+      "cash": "Efectivo de Elena",
+      "card": "Tarjeta platino",
+      "newExpense": "Nuevo gasto",
+      "concept": "Concepto",
+      "lunch": "Almuerzo",
+      "account": "Cuenta",
+      "category": "Categoría",
+      "restaurants": "Restaurantes",
+      "spent": "Gastado",
+      "monthlyBudget": "Presupuesto mensual",
+      "of": "de",
+      "groceries": "Supermercado",
+      "fuel": "Combustible",
+      "fun": "Entretenimiento",
+      "august": "Agosto 2026",
+      "pendingBills": "3 pendientes este mes",
+      "internet": "Internet del hogar",
+      "dueToday": "Vence hoy"
+    },
+    "story": {
+      "eyebrow": "Creadores independientes",
+      "title": "Construida por una necesidad real",
+      "first": "DuoBalance nació de una pregunta común: ¿cómo se puede manejar dinero compartido sin perder claridad ni espacio personal?",
+      "second": "Muchas apps financieras se diseñan para una persona, mientras otras borran todos los límites. Ninguna refleja cómo manejamos el dinero en realidad: a veces de forma independiente y a veces juntos.",
+      "quote": "“Las buenas herramientas financieras dejan espacio para lo personal, lo compartido y todo lo que existe entre ambos.”",
+      "third": "Por eso DuoBalance combina cuentas personales con finanzas compartidas: sirve si manejas tu dinero a solas, con tu pareja o como parte de un hogar."
+    },
+    "differences": {
+      "eyebrow": "Por qué DuoBalance",
+      "title": "La diferencia empieza en la estructura",
+      "together": {
+        "title": "Flexible por diseño",
+        "description": "Úsala de forma individual, vincula perfiles al compartir finanzas y conserva límites claros en ambos casos."
+      },
+      "currency": {
+        "title": "Multidivisa real",
+        "description": "Registra córdobas y dólares a la vez, pensado para vidas y hogares reales de Latinoamérica."
+      },
+      "privacy": {
+        "title": "Privacidad por defecto",
+        "description": "Sin anuncios, sin rastreo y con sus datos siempre disponibles para exportar."
+      },
+      "manualEntry": {
+        "title": "Manual a propósito",
+        "description": "Registra transacciones en segundos para tener más consciencia, privacidad y confiabilidad que con conexiones bancarias frágiles."
+      }
+    },
+    "manual": {
+      "eyebrow": "Sin filtros de marketing",
+      "title": "¿Por qué no hay conexión bancaria?",
+      "description": "Las conexiones automáticas son frágiles en Latinoamérica: se desconectan, piden verificaciones frecuentes y pueden duplicar transacciones.",
+      "descriptionTwo": "El registro manual da consciencia activa. Anotar cada gasto toma un momento y te ayuda a tomar mejores decisiones, a solas o en conjunto.",
+      "forYouTitle": "Esta app es para ustedes si:",
+      "forYouOne": "Quieres una relación más clara con tus gastos, a solas o en conjunto.",
+      "forYouTwo": "Valoran la precisión sobre la automatización defectuosa.",
+      "forYouThree": "Manejan efectivo y múltiples monedas regularmente.",
+      "notForYouTitle": "Esta app no es para ustedes si:",
+      "notForYouOne": "No pueden dedicar unos segundos a anotar compras.",
+      "notForYouTwo": "El registro manual de transacciones es inaceptable."
+    },
+    "pricing": {
+      "eyebrow": "Precio simple y honesto",
+      "title": "Sin sorpresas ni suscripciones confusas",
+      "badge": "Fase actual",
+      "plan": "Gratis durante la beta",
+      "price": "$0",
+      "description": "Únete a las primeras personas y hogares que nos ayudan a pulir cada parte de la app, con acceso completo sin costo.",
+      "future": "Cuando DuoBalance sea estable, introduciremos una tarifa fija, baja y justa para cubrir servidores y desarrollo independiente. Sus datos seguirán siendo exportables.",
+      "cta": "Registrarse gratis"
+    },
+    "faq": {
+      "eyebrow": "Respuestas directas",
+      "title": "Preguntas frecuentes",
+      "safe": {
+        "question": "¿Mi información está segura?",
+        "answer": "Sí. Los datos se cifran en tránsito y en reposo. Como no nos conectamos al banco, nunca guardamos credenciales bancarias."
+      },
+      "bank": {
+        "question": "¿Por qué no hay conexión automática al banco?",
+        "answer": "Por estabilidad, privacidad y consciencia. Las integraciones bancarias en Latinoamérica son poco confiables y el registro manual te mantiene conectado con tus gastos, a solas o con otras personas."
+      },
+      "data": {
+        "question": "¿Qué pasa con mis datos si dejo de usar la app?",
+        "answer": "Sus datos les pertenecen. Pueden exportar cuentas, presupuestos y transacciones cuando lo necesiten."
+      },
+      "export": {
+        "question": "¿Puedo exportar mi historial?",
+        "answer": "Sí. Descarguen el historial para usarlo en una hoja de cálculo u otra herramienta cuando quieran."
+      },
+      "currencies": {
+        "question": "¿Qué países y monedas están soportados?",
+        "answer": "Puedes crear un hogar en Argentina, Bolivia, Brasil, Chile, Colombia, Costa Rica, Cuba, República Dominicana, Ecuador, El Salvador, Guatemala, Honduras, México, Nicaragua, Panamá, Paraguay, Perú, Puerto Rico, Uruguay, Venezuela, Estados Unidos o España. DuoBalance obtiene tipos de cambio para la configuración de monedas soportada, incluidos córdobas y dólares estadounidenses."
+      }
+    },
+    "footer": {
+      "description": "Finanzas honestas y transparentes para personas, parejas y hogares.",
+      "product": "Producto",
+      "howItWorks": "Cómo funciona",
+      "pricing": "Precios beta",
+      "faq": "Preguntas frecuentes",
+      "company": "Compañía",
+      "story": "Nuestra historia",
+      "contact": "Contacto",
+      "legal": "Legal",
+      "terms": "Términos",
+      "privacy": "Privacidad"
+    }
   },
   "nav": {
     "balances": "Saldos",
@@ -168,6 +312,7 @@
       "creatingHousehold": "Creando hogar…",
       "haveAccount": "¿Ya tienes cuenta?",
       "loginLink": "Iniciar sesión",
+      "consentNotice": "Al registrarte, aceptas nuestros <terms>Términos de Servicio</terms> y <privacy>Política de Privacidad</privacy>.",
       "checkEmailTitle": "Revisa tu correo",
       "checkEmailBody": "Te enviamos un enlace para confirmar tu cuenta. Vuelve e inicia sesión luego de confirmar."
     },
@@ -687,7 +832,18 @@
       "household": "Hogar",
       "preferences": "Preferencias",
       "configuration": "Categorías y reglas",
-      "data": "Tus datos"
+      "data": "Tus datos",
+      "legal": "Legal y Privacidad"
+    },
+    "legal": {
+      "privacy": {
+        "title": "Política de Privacidad",
+        "description": "Consulta cómo protegemos y gestionamos tus datos personales."
+      },
+      "terms": {
+        "title": "Términos de Servicio",
+        "description": "Términos de uso, aviso de fase Beta y ausencia de garantías."
+      }
     },
     "navigation": {
       "categories": {

@@ -13,7 +13,7 @@ vi.mock("resend", () => {
   return { Resend: MockResend };
 });
 
-const ENV_KEYS = ["RESEND_API_KEY", "RESEND_FROM"] as const;
+const ENV_KEYS = ["RESEND_API_KEY", "RESEND_FROM", "RESEND_REPLY_TO"] as const;
 
 const ITEM = { billName: "Rent", dueOn: "2026-08-15", amount: 1234, currency: "USD" };
 
@@ -54,7 +54,7 @@ describe("sendReminderDigest", () => {
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "duobalance <reminders@resend.dev>",
+        from: "DuoBalance <hola@duobalance.app>",
         to: ["partner@example.com"],
         subject: "Tienes 1 factura(s) por pagar en Casa 123",
       }),
@@ -121,17 +121,21 @@ describe("sendReminderDigest", () => {
     expect(html).not.toContain("<script>");
   });
 
-  it("uses RESEND_FROM when set", async () => {
+  it("uses RESEND_FROM and RESEND_REPLY_TO when set", async () => {
     const { sendReminderDigest } = await loadEmail({
       RESEND_API_KEY: "re_secret",
       RESEND_FROM: "duobalance <bills@example.com>",
+      RESEND_REPLY_TO: "support@example.com",
     });
     mockSend.mockResolvedValue({ error: null });
 
     await sendReminderDigest(PARAMS);
 
     expect(mockSend).toHaveBeenCalledWith(
-      expect.objectContaining({ from: "duobalance <bills@example.com>" }),
+      expect.objectContaining({
+        from: "duobalance <bills@example.com>",
+        replyTo: "support@example.com",
+      }),
     );
   });
 

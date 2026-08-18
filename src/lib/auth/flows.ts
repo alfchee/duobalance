@@ -14,7 +14,13 @@ export type SignInPort = (input: {
 export type SignUpPort = (input: {
   email: string;
   password: string;
-  options: { data: { display_name: string } };
+  options: {
+    data: {
+      display_name: string;
+      legal_consent_version?: string;
+      legal_consent_at?: string;
+    };
+  };
 }) => Promise<{ data: { session: unknown | null }; error: unknown }>;
 
 export type RequestPasswordResetPort = (
@@ -60,13 +66,25 @@ export type SignupNextStep = "household" | "check-email";
 
 export async function signUp(
   port: SignUpPort | null,
-  input: { displayName: string; email: string; password: string; pendingInvitePath: string | null },
+  input: {
+    displayName: string;
+    email: string;
+    password: string;
+    pendingInvitePath: string | null;
+    legalConsentVersion?: string;
+  },
 ): Promise<AuthResult<{ nextStep: SignupNextStep; redirectTo: PostAuthDestination | null }>> {
   if (!port) return { ok: false, errorKey: "generic" };
   const { data, error } = await port({
     email: normalizeEmail(input.email),
     password: input.password,
-    options: { data: { display_name: input.displayName.trim() } },
+    options: {
+      data: {
+        display_name: input.displayName.trim(),
+        legal_consent_version: input.legalConsentVersion ?? "1.0",
+        legal_consent_at: new Date().toISOString(),
+      },
+    },
   });
   if (error) return { ok: false, errorKey: getAuthErrorKey(error) };
 

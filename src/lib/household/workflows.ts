@@ -34,6 +34,7 @@ export type CreateHouseholdPort = (input: {
   p_country: string;
   p_base_currency: string;
   p_display_name: string;
+  p_signup_source?: string;
 }) => Promise<{ data: string | null; error: unknown }>;
 
 export type AcceptInvitePort = (input: {
@@ -94,15 +95,24 @@ export function getHouseholdActionErrorKey(error: unknown): string {
 
 export async function createHousehold(
   port: CreateHouseholdPort | null,
-  input: { name: string; country: string; baseCurrency: string; displayName: string },
+  input: {
+    name: string;
+    country: string;
+    baseCurrency: string;
+    displayName: string;
+    signupSource?: string;
+  },
 ): Promise<HouseholdResult<{ householdId: string }>> {
   if (!port) return { ok: false, errorKey: "generic" };
-  const { data, error } = await port({
+  const values = {
     p_name: input.name.trim(),
     p_country: input.country,
     p_base_currency: input.baseCurrency,
     p_display_name: input.displayName.trim(),
-  });
+  };
+  const { data, error } = await port(
+    input.signupSource ? { ...values, p_signup_source: input.signupSource } : values,
+  );
   return error || !data
     ? { ok: false, errorKey: getHouseholdActionErrorKey(error) }
     : { ok: true, value: { householdId: data } };
