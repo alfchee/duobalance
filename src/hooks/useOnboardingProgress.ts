@@ -11,7 +11,7 @@ export function useOnboardingProgress(householdId: string | null) {
   const hasAccounts = (accounts?.length ?? 0) > 0;
 
   const { data: hasTransactions = false, isLoading: txLoading } = useQuery({
-    queryKey: ["onboarding-transactions-check", householdId],
+    queryKey: ["transactions", householdId, "onboarding-check"],
     queryFn: async () => {
       const supabase = createSupabaseBrowser();
       if (!supabase || !householdId) return false;
@@ -26,7 +26,7 @@ export function useOnboardingProgress(householdId: string | null) {
   });
 
   const { data: hasBudgets = false, isLoading: budgetsLoading } = useQuery({
-    queryKey: ["onboarding-budgets-check", householdId],
+    queryKey: ["budgets", householdId, "onboarding-check"],
     queryFn: async () => {
       const supabase = createSupabaseBrowser();
       if (!supabase || !householdId) return false;
