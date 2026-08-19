@@ -45,6 +45,9 @@ before insert or update of account_id, amount, currency, fx_rate, occurred_on, h
 on public.transactions
 for each row execute function public.tg_transactions_set_account_amount();
 
+alter table public.transactions disable trigger transactions_prevent_transfer_update;
+alter table public.transactions disable trigger transactions_protect_transfer_group;
+
 update public.transactions t
 set account_amount = case
   when t.currency = a.currency then round(t.amount, 4)
@@ -55,6 +58,9 @@ from public.accounts a
 join public.households h on h.id = a.household_id
 where a.id = t.account_id
   and h.id = t.household_id;
+
+alter table public.transactions enable trigger transactions_prevent_transfer_update;
+alter table public.transactions enable trigger transactions_protect_transfer_group;
 
 alter table public.transactions
   alter column account_amount set default 0,
