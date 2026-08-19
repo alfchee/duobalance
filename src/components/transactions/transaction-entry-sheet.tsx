@@ -50,7 +50,7 @@ import { useOfflineQueue } from "@/components/realtime-status";
 const LAST_ACCOUNT_STORAGE_KEY = "duobalance:lastTransactionAccountId";
 const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"] as const;
 const ENTRY_SHEET_CLASS_NAME =
-  "max-h-[92dvh] overflow-y-auto rounded-t-[2rem] sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[2rem]";
+  "max-h-[92dvh] overflow-y-auto rounded-t-[2rem] sm:top-[4dvh] sm:right-0 sm:bottom-auto sm:left-0 sm:mx-auto sm:w-full sm:max-w-xl sm:rounded-[2rem]";
 
 type Draft = {
   amount: string;
@@ -468,6 +468,7 @@ function TransactionEntryContent({
   const [fxRateOverridden, setFxRateOverridden] = useState(transaction !== null);
   const [descriptionFocused, setDescriptionFocused] = useState(false);
   const amountRef = useRef<HTMLInputElement>(null);
+  const sheetContentRef = useRef<HTMLDivElement>(null);
   const selectedAccount = accounts.find((account) => account.id === draft.accountId) ?? null;
   const minorUnit = findMinorUnit(currencies, draft.currency || null);
   const isForeignCurrency = !!draft.currency && !!baseCurrency && draft.currency !== baseCurrency;
@@ -719,7 +720,7 @@ function TransactionEntryContent({
   }
 
   return (
-    <SheetContent side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
+    <SheetContent ref={sheetContentRef} side="bottom" className={ENTRY_SHEET_CLASS_NAME}>
       <SheetHeader className="border-b px-6 pb-5 pt-6">
         <div className="flex items-center justify-between gap-2 pr-6">
           <SheetTitle className="text-2xl font-black tracking-tight">
@@ -846,7 +847,11 @@ function TransactionEntryContent({
 
         <div className="space-y-2">
           <Label>{t("form.currency")}</Label>
-          <CurrencyPicker value={draft.currency || null} onSelect={setCurrency} />
+          <CurrencyPicker
+            value={draft.currency || null}
+            onSelect={setCurrency}
+            portalContainerRef={sheetContentRef}
+          />
         </div>
 
         <div className="space-y-2">
