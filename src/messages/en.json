@@ -519,6 +519,7 @@
       "currencyNoResults": "No currencies match.",
       "openingBalance": "Opening balance",
       "openingBalanceHint": "Starting balance before transactions.",
+      "openingBalanceHintDebt": "Enter the amount currently owed as a positive number — DuoBalance tracks it as debt automatically.",
       "manualBalance": "Current balance",
       "creditLimit": "Credit limit",
       "creditLimitHint": "Optional — shown on the account.",

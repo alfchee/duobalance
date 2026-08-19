@@ -519,6 +519,7 @@
       "currencyNoResults": "Ninguna moneda coincide.",
       "openingBalance": "Saldo inicial",
       "openingBalanceHint": "Saldo inicial antes de los movimientos.",
+      "openingBalanceHintDebt": "Ingresa el monto que debes actualmente como número positivo — DuoBalance lo registra como deuda automáticamente.",
       "manualBalance": "Saldo actual",
       "creditLimit": "Límite de crédito",
       "creditLimitHint": "Opcional — se muestra en la cuenta.",
