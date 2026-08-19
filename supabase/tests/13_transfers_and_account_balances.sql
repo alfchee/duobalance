@@ -36,7 +36,7 @@ begin
 end
 $$;
 
-select plan(14);
+select plan(18);
 
 select tests.authenticate_as('e1000000-0000-0000-0000-000000000001');
 
@@ -70,6 +70,26 @@ select results_eq(
   'ledger includes transfers and manual balance ignores transactions'
 );
 
+insert into public.fx_overrides (household_id, rate_date, code, usd_rate)
+values ('e0000000-0000-0000-0000-00000000000a', current_date, 'NIO', 36.769);
+
+select results_eq(
+  $$ insert into public.transactions
+       (household_id, account_id, amount, currency, fx_rate, occurred_on, description, entered_by)
+     values
+       ('e0000000-0000-0000-0000-00000000000a', 'e3000000-0000-0000-0000-000000000002', -440, 'USD', 1, current_date, 'USD expense in NIO account', 'e2000000-0000-0000-0000-000000000001')
+     returning account_amount $$,
+  $$ values (-16178.3600::numeric) $$,
+  'foreign-currency transaction snapshots its amount in the account currency'
+);
+
+select results_eq(
+  $$ select balance from public.account_balances
+     where account_id = 'e3000000-0000-0000-0000-000000000002'::uuid $$,
+  $$ values (-15618.3600::numeric) $$,
+  'ledger balance aggregates the account-currency amount rather than the transaction amount'
+);
+
 select results_eq(
   $$ select count(*) from public.transactions where transfer_group_id is not null $$,
   $$ values (2::bigint) $$,
@@ -89,7 +109,25 @@ select throws_ok(
 insert into public.transactions
   (household_id, account_id, amount, currency, fx_rate, occurred_on, description, entered_by)
 values
-  ('e0000000-0000-0000-0000-00000000000a', 'e3000000-0000-0000-0000-000000000001', -1, 'USD', 1, current_date, 'regular transaction', 'e2000000-0000-0000-0000-000000000001');
+  ('e0000000-0000-0000-0000-00000000000a', 'e3000000-0000-0000-0000-000000000001', -36.769, 'NIO', 0.0271961718, current_date, 'regular transaction', 'e2000000-0000-0000-0000-000000000001');
+
+update public.transactions
+set fx_rate = 0.0543923436
+where description = 'regular transaction';
+
+select results_eq(
+  $$ select account_amount from public.transactions where description = 'regular transaction' $$,
+  $$ values (-2::numeric) $$,
+  'updating an FX rate refreshes the account-currency amount'
+);
+
+select throws_ok(
+  $$ update public.accounts set currency = 'NIO'
+     where id = 'e3000000-0000-0000-0000-000000000001'::uuid $$,
+  '23514',
+  'cannot change an account currency after transactions exist',
+  'accounts with transactions cannot change currency'
+);
 
 select throws_ok(
   $$ update public.transactions
