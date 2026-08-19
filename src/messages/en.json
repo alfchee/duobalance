@@ -254,6 +254,8 @@
       "duplicate": "Duplicate",
       "delete": "Delete",
       "confirmDelete": "Delete “{description}”? This cannot be undone.",
+      "firstTransactionHintTitle": "First transaction tip",
+      "firstTransactionHintBody": "Log a recent expense (e.g. coffee or groceries) to see DuoBalance track your balances!",
       "errors": {
         "amount": "Enter an amount other than zero.",
         "description": "Enter a description between 1 and 200 characters.",
@@ -406,6 +408,28 @@
     "breakdownClose": "Close",
     "rateUsed": "1 USD = {rate} · {date}"
   },
+  "onboarding": {
+    "checklist": {
+      "badge": "Getting started",
+      "title": "Set up your household",
+      "progressCount": "{completed} of {total} steps completed",
+      "dismiss": "Dismiss checklist",
+      "stepAccount": "Add an account",
+      "stepTransaction": "Record a transaction",
+      "stepBudget": "Set a budget",
+      "stepPartner": "Invite your partner",
+      "actionAdd": "Add",
+      "actionRecord": "Record",
+      "actionSet": "Set",
+      "actionInvite": "Invite",
+      "inviteModalTitle": "Invite your partner",
+      "inviteModalDescription": "Send an email invitation to join your shared household.",
+      "inviteError": "Couldn't send invitation. Check the email and try again.",
+      "inviteCancel": "Cancel",
+      "inviteSending": "Sending invitation…",
+      "inviteSend": "Send invitation"
+    }
+  },
   "household": {
     "picker": {
       "title": "Choose a household",
@@ -475,6 +499,13 @@
       "defaultCash": "Cash",
       "defaultChecking": "Checking",
       "defaultCreditCard": "Credit card",
+      "initialBalancePlaceholder": "Initial balance",
+      "modeExplanationTitle": "Ledger vs Manual balance mode",
+      "modeExplanationBody": "Balances update automatically from recorded transactions (Ledger) or can be updated directly (Manual).",
+      "learnMoreHelp": "Learn about balance modes →",
+      "createSelected": "Create starter accounts",
+      "creatingBatch": "Creating accounts…",
+      "addSingleCustom": "Or add a custom account",
       "error": "Couldn't create the account. Try again."
     },
     "list": {
