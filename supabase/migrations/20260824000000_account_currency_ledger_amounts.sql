@@ -19,7 +19,7 @@ begin
     and a.household_id = new.household_id;
 
   if v_account_currency is null then
-    raise exception 'transaction account must belong to its household' using errcode = 'foreign_key_violation';
+    raise exception 'transaction account must belong to its household' using errcode = 'check_violation';
   end if;
 
   new.account_amount := case
