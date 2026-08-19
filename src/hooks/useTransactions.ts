@@ -42,7 +42,7 @@ export function useTransactions(householdId: string | null, filters: Transaction
       let query = requireSupabase()
         .from("transactions")
         .select(
-          "id, account_id, amount, base_amount, category_id, currency, description, entered_by, fx_rate, household_id, notes, occurred_on, spent_by, transfer_group_id, created_at, updated_at, import_batch_id, import_hash, is_cleared, is_pending_review, merchant, receipt_url",
+          "id, account_id, account_amount, amount, base_amount, category_id, currency, description, entered_by, fx_rate, household_id, notes, occurred_on, spent_by, transfer_group_id, created_at, updated_at, import_batch_id, import_hash, is_cleared, is_pending_review, merchant, receipt_url",
         )
         .eq("household_id", householdId!);
       applyActivityFilters(
