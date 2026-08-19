@@ -507,6 +507,7 @@
       "createSelected": "Crear cuentas iniciales",
       "creatingBatch": "Creando cuentas…",
       "addSingleCustom": "O agregar una cuenta personalizada",
+      "invalidBalance": "Ingresa un saldo inicial válido.",
       "error": "No se pudo crear la cuenta. Intenta de nuevo."
     },
     "list": {

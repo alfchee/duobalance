@@ -507,6 +507,7 @@
       "createSelected": "Create starter accounts",
       "creatingBatch": "Creating accounts…",
       "addSingleCustom": "Or add a custom account",
+      "invalidBalance": "Enter a valid initial balance.",
       "error": "Couldn't create the account. Try again."
     },
     "list": {

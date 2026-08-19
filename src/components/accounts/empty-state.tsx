@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { HelpCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useAccountMutations, type AccountInput } from "@/hooks/useAccounts";
+import { useCurrencies } from "@/hooks/useCurrencies";
+import { maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
 import { useAccountsUiStore } from "@/store/accounts";
 import type { AccountKind } from "@/lib/accounts";
 import { KindIcon } from "./kind-icon";
@@ -22,15 +24,19 @@ type StarterItem = {
 
 export function EmptyAccounts() {
   const t = useTranslations("accounts.empty");
-  const { householdId, baseCurrency } = useHousehold();
+  const locale = useLocale();
+  const { householdId, baseCurrency, numberFormat } = useHousehold();
   const { createBatch } = useAccountMutations(householdId);
   const { openCreate } = useAccountsUiStore();
+  const { data: currencies } = useCurrencies();
+  const minorUnit = currencies?.find((currency) => currency.code === baseCurrency)?.minor_unit ?? 2;
 
   const [starters, setStarters] = useState<StarterItem[]>([
     { kind: "cash", nameKey: "defaultCash", enabled: true, name: "", balance: "" },
     { kind: "checking", nameKey: "defaultChecking", enabled: true, name: "", balance: "" },
     { kind: "credit_card", nameKey: "defaultCreditCard", enabled: true, name: "", balance: "" },
   ]);
+  const [balanceError, setBalanceError] = useState(false);
 
   function updateStarter(index: number, patch: Partial<StarterItem>) {
     setStarters((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
@@ -38,27 +44,34 @@ export function EmptyAccounts() {
 
   async function handleBatchSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBalanceError(false);
     if (!householdId || !baseCurrency) return;
 
     const selected = starters.filter((s) => s.enabled);
     if (selected.length === 0) return;
 
-    const payload: AccountInput[] = selected.map((s) => {
-      const name = s.name.trim() || t(s.nameKey);
-      const parsed = parseFloat(s.balance);
-      const balanceVal = isNaN(parsed) ? 0 : parsed;
-      return {
+    const payload: AccountInput[] = [];
+    for (const starter of selected) {
+      const rawBalance = starter.balance.trim();
+      const parsedBalance = rawBalance ? parseMoneyInput(rawBalance, locale, numberFormat) : 0;
+      if (parsedBalance == null) {
+        setBalanceError(true);
+        return;
+      }
+
+      const name = starter.name.trim() || t(starter.nameKey);
+      payload.push({
         name,
-        kind: s.kind,
+        kind: starter.kind,
         currency: baseCurrency,
         balance_mode: "ledger",
-        opening_balance: balanceVal,
+        opening_balance: roundToMinorUnit(parsedBalance, minorUnit),
         manual_balance: null,
         credit_limit: null,
         is_shared: true,
         owner_member_id: null,
-      };
-    });
+      });
+    }
 
     createBatch.mutate(payload);
   }
@@ -102,10 +115,14 @@ export function EmptyAccounts() {
                     className="h-10 text-sm"
                   />
                   <Input
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     value={item.balance}
-                    onChange={(e) => updateStarter(index, { balance: e.target.value })}
+                    onChange={(e) =>
+                      updateStarter(index, {
+                        balance: maskMoneyInput(e.target.value, locale, minorUnit, numberFormat),
+                      })
+                    }
                     placeholder={t("initialBalancePlaceholder")}
                     disabled={!item.enabled}
                     className="h-10 text-sm"
@@ -132,6 +149,11 @@ export function EmptyAccounts() {
           </div>
         </div>
 
+        {balanceError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t("invalidBalance")}
+          </p>
+        ) : null}
         {createBatch.isError ? (
           <p role="alert" className="text-sm text-destructive">
             {t("error")}
