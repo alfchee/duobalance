@@ -499,6 +499,7 @@
       "defaultCash": "Cash",
       "defaultChecking": "Checking",
       "defaultCreditCard": "Credit card",
+      "selectStarter": "Include {name}",
       "initialBalancePlaceholder": "Initial balance",
       "modeExplanationTitle": "Ledger vs Manual balance mode",
       "modeExplanationBody": "Balances update automatically from recorded transactions (Ledger) or can be updated directly (Manual).",

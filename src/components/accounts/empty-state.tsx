@@ -84,6 +84,7 @@ export function EmptyAccounts() {
                     type="checkbox"
                     checked={item.enabled}
                     onChange={(e) => updateStarter(index, { enabled: e.target.checked })}
+                    aria-label={t("selectStarter", { name: defaultName })}
                     className="size-4 rounded border-input"
                   />
                   <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-secondary">
@@ -122,7 +123,7 @@ export function EmptyAccounts() {
               <p className="font-semibold text-foreground">{t("modeExplanationTitle")}</p>
               <p>{t("modeExplanationBody")}</p>
               <Link
-                href="/help/01-ledger-vs-manual-balance"
+                href="/help/ledger-vs-manual-balance"
                 className="inline-flex items-center font-medium text-primary hover:underline"
               >
                 {t("learnMoreHelp")}

@@ -735,7 +735,7 @@ function TransactionEntryContent({
         onSubmit={handleSubmit}
         className="space-y-5 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2"
       >
-        {!onboardingProgress.hasTransactions ? (
+        {!onboardingProgress.isLoading && !onboardingProgress.hasTransactions ? (
           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
             <p className="font-bold">{t("form.firstTransactionHintTitle")}</p>
             <p className="mt-0.5 text-muted-foreground">{t("form.firstTransactionHintBody")}</p>

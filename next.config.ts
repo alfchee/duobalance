@@ -5,7 +5,7 @@ const isTauri = process.env.BUILD_TARGET === "tauri";
 const config: NextConfig = {
   reactStrictMode: true,
   images: {
-    unoptimized: true,
+    unoptimized: isTauri,
   },
   ...(isTauri && {
     output: "export" as const,

@@ -499,6 +499,7 @@
       "defaultCash": "Efectivo",
       "defaultChecking": "Cuenta corriente",
       "defaultCreditCard": "Tarjeta de crédito",
+      "selectStarter": "Incluir {name}",
       "initialBalancePlaceholder": "Saldo inicial",
       "modeExplanationTitle": "Modos por movimientos y manual",
       "modeExplanationBody": "El saldo se calcula con cada movimiento (movimientos) o se actualiza directamente (manual).",
