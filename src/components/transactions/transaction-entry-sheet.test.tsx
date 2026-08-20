@@ -38,6 +38,9 @@ vi.mock("@/hooks/useCurrencies", () => ({
 }));
 vi.mock("@/hooks/useFxOverrides", () => ({ useFxOverrides: () => ({ data: [] }) }));
 vi.mock("@/hooks/useHouseholdMembers", () => ({ useHouseholdMembers: () => ({ data: [] }) }));
+vi.mock("@/hooks/useOnboardingProgress", () => ({
+  useOnboardingProgress: () => ({ hasTransactions: true }),
+}));
 vi.mock("@/hooks/useTransactions", () => ({
   useFxRateOn: () => ({ data: null }),
   useTransactionDescriptions: () => ({ data: [] }),
