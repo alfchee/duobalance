@@ -1,0 +1,1271 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>duobalance — Finanzas compartidas para parejas reales</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+  <style>
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Tokens & Component CSS - Wise Design System
+     * ─────────────────────────────────────────────────────────────────── */
+    :root {
+      /* Surface */
+      --bg: #ffffff;
+      --surface: #e8ebe6;
+      --surface-warm: var(--surface);
+
+      /* Foreground */
+      --fg: #0e0f0c;
+      --fg-2: var(--fg);
+      --muted: #868685;
+      --meta: var(--muted);
+
+      /* Border */
+      --border: rgba(14, 15, 12, 0.12);
+      --border-soft: var(--border);
+
+      /* Accent */
+      --accent: #9fe870;
+      --accent-on: #163300;
+      --accent-hover: #cdffad;
+      --accent-active: color-mix(in oklab, var(--accent), black 12%);
+
+      /* Semantic */
+      --success: #054d28;
+      --warn: #ffd11a;
+      --danger: #d03238;
+
+      /* Typography */
+      --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+      --font-body: "Inter", Helvetica, Arial, ui-sans-serif, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Monaco, monospace;
+
+      --text-xs: 12px;
+      --text-sm: 14px;
+      --text-base: 18px;
+      --text-lg: 22px;
+      --text-xl: 26px;
+      --text-2xl: 40px;
+      --text-3xl: 64px;
+      --text-4xl: 96px;
+
+      --leading-body: 1.44;
+      --leading-tight: 0.9;
+      --tracking-display: -0.03em;
+
+      /* Spacing */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-12: 48px;
+      --space-16: 64px;
+      --space-24: 96px;
+
+      /* Radius */
+      --radius-sm: 16px;
+      --radius-md: 30px;
+      --radius-lg: 40px;
+      --radius-pill: 9999px;
+
+      /* Elevation */
+      --elev-flat: none;
+      --elev-ring: 0 0 0 1px var(--border);
+      --elev-raised: 0 0 0 1px var(--border), 0 4px 16px rgba(14, 15, 12, 0.04);
+      --focus-ring: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 60%);
+
+      /* Motion */
+      --motion-fast: 150ms;
+      --motion-base: 200ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* Reset & Base */
+    * { 
+      box-sizing: border-box; 
+      font-feature-settings: "calt" 1; 
+      margin: 0; 
+      padding: 0; 
+    }
+    
+    body {
+      font-family: var(--font-body);
+      color: var(--fg);
+      background-color: var(--bg);
+      line-height: var(--leading-body);
+      font-size: var(--text-base);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Typography Utilities */
+    .heading-display {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 6vw, var(--text-3xl));
+      font-weight: 900;
+      line-height: var(--leading-tight);
+      letter-spacing: var(--tracking-display);
+      color: var(--fg);
+    }
+    .heading-section {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 4vw, var(--text-2xl));
+      font-weight: 900;
+      line-height: var(--leading-tight);
+      letter-spacing: -0.02em;
+    }
+    .heading-card {
+      font-family: var(--font-body);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .body-semi {
+      font-weight: 600;
+    }
+    .text-muted {
+      color: var(--muted);
+    }
+    .text-sm {
+      font-size: var(--text-sm);
+    }
+    .text-xs {
+      font-size: var(--text-xs);
+    }
+    .text-caps {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+    .tnum {
+      font-feature-settings: "calt" 1, "tnum" 1;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      border-radius: var(--radius-pill);
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: var(--text-base);
+      cursor: pointer;
+      transition: transform var(--motion-fast) var(--ease-standard), 
+                  background-color var(--motion-fast) var(--ease-standard);
+      text-decoration: none;
+      border: none;
+      outline: none;
+      padding: 10px 24px;
+      min-height: 48px;
+    }
+    .btn:focus-visible {
+      box-shadow: var(--focus-ring);
+    }
+    .btn:hover {
+      transform: scale(1.03);
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    
+    .btn-primary {
+      background-color: var(--accent);
+      color: var(--accent-on);
+    }
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+    
+    .btn-secondary {
+      background-color: rgba(22, 51, 0, 0.08);
+      color: var(--fg);
+    }
+    .btn-secondary:hover {
+      background-color: rgba(22, 51, 0, 0.12);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      color: var(--fg);
+      box-shadow: var(--elev-ring);
+    }
+    .btn-outline:hover {
+      background-color: var(--surface);
+    }
+
+    /* Layout Components */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-4) clamp(var(--space-4), 5vw, var(--space-12));
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: var(--text-lg);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      text-decoration: none;
+      color: var(--fg);
+    }
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-on);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+      width: 100%;
+    }
+
+    /* Sections */
+    .hero-section {
+      padding: var(--space-12) 0 var(--space-24);
+      background: radial-gradient(circle at 80% 20%, rgba(159, 232, 112, 0.15) 0%, rgba(255, 255, 255, 0) 60%);
+      text-align: center;
+    }
+    .hero-content {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    .hero-warning {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-4) var(--space-5);
+      max-width: 640px;
+      text-align: left;
+      font-size: var(--text-sm);
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      margin-top: var(--space-2);
+    }
+    .hero-warning-icon {
+      color: #9c7b00;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Showcase Section (Interactive Live Mockups) */
+    .showcase-section {
+      background-color: var(--surface);
+      padding: var(--space-16) 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-8);
+      align-items: center;
+    }
+    @media (min-width: 992px) {
+      .showcase-grid {
+        grid-template-columns: 350px 1fr;
+      }
+    }
+    .showcase-tabs {
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      gap: var(--space-3);
+      padding-bottom: var(--space-3);
+    }
+    @media (min-width: 992px) {
+      .showcase-tabs {
+        flex-direction: column;
+        overflow-x: visible;
+        padding-bottom: 0;
+      }
+    }
+    .showcase-tab-btn {
+      text-align: left;
+      padding: var(--space-4);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--motion-base) var(--ease-standard);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+      min-width: 200px;
+      flex-shrink: 0;
+    }
+    .showcase-tab-btn.active {
+      background-color: var(--fg);
+      border-color: var(--fg);
+      color: var(--bg);
+    }
+    .showcase-tab-btn:hover:not(.active) {
+      border-color: var(--fg);
+      transform: translateY(-2px);
+    }
+    .showcase-tab-btn .tab-title {
+      font-weight: 600;
+      font-size: var(--text-base);
+    }
+    .showcase-tab-btn.active .tab-title {
+      color: var(--accent);
+    }
+    .showcase-tab-btn .tab-desc {
+      font-size: var(--text-xs);
+      color: var(--muted);
+    }
+    .showcase-tab-btn.active .tab-desc {
+      color: #b0b4ad;
+    }
+
+    /* Live Interface Mockups - rendered purely in CSS */
+    .mockup-viewport {
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      border: 6px solid var(--fg);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      aspect-ratio: 16/10;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    @media (max-width: 576px) {
+      .mockup-viewport {
+        aspect-ratio: auto;
+        min-height: 400px;
+      }
+    }
+    .mockup-header {
+      height: 54px;
+      border-bottom: 1px solid var(--border);
+      padding: 0 var(--space-4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg);
+    }
+    .mockup-body {
+      flex: 1;
+      padding: var(--space-5);
+      overflow-y: auto;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    /* Live elements */
+    .mockup-networth {
+      padding: var(--space-4);
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .mockup-accounts {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+    @media (min-width: 576px) {
+      .mockup-accounts {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .mockup-account-card {
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mockup-account-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .mockup-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+
+    /* Keypad mockup styling */
+    .keypad-container {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: var(--space-4);
+      height: 100%;
+      align-items: stretch;
+    }
+    @media (max-width: 576px) {
+      .keypad-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .keypad-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      justify-content: center;
+    }
+    .keypad-display {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 900;
+      text-align: right;
+      padding: var(--space-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+    }
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .keypad-key {
+      background: var(--surface);
+      border: none;
+      border-radius: var(--radius-sm);
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .keypad-key:hover {
+      background: var(--border);
+    }
+
+    /* Budget Chart mockup */
+    .budget-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: var(--space-4);
+      align-items: center;
+    }
+    @media (max-width: 576px) {
+      .budget-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .budget-chart-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .budget-donut {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--accent) 0% 60%,
+        var(--surface) 60% 85%,
+        var(--muted) 85% 100%
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .budget-donut-inner {
+      width: 100px;
+      height: 100px;
+      background: var(--bg);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .budget-categories {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .budget-progress-bar {
+      height: 8px;
+      background: var(--surface);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .budget-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: var(--radius-pill);
+    }
+    .budget-progress-fill.over {
+      background: var(--danger);
+    }
+
+    /* Calendar mockup */
+    .calendar-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .calendar-day-header {
+      font-size: var(--text-xs);
+      color: var(--muted);
+      text-align: center;
+      font-weight: 600;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .calendar-day.today {
+      background: var(--surface);
+      font-weight: 600;
+    }
+    .calendar-dots {
+      display: flex;
+      gap: 2px;
+    }
+    .calendar-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+    }
+    .calendar-dot.accent { background: var(--accent-on); }
+    .calendar-dot.muted { background: var(--muted); }
+
+    /* The Story Section */
+    .story-section {
+      padding: var(--space-16) 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .story-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .story-quote {
+      font-size: var(--text-lg);
+      font-style: italic;
+      border-left: 4px solid var(--accent);
+      padding-left: var(--space-4);
+      margin: var(--space-6) 0;
+      color: var(--fg);
+    }
+
+    /* Features Grid */
+    .features-section {
+      padding: var(--space-16) 0;
+      background-color: var(--bg);
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+      margin-top: var(--space-12);
+    }
+    @media (min-width: 768px) {
+      .features-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .feature-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      transition: all var(--motion-fast) var(--ease-standard);
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--elev-raised);
+      border-color: var(--fg);
+    }
+    .feature-icon-box {
+      width: 48px;
+      height: 48px;
+      background-color: var(--surface);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg);
+    }
+
+    /* Honest Limitations Deep Dive */
+    .limitation-section {
+      padding: var(--space-16) 0;
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .limitation-card {
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      padding: var(--space-8);
+      max-width: 900px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+    }
+    @media (min-width: 768px) {
+      .limitation-card {
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+      }
+    }
+
+    /* Pricing */
+    .pricing-section {
+      padding: var(--space-16) 0;
+      text-align: center;
+    }
+    .pricing-card {
+      background: var(--bg);
+      border: 2px solid var(--fg);
+      border-radius: var(--radius-md);
+      padding: var(--space-8);
+      max-width: 450px;
+      margin: var(--space-8) auto 0;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .price-value {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    /* FAQ */
+    .faq-section {
+      padding: var(--space-16) 0;
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+    .faq-list {
+      max-width: 800px;
+      margin: var(--space-12) auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .faq-item {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      padding: var(--space-5);
+      text-align: left;
+    }
+    .faq-question {
+      font-weight: 600;
+      font-size: var(--text-base);
+      margin-bottom: var(--space-2);
+      color: var(--fg);
+    }
+    .faq-answer {
+      font-size: var(--text-sm);
+      color: var(--muted);
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--fg);
+      color: var(--surface);
+      padding: var(--space-12) 0;
+      border-top: 1px solid var(--border);
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-8);
+    }
+    @media (min-width: 768px) {
+      .footer-grid {
+        grid-template-columns: 2fr repeat(3, 1fr);
+      }
+    }
+    .footer-col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .footer-link {
+      color: #b0b4ad;
+      text-decoration: none;
+      font-size: var(--text-sm);
+      transition: color var(--motion-fast);
+    }
+    .footer-link:hover {
+      color: var(--accent);
+    }
+    .footer-bottom {
+      margin-top: var(--space-12);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+    @media (min-width: 768px) {
+      .footer-bottom {
+        flex-direction: row;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      </div>
+      duobalance
+    </a>
+    <div style="display: flex; gap: var(--space-3); align-items: center;">
+      <a href="duobalance-auth.html" class="btn btn-outline" style="min-height:38px; padding: 2px 16px; font-size:14px;">Iniciar Sesión</a>
+      <a href="duobalance-auth.html" class="btn btn-primary" style="min-height:38px; padding: 2px 16px; font-size:14px;">Registrarse</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-section" data-od-id="landing-hero">
+    <div class="container hero-content">
+      <span class="text-caps color-muted">Diseñado exclusivamente para parejas</span>
+      <h1 class="heading-display">Las apps de finanzas personales son para una persona. Sus finanzas no lo son.</h1>
+      <p style="font-size: var(--text-lg); color: var(--muted); max-width: 680px; margin: 0 auto;">
+        duobalance une las cuentas de ambos sin perder el control. Compartan gastos, realicen presupuestos y coordinen facturas en una sola app, respetando la privacidad que cada uno necesita.
+      </p>
+      
+      <div style="display: flex; gap: var(--space-4); flex-wrap: wrap; justify-content: center; margin-top: var(--space-2);">
+        <a href="duobalance-auth.html" class="btn btn-primary" data-od-id="cta-register-primary">Comenzar gratis</a>
+        <a href="#cómo-funciona" class="btn btn-secondary">Ver cómo funciona</a>
+      </div>
+
+      <!-- Honest limitation warning above-the-fold -->
+      <div class="hero-warning">
+        <svg class="hero-warning-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+          <span class="body-semi" style="color: var(--fg);">Nota transparente sobre sincronización bancaria:</span>
+          <p style="margin-top: 4px; color: var(--muted); line-height: 1.35;">
+            No nos conectamos a tu banco automáticamente. En duobalance anotas tus transacciones de forma manual. Creemos que la entrada manual fomenta una mejor conciencia financiera y evita fallos de conexión. Si buscas sincronización automática, te sugerimos buscar otra alternativa.
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Showcase Section -->
+  <section class="showcase-section" id="cómo-funciona" data-od-id="landing-showcase">
+    <div class="container">
+      <div style="text-align: center; margin-bottom: var(--space-12);">
+        <span class="text-caps color-muted">Vista previa interactiva</span>
+        <h2 class="heading-section" style="margin-top: var(--space-2);">Una app que habla el mismo idioma financiero</h2>
+      </div>
+
+      <div class="showcase-grid">
+        <!-- Showcase Navigation Tabs -->
+        <div class="showcase-tabs">
+          <button class="showcase-tab-btn active" onclick="switchShowcase('balances', this)">
+            <span class="tab-title">1. Saldos y Cuentas</span>
+            <span class="tab-desc">Net Worth y balances unificados de ambos en Córdobas o Dólares.</span>
+          </button>
+          <button class="showcase-tab-btn" onclick="switchShowcase('keypad', this)">
+            <span class="tab-title">2. Teclado de Entrada Rápida</span>
+            <span class="tab-desc">Anota gastos en segundos con nuestro teclado numérico optimizado.</span>
+          </button>
+          <button class="showcase-tab-btn" onclick="switchShowcase('budget', this)">
+            <span class="tab-title">3. Presupuesto Mensual</span>
+            <span class="tab-desc">Asignen límites por categoría y monitoreen el gasto conjunto.</span>
+          </button>
+          <button class="showcase-tab-btn" onclick="switchShowcase('bills', this)">
+            <span class="tab-title">4. Calendario de Facturas</span>
+            <span class="tab-desc">Nunca más olviden un pago recurrente con alertas compartidas.</span>
+          </button>
+        </div>
+
+        <!-- Showcase Visual Mockup Frame -->
+        <div class="mockup-viewport">
+          <!-- Mockup Header -->
+          <div class="mockup-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: 24px; height: 24px; background: var(--accent); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size:12px; font-weight:900;">$</div>
+              <span class="body-semi text-sm">duobalance</span>
+            </div>
+            <div style="display:flex; gap:-6px; align-items:center;">
+              <div class="mockup-circle" style="width:24px; height:24px; background:#e8ebe6; font-size:9px; border: 2px solid white; margin-right: -6px; z-index:1;">EM</div>
+              <div class="mockup-circle" style="width:24px; height:24px; background:var(--accent); font-size:9px; border: 2px solid white;">AL</div>
+            </div>
+          </div>
+
+          <!-- Tab Content 1: Balances -->
+          <div id="showcase-balances" class="mockup-body">
+            <div class="mockup-networth">
+              <span class="text-caps text-muted">Patrimonio Neto Combinado</span>
+              <div style="font-size: 32px; font-weight: 900; margin-top: 4px; letter-spacing: -0.02em;" class="tnum">$24,530.00</div>
+              <span class="text-xs text-muted">Valor de cambio automático: 1 USD = C$ 36.65 NIO</span>
+            </div>
+            <div class="mockup-accounts">
+              <div class="mockup-account-card">
+                <div class="mockup-account-info">
+                  <div class="mockup-circle">🏦</div>
+                  <div>
+                    <div style="font-weight:600; font-size:14px;">Cuenta de Gastos Hogar</div>
+                    <div class="text-xs text-muted">Joint &middot; BAC Credomatic</div>
+                  </div>
+                </div>
+                <span class="body-semi tnum">$4,200.00</span>
+              </div>
+              <div class="mockup-account-card">
+                <div class="mockup-account-info">
+                  <div class="mockup-circle">💵</div>
+                  <div>
+                    <div style="font-weight:600; font-size:14px;">Efectivo Elena</div>
+                    <div class="text-xs text-muted">Elena &middot; Manual</div>
+                  </div>
+                </div>
+                <span class="body-semi tnum">C$ 18,325.00</span>
+              </div>
+              <div class="mockup-account-card">
+                <div class="mockup-account-info">
+                  <div class="mockup-circle">💳</div>
+                  <div>
+                    <div style="font-weight:600; font-size:14px;">Tarjeta Amex Platino</div>
+                    <div class="text-xs text-muted">Joint &middot; BAC</div>
+                  </div>
+                </div>
+                <span class="body-semi tnum" style="color:var(--danger);">&minus;$1,420.00</span>
+              </div>
+              <div class="mockup-account-card">
+                <div class="mockup-account-info">
+                  <div class="mockup-circle">🛡️</div>
+                  <div>
+                    <div style="font-weight:600; font-size:14px;">Fondo de Emergencia</div>
+                    <div class="text-xs text-muted">Joint &middot; Cuenta de Ahorro</div>
+                  </div>
+                </div>
+                <span class="body-semi tnum">$16,000.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content 2: Keypad -->
+          <div id="showcase-keypad" class="mockup-body" style="display: none;">
+            <div class="keypad-container">
+              <div class="keypad-form">
+                <div class="text-caps text-muted">Nuevo Gasto</div>
+                <div class="keypad-display tnum">C$ 450.00</div>
+                <div style="font-size:13px; color: var(--muted);">
+                  <strong>Concepto:</strong> Almuerzo Tip Top<br>
+                  <strong>Cuenta:</strong> Efectivo Elena<br>
+                  <strong>Categoría:</strong> 🍔 Restaurantes
+                </div>
+              </div>
+              <div class="keypad-grid">
+                <button class="keypad-key">1</button>
+                <button class="keypad-key">2</button>
+                <button class="keypad-key">3</button>
+                <button class="keypad-key">4</button>
+                <button class="keypad-key">5</button>
+                <button class="keypad-key">6</button>
+                <button class="keypad-key">7</button>
+                <button class="keypad-key">8</button>
+                <button class="keypad-key">9</button>
+                <button class="keypad-key">.</button>
+                <button class="keypad-key">0</button>
+                <button class="keypad-key" style="background:var(--accent); color:var(--accent-on);">💾</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content 3: Budget -->
+          <div id="showcase-budget" class="mockup-body" style="display: none;">
+            <div class="budget-layout">
+              <div class="budget-chart-container">
+                <div class="budget-donut">
+                  <div class="budget-donut-inner">
+                    <span class="text-xs text-muted">Gastado</span>
+                    <span class="body-semi tnum" style="font-size:18px;">$1,240.00</span>
+                    <span class="text-xs text-muted">de $2,000</span>
+                  </div>
+                </div>
+              </div>
+              <div class="budget-categories">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:14px;">
+                    <span class="body-semi">🛒 Supermercado</span>
+                    <span class="tnum">$480.00 / $600.00</span>
+                  </div>
+                  <div class="budget-progress-bar">
+                    <div class="budget-progress-fill" style="width: 80%;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:14px;">
+                    <span class="body-semi">🚗 Gasolina</span>
+                    <span class="tnum">$180.00 / $200.00</span>
+                  </div>
+                  <div class="budget-progress-bar">
+                    <div class="budget-progress-fill" style="width: 90%;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:14px;">
+                    <span class="body-semi" style="color:var(--danger);">🍿 Entretenimiento</span>
+                    <span class="tnum" style="color:var(--danger);">$220.00 / $150.00</span>
+                  </div>
+                  <div class="budget-progress-bar">
+                    <div class="budget-progress-fill over" style="width: 100%;"></div>
+                  </div>
+                  <span class="text-xs color-danger" style="display:block; margin-top:2px;">Excedido por $70.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content 4: Bills -->
+          <div id="showcase-bills" class="mockup-body" style="display: none;">
+            <div class="calendar-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:14px;">
+                <span class="body-semi">Agosto 2026</span>
+                <span class="text-muted">3 pendientes este mes</span>
+              </div>
+              <div class="calendar-grid">
+                <!-- Day Headers -->
+                <div class="calendar-day-header">L</div>
+                <div class="calendar-day-header">M</div>
+                <div class="calendar-day-header">X</div>
+                <div class="calendar-day-header">J</div>
+                <div class="calendar-day-header">V</div>
+                <div class="calendar-day-header">S</div>
+                <div class="calendar-day-header">D</div>
+                
+                <!-- Calendar row snippet -->
+                <div class="calendar-day"><span class="text-xs text-muted">10</span></div>
+                <div class="calendar-day"><span class="text-xs text-muted">11</span></div>
+                <div class="calendar-day today">
+                  <span class="text-xs">12</span>
+                  <div class="calendar-dots">
+                    <div class="calendar-dot accent" title="Internet Hogar"></div>
+                  </div>
+                </div>
+                <div class="calendar-day"><span class="text-xs text-muted">13</span></div>
+                <div class="calendar-day"><span class="text-xs text-muted">14</span></div>
+                <div class="calendar-day"><span class="text-xs text-muted">15</span></div>
+                <div class="calendar-day">
+                  <span class="text-xs text-muted">16</span>
+                  <div class="calendar-dots">
+                    <div class="calendar-dot muted" title="Suscripción Netflix"></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-3); display: flex; justify-content: space-between; align-items: center; background: var(--surface);">
+                <div>
+                  <div style="font-weight:600; font-size:14px;">🌐 Internet Fibra Claro</div>
+                  <span class="text-xs text-muted">Vence hoy &bull; Responsable: Elena</span>
+                </div>
+                <div style="text-align: right;">
+                  <div class="body-semi tnum" style="font-size:15px; color:var(--danger);">C$ 1,450.00</div>
+                  <span class="text-xs text-caps" style="color:var(--danger); font-weight:bold;">PENDIENTE</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Story Section -->
+  <section class="story-section" id="historia" data-od-id="landing-story">
+    <div class="container story-container">
+      <span class="text-caps color-muted">Creadores independientes</span>
+      <h2 class="heading-section" style="margin-top: var(--space-2); margin-bottom: var(--space-6);">Nuestra Historia: Construida por necesidad real</h2>
+      
+      <p style="margin-bottom: var(--space-4);">
+        Hola, somos Alfredo y Elena. Cuando nos casamos, nos enfrentamos al clásico problema financiero: ¿cómo manejamos nuestro dinero juntos? 
+      </p>
+      <p style="margin-bottom: var(--space-4);">
+        Probamos todas las aplicaciones del mercado. Unas requerían compartir la misma contraseña y mezclarlo absolutamente todo, lo cual eliminaba cualquier autonomía personal. Otras eran simples hojas de cálculo móviles diseñadas para una sola persona, donde uno tenía que actuar de "contador" de la relación y perseguir al otro para que anotara sus gastos.
+      </p>
+      
+      <div class="story-quote">
+        "No encontramos ninguna app que entendiera que una pareja comparte un proyecto de vida común, pero sigue estando compuesta por dos individuos con sus propios gastos privados."
+      </div>
+      
+      <p style="margin-bottom: var(--space-4);">
+        Por eso decidimos programar <strong>duobalance</strong>. La diseñamos desde el primer día bajo un principio muy simple: cuentas conjuntas para lo que se comparte (alquiler, comida, servicios, viajes) y cuentas privadas para el gasto personal de cada uno (regalos, salidas, gustos personales). Tu pareja sabe el saldo general de tus cuentas privadas si tú lo deseas para calcular el patrimonio conjunto, pero nunca verá el detalle de en qué gastas tu dinero privado.
+      </p>
+      <p>
+        Hoy en día, duobalance es la herramienta con la que manejamos nuestro hogar de forma pacífica, sin discusiones por dinero y con una alineación total. Creemos que más parejas merecen experimentar esa misma tranquilidad.
+      </p>
+    </div>
+  </section>
+
+  <!-- Key Differences (What makes it different) -->
+  <section class="features-section" id="diferenciales">
+    <div class="container">
+      <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+        <span class="text-caps color-muted">¿Por qué elegirnos?</span>
+        <h2 class="heading-section" style="margin-top: var(--space-2);">La diferencia está en la estructura de base</h2>
+      </div>
+
+      <div class="features-grid">
+        <!-- Diff 1 -->
+        <div class="feature-card" id="feature-card-two-people">
+          <div class="feature-icon-box">👥</div>
+          <h3 class="heading-card">Diseñado para dos</h3>
+          <p class="text-sm text-muted">
+            No es una app individual adaptada. Soporta perfiles vinculados, asignación de responsabilidades de facturas, control de quién gastó qué, y un balance patrimonial conjunto inmediato.
+          </p>
+        </div>
+        <!-- Diff 2 -->
+        <div class="feature-card" id="feature-card-multicurrency">
+          <div class="feature-icon-box">🇳🇮</div>
+          <h3 class="heading-card">Multidivisa real para LatAm</h3>
+          <p class="text-sm text-muted">
+            Perfecto para economías dolarizadas como Nicaragua y el resto de la región. Registra cuentas en Córdobas (NIO) y Dólares (USD) de forma simultánea con conversión automática basada en tasas oficiales o personalizadas.
+          </p>
+        </div>
+        <!-- Diff 3 -->
+        <div class="feature-card" id="feature-card-privacy">
+          <div class="feature-icon-box">🔒</div>
+          <h3 class="heading-card">Privacidad y soberanía total</h3>
+          <p class="text-sm text-muted">
+            Tus datos financieros son sagrados. En duobalance no hay anuncios molestos, no vendemos ni rastreamos tus hábitos de consumo, y puedes exportar toda tu base de datos a Excel/CSV con un solo clic.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Honest Limitations Deep Dive -->
+  <section class="limitation-section" id="limites-honestos" data-od-id="landing-limitation">
+    <div class="container">
+      <div class="limitation-card">
+        <div>
+          <span class="text-caps color-muted" style="color: #9c7b00;">Sin filtros de marketing</span>
+          <h2 class="heading-section" style="margin: var(--space-2) 0 var(--space-4);">¿Por qué no nos conectamos al banco?</h2>
+          <p class="text-sm text-muted" style="margin-bottom: var(--space-4);">
+            La mayoría de las apps prometen sincronizarse con tus cuentas bancarias y tarjetas automáticamente. Suena increíble en teoría, pero en América Latina la realidad es otra: las conexiones se caen constantemente, requieren reconectarse cada semana con SMS, y a menudo mezclan transacciones duplicadas.
+          </p>
+          <p class="text-sm text-muted">
+            Al obligarte a registrar los gastos a mano, duobalance te da algo invaluable: <strong>consciencia activa</strong>. Cuando digitas cada Córdoba o Dólar que sale de tu bolsillo, realmente sientes el gasto y tomas control sobre tus impulsos.
+          </p>
+        </div>
+        <div style="background-color: var(--bg); padding: var(--space-6); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <h3 class="heading-card" style="margin-bottom: var(--space-3); font-size: 18px;">Esta app ES para ustedes si:</h3>
+          <ul style="margin-left: var(--space-4); margin-bottom: var(--space-5); font-size:14px; color: var(--muted); display:flex; flex-direction:column; gap:8px;">
+            <li>Quieren ser conscientes y discutir activamente sus hábitos de compra.</li>
+            <li>Valoran la precisión sobre la automatización defectuosa.</li>
+            <li>Manejan efectivo y múltiples cuentas en distintas monedas de forma regular.</li>
+          </ul>
+          <h3 class="heading-card" style="margin-bottom: var(--space-3); font-size: 18px; color: var(--danger);">Esta app NO es para ustedes si:</h3>
+          <ul style="margin-left: var(--space-4); font-size:14px; color: var(--muted); display:flex; flex-direction:column; gap:8px;">
+            <li>No están dispuestos a dedicar 15 segundos al día a anotar sus compras.</li>
+            <li>Consideran intolerable registrar transacciones a mano.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing-section" id="precios" data-od-id="landing-pricing">
+    <div class="container">
+      <span class="text-caps color-muted">Precio simple y honesto</span>
+      <h2 class="heading-section" style="margin-top: var(--space-2);">Sin sorpresas, sin suscripciones confusas</h2>
+      
+      <div class="pricing-card" id="pricing-card-beta">
+        <span class="text-caps" style="color: var(--success); font-weight: bold; background-color: rgba(5,77,40,0.1); padding: 4px 12px; border-radius: var(--radius-pill); align-self: center;">Fase Actual</span>
+        <h3 class="heading-card" style="font-size: var(--text-lg);">Gratis durante la beta</h3>
+        <div class="price-value tnum">$0.00 NIO/USD</div>
+        <p class="text-sm text-muted">
+          Estamos puliendo la aplicación junto a nuestras primeras parejas. Al registrarte hoy, obtienes acceso completo a todas las funciones sin costo alguno.
+        </p>
+        <p class="text-xs text-muted" style="border-top: 1px solid var(--border); padding-top: var(--space-3); margin-top: var(--space-2);">
+          En el futuro, cuando la app sea 100% estable, introduciremos una tarifa plana mensual muy baja y justa para cubrir servidores y desarrollo independiente. Tus datos siempre serán exportables si decides no continuar.
+        </p>
+        <a href="duobalance-auth.html" class="btn btn-primary" style="margin-top: var(--space-2);">Registrarse y Probar Gratis</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq-section" id="faq" data-od-id="landing-faq">
+    <div class="container">
+      <div style="text-align: center;">
+        <span class="text-caps color-muted">Respuestas directas</span>
+        <h2 class="heading-section" style="margin-top: var(--space-2);">Preguntas Frecuentes</h2>
+      </div>
+
+      <div class="faq-list">
+        <!-- FAQ 1 -->
+        <div class="faq-item" id="faq-item-safe">
+          <h3 class="faq-question">¿Es segura mi información?</h3>
+          <p class="faq-answer">
+            Totalmente. Utilizamos encriptación de nivel bancario en tránsito y reposo. Además, al no conectarnos a cuentas bancarias reales, no guardamos claves financieras ni credenciales de ningún banco. Tu contraseña e historial de gastos están protegidos con la infraestructura segura de Supabase.
+          </p>
+        </div>
+        <!-- FAQ 2 -->
+        <div class="faq-item" id="faq-item-nobank">
+          <h3 class="faq-question">¿Por qué no hay conexión automática al banco?</h3>
+          <p class="faq-answer">
+            Por tres razones: estabilidad (las APIs financieras en LatAm son muy inestables), privacidad (no tenemos que leer ni almacenar tus credenciales bancarias) y conciencia (el acto de registrar manualmente fomenta que tú y tu pareja mantengan un control de gasto real y diario).
+          </p>
+        </div>
+        <!-- FAQ 3 -->
+        <div class="faq-item" id="faq-item-stoppay">
+          <h3 class="faq-question">¿Qué pasa con mis datos si decido dejar de usar la app?</h3>
+          <p class="faq-answer">
+            Tus datos te pertenecen. En cualquier momento, desde el panel de Configuración, puedes realizar una exportación completa de todas tus cuentas, presupuestos y transacciones en formato CSV/Excel. No secuestramos tu información.
+          </p>
+        </div>
+        <!-- FAQ 4 -->
+        <div class="faq-item" id="faq-item-export">
+          <h3 class="faq-question">¿Puedo exportar mi historial de transacciones?</h3>
+          <p class="faq-answer">
+            Sí. No ponemos ninguna traba. Exportas todo tu historial con un solo botón de descarga, listo para ser analizado en Excel, Google Sheets o cualquier otra plataforma.
+          </p>
+        </div>
+        <!-- FAQ 5 -->
+        <div class="faq-item" id="faq-item-currencies">
+          <h3 class="faq-question">¿Qué países y monedas están soportados?</h3>
+          <p class="faq-answer">
+            Soportamos de forma nativa Córdobas Nicaragüenses (NIO) y Dólares Estadounidenses (USD) de manera simultánea en una misma cuenta, ideal para hogares en Nicaragua. Sin embargo, nuestro selector de divisas admite prácticamente cualquier moneda del mundo, permitiendo registrar transacciones en la moneda local y convertirlas a tu divisa base hogar de forma automática.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <a href="index.html" class="logo" style="color: white;">
+            <div class="logo-icon" style="background: var(--accent); color: var(--accent-on);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            duobalance
+          </a>
+          <p style="font-size: 14px; color: #b0b4ad; line-height: 1.5; margin-top: var(--space-2);">
+            Administración financiera honesta y transparente para parejas reales. Creado de forma independiente desde Centroamérica para el mundo entero.
+          </p>
+        </div>
+        <div class="footer-col">
+          <span style="font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: white;">Producto</span>
+          <a href="#cómo-funciona" class="footer-link">Cómo Funciona</a>
+          <a href="#limites-honestos" class="footer-link">Sincronización Manual</a>
+          <a href="#precios" class="footer-link">Precios Beta</a>
+        </div>
+        <div class="footer-col">
+          <span style="font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: white;">Compañía</span>
+          <a href="#historia" class="footer-link">Nuestra Historia</a>
+          <a href="mailto:soporte@duobalance.app" class="footer-link">Contacto</a>
+        </div>
+        <div class="footer-col">
+          <span style="font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: white;">Legales</span>
+          <a href="#" class="footer-link">Términos del Servicio</a>
+          <a href="#" class="footer-link">Privacidad de Datos</a>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <span style="font-size: 12px; color: #868685;">&copy; 2026 duobalance. Todos los derechos reservados.</span>
+        <div style="display: flex; gap: var(--space-4);">
+          <a href="#" class="footer-link" style="font-size: 12px;">Nicaragua</a>
+          <a href="#" class="footer-link" style="font-size: 12px;">English Version</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function switchShowcase(tabId, btnElement) {
+      // Hide all mockups
+      document.getElementById('showcase-balances').style.display = 'none';
+      document.getElementById('showcase-keypad').style.display = 'none';
+      document.getElementById('showcase-budget').style.display = 'none';
+      document.getElementById('showcase-bills').style.display = 'none';
+      
+      // Show requested mockup
+      document.getElementById('showcase-' + tabId).style.display = 'flex';
+      
+      // Update active button state
+      var buttons = document.getElementsByClassName('showcase-tab-btn');
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].classList.remove('active');
+      }
+      btnElement.classList.add('active');
+    }
+  </script>
+</body>
+</html>

@@ -254,6 +254,8 @@
       "duplicate": "Duplicar",
       "delete": "Eliminar",
       "confirmDelete": "¿Eliminar “{description}”? Esta acción no se puede deshacer.",
+      "firstTransactionHintTitle": "Sugerencia para tu primer movimiento",
+      "firstTransactionHintBody": "Anota una compra reciente (p. ej. café o supermercado) para ver cómo se actualiza tu saldo.",
       "errors": {
         "amount": "Ingresa un monto distinto de cero.",
         "description": "Ingresa una descripción de 1 a 200 caracteres.",
@@ -406,6 +408,28 @@
     "breakdownClose": "Cerrar",
     "rateUsed": "1 USD = {rate} · {date}"
   },
+  "onboarding": {
+    "checklist": {
+      "badge": "Primeros pasos",
+      "title": "Configura tu hogar",
+      "progressCount": "{completed} de {total} pasos completados",
+      "dismiss": "Descartar lista",
+      "stepAccount": "Agregar una cuenta",
+      "stepTransaction": "Registrar un movimiento",
+      "stepBudget": "Crear un presupuesto",
+      "stepPartner": "Invitar a tu pareja",
+      "actionAdd": "Agregar",
+      "actionRecord": "Registrar",
+      "actionSet": "Crear",
+      "actionInvite": "Invitar",
+      "inviteModalTitle": "Invita a tu pareja",
+      "inviteModalDescription": "Envía una invitación por correo para unirse a tu hogar compartido.",
+      "inviteError": "No se pudo enviar la invitación. Verifica el correo e intenta de nuevo.",
+      "inviteCancel": "Cancelar",
+      "inviteSending": "Enviando invitación…",
+      "inviteSend": "Enviar invitación"
+    }
+  },
   "household": {
     "picker": {
       "title": "Elige un hogar",
@@ -475,6 +499,15 @@
       "defaultCash": "Efectivo",
       "defaultChecking": "Cuenta corriente",
       "defaultCreditCard": "Tarjeta de crédito",
+      "selectStarter": "Incluir {name}",
+      "initialBalancePlaceholder": "Saldo inicial",
+      "modeExplanationTitle": "Modos por movimientos y manual",
+      "modeExplanationBody": "El saldo se calcula con cada movimiento (movimientos) o se actualiza directamente (manual).",
+      "learnMoreHelp": "Saber más sobre los modos de saldo →",
+      "createSelected": "Crear cuentas iniciales",
+      "creatingBatch": "Creando cuentas…",
+      "addSingleCustom": "O agregar una cuenta personalizada",
+      "invalidBalance": "Ingresa un saldo inicial válido.",
       "error": "No se pudo crear la cuenta. Intenta de nuevo."
     },
     "list": {
@@ -834,6 +867,7 @@
       "preferences": "Preferencias",
       "configuration": "Categorías y reglas",
       "data": "Tus datos",
+      "support": "Soporte y Diagnóstico",
       "legal": "Legal y Privacidad"
     },
     "legal": {
@@ -1069,5 +1103,23 @@
       "settings": "Ajustes y Configuración",
       "general": "General"
     }
+  },
+  "feedback": {
+    "reportProblem": "Reportar un problema",
+    "title": "Reportar un problema",
+    "description": "Cuéntanos qué sucedió para que podamos solucionarlo.",
+    "messagePlaceholder": "Describe qué ocurrió o qué no está funcionando…",
+    "send": "Enviar reporte",
+    "sending": "Enviando…",
+    "sent": "Reporte enviado. ¡Gracias!",
+    "queued": "Reporte guardado sin conexión. Se enviará automáticamente al reconectarte.",
+    "noticeLine": "Se adjunta información técnica de diagnóstico para identificar el problema. No se incluye ningún dato de transacciones ni información financiera.",
+    "seeWhatIncluded": "Ver información técnica enviada",
+    "hideIncluded": "Ocultar detalles",
+    "promptTitle": "¿Cómo te está yendo?",
+    "promptDescription": "¡Llevas un par de semanas usando DuoBalance! Cuéntanos qué tal ha sido tu experiencia.",
+    "promptSubmit": "Enviar comentarios",
+    "dismiss": "No volver a mostrar",
+    "cancel": "Cancelar"
   }
 }

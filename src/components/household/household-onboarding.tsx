@@ -1,13 +1,14 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
 import { useCountries } from "@/hooks/useCountries";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
 import { useHousehold } from "@/hooks/useHousehold";
+import { detectLocationDefaults, getCountryDefaultCurrency } from "@/lib/household/defaults";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,26 @@ export function HouseholdOnboarding() {
   const [inviteToken, setInviteToken] = useState("");
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [invitePending, setInvitePending] = useState(false);
+
+  useEffect(() => {
+    if (!countries.data || !currencies.data || country) return;
+    const currencyCodes = currencies.data.map((c) => c.code);
+    const defaults = detectLocationDefaults(countries.data, currencyCodes);
+    if (defaults.country) setCountry(defaults.country);
+    if (defaults.baseCurrency) setBaseCurrency(defaults.baseCurrency);
+  }, [countries.data, currencies.data, country]);
+
+  function handleCountrySelect(val: string) {
+    const newCountry = val || null;
+    setCountry(newCountry);
+    if (newCountry) {
+      const suggested = getCountryDefaultCurrency(newCountry);
+      const currencyCodes = currencies.data?.map((c) => c.code) ?? [];
+      if (currencyCodes.includes(suggested)) {
+        setBaseCurrency(suggested);
+      }
+    }
+  }
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -162,11 +183,7 @@ export function HouseholdOnboarding() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="onboarding-country">{t("country")}</Label>
-                  <Select
-                    value={country ?? ""}
-                    onValueChange={(v) => setCountry(v || null)}
-                    required
-                  >
+                  <Select value={country ?? ""} onValueChange={handleCountrySelect} required>
                     <SelectTrigger id="onboarding-country" className="w-full">
                       <SelectValue placeholder={t("countryPlaceholder")} />
                     </SelectTrigger>

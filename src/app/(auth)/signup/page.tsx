@@ -30,6 +30,7 @@ import { getPasswordStrength } from "@/lib/auth/flows";
 import { useAuthCommands } from "@/hooks/useAuthCommands";
 import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
 import { captureReferral } from "@/lib/referral";
+import { detectLocationDefaults, getCountryDefaultCurrency } from "@/lib/household/defaults";
 
 type Step = "credentials" | "household" | "check-email";
 
@@ -52,9 +53,33 @@ export default function SignupPage() {
   const [householdError, setHouseholdError] = useState<string | null>(null);
   const [householdPending, setHouseholdPending] = useState(false);
 
+  const [country, setCountry] = useState<string | null>(null);
+  const [baseCurrency, setBaseCurrency] = useState<string | null>(null);
+
   const countries = useCountries({ enabled: !!session });
   const currencies = useCurrencies({ enabled: !!session });
   const countryNames = new Intl.DisplayNames(locale, { type: "region" });
+
+  useEffect(() => {
+    if (step === "household" && countries.data && currencies.data && !country) {
+      const currencyCodes = currencies.data.map((c) => c.code);
+      const defaults = detectLocationDefaults(countries.data, currencyCodes);
+      if (defaults.country) setCountry(defaults.country);
+      if (defaults.baseCurrency) setBaseCurrency(defaults.baseCurrency);
+    }
+  }, [step, countries.data, currencies.data, country]);
+
+  function handleCountrySelect(val: string) {
+    const newCountry = val || null;
+    setCountry(newCountry);
+    if (newCountry) {
+      const suggested = getCountryDefaultCurrency(newCountry);
+      const currencyCodes = currencies.data?.map((c) => c.code) ?? [];
+      if (currencyCodes.includes(suggested)) {
+        setBaseCurrency(suggested);
+      }
+    }
+  }
 
   useEffect(() => {
     captureReferral(window.location.search, localStorage);
@@ -157,7 +182,12 @@ export default function SignupPage() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="country">{t("country")}</Label>
-              <Select name="country" required>
+              <Select
+                name="country"
+                value={country ?? ""}
+                onValueChange={handleCountrySelect}
+                required
+              >
                 <SelectTrigger id="country" className="w-full">
                   <SelectValue placeholder={t("countryPlaceholder")} />
                 </SelectTrigger>
@@ -172,7 +202,12 @@ export default function SignupPage() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="baseCurrency">{t("baseCurrency")}</Label>
-              <Select name="baseCurrency" required>
+              <Select
+                name="baseCurrency"
+                value={baseCurrency ?? ""}
+                onValueChange={(v) => setBaseCurrency(v || null)}
+                required
+              >
                 <SelectTrigger id="baseCurrency" className="w-full">
                   <SelectValue placeholder={t("baseCurrencyPlaceholder")} />
                 </SelectTrigger>

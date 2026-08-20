@@ -52,6 +52,7 @@ Recabamos únicamente la información necesaria para prestar el servicio de gest
    - Dirección IP (utilizada exclusivamente con fines de seguridad, prevención de fraudes y enrutamiento técnico).
    - Tipo de navegador y agente de usuario (*User-Agent*).
    - Estado de sincronización local/remota.
+   - Contexto de diagnóstico técnico al reportar problemas o enviar comentarios (versión de la aplicación, identificador de hogar y miembro, rol, configuración de idioma y formato de números, zona horaria, conteos de cuentas y transacciones, y detalles de errores técnicos, sin incluir montos, descripciones ni datos financieros).
 
 ---
 
@@ -166,6 +167,7 @@ We collect only the information necessary to deliver our household finance manag
    - IP address (used strictly for security, fraud prevention, and technical routing).
    - Browser type and User-Agent.
    - Local/remote synchronization state.
+   - Technical diagnostic context when reporting problems or submitting feedback (app version, household and member identifiers, role, locale and number format settings, timezone, account and transaction counts, and technical error details, explicitly excluding amounts, descriptions, or financial content).
 
 ---
 

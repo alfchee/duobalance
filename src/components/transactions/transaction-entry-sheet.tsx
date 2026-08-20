@@ -46,6 +46,7 @@ import type { Transaction } from "@/lib/transactions";
 import type { AccountWithBalance } from "@/lib/accounts";
 import { useTransactionsUiStore } from "@/store/transactions";
 import { useOfflineQueue } from "@/components/realtime-status";
+import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 
 const LAST_ACCOUNT_STORAGE_KEY = "duobalance:lastTransactionAccountId";
 const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"] as const;
@@ -480,6 +481,7 @@ function TransactionEntryContent({
     isForeignCurrency,
   );
   const { create, update, remove } = useTransactionMutations(householdId, memberId);
+  const onboardingProgress = useOnboardingProgress(householdId);
   const { connectionState, queueTransaction } = useOfflineQueue();
   const pending = create.isPending || update.isPending || remove.isPending;
   const categoryKind = draft.isExpense ? "expense" : "income";
@@ -734,6 +736,13 @@ function TransactionEntryContent({
         onSubmit={handleSubmit}
         className="space-y-5 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2"
       >
+        {!onboardingProgress.isLoading && !onboardingProgress.hasTransactions ? (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-foreground">
+            <p className="font-bold">{t("form.firstTransactionHintTitle")}</p>
+            <p className="mt-0.5 text-muted-foreground">{t("form.firstTransactionHintBody")}</p>
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-2 rounded-full bg-secondary p-1">
           <Button
             type="button"

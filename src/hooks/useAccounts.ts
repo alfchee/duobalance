@@ -73,6 +73,25 @@ export function useAccountMutations(householdId: string | null) {
     onSuccess: invalidate,
   });
 
+  const createBatch = useMutation({
+    mutationFn: async (inputs: AccountInput[]) => {
+      if (!householdId || !key) throw new Error("no household");
+      if (inputs.length === 0) return [];
+      const supabase = requireSupabase();
+      const existing = queryClient.getQueryData<AccountWithBalance[]>(key) ?? [];
+      const startOrder = nextDisplayOrder(existing);
+      const rows = inputs.map((input, idx) => ({
+        ...input,
+        household_id: householdId,
+        display_order: startOrder + idx,
+      }));
+      const { data, error } = await supabase.from("accounts").insert(rows).select();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+
   const update = useMutation({
     mutationFn: async ({ id, ...input }: AccountInput & { id: string }) => {
       const supabase = requireSupabase();
@@ -159,5 +178,5 @@ export function useAccountMutations(householdId: string | null) {
     onSettled: invalidate,
   });
 
-  return { create, update, archive, updateManualBalance, reorder };
+  return { create, createBatch, update, archive, updateManualBalance, reorder };
 }
