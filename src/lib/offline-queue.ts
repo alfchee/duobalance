@@ -164,10 +164,16 @@ export function updateQueuedFeedbackReport(report: QueuedFeedbackReport) {
   return withStore(FEEDBACK_STORE_NAME, "readwrite", (store) => store.put(report));
 }
 
+const MAX_FEEDBACK_ATTEMPTS = 5;
+
 export async function flushQueuedFeedbackReports(scope: QueueScope): Promise<void> {
   if (typeof window === "undefined" || !navigator.onLine) return;
   const reports = await getQueuedFeedbackReports(scope);
   for (const report of reports) {
+    if (report.attempts >= MAX_FEEDBACK_ATTEMPTS) {
+      await removeQueuedFeedbackReport(report.id);
+      continue;
+    }
     try {
       await apiFetch("/api/feedback", {
         method: "POST",

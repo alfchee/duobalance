@@ -27,6 +27,7 @@ const feedbackSchema = z.object({
         stack: z.string().optional(),
         at: z.string(),
       })
+      .nullable()
       .optional(),
     currentRoute: z.string(),
   }),
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     });
     return new Response(null, { status: 204 });
   } catch (error) {
-    const errMessage = error instanceof Error ? error.message : "failed to send feedback";
-    return Response.json({ error: errMessage }, { status: 500 });
+    console.error("Feedback route error:", error);
+    return Response.json({ error: "failed to send feedback" }, { status: 500 });
   }
 }

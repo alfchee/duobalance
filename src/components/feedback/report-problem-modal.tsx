@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -37,59 +37,72 @@ export function ReportProblemModal({ open, onOpenChange, lastError }: ReportProb
   const [isSending, setIsSending] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   async function getCounts() {
     if (!householdId) return { accountCount: 0, transactionCount: 0 };
-    const supabase = createSupabaseBrowser();
-    if (!supabase) return { accountCount: 0, transactionCount: 0 };
+    try {
+      const supabase = createSupabaseBrowser();
+      if (!supabase) return { accountCount: 0, transactionCount: 0 };
 
-    const [accountsRes, txsRes] = await Promise.all([
-      supabase
-        .from("accounts")
-        .select("id", { count: "exact", head: true })
-        .eq("household_id", householdId),
-      supabase
-        .from("transactions")
-        .select("id", { count: "exact", head: true })
-        .eq("household_id", householdId),
-    ]);
+      const [accountsRes, txsRes] = await Promise.all([
+        supabase
+          .from("accounts")
+          .select("id", { count: "exact", head: true })
+          .eq("household_id", householdId),
+        supabase
+          .from("transactions")
+          .select("id", { count: "exact", head: true })
+          .eq("household_id", householdId),
+      ]);
 
-    return {
-      accountCount: accountsRes.count ?? 0,
-      transactionCount: txsRes.count ?? 0,
-    };
+      return {
+        accountCount: accountsRes.count ?? 0,
+        transactionCount: txsRes.count ?? 0,
+      };
+    } catch {
+      return { accountCount: 0, transactionCount: 0 };
+    }
   }
 
   const handleSend = async () => {
     setIsSending(true);
     setStatusMessage(null);
 
-    const counts = await getCounts();
-    const diagnostics = collectDiagnosticContext({
-      householdId,
-      memberId,
-      role,
-      locale,
-      numberFormat,
-      baseCurrency,
-      timezone,
-      accountCount: counts.accountCount,
-      transactionCount: counts.transactionCount,
-      queuedWrites: queuedWrites.length,
-      lastError,
-      currentRoute: typeof window !== "undefined" ? window.location.pathname : "/",
-    });
-
-    const payload = {
-      category: "problem_report" as const,
-      message,
-      diagnostics,
-    };
-
-    const isOnline =
-      connectionState === "online" && typeof navigator !== "undefined" && navigator.onLine;
-
     try {
+      const counts = await getCounts();
+      const diagnostics = collectDiagnosticContext({
+        householdId,
+        memberId,
+        role,
+        locale,
+        numberFormat,
+        baseCurrency,
+        timezone,
+        accountCount: counts.accountCount,
+        transactionCount: counts.transactionCount,
+        queuedWrites: queuedWrites.length,
+        lastError,
+        currentRoute: typeof window !== "undefined" ? window.location.pathname : "/",
+      });
+
+      const payload = {
+        category: "problem_report" as const,
+        message,
+        diagnostics,
+      };
+
+      const isOnline =
+        connectionState === "online" && typeof navigator !== "undefined" && navigator.onLine;
+
       if (isOnline) {
         await apiFetch("/api/feedback", {
           method: "POST",
@@ -100,6 +113,27 @@ export function ReportProblemModal({ open, onOpenChange, lastError }: ReportProb
         throw new Error("offline");
       }
     } catch {
+      const fallbackDiagnostics = collectDiagnosticContext({
+        householdId,
+        memberId,
+        role,
+        locale,
+        numberFormat,
+        baseCurrency,
+        timezone,
+        accountCount: 0,
+        transactionCount: 0,
+        queuedWrites: queuedWrites.length,
+        lastError,
+        currentRoute: typeof window !== "undefined" ? window.location.pathname : "/",
+      });
+
+      const payload = {
+        category: "problem_report" as const,
+        message,
+        diagnostics: fallbackDiagnostics,
+      };
+
       if (householdId && user) {
         await queueFeedbackReport(crypto.randomUUID(), payload, {
           householdId,
@@ -111,7 +145,8 @@ export function ReportProblemModal({ open, onOpenChange, lastError }: ReportProb
       }
     } finally {
       setIsSending(false);
-      setTimeout(() => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
         setMessage("");
         setStatusMessage(null);
         onOpenChange(false);
@@ -119,19 +154,36 @@ export function ReportProblemModal({ open, onOpenChange, lastError }: ReportProb
     }
   };
 
-  const sampleDiagnostics = collectDiagnosticContext({
-    householdId,
-    memberId,
-    role,
-    locale,
-    numberFormat,
-    baseCurrency,
-    timezone,
-    accountCount: 0,
-    transactionCount: 0,
-    queuedWrites: queuedWrites.length,
-    lastError,
-  });
+  const sampleDiagnostics = useMemo(
+    () =>
+      showDetails
+        ? collectDiagnosticContext({
+            householdId,
+            memberId,
+            role,
+            locale,
+            numberFormat,
+            baseCurrency,
+            timezone,
+            accountCount: 0,
+            transactionCount: 0,
+            queuedWrites: queuedWrites.length,
+            lastError,
+          })
+        : null,
+    [
+      showDetails,
+      householdId,
+      memberId,
+      role,
+      locale,
+      numberFormat,
+      baseCurrency,
+      timezone,
+      queuedWrites.length,
+      lastError,
+    ],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

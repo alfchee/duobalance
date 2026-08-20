@@ -28,8 +28,12 @@ export function FeedbackPrompt() {
 
   useEffect(() => {
     if (!user?.id) return;
-    const key = `duobalance_feedback_dismissed_${user.id}`;
-    if (localStorage.getItem(key) === "true") return;
+    try {
+      const key = `duobalance_feedback_dismissed_${user.id}`;
+      if (localStorage.getItem(key) === "true") return;
+    } catch {
+      // Storage access blocked or unavailable
+    }
 
     const createdAt = user.created_at ? new Date(user.created_at).getTime() : Date.now();
     const age = Date.now() - createdAt;
@@ -41,7 +45,11 @@ export function FeedbackPrompt() {
 
   const handleDismiss = () => {
     if (user?.id) {
-      localStorage.setItem(`duobalance_feedback_dismissed_${user.id}`, "true");
+      try {
+        localStorage.setItem(`duobalance_feedback_dismissed_${user.id}`, "true");
+      } catch {
+        // Storage access blocked or unavailable
+      }
     }
     setVisible(false);
   };
@@ -54,20 +62,24 @@ export function FeedbackPrompt() {
     let transactionCount = 0;
 
     if (householdId) {
-      const supabase = createSupabaseBrowser();
-      if (supabase) {
-        const [accRes, txRes] = await Promise.all([
-          supabase
-            .from("accounts")
-            .select("id", { count: "exact", head: true })
-            .eq("household_id", householdId),
-          supabase
-            .from("transactions")
-            .select("id", { count: "exact", head: true })
-            .eq("household_id", householdId),
-        ]);
-        accountCount = accRes.count ?? 0;
-        transactionCount = txRes.count ?? 0;
+      try {
+        const supabase = createSupabaseBrowser();
+        if (supabase) {
+          const [accRes, txRes] = await Promise.all([
+            supabase
+              .from("accounts")
+              .select("id", { count: "exact", head: true })
+              .eq("household_id", householdId),
+            supabase
+              .from("transactions")
+              .select("id", { count: "exact", head: true })
+              .eq("household_id", householdId),
+          ]);
+          accountCount = accRes.count ?? 0;
+          transactionCount = txRes.count ?? 0;
+        }
+      } catch {
+        // Fallback to 0 counts on offline or query error
       }
     }
 

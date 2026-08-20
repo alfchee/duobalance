@@ -13,7 +13,7 @@ export type DiagnosticContext = {
   isOnline: boolean;
   queuedWrites: number; // #28 offline queue depth
   userAgent: string;
-  lastError?: { message: string; stack?: string; at: string };
+  lastError?: { message: string; stack?: string; at: string } | null;
   currentRoute: string;
 };
 
