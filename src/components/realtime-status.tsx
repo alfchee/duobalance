@@ -257,8 +257,18 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
   );
 }
 
-export function useOfflineQueue() {
+export function useOfflineQueue(): OfflineQueueContextValue {
   const context = useContext(OfflineQueueContext);
-  if (!context) throw new Error("useOfflineQueue must be used within RealtimeStatus");
+  if (!context) {
+    return {
+      connectionState: typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline",
+      queueTransaction: async () => {
+        throw new Error("useOfflineQueue must be used within RealtimeStatus");
+      },
+      queuedWrites: [],
+      discardWrite: async () => {},
+      retryWrite: async () => {},
+    };
+  }
   return context;
 }

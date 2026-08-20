@@ -101,7 +101,7 @@ export function ReportProblemModal({ open, onOpenChange, lastError }: ReportProb
       };
 
       const isOnline =
-        connectionState === "online" && typeof navigator !== "undefined" && navigator.onLine;
+        connectionState !== "offline" && typeof navigator !== "undefined" && navigator.onLine;
 
       if (isOnline) {
         await apiFetch("/api/feedback", {
