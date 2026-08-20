@@ -867,6 +867,7 @@
       "preferences": "Preferences",
       "configuration": "Categories & rules",
       "data": "Your data",
+      "support": "Support & Diagnostics",
       "legal": "Legal & Privacy"
     },
     "legal": {
@@ -1102,5 +1103,22 @@
       "settings": "Settings & Config",
       "general": "General"
     }
+  },
+  "feedback": {
+    "reportProblem": "Report a problem",
+    "title": "Report a problem",
+    "description": "Tell us what happened so we can fix it.",
+    "messagePlaceholder": "Describe what happened or what isn't working…",
+    "send": "Send report",
+    "sending": "Sending…",
+    "sent": "Report sent. Thank you!",
+    "queued": "Report saved offline. Will send automatically when back online.",
+    "noticeLine": "Technical diagnostics are auto-attached to help us diagnose the issue. No transaction data or financial details are included.",
+    "seeWhatIncluded": "See what's included",
+    "hideIncluded": "Hide details",
+    "promptTitle": "How's it going?",
+    "promptDescription": "You've been using DuoBalance for a couple of weeks! Let us know how it's working for you.",
+    "promptSubmit": "Send feedback",
+    "dismiss": "Dismiss"
   }
 }

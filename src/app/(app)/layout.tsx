@@ -13,6 +13,7 @@ import { TransactionEntrySheet } from "@/components/transactions/transaction-ent
 import { FullPageSpinner } from "@/components/full-page-spinner";
 import { RealtimeStatus } from "@/components/realtime-status";
 import { HouseholdSwitcher } from "@/components/household/household-switcher";
+import { FeedbackPrompt } from "@/components/feedback/feedback-prompt";
 
 // AC (#14): auth guarding happens client-side here, never in middleware.ts —
 // middleware doesn't exist in a static export (architecture rule #1).
@@ -62,6 +63,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <HouseholdSwitcher />
           <div className="min-w-0">{children}</div>
           <TransactionEntrySheet />
+          <FeedbackPrompt />
           {!keyboardOpen ? <BottomNav /> : null}
         </RealtimeStatus>
       </div>

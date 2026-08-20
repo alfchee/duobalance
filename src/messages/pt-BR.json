@@ -169,5 +169,22 @@
       "settings": "Configurações",
       "general": "Geral"
     }
+  },
+  "feedback": {
+    "reportProblem": "Reportar um problema",
+    "title": "Reportar um problema",
+    "description": "Conte-nos o que aconteceu para que possamos resolver.",
+    "messagePlaceholder": "Descreva o que ocorreu ou o que não está funcionando…",
+    "send": "Enviar relatório",
+    "sending": "Enviando…",
+    "sent": "Relatório enviado. Obrigado!",
+    "queued": "Relatório salvo offline. Será enviado automaticamente quando reconectar.",
+    "noticeLine": "Informações técnicas de diagnóstico são anexadas automaticamente. Nenhum dado de transação ou saldo financeiro é incluído.",
+    "seeWhatIncluded": "Ver o que está incluído",
+    "hideIncluded": "Ocultar detalhes",
+    "promptTitle": "Como está indo?",
+    "promptDescription": "Você está usando o DuoBalance há algumas semanas! Conte-nos como está sendo sua experiência.",
+    "promptSubmit": "Enviar feedback",
+    "dismiss": "Não mostrar novamente"
   }
 }
