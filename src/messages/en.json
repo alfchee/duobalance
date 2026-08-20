@@ -254,6 +254,8 @@
       "duplicate": "Duplicate",
       "delete": "Delete",
       "confirmDelete": "Delete “{description}”? This cannot be undone.",
+      "firstTransactionHintTitle": "First transaction tip",
+      "firstTransactionHintBody": "Log a recent expense (e.g. coffee or groceries) to see DuoBalance track your balances!",
       "errors": {
         "amount": "Enter an amount other than zero.",
         "description": "Enter a description between 1 and 200 characters.",
@@ -406,6 +408,28 @@
     "breakdownClose": "Close",
     "rateUsed": "1 USD = {rate} · {date}"
   },
+  "onboarding": {
+    "checklist": {
+      "badge": "Getting started",
+      "title": "Set up your household",
+      "progressCount": "{completed} of {total} steps completed",
+      "dismiss": "Dismiss checklist",
+      "stepAccount": "Add an account",
+      "stepTransaction": "Record a transaction",
+      "stepBudget": "Set a budget",
+      "stepPartner": "Invite your partner",
+      "actionAdd": "Add",
+      "actionRecord": "Record",
+      "actionSet": "Set",
+      "actionInvite": "Invite",
+      "inviteModalTitle": "Invite your partner",
+      "inviteModalDescription": "Send an email invitation to join your shared household.",
+      "inviteError": "Couldn't send invitation. Check the email and try again.",
+      "inviteCancel": "Cancel",
+      "inviteSending": "Sending invitation…",
+      "inviteSend": "Send invitation"
+    }
+  },
   "household": {
     "picker": {
       "title": "Choose a household",
@@ -475,6 +499,15 @@
       "defaultCash": "Cash",
       "defaultChecking": "Checking",
       "defaultCreditCard": "Credit card",
+      "selectStarter": "Include {name}",
+      "initialBalancePlaceholder": "Initial balance",
+      "modeExplanationTitle": "Ledger vs Manual balance mode",
+      "modeExplanationBody": "Balances update automatically from recorded transactions (Ledger) or can be updated directly (Manual).",
+      "learnMoreHelp": "Learn about balance modes →",
+      "createSelected": "Create starter accounts",
+      "creatingBatch": "Creating accounts…",
+      "addSingleCustom": "Or add a custom account",
+      "invalidBalance": "Enter a valid initial balance.",
       "error": "Couldn't create the account. Try again."
     },
     "list": {
@@ -834,6 +867,7 @@
       "preferences": "Preferences",
       "configuration": "Categories & rules",
       "data": "Your data",
+      "support": "Support & Diagnostics",
       "legal": "Legal & Privacy"
     },
     "legal": {
@@ -1069,5 +1103,23 @@
       "settings": "Settings & Config",
       "general": "General"
     }
+  },
+  "feedback": {
+    "reportProblem": "Report a problem",
+    "title": "Report a problem",
+    "description": "Tell us what happened so we can fix it.",
+    "messagePlaceholder": "Describe what happened or what isn't working…",
+    "send": "Send report",
+    "sending": "Sending…",
+    "sent": "Report sent. Thank you!",
+    "queued": "Report saved offline. Will send automatically when back online.",
+    "noticeLine": "Technical diagnostics are auto-attached to help us diagnose the issue. No transaction data or financial details are included.",
+    "seeWhatIncluded": "See what's included",
+    "hideIncluded": "Hide details",
+    "promptTitle": "How's it going?",
+    "promptDescription": "You've been using DuoBalance for a couple of weeks! Let us know how it's working for you.",
+    "promptSubmit": "Send feedback",
+    "dismiss": "Dismiss",
+    "cancel": "Cancel"
   }
 }

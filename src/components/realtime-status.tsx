@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useSession } from "@/hooks/useSession";
 import {
+  flushQueuedFeedbackReports,
   getQueuedTransactionWrites,
   queueTransactionWrite,
   removeQueuedTransactionWrite,
@@ -73,6 +74,7 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
         lastError: error.message,
       });
     }
+    await flushQueuedFeedbackReports({ householdId, ownerUserId: user.id });
     await refreshQueue();
     void queryClient.invalidateQueries({ queryKey: ["transactions", householdId] });
     void queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
@@ -255,8 +257,18 @@ export function RealtimeStatus({ children }: { children: ReactNode }) {
   );
 }
 
-export function useOfflineQueue() {
+export function useOfflineQueue(): OfflineQueueContextValue {
   const context = useContext(OfflineQueueContext);
-  if (!context) throw new Error("useOfflineQueue must be used within RealtimeStatus");
+  if (!context) {
+    return {
+      connectionState: typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline",
+      queueTransaction: async () => {
+        throw new Error("useOfflineQueue must be used within RealtimeStatus");
+      },
+      queuedWrites: [],
+      discardWrite: async () => {},
+      retryWrite: async () => {},
+    };
+  }
   return context;
 }

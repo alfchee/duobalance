@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -18,13 +19,16 @@ import { InstallSection } from "@/components/pwa/install-section";
 import { PushNotificationsSection } from "@/components/pwa/push-notifications-section";
 import { ExportSection } from "@/components/household/export-section";
 import { HouseholdDangerSection } from "@/components/household/household-danger-section";
+import { ReportProblemModal } from "@/components/feedback/report-problem-modal";
 
 export default function SettingsPage() {
   const router = useRouter();
   const t = useTranslations("settings");
+  const tFeedback = useTranslations("feedback");
   const { user } = useSession();
   const { householdName, role, baseCurrency } = useHousehold();
   const { logout } = useAuthCommands();
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   async function handleLogout() {
     await logout();
@@ -118,6 +122,22 @@ export default function SettingsPage() {
         />
       </SettingsGroup>
 
+      <SettingsGroup title={t("groups.support")}>
+        <button
+          type="button"
+          onClick={() => setReportModalOpen(true)}
+          className="flex min-h-16 w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        >
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold">{tFeedback("reportProblem")}</span>
+            <span className="mt-0.5 block text-sm text-muted-foreground">
+              {tFeedback("description")}
+            </span>
+          </span>
+          <ChevronRight aria-hidden className="size-5 shrink-0 text-muted-foreground" />
+        </button>
+      </SettingsGroup>
+
       <HouseholdDangerSection />
 
       <Button
@@ -127,6 +147,8 @@ export default function SettingsPage() {
       >
         {t("logout")}
       </Button>
+
+      <ReportProblemModal open={reportModalOpen} onOpenChange={setReportModalOpen} />
     </main>
   );
 }

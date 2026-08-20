@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { useBalancesScreen } from "@/hooks/useBalancesScreen";
 import { EmptyAccounts } from "@/components/accounts/empty-state";
+import { GettingStartedChecklist } from "@/components/household/getting-started-checklist";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAccountsUiStore } from "@/store/accounts";
@@ -54,6 +55,7 @@ export function BalancesView() {
 
   return (
     <div className="space-y-4">
+      <GettingStartedChecklist />
       {hasAccounts ? (
         <>
           <BalancesHeader
