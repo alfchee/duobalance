@@ -867,6 +867,7 @@
       "preferences": "Preferencias",
       "configuration": "Categorías y reglas",
       "data": "Tus datos",
+      "support": "Soporte y Diagnóstico",
       "legal": "Legal y Privacidad"
     },
     "legal": {
@@ -1102,5 +1103,23 @@
       "settings": "Ajustes y Configuración",
       "general": "General"
     }
+  },
+  "feedback": {
+    "reportProblem": "Reportar un problema",
+    "title": "Reportar un problema",
+    "description": "Cuéntanos qué sucedió para que podamos solucionarlo.",
+    "messagePlaceholder": "Describe qué ocurrió o qué no está funcionando…",
+    "send": "Enviar reporte",
+    "sending": "Enviando…",
+    "sent": "Reporte enviado. ¡Gracias!",
+    "queued": "Reporte guardado sin conexión. Se enviará automáticamente al reconectarte.",
+    "noticeLine": "Se adjunta información técnica de diagnóstico para identificar el problema. No se incluye ningún dato de transacciones ni información financiera.",
+    "seeWhatIncluded": "Ver información técnica enviada",
+    "hideIncluded": "Ocultar detalles",
+    "promptTitle": "¿Cómo te está yendo?",
+    "promptDescription": "¡Llevas un par de semanas usando DuoBalance! Cuéntanos qué tal ha sido tu experiencia.",
+    "promptSubmit": "Enviar comentarios",
+    "dismiss": "No volver a mostrar",
+    "cancel": "Cancelar"
   }
 }
