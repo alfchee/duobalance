@@ -1,43 +1,49 @@
 import { z } from "zod";
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
-import { assertNoFinancialData } from "@/lib/diagnostics";
+import { assertNoFinancialData, type DiagnosticContext } from "@/lib/diagnostics";
 import { sendFeedbackEmail } from "@/lib/feedback-email";
 
 const feedbackSchema = z.object({
-  category: z.enum(["problem_report", "satisfaction_prompt", "general"]).default("problem_report"),
-  message: z.string().default(""),
-  diagnostics: z.object({
-    appVersion: z.string(),
-    householdId: z.string(),
-    memberId: z.string(),
-    role: z.enum(["owner", "partner"]),
-    locale: z.string(),
-    numberFormat: z.string(),
-    baseCurrency: z.string(),
-    timezone: z.string(),
-    accountCount: z.number(),
-    transactionCount: z.number(),
-    isStandalone: z.boolean(),
-    isOnline: z.boolean(),
-    queuedWrites: z.number(),
-    userAgent: z.string(),
-    lastError: z
-      .object({
-        message: z.string(),
-        stack: z.string().optional(),
-        at: z.string(),
-      })
-      .nullable()
-      .optional(),
-    currentRoute: z.string(),
-  }),
+  category: z.string().optional().default("problem_report"),
+  message: z.string().optional().default(""),
+  diagnostics: z
+    .object({
+      appVersion: z.string().optional().default("1.1.0"),
+      householdId: z.string().optional().default("none"),
+      memberId: z.string().optional().default("none"),
+      role: z.string().optional().default("owner"),
+      locale: z.string().optional().default("en"),
+      numberFormat: z.string().optional().default("locale"),
+      baseCurrency: z.string().optional().default("USD"),
+      timezone: z.string().optional().default("UTC"),
+      accountCount: z.number().optional().default(0),
+      transactionCount: z.number().optional().default(0),
+      isStandalone: z.boolean().optional().default(false),
+      isOnline: z.boolean().optional().default(true),
+      queuedWrites: z.number().optional().default(0),
+      userAgent: z.string().optional().default(""),
+      lastError: z
+        .object({
+          message: z.string().optional(),
+          stack: z.string().optional().nullable(),
+          at: z.string().optional(),
+        })
+        .nullable()
+        .optional(),
+      currentRoute: z.string().optional().default("/"),
+    })
+    .passthrough(),
 });
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = feedbackSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "invalid feedback payload" }, { status: 400 });
+    console.error("Feedback Zod validation error:", parsed.error);
+    return Response.json(
+      { error: "invalid feedback payload", details: parsed.error.format() },
+      { status: 400 },
+    );
   }
 
   const { category, message, diagnostics } = parsed.data;
@@ -61,11 +67,28 @@ export async function POST(request: Request) {
     // Session optional for feedback reporting
   }
 
+  const normalizedCategory =
+    category === "satisfaction_prompt" || category === "general" ? category : "problem_report";
+
+  const normalizedRole = diagnostics.role === "partner" ? "partner" : "owner";
+
+  const normalizedDiagnostics: DiagnosticContext = {
+    ...diagnostics,
+    role: normalizedRole,
+    lastError: diagnostics.lastError
+      ? {
+          message: diagnostics.lastError.message ?? "",
+          stack: diagnostics.lastError.stack ?? undefined,
+          at: diagnostics.lastError.at ?? new Date().toISOString(),
+        }
+      : undefined,
+  };
+
   try {
     await sendFeedbackEmail({
-      category,
+      category: normalizedCategory,
       message,
-      diagnostics,
+      diagnostics: normalizedDiagnostics,
       userEmail,
     });
     return new Response(null, { status: 204 });
