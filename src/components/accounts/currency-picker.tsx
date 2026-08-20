@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,12 @@ export function CurrencyPicker({
   value,
   onSelect,
   className,
+  portalContainerRef,
 }: {
   value: string | null;
   onSelect: (code: string) => void;
   className?: string;
+  portalContainerRef?: RefObject<HTMLElement | null>;
 }) {
   const t = useTranslations("accounts.form");
   const { data: currencies } = useCurrencies();
@@ -42,7 +44,11 @@ export function CurrencyPicker({
           {selected ? `${selected.code} — ${selected.name_en}` : t("currencyPlaceholder")}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
+      <PopoverContent
+        align="start"
+        container={portalContainerRef?.current}
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+      >
         <div className="border-b p-2">
           <div className="relative">
             <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -55,7 +61,7 @@ export function CurrencyPicker({
             />
           </div>
         </div>
-        <ul className="max-h-64 overflow-y-auto">
+        <ul className="max-h-64 touch-pan-y overflow-y-auto overscroll-contain">
           {filtered.map((c) => (
             <li key={c.code}>
               <button

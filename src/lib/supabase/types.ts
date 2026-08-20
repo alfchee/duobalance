@@ -831,6 +831,7 @@ export type Database = {
           id: string
           locale: string
           name: string
+          signup_source: string | null
           timezone: string
           updated_at: string
         }
@@ -842,6 +843,7 @@ export type Database = {
           id?: string
           locale: string
           name: string
+          signup_source?: string | null
           timezone: string
           updated_at?: string
         }
@@ -853,6 +855,7 @@ export type Database = {
           id?: string
           locale?: string
           name?: string
+          signup_source?: string | null
           timezone?: string
           updated_at?: string
         }
@@ -1096,6 +1099,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          account_amount: number
           account_id: string
           amount: number
           base_amount: number | null
@@ -1120,6 +1124,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_amount?: number
           account_id: string
           amount: number
           base_amount?: number | null
@@ -1144,6 +1149,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_amount?: number
           account_id?: string
           amount?: number
           base_amount?: number | null

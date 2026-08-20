@@ -26,6 +26,7 @@ import { useAccountMutations, type AccountInput } from "@/hooks/useAccounts";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import {
   ACCOUNT_KINDS,
+  isDebtKind,
   isPrivateNeedsOwnerError,
   type Account,
   type AccountKind,
@@ -88,7 +89,13 @@ function AccountFormContent({
     kind: (account?.kind as AccountKind) ?? "checking",
     currency: account?.currency ?? baseCurrency,
     balanceMode: account?.balance_mode === "manual" ? "manual" : "ledger",
-    openingBalance: account ? formatMoneyInput(account.opening_balance, locale, numberFormat) : "0",
+    openingBalance: account
+      ? formatMoneyInput(
+          isDebtKind(account.kind) ? Math.abs(account.opening_balance) : account.opening_balance,
+          locale,
+          numberFormat,
+        )
+      : "0",
     manualBalance:
       account?.manual_balance != null
         ? formatMoneyInput(account.manual_balance, locale, numberFormat)
@@ -161,7 +168,9 @@ function AccountFormContent({
       balance_mode: draft.balanceMode,
       opening_balance:
         draft.balanceMode === "ledger"
-          ? roundToMinorUnit(parsedAmount, minorUnit)
+          ? isDebtKind(draft.kind)
+            ? -Math.abs(roundToMinorUnit(parsedAmount, minorUnit))
+            : roundToMinorUnit(parsedAmount, minorUnit)
           : (account?.opening_balance ?? 0),
       manual_balance:
         draft.balanceMode === "manual" ? roundToMinorUnit(parsedAmount, minorUnit) : null,
@@ -283,7 +292,9 @@ function AccountFormContent({
               value={draft.openingBalance}
               onChange={setAmount("openingBalance")}
             />
-            <p className="text-xs text-muted-foreground">{t("openingBalanceHint")}</p>
+            <p className="text-xs text-muted-foreground">
+              {isDebtKind(draft.kind) ? t("openingBalanceHintDebt") : t("openingBalanceHint")}
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
