@@ -39,6 +39,28 @@ describe("POST /api/feedback", () => {
     expect(response.status).toBe(204);
   });
 
+  it("handles double-stringified JSON string bodies gracefully", async () => {
+    const diagnostics = collectDiagnosticContext({
+      householdId: "hh-123",
+      memberId: "mem-456",
+    });
+
+    const innerJson = JSON.stringify({
+      category: "problem_report",
+      message: "Test message",
+      diagnostics,
+    });
+
+    const request = new Request("http://localhost/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(innerJson),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(204);
+  });
+
   it("returns 204 when lastError is explicitly null", async () => {
     const diagnostics = {
       ...collectDiagnosticContext({

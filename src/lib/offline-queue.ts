@@ -177,7 +177,7 @@ export async function flushQueuedFeedbackReports(scope: QueueScope): Promise<voi
     try {
       await apiFetch("/api/feedback", {
         method: "POST",
-        body: JSON.stringify(report.payload),
+        body: report.payload,
       });
       await removeQueuedFeedbackReport(report.id);
     } catch (err) {

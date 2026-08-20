@@ -110,7 +110,7 @@ export function FeedbackPrompt() {
       if (isOnline) {
         await apiFetch("/api/feedback", {
           method: "POST",
-          body: JSON.stringify(payload),
+          body: payload,
         });
       } else {
         throw new Error("offline");

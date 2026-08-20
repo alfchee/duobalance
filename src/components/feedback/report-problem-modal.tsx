@@ -106,7 +106,7 @@ export function ReportProblemModal({ open, onOpenChange, lastError }: ReportProb
       if (isOnline) {
         await apiFetch("/api/feedback", {
           method: "POST",
-          body: JSON.stringify(payload),
+          body: payload,
         });
         setStatusMessage(t("sent"));
       } else {

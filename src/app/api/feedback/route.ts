@@ -36,7 +36,14 @@ const feedbackSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
+  let body = await request.json().catch(() => null);
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      // Keep string if invalid JSON
+    }
+  }
   const parsed = feedbackSchema.safeParse(body);
   if (!parsed.success) {
     console.error("Feedback Zod validation error:", parsed.error);
