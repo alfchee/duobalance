@@ -1119,6 +1119,7 @@
     "promptTitle": "¿Cómo te está yendo?",
     "promptDescription": "¡Llevas un par de semanas usando DuoBalance! Cuéntanos qué tal ha sido tu experiencia.",
     "promptSubmit": "Enviar comentarios",
-    "dismiss": "No volver a mostrar"
+    "dismiss": "No volver a mostrar",
+    "cancel": "Cancelar"
   }
 }

@@ -185,6 +185,7 @@
     "promptTitle": "Como está indo?",
     "promptDescription": "Você está usando o DuoBalance há algumas semanas! Conte-nos como está sendo sua experiência.",
     "promptSubmit": "Enviar feedback",
-    "dismiss": "Não mostrar novamente"
+    "dismiss": "Não mostrar novamente",
+    "cancel": "Cancelar"
   }
 }

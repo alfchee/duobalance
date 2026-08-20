@@ -228,7 +228,7 @@ export function ReportProblemModal({ open, onOpenChange, lastError }: ReportProb
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSending}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSend} disabled={isSending}>
             {isSending ? t("sending") : t("send")}
