@@ -10,6 +10,7 @@ import { useHousehold } from "@/hooks/useHousehold";
 import { useAccountMutations, type AccountInput } from "@/hooks/useAccounts";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { maskMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { isDebtKind } from "@/lib/accounts";
 import { useAccountsUiStore } from "@/store/accounts";
 import type { AccountKind } from "@/lib/accounts";
 import { KindIcon } from "./kind-icon";
@@ -65,7 +66,9 @@ export function EmptyAccounts() {
         kind: starter.kind,
         currency: baseCurrency,
         balance_mode: "ledger",
-        opening_balance: roundToMinorUnit(parsedBalance, minorUnit),
+        opening_balance: isDebtKind(starter.kind)
+          ? -Math.abs(roundToMinorUnit(parsedBalance, minorUnit))
+          : roundToMinorUnit(parsedBalance, minorUnit),
         manual_balance: null,
         credit_limit: null,
         is_shared: true,

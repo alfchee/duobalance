@@ -61,7 +61,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="min-w-0 flex-1">
         <RealtimeStatus>
           <HouseholdSwitcher />
-          <div className="min-w-0">{children}</div>
+          <div className="min-w-0 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0">
+            {children}
+          </div>
           <TransactionEntrySheet />
           <FeedbackPrompt />
           {!keyboardOpen ? <BottomNav /> : null}

@@ -11,7 +11,7 @@ export default function TransactionsPage() {
   const tTransactions = useTranslations("transactions");
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8 md:pb-8">
+    <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <h1 className="sr-only">{tNav("transactions")}</h1>
       <div>
         <Suspense

@@ -47,7 +47,7 @@ function query(sql) {
 
   if (result.error) {
     throw new Error(
-      "Unable to run psql. Install PostgreSQL client tools and set DATABASE_URL for a non-local database.",
+      "Unable to run psql. Install PostgreSQL client tools and set SUPABASE_DB_URL for a non-local database.",
     );
   }
 
@@ -116,10 +116,9 @@ const report = [
          and exists (select 1 from public.budgets b where b.household_id = h.id)
          and (select count(*) from public.household_members m where m.household_id = h.id and m.removed_at is null) >= 2
      ), first_owners as (
-       select distinct on (m.household_id) m.household_id, m.user_id
+       select m.household_id, m.user_id
        from public.household_members m
-       where m.removed_at is null
-       order by m.household_id, m.joined_at, m.id
+       where m.removed_at is null and m.role = 'owner'
      ), signup_to_first_transaction as (
        select u.id, min(t.created_at) as first_transaction_at, u.created_at as signed_up_at
        from auth.users u
@@ -132,7 +131,7 @@ const report = [
             '| Active households created | ' || (select count(*) from active_households) || ' |' || E'\n' ||
             '| Completed onboarding households | ' || (select count(*) from completed_onboarding) || ' |' || E'\n' ||
             '| Household onboarding completion rate | ' || coalesce(to_char(100.0 * (select count(*) from completed_onboarding) / nullif((select count(*) from active_households), 0), 'FM990.0') || '%', 'n/a') || ' |' || E'\n' ||
-            '| Signed-up owners with completed onboarding | ' || (select count(*) from first_owners o join completed_onboarding c on c.id = o.household_id) || ' |' || E'\n' ||
+            '| Signed-up owners with completed onboarding | ' || (select count(distinct o.user_id) from first_owners o join completed_onboarding c on c.id = o.household_id) || ' |' || E'\n' ||
             '| Users who entered a transaction | ' || (select count(*) from signup_to_first_transaction) || ' |' || E'\n' ||
             '| First transaction under 5 minutes | ' || (select count(*) from signup_to_first_transaction where first_transaction_at - signed_up_at < interval '5 minutes') || ' |' || E'\n' ||
             '| Under-5-minute rate among users with a transaction | ' || coalesce(to_char(100.0 * (select count(*) from signup_to_first_transaction where first_transaction_at - signed_up_at < interval '5 minutes') / nullif((select count(*) from signup_to_first_transaction), 0), 'FM990.0') || '%', 'n/a') || ' |' || E'\n' ||
@@ -153,20 +152,23 @@ const report = [
   section(
     "Retention By Household Cohort",
     `with cohorts as (
-       select id, date_trunc('week', created_at) as cohort_week
+       select id, created_at, date_trunc('week', created_at) as cohort_week
        from public.households
        where deleted_at is null
      ), retention as (
        select cohort_week,
               count(*) as households,
-              count(*) filter (where now() >= cohort_week + interval '2 weeks' and exists (select 1 from public.transactions t where t.household_id = c.id and t.created_at >= cohort_week + interval '1 week' and t.created_at < cohort_week + interval '2 weeks')) as week_2_active,
-              count(*) filter (where now() >= cohort_week + interval '3 weeks' and exists (select 1 from public.transactions t where t.household_id = c.id and t.created_at >= cohort_week + interval '2 weeks' and t.created_at < cohort_week + interval '3 weeks')) as week_3_active,
-              count(*) filter (where now() >= cohort_week + interval '4 weeks' and exists (select 1 from public.transactions t where t.household_id = c.id and t.created_at >= cohort_week + interval '3 weeks' and t.created_at < cohort_week + interval '4 weeks')) as week_4_active
+              count(*) filter (where now() >= c.created_at + interval '2 weeks') as week_2_eligible,
+              count(*) filter (where now() >= c.created_at + interval '2 weeks' and exists (select 1 from public.transactions t where t.household_id = c.id and t.created_at >= c.created_at + interval '1 week' and t.created_at < c.created_at + interval '2 weeks')) as week_2_active,
+              count(*) filter (where now() >= c.created_at + interval '3 weeks') as week_3_eligible,
+              count(*) filter (where now() >= c.created_at + interval '3 weeks' and exists (select 1 from public.transactions t where t.household_id = c.id and t.created_at >= c.created_at + interval '2 weeks' and t.created_at < c.created_at + interval '3 weeks')) as week_3_active,
+              count(*) filter (where now() >= c.created_at + interval '4 weeks') as week_4_eligible,
+              count(*) filter (where now() >= c.created_at + interval '4 weeks' and exists (select 1 from public.transactions t where t.household_id = c.id and t.created_at >= c.created_at + interval '3 weeks' and t.created_at < c.created_at + interval '4 weeks')) as week_4_active
        from cohorts c
        group by cohort_week
      )
      select '| Signup week | Households | Week 2 active | Week 3 active | Week 4 active |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
-            coalesce(string_agg('| ' || to_char(cohort_week, 'YYYY-MM-DD') || ' | ' || households || ' | ' || case when now() < cohort_week + interval '2 weeks' then 'not mature' else week_2_active || ' (' || to_char(100.0 * week_2_active / households, 'FM990.0') || '%)' end || ' | ' || case when now() < cohort_week + interval '3 weeks' then 'not mature' else week_3_active || ' (' || to_char(100.0 * week_3_active / households, 'FM990.0') || '%)' end || ' | ' || case when now() < cohort_week + interval '4 weeks' then 'not mature' else week_4_active || ' (' || to_char(100.0 * week_4_active / households, 'FM990.0') || '%)' end || ' |', E'\n' order by cohort_week desc), '| No active households | 0 | n/a | n/a | n/a |')
+            coalesce(string_agg('| ' || to_char(cohort_week, 'YYYY-MM-DD') || ' | ' || households || ' | ' || case when week_2_eligible = 0 then 'not mature' else week_2_active || ' (' || to_char(100.0 * week_2_active / week_2_eligible, 'FM990.0') || '%)' end || ' | ' || case when week_3_eligible = 0 then 'not mature' else week_3_active || ' (' || to_char(100.0 * week_3_active / week_3_eligible, 'FM990.0') || '%)' end || ' | ' || case when week_4_eligible = 0 then 'not mature' else week_4_active || ' (' || to_char(100.0 * week_4_active / week_4_eligible, 'FM990.0') || '%)' end || ' |', E'\n' order by cohort_week desc), '| No active households | 0 | n/a | n/a | n/a |')
      from retention;`,
     "No retention data.",
   ),
