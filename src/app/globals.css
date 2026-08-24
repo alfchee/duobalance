@@ -110,3 +110,19 @@
     user-select: none;
   }
 }
+
+@keyframes nav-menu-entrance {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nav-menu-attention {
+    animation: nav-menu-entrance 650ms ease-out 450ms 2;
+  }
+}
