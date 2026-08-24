@@ -23,6 +23,7 @@
     "test:ui-validation": "npm run test:e2e",
     "content:build": "node scripts/build-help-content.mjs",
     "locales:check": "node scripts/check-locales.mjs",
+    "metrics:report": "node --env-file-if-exists=.env.local scripts/generate-metrics-report.mjs",
     "prepare": "husky",
     "check": "npm run content:build && npm run typecheck && npm run lint && npm run format:check && npm run test && npm run locales:check",
     "db:start": "supabase start",

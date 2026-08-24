@@ -75,7 +75,7 @@ describe("TransactionsView", () => {
     openEdit.mockReset();
   });
 
-  it("debounces search URL updates and preserves transaction entry actions", () => {
+  it("debounces search URL updates and keeps labelled transaction entry actions discoverable", () => {
     vi.useFakeTimers();
     render(<TransactionsView />);
 
@@ -86,8 +86,13 @@ describe("TransactionsView", () => {
     act(() => vi.advanceTimersByTime(1));
     expect(replace).toHaveBeenCalledWith("/transactions?q=lunch");
 
-    fireEvent.click(screen.getByRole("button", { name: "new" }));
-    fireEvent.click(screen.getByRole("button", { name: "newTransfer" }));
+    const transactionAction = screen.getByRole("button", { name: "new" });
+    const transferAction = screen.getByRole("button", { name: "newTransfer" });
+    expect(transactionAction.textContent).toContain("new");
+    expect(transferAction.textContent).toContain("newTransfer");
+
+    fireEvent.click(transactionAction);
+    fireEvent.click(transferAction);
     expect(openCreate).toHaveBeenNthCalledWith(1);
     expect(openCreate).toHaveBeenNthCalledWith(2, "transfer");
     vi.useRealTimers();

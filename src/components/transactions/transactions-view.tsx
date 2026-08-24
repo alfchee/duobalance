@@ -163,23 +163,23 @@ export function TransactionsView({ accountId }: { accountId?: string }) {
           </div>
         </div>
       ) : null}
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             {t("summary.count")}
           </p>
           <h2 className="mt-1 text-3xl font-black tracking-tight">{t("title")}</h2>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
           <Button
             variant="outline"
-            size="icon"
-            aria-label={t("newTransfer")}
+            className="min-h-11 w-full sm:w-auto"
             onClick={() => openCreate("transfer")}
           >
             <ArrowLeftRight />
+            {t("newTransfer")}
           </Button>
-          <Button onClick={() => openCreate()}>
+          <Button className="min-h-11 w-full sm:w-auto" onClick={() => openCreate()}>
             <Plus />
             {t("new")}
           </Button>

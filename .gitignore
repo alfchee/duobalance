@@ -21,6 +21,7 @@
 
 # production
 /build
+/reports/metrics/
 
 # misc
 .DS_Store

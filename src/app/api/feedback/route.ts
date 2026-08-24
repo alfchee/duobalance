@@ -3,40 +3,77 @@ import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 import { assertNoFinancialData, type DiagnosticContext } from "@/lib/diagnostics";
 import { sendFeedbackEmail } from "@/lib/feedback-email";
 
-const feedbackSchema = z.object({
-  category: z.string().optional().default("problem_report"),
-  message: z.string().optional().default(""),
-  diagnostics: z
-    .object({
-      appVersion: z.string().optional().default("1.1.0"),
-      householdId: z.string().optional().default("none"),
-      memberId: z.string().optional().default("none"),
-      role: z.string().optional().default("owner"),
-      locale: z.string().optional().default("en"),
-      numberFormat: z.string().optional().default("locale"),
-      baseCurrency: z.string().optional().default("USD"),
-      timezone: z.string().optional().default("UTC"),
-      accountCount: z.number().optional().default(0),
-      transactionCount: z.number().optional().default(0),
-      isStandalone: z.boolean().optional().default(false),
-      isOnline: z.boolean().optional().default(true),
-      queuedWrites: z.number().optional().default(0),
-      userAgent: z.string().optional().default(""),
-      lastError: z
-        .object({
-          message: z.string().optional(),
-          stack: z.string().optional().nullable(),
-          at: z.string().optional(),
-        })
-        .nullable()
-        .optional(),
-      currentRoute: z.string().optional().default("/"),
-    })
-    .passthrough(),
-});
+const feedbackSchema = z
+  .object({
+    category: z
+      .enum(["problem_report", "satisfaction_prompt", "general"])
+      .optional()
+      .default("problem_report"),
+    message: z.string().max(4_000).optional().default(""),
+    diagnostics: z
+      .object({
+        appVersion: z.string().max(100).optional().default("1.1.0"),
+        householdId: z
+          .union([z.string().uuid(), z.literal("none")])
+          .optional()
+          .default("none"),
+        memberId: z
+          .union([z.string().uuid(), z.literal("none")])
+          .optional()
+          .default("none"),
+        role: z.enum(["owner", "partner"]).optional().default("owner"),
+        locale: z.string().max(35).optional().default("en"),
+        numberFormat: z.string().max(35).optional().default("locale"),
+        baseCurrency: z.string().length(3).optional().default("USD"),
+        timezone: z.string().max(100).optional().default("UTC"),
+        accountCount: z.number().optional().default(0),
+        transactionCount: z.number().optional().default(0),
+        isStandalone: z.boolean().optional().default(false),
+        isOnline: z.boolean().optional().default(true),
+        queuedWrites: z.number().optional().default(0),
+        userAgent: z.string().max(1_000).optional().default(""),
+        lastError: z
+          .object({
+            message: z.string().max(1_000).optional(),
+            stack: z.string().max(8_000).optional().nullable(),
+            at: z.string().datetime().optional(),
+          })
+          .nullable()
+          .optional(),
+        currentRoute: z.string().max(500).optional().default("/"),
+      })
+      .strict(),
+  })
+  .strict();
+
+const feedbackAttempts = new Map<string, number[]>();
+const feedbackWindowMs = 10 * 60 * 1_000;
+const maxFeedbackAttempts = 5;
+
+function canSubmitFeedback(userId: string, now: number): boolean {
+  const recentAttempts = (feedbackAttempts.get(userId) ?? []).filter(
+    (attemptedAt) => now - attemptedAt < feedbackWindowMs,
+  );
+  if (recentAttempts.length >= maxFeedbackAttempts) {
+    feedbackAttempts.set(userId, recentAttempts);
+    return false;
+  }
+  feedbackAttempts.set(userId, [...recentAttempts, now]);
+  return true;
+}
 
 export async function POST(request: Request) {
-  let body = await request.json().catch(() => null);
+  const rawBody = await request.text();
+  if (rawBody.length > 16_384) {
+    return Response.json({ error: "feedback payload is too large" }, { status: 413 });
+  }
+
+  let body: unknown;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    body = null;
+  }
   if (typeof body === "string") {
     try {
       body = JSON.parse(body);
@@ -64,24 +101,24 @@ export async function POST(request: Request) {
   let userEmail: string | undefined;
   try {
     const supabase = await createSupabaseRouteHandler();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user?.email) {
-      userEmail = user.email;
+    const { data } = await supabase.auth.getUser();
+    if (data.user?.email && data.user.id) {
+      userEmail = data.user.email;
+      if (!canSubmitFeedback(data.user.id, Date.now())) {
+        return Response.json({ error: "too many feedback submissions" }, { status: 429 });
+      }
     }
   } catch {
-    // Session optional for feedback reporting
+    return Response.json({ error: "authentication required" }, { status: 401 });
   }
 
-  const normalizedCategory =
-    category === "satisfaction_prompt" || category === "general" ? category : "problem_report";
-
-  const normalizedRole = diagnostics.role === "partner" ? "partner" : "owner";
+  if (!userEmail) {
+    return Response.json({ error: "authentication required" }, { status: 401 });
+  }
 
   const normalizedDiagnostics: DiagnosticContext = {
     ...diagnostics,
-    role: normalizedRole,
+    role: diagnostics.role,
     lastError: diagnostics.lastError
       ? {
           message: diagnostics.lastError.message ?? "",
@@ -93,7 +130,7 @@ export async function POST(request: Request) {
 
   try {
     await sendFeedbackEmail({
-      category: normalizedCategory,
+      category,
       message,
       diagnostics: normalizedDiagnostics,
       userEmail,
