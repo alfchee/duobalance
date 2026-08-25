@@ -50,4 +50,31 @@ describe("BudgetCategoryList", () => {
     expect(onEdit).toHaveBeenCalledWith("budget-1");
     expect(onDelete).toHaveBeenCalledWith("budget-1");
   });
+
+  it("uses grouped money formatting for four-digit budget amounts", () => {
+    render(
+      <BudgetCategoryList
+        actions={{ create: "Create", delete: "Delete", edit: "Edit" }}
+        currency="NIO"
+        locale="es"
+        numberFormat="dot_decimal"
+        onCreate={vi.fn()}
+        onDelete={vi.fn()}
+        onEdit={vi.fn()}
+        periodMonth="2026-08-01"
+        rows={[{ ...row, amount: 5000, spent: 3400 }]}
+        translations={{
+          categories: "Categories",
+          noBudget: "No budget",
+          overBy: ({ amount }) => `${amount} over`,
+          percentUsed: ({ percent }) => `${percent}% used`,
+          visibleToYou: "Visible to you",
+        }}
+        visibleToHousehold
+      />,
+    );
+
+    expect(screen.getByRole("listitem").textContent).toContain("3,400.00");
+    expect(screen.getByRole("listitem").textContent).toContain("5,000.00");
+  });
 });

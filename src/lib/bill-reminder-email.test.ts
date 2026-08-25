@@ -63,9 +63,9 @@ describe("sendReminderDigest", () => {
     // formatMoney, not a hand-rolled Intl call — no duplicated currency code
     // (the old formatAmount() produced "USD US$1.234,00"). Intl inserts a
     // non-breaking space before the symbol, hence \s+ rather than a literal one.
-    expect(html).toMatch(/1234,00\s+US\$/);
+    expect(html).toMatch(/1\.234,00\s+US\$/);
     expect(html).not.toContain("USD US$");
-    expect(text).toMatch(/1234,00\s+US\$/);
+    expect(text).toMatch(/1\.234,00\s+US\$/);
   });
 
   it("uses the English template for en locale", async () => {
@@ -100,7 +100,7 @@ describe("sendReminderDigest", () => {
     });
 
     const { html } = mockSend.mock.calls[0]![0] as { html: string };
-    expect(html).toMatch(/5000\s+CLP/);
+    expect(html).toMatch(/5\.000\s+CLP/);
     expect(html).not.toContain("5000.0000");
   });
 

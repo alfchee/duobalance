@@ -24,9 +24,9 @@ describe("formatMoney", () => {
     const decimals = currency === "CLP" ? 0 : 2;
 
     if (decimals === 0) {
-      expect(localeFormat).not.toMatch(/[.,]\d{2}/);
-      expect(dotDecimal).not.toMatch(/[.,]\d{2}/);
-      expect(commaDecimal).not.toMatch(/[.,]\d{2}/);
+      expect(localeFormat.replace(/\D/g, "")).toBe("1235");
+      expect(dotDecimal.replace(/\D/g, "")).toBe("1235");
+      expect(commaDecimal.replace(/\D/g, "")).toBe("1235");
     } else {
       expect(localeFormat).toMatch(/[.,]50/);
       expect(dotDecimal).toMatch(/\.50/);
@@ -48,6 +48,24 @@ describe("formatMoney", () => {
 
   it("renders negative amounts with the currency's minus styling", () => {
     expect(formatMoney(-500, "USD", "en")).toMatch(/500\.00/);
+  });
+
+  it.each([
+    ["es", "locale", "."],
+    ["es", "dot_decimal", ","],
+    ["es", "comma_decimal", "."],
+    ["en", "locale", ","],
+    ["pt-BR", "locale", "."],
+  ] as const)("always groups four-digit NIO amounts for %s with %s", (locale, pref, group) => {
+    expect(formatMoney(3400, "NIO", locale, pref)).toContain(`3${group}400`);
+  });
+
+  it.each([
+    ["es", "locale", "."],
+    ["en", "locale", ","],
+    ["pt-BR", "locale", "."],
+  ] as const)("always groups four-digit money input values for %s", (locale, pref, group) => {
+    expect(formatMoneyInput(3400, locale, pref)).toContain(`3${group}400`);
   });
 });
 
@@ -164,11 +182,11 @@ describe("roundToMinorUnit", () => {
 describe("formatSignedMoney", () => {
   it("prepends the U+2212 minus sign for outflows", () => {
     expect(formatSignedMoney(-1234, "CLP", "es")).toContain("−");
-    expect(formatSignedMoney(-1234, "CLP", "es")).toContain("1234");
+    expect(formatSignedMoney(-1234, "CLP", "es").replace(/\D/g, "")).toBe("1234");
   });
 
   it("prepends + for inflows", () => {
     expect(formatSignedMoney(1234, "CLP", "es")).toContain("+");
-    expect(formatSignedMoney(1234, "CLP", "es")).toContain("1234");
+    expect(formatSignedMoney(1234, "CLP", "es").replace(/\D/g, "")).toBe("1234");
   });
 });

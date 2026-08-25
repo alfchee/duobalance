@@ -14,9 +14,11 @@ export function formatMoney(
   locale = "es",
   pref: NumberFormatPref = "locale",
 ): string {
-  const parts = new Intl.NumberFormat(locale, { style: "currency", currency }).formatToParts(
-    amount,
-  );
+  const parts = new Intl.NumberFormat(locale, {
+    currency,
+    style: "currency",
+    useGrouping: true,
+  }).formatToParts(amount);
   if (pref === "locale") return parts.map((part) => part.value).join("");
 
   const { decimal, group } = separatorsFor(locale, pref);
@@ -34,7 +36,7 @@ export function formatMoneyInput(
   locale = "es",
   pref: NumberFormatPref = "locale",
 ): string {
-  const parts = new Intl.NumberFormat(locale).formatToParts(amount);
+  const parts = new Intl.NumberFormat(locale, { useGrouping: true }).formatToParts(amount);
   if (pref === "locale") return parts.map((part) => part.value).join("");
 
   const { decimal, group } = separatorsFor(locale, pref);
