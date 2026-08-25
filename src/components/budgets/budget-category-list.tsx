@@ -108,62 +108,21 @@ function BudgetCategoryRow({
           aria-label={row.name}
         />
         <div className="min-w-0">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-lg font-semibold">{row.name}</p>
-              {row.merchants.length ? (
-                <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                  {row.merchants.join(" · ")}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex shrink-0 items-baseline gap-1 text-lg font-semibold tabular-nums">
-              <span className={overBudget ? "text-destructive" : "text-foreground"}>
-                {formatMoney(row.spent, currency, locale, numberFormat)}
-              </span>
-              <span className="text-muted-foreground">/</span>
-              <span className={overBudget ? "text-destructive" : "text-muted-foreground"}>
-                {formatMoney(Math.max(row.amount, 0), currency, locale, numberFormat)}
-              </span>
-            </div>
-            {row.id ? (
-              <div className="relative z-10 ml-2 flex shrink-0 gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                <Button
-                  aria-label={actions.edit}
-                  className="rounded-full"
-                  size="icon"
-                  type="button"
-                  variant="ghost"
-                  onClick={() => onEdit(row.id!)}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  aria-label={actions.delete}
-                  className="rounded-full text-destructive hover:text-destructive"
-                  size="icon"
-                  type="button"
-                  variant="ghost"
-                  onClick={() => onDelete(row.id!)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="relative z-10 ml-2 shrink-0">
-                <Button
-                  aria-label={actions.create}
-                  className="rounded-full"
-                  size="icon"
-                  type="button"
-                  variant="ghost"
-                  onClick={() => onCreate(row.categoryId)}
-                >
-                  <Plus className="size-4" />
-                </Button>
-              </div>
-            )}
+          <p className="break-words text-lg font-semibold leading-snug">{row.name}</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-1 text-lg font-semibold tabular-nums">
+            <span className={overBudget ? "text-destructive" : "text-foreground"}>
+              {formatMoney(row.spent, currency, locale, numberFormat)}
+            </span>
+            <span className="text-muted-foreground">/</span>
+            <span className={overBudget ? "text-destructive" : "text-muted-foreground"}>
+              {formatMoney(Math.max(row.amount, 0), currency, locale, numberFormat)}
+            </span>
           </div>
+          {row.merchants.length ? (
+            <p className="mt-1 truncate text-sm text-muted-foreground">
+              {row.merchants.join(" · ")}
+            </p>
+          ) : null}
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
             <div
               className={cn(
@@ -187,6 +146,43 @@ function BudgetCategoryRow({
             <p className="mt-2 text-xs font-semibold text-muted-foreground">
               {translations.percentUsed({ percent: percentUsed })}
             </p>
+          )}
+          {row.id ? (
+            <div className="relative z-10 mt-3 flex gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+              <Button
+                aria-label={actions.edit}
+                className="rounded-full"
+                size="icon"
+                type="button"
+                variant="ghost"
+                onClick={() => onEdit(row.id!)}
+              >
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                aria-label={actions.delete}
+                className="rounded-full text-destructive hover:text-destructive"
+                size="icon"
+                type="button"
+                variant="ghost"
+                onClick={() => onDelete(row.id!)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="relative z-10 mt-3">
+              <Button
+                aria-label={actions.create}
+                className="rounded-full"
+                size="icon"
+                type="button"
+                variant="ghost"
+                onClick={() => onCreate(row.categoryId)}
+              >
+                <Plus className="size-4" />
+              </Button>
+            </div>
           )}
         </div>
       </div>
