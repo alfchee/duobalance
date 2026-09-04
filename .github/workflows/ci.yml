@@ -81,6 +81,15 @@ jobs:
         env:
           BUILD_TARGET: web
 
+      - name: Cloudflare Worker smoke build
+        run: |
+          npx opennextjs-cloudflare build
+          test -f .open-next/worker.js
+          test -d .open-next/assets
+          size=$(stat -c%s .open-next/server-functions/default/handler.mjs)
+          echo "handler.mjs size: $size bytes"
+          if [ "$size" -gt 26214400 ]; then echo "Worker handler exceeds 25 MiB"; exit 1; fi
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
 
