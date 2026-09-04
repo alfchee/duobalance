@@ -1,19 +1,31 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { setVapidDetails, sendNotification, MockWebPushError } = vi.hoisted(() => {
-  class MockWebPushError extends Error {
-    statusCode: number;
-    constructor(message: string, statusCode: number) {
-      super(message);
-      this.name = "WebPushError";
-      this.statusCode = statusCode;
+const { setVapidDetails, sendNotification, generateRequestDetails, MockWebPushError } = vi.hoisted(
+  () => {
+    class MockWebPushError extends Error {
+      statusCode: number;
+      constructor(message: string, statusCode: number) {
+        super(message);
+        this.name = "WebPushError";
+        this.statusCode = statusCode;
+      }
     }
-  }
-  return { setVapidDetails: vi.fn(), sendNotification: vi.fn(), MockWebPushError };
-});
+    return {
+      setVapidDetails: vi.fn(),
+      sendNotification: vi.fn(),
+      generateRequestDetails: vi.fn(),
+      MockWebPushError,
+    };
+  },
+);
 
 vi.mock("web-push", () => {
-  const webpush = { setVapidDetails, sendNotification, WebPushError: MockWebPushError };
+  const webpush = {
+    setVapidDetails,
+    sendNotification,
+    generateRequestDetails,
+    WebPushError: MockWebPushError,
+  };
   return { default: webpush, ...webpush };
 });
 
@@ -42,6 +54,15 @@ function clearVapidEnv() {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, "error").mockImplementation(() => undefined);
+  vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  // Disable the Workers fetch path by default — legacy sendNotification tests cover Node.
+  // Make generateRequestDetails throw so the code logs a warn and falls back.
+  generateRequestDetails.mockImplementation(() => {
+    throw new Error("fetch path disabled in test");
+  });
+  vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+    Promise.resolve(new Response(null, { status: 500 })),
+  );
   setVapidEnv();
 });
 
@@ -58,7 +79,10 @@ describe("sendBillReminderPush", () => {
 
     expect(result).toBe("failed");
     expect(sendNotification).not.toHaveBeenCalled();
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("VAPID"));
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("VAPID"),
+      expect.objectContaining({ subscriptionId: subscription.id }),
+    );
   });
 
   it("sends the notification and returns sent on success", async () => {
@@ -132,5 +156,80 @@ describe("sendBillReminderPush", () => {
     const result = await sendBillReminderPush(subscription, 1, "en");
 
     expect(result).toBe("failed");
+  });
+
+  describe("Workers-native fetch path", () => {
+    it("delivers via fetch when generateRequestDetails succeeds", async () => {
+      const payloadJson = JSON.stringify({
+        title: "DuoBalance",
+        body: "You have 2 bills due soon.",
+        url: "/bills",
+      });
+      generateRequestDetails.mockReturnValue({
+        endpoint: subscription.endpoint,
+        method: "POST",
+        headers: { Authorization: "vapid", "Content-Encoding": "aes128gcm" },
+        body: payloadJson,
+      });
+      vi.mocked(globalThis.fetch).mockResolvedValue(new Response(null, { status: 201 }));
+
+      const result = await sendBillReminderPush(subscription, 2, "en");
+
+      expect(result).toBe("sent");
+      expect(generateRequestDetails).toHaveBeenCalledTimes(1);
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        subscription.endpoint,
+        expect.objectContaining({ method: "POST" }),
+      );
+      expect(sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("classifies 404/410 from fetch as gone", async () => {
+      generateRequestDetails.mockReturnValue({
+        endpoint: subscription.endpoint,
+        method: "POST",
+        headers: {},
+        body: "{}",
+      });
+      vi.mocked(globalThis.fetch).mockResolvedValue(new Response(null, { status: 410 }));
+
+      const result = await sendBillReminderPush(subscription, 1, "en");
+
+      expect(result).toBe("gone");
+    });
+
+    it("logs and falls back to sendNotification when fetch path throws", async () => {
+      generateRequestDetails.mockImplementation(() => {
+        throw new MockWebPushError("crypto unavailable", 500);
+      });
+      sendNotification.mockResolvedValue(undefined);
+
+      const result = await sendBillReminderPush(subscription, 1, "en");
+
+      expect(result).toBe("sent");
+      expect(console.warn).toHaveBeenCalledWith(
+        expect.stringContaining("falling back to sendNotification"),
+        expect.objectContaining({ subscriptionId: subscription.id }),
+      );
+      expect(sendNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns failed and logs when fetch returns non-2xx", async () => {
+      generateRequestDetails.mockReturnValue({
+        endpoint: subscription.endpoint,
+        method: "POST",
+        headers: {},
+        body: "{}",
+      });
+      vi.mocked(globalThis.fetch).mockResolvedValue(new Response("push failed", { status: 502 }));
+
+      const result = await sendBillReminderPush(subscription, 1, "en");
+
+      expect(result).toBe("failed");
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining("push delivery failed (fetch path)"),
+        expect.objectContaining({ status: 502 }),
+      );
+    });
   });
 });
