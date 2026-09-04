@@ -168,9 +168,14 @@ async function main() {
         const staticEntries = assets.filter((a) => a.startsWith("/_next/static/"));
         const nextStaticExists = exists(".next/static");
         const openNextStaticExists = exists(".open-next/assets/_next/static");
+        const hasBuildOutput = nextStaticExists || openNextStaticExists;
         if (staticEntries.length === 0)
           warn("precache has no /_next/static entries — did generation run without a build?");
-        else {
+        else if (!hasBuildOutput) {
+          warn(
+            "no build output found (.next/static or .open-next/assets/_next/static) — skipping file-existence check (run npm run build or npx opennextjs-cloudflare build first; CI runs this check before build)",
+          );
+        } else {
           let missing = 0;
           for (const entry of staticEntries) {
             const rel = entry.replace(/^\/_next\/static\//, "");
