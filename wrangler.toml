@@ -1,0 +1,25 @@
+name = "duobalance"
+main = "./worker.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[observability]
+enabled = true
+
+[triggers]
+crons = ["0 6 * * *", "0 7 * * *", "0 12 * * *", "0 3 * * *"]
+
+# Environment variables are injected via `wrangler secret put` and dashboard vars.
+# For local dev, populate `.dev.vars` (gitignored) or `.env.local` — wrangler dev
+# loads them automatically. See `opennextjs-cloudflare` docs for vars/secrets.
+# Cron schedules (#155): the custom worker's `scheduled()` dispatches on
+# `event.cron` to the matching job — no HTTP round-trip to self.
+#   0 6 * * *  → fx-refresh
+#   0 7 * * *  → generate-bill-instances
+#   0 12 * * * → send-bill-reminders
+#   0 3 * * *  → purge-households
+# Manual HTTP invocation (GET/POST /api/cron/*) still requires CRON_SECRET.
