@@ -35,6 +35,7 @@ export async function runSendBillReminders(
   supabase: SupabaseClient<Database>,
 ): Promise<SendBillRemindersResult> {
   if (!process.env.RESEND_API_KEY) {
+    console.error("send-bill-reminders: RESEND_API_KEY not configured — aborting");
     throw new Error("RESEND_API_KEY not configured");
   }
 
@@ -46,10 +47,15 @@ export async function runSendBillReminders(
   const { data: reminderRows, error: reminderError } = await rpc("bill_instances_due_for_reminder");
 
   if (reminderError) {
+    console.error("send-bill-reminders: fetch reminders failed", reminderError);
     throw new Error(`fetch reminders failed: ${String(reminderError)}`);
   }
 
   const items = (reminderRows ?? []) as ReminderRow[];
+  console.info("send-bill-reminders: fetched reminders", {
+    count: items.length,
+    households: new Set(items.map((i) => i.household_id)).size,
+  });
   if (items.length === 0) {
     return { sent: 0, instances: 0 };
   }
@@ -204,6 +210,9 @@ export async function runSendBillReminders(
   }
 
   let totalSent = 0;
+  let totalFailedGroups = 0;
+  let pushFailedCount = 0;
+  let pushGoneCount = 0;
   const succeededInstanceIds: string[] = [];
 
   for (const [hhId, hh] of grouped) {
@@ -244,10 +253,19 @@ export async function runSendBillReminders(
         let pushSent = false;
         for (const subscription of subscriptions) {
           const result = await sendBillReminderPush(subscription, entry.items.length, hh.locale);
-          if (result === "gone") deadSubscriptionIds.push(subscription.id);
-          if (result === "sent") pushSent = true;
+          if (result === "gone") {
+            deadSubscriptionIds.push(subscription.id);
+            pushGoneCount++;
+          } else if (result === "sent") {
+            pushSent = true;
+          } else {
+            pushFailedCount++;
+          }
         }
         if (pushSent) continue;
+        // No push delivered (or no subscription) — fall back to email. A
+        // push failure is already logged inside sendBillReminderPush so
+        // Workers logs will show it even when email succeeds.
         try {
           await sendReminderDigest({
             to: [email],
@@ -278,8 +296,33 @@ export async function runSendBillReminders(
       if (allSucceeded) {
         succeededInstanceIds.push(...memberInstanceIds);
         totalSent++;
+      } else {
+        totalFailedGroups++;
+        console.warn("send-bill-reminders: group delivery failed", {
+          householdId: hhId,
+          memberKey: key,
+          itemCount: entry.items.length,
+        });
       }
     }
+  }
+
+  console.info("send-bill-reminders: dispatch complete", {
+    totalSent,
+    totalFailedGroups,
+    instances: succeededInstanceIds.length,
+    totalItems: items.length,
+    pushGoneCount,
+    pushFailedCount,
+    prunedSubscriptions: pushGoneCount,
+  });
+
+  if (totalFailedGroups > 0) {
+    console.error("send-bill-reminders: some reminder groups failed — check preceding logs", {
+      totalFailedGroups,
+      totalSent,
+      instances: succeededInstanceIds.length,
+    });
   }
 
   if (succeededInstanceIds.length > 0) {
@@ -290,6 +333,7 @@ export async function runSendBillReminders(
       .in("id", succeededInstanceIds);
 
     if (updateError) {
+      console.error("send-bill-reminders: failed to mark instances as reminded", updateError);
       throw new Error(`failed to mark instances as reminded: ${String(updateError)}`);
     }
   }
