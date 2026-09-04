@@ -1,6 +1,6 @@
 name = "duobalance"
 main = ".open-next/worker.js"
-compatibility_date = "2024-09-23"
+compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 
 [assets]
@@ -9,3 +9,7 @@ binding = "ASSETS"
 
 [observability]
 enabled = true
+
+# Environment variables are injected via `wrangler secret put` and dashboard vars.
+# For local dev, populate `.dev.vars` (gitignored) or `.env.local` — wrangler dev
+# loads them automatically. See `opennextjs-cloudflare` docs for vars/secrets.
