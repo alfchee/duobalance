@@ -51,12 +51,17 @@ Additional secret **not in Worker runtime** (scripts only): `SUPABASE_DB_URL` �
 ## Invariants
 
 - No secret is renamed to a `NEXT_PUBLIC_*` name. `SUPABASE_SERVICE_ROLE_KEY`,
-  `EXCHANGERATE_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`, `VAPID_PRIVATE_KEY`,
-  `VAPID_SUBJECT` remain server-only.
+  `SUPABASE_SECRET_KEY`, `EXCHANGERATE_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`,
+  `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` remain server-only.
 - No secret appears in `wrangler.toml` `[vars]` or in a built client bundle.
-  Verified by CI: `npm run check` includes a bundle grep (see `scripts/verify-cloudflare-env.mjs`)
-  and a `wrangler.toml` guard against `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
-  `EXCHANGERATE_API_KEY`, `CRON_SECRET`, `VAPID_PRIVATE_KEY` in `[vars]`.
+  Verified by CI: `npm run check` includes a vars guard (see `scripts/verify-cloudflare-env.mjs`);
+  bundle grep runs as `node scripts/verify-cloudflare-env.mjs --build` after
+  `opennextjs-cloudflare build` in CI and guards against `SUPABASE_SERVICE_ROLE_KEY`,
+  `SUPABASE_SECRET_KEY`, `EXCHANGERATE_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`,
+  `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` in `[vars]` and client chunks.
+- `[vars]` placeholders (`example.*` / `sb_publishable_example`) are deployed defaults.
+  Override real values per-environment in the Cloudflare dashboard before production;
+  the verify script does not block placeholders locally but production must not ship them.
 - Every handler resolves its configuration on Cloudflare via `process.env` populated
   from the Worker `env` (OpenNext `populateProcessEnv` for `fetch`, `worker.ts:45`
   for `scheduled`). No handler was migrated to `getCloudflareContext()` in this issue.
@@ -85,9 +90,15 @@ wrangler secret put SUPABASE_SECRET_KEY
 ## Verification
 
 ```bash
-# After `npm run build && npx opennextjs-cloudflare build`:
-# - wrangler.toml contains no secret in [vars]
-# - client bundle (.open-next/assets) contains no secret
-npm run check  # includes verify-cloudflare-env guard
-node scripts/verify-cloudflare-env.mjs --build  # explicit bundle grep after a build
+# Vars guard (no build needed) — part of `npm run check`:
+node scripts/verify-cloudflare-env.mjs
+
+# Bundle grep (requires a build) — CI runs this after `opennextjs-cloudflare build`:
+npm run build && npx opennextjs-cloudflare build
+node scripts/verify-cloudflare-env.mjs --build  # checks .open-next/assets for leaked identifiers
 ```
+
+Compat vars `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `VAPID_PUBLIC_KEY`, `RESEND_REPLY_TO` are in
+`[vars]` but not in the required-7 list — they are optional/alias. Deleting
+`VAPID_PUBLIC_KEY` would break `src/lib/web-push.ts:15`; the script now also fails if
+`VAPID_PUBLIC_KEY` and `NEXT_PUBLIC_VAPID_PUBLIC_KEY` diverge.

@@ -11,6 +11,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const SECRETS = [
   "SUPABASE_SERVICE_ROLE_KEY",
@@ -27,7 +28,7 @@ const SECRETS = [
 const RENAMED_SECRET_PATTERN =
   /NEXT_PUBLIC_.*(SERVICE_ROLE|RESEND_API|EXCHANGERATE|CRON_SECRET|VAPID_PRIVATE)/;
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const wranglerPath = path.join(root, "wrangler.toml");
 const args = process.argv.slice(2);
 const checkBuild = args.includes("--build");
@@ -49,7 +50,7 @@ if (!fs.existsSync(wranglerPath)) {
 } else {
   const toml = fs.readFileSync(wranglerPath, "utf8");
   // Extract the [vars] block — naive but sufficient for our flat toml.
-  const varsMatch = toml.match(/\[vars\]([\s\S]*?)(?:\n\[[^\]]|\n# Secrets|\n# Cron|\z)/);
+  const varsMatch = toml.match(/\[vars\]([\s\S]*?)(?=\n\[|\n# Secrets|\n# Cron|$)/);
   const varsBlock = varsMatch ? varsMatch[1] : "";
   const hasVars = /\[vars\]/.test(toml);
 
@@ -92,6 +93,17 @@ if (!fs.existsSync(wranglerPath)) {
     }
   }
   if (!failed) pass(`required ${requiredVars.length} public vars present in [vars]`);
+
+  // Optional compat vars (not required but warn if divergence)
+  const vapidPublic = varsBlock.match(/^\s*VAPID_PUBLIC_KEY\s*=\s*"?([^"\n]+)"?/m)?.[1]?.trim();
+  const nextVapidPublic = varsBlock
+    .match(/^\s*NEXT_PUBLIC_VAPID_PUBLIC_KEY\s*=\s*"?([^"\n]+)"?/m)?.[1]
+    ?.trim();
+  if (vapidPublic && nextVapidPublic && vapidPublic !== nextVapidPublic) {
+    fail(
+      `VAPID_PUBLIC_KEY and NEXT_PUBLIC_VAPID_PUBLIC_KEY diverge in [vars] — keep them equal or use a single source with fallback in web-push.ts`,
+    );
+  }
 }
 
 // 2) Optional: grep built client bundle for secrets
@@ -116,6 +128,7 @@ if (checkBuild) {
       "RESEND_API_KEY",
       "CRON_SECRET",
       "VAPID_PRIVATE_KEY",
+      "VAPID_SUBJECT",
     ];
     const clientFiles = [];
     for (const dir of candidates) {
