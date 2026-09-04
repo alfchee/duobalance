@@ -99,7 +99,8 @@ export async function sendReminderDigest(params: ReminderDigestParams): Promise<
   const { apiKey: RESEND_API_KEY, from: FROM, replyTo: REPLY_TO } = getResendConfig();
   if (!RESEND_API_KEY) {
     console.error("bill-reminder-email: RESEND_API_KEY is not set — email not sent", {
-      to: params.to,
+      toCount: params.to.length,
+      toDomains: [...new Set(params.to.map((e) => e.split("@")[1] ?? "unknown"))],
       householdName: params.householdName,
       itemCount: params.items.length,
     });
@@ -126,7 +127,8 @@ export async function sendReminderDigest(params: ReminderDigestParams): Promise<
 
     if (error) {
       console.error("bill-reminder-email: Resend delivery failed", {
-        to: params.to,
+        toCount: params.to.length,
+        toDomains: [...new Set(params.to.map((e) => e.split("@")[1] ?? "unknown"))],
         householdName: params.householdName,
         itemCount: params.items.length,
         error: error.message,
@@ -135,7 +137,8 @@ export async function sendReminderDigest(params: ReminderDigestParams): Promise<
     }
 
     console.info("bill-reminder-email: reminder digest sent", {
-      to: params.to,
+      toCount: params.to.length,
+      toDomains: [...new Set(params.to.map((e) => e.split("@")[1] ?? "unknown"))],
       householdName: params.householdName,
       itemCount: params.items.length,
     });
@@ -143,7 +146,8 @@ export async function sendReminderDigest(params: ReminderDigestParams): Promise<
     if (err instanceof ReminderEmailError) throw err;
     const message = err instanceof Error ? err.message : String(err);
     console.error("bill-reminder-email: unexpected delivery error", {
-      to: params.to,
+      toCount: params.to.length,
+      toDomains: [...new Set(params.to.map((e) => e.split("@")[1] ?? "unknown"))],
       householdName: params.householdName,
       error: message,
     });

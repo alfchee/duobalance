@@ -277,7 +277,7 @@ export async function runSendBillReminders(
         } catch (err) {
           allSucceeded = false;
           console.error(
-            `send-bill-reminders: failed to send digest for household=${hhId} member=${key} to=${email}`,
+            `send-bill-reminders: failed to send digest for household=${hhId} member=${key} recipientDomain=${email.split("@")[1] ?? "unknown"}`,
             err,
           );
         }
