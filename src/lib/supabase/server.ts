@@ -31,7 +31,21 @@ export async function createSupabaseRouteHandler() {
   const cookieStore = await cookies();
   return createServerClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, serviceRoleKey, {
     cookies: {
-      getAll: () => cookieStore.getAll(),
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        } catch (error) {
+          // Route handlers are writable, but Server Components are not —
+          // log so a TOKEN_REFRESHED that cannot persist surfaces in
+          // `wrangler tail` instead of silently dropping the session
+          // after jwt_expiry. workerd's cookie polyfill surfaces here
+          // if the compat layer changes.
+          console.warn("[supabase] setAll failed — session refresh may not persist", error);
+        }
+      },
     },
   });
 }
