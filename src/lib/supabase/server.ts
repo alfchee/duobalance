@@ -15,12 +15,9 @@ import { z } from "zod";
 import type { Database } from "./types";
 import { env } from "@/lib/env";
 
-function getServiceRoleKey(): string | undefined {
-  return z.string().min(1).optional().parse(process.env.SUPABASE_SERVICE_ROLE_KEY);
-}
+const serviceRoleKey = z.string().min(1).optional().parse(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export async function createSupabaseRouteHandler() {
-  const serviceRoleKey = getServiceRoleKey();
   if (!serviceRoleKey || !env.NEXT_PUBLIC_SUPABASE_URL) {
     throw new Error("Supabase env not set — see issue #9");
   }
@@ -33,7 +30,6 @@ export async function createSupabaseRouteHandler() {
 }
 
 export function createSupabaseServiceRoleClient() {
-  const serviceRoleKey = getServiceRoleKey();
   if (!serviceRoleKey || !env.NEXT_PUBLIC_SUPABASE_URL) {
     throw new Error("Supabase env not set — see issue #9");
   }

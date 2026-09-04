@@ -45,12 +45,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# cloudflare / opennext
-.open-next/
-.wrangler/
-.dev.vars
-cloudflare-env.d.ts
-
 # supabase (managed by CLI)
 /supabase/.branches
 /supabase/.temp
