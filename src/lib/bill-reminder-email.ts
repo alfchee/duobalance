@@ -5,9 +5,13 @@
 import { Resend } from "resend";
 import { formatMoney } from "@/lib/money";
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>";
-const REPLY_TO = process.env.RESEND_REPLY_TO;
+function getResendConfig() {
+  return {
+    apiKey: process.env.RESEND_API_KEY,
+    from: process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>",
+    replyTo: process.env.RESEND_REPLY_TO,
+  };
+}
 
 export class ReminderEmailError extends Error {}
 
@@ -92,6 +96,7 @@ function escapeHtml(value: string): string {
 }
 
 export async function sendReminderDigest(params: ReminderDigestParams): Promise<void> {
+  const { apiKey: RESEND_API_KEY, from: FROM, replyTo: REPLY_TO } = getResendConfig();
   if (!RESEND_API_KEY) {
     throw new ReminderEmailError("RESEND_API_KEY is not set — reminder email not sent");
   }
