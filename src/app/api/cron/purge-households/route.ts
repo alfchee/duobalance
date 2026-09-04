@@ -1,13 +1,8 @@
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
-import {
-  PURGE_SANITY_CAP,
-  PurgeSanityCapError,
-  runPurgeHouseholds,
-} from "@/lib/cron/purge-households";
 
 export const revalidate = 1;
 
-export { PURGE_SANITY_CAP };
+export const PURGE_SANITY_CAP = 50;
 
 export async function GET(request: Request) {
   return handle(request);
@@ -24,35 +19,61 @@ async function handle(request: Request) {
 
   const supabase = await createSupabaseRouteHandler();
   try {
-    const result = await runPurgeHouseholds(supabase);
-    if (result.purgedCount === 0) {
-      console.info("purge-households: no households to purge");
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: expiredHouseholds, error: selectError } = await supabase
+      .from("households")
+      .select("id, name, deleted_at")
+      .not("deleted_at", "is", null)
+      .lt("deleted_at", cutoff)
+      .limit(PURGE_SANITY_CAP + 1);
+
+    if (selectError) {
+      console.error("purge-households: lookup failed", selectError);
+      return Response.json({ error: "lookup failed" }, { status: 502 });
     }
-    return Response.json(result);
-  } catch (err) {
-    if (err instanceof PurgeSanityCapError) {
+
+    const householdsToPurge = expiredHouseholds ?? [];
+
+    if (householdsToPurge.length > PURGE_SANITY_CAP) {
       console.error("purge-households: sanity cap exceeded", {
-        count: err.count,
-        cap: err.cap,
+        count: householdsToPurge.length,
+        cap: PURGE_SANITY_CAP,
       });
       return Response.json(
         {
           error: "purge count exceeds sanity cap",
-          count: err.count,
-          cap: err.cap,
+          count: householdsToPurge.length,
+          cap: PURGE_SANITY_CAP,
         },
         { status: 422 },
       );
     }
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("lookup failed")) {
-      console.error("purge-households: lookup failed", err);
-      return Response.json({ error: "lookup failed" }, { status: 502 });
+
+    if (householdsToPurge.length === 0) {
+      console.info("purge-households: no households to purge");
+      return Response.json({ purgedCount: 0, households: [] });
     }
-    if (message.includes("deletion failed")) {
-      console.error("purge-households: deletion failed", err);
+
+    const idsToPurge = householdsToPurge.map((h) => h.id);
+
+    console.info("purge-households: purging soft-deleted households (>30 days old)", {
+      count: idsToPurge.length,
+      ids: idsToPurge,
+    });
+
+    const { error: deleteError } = await supabase.from("households").delete().in("id", idsToPurge);
+
+    if (deleteError) {
+      console.error("purge-households: deletion failed", deleteError);
       return Response.json({ error: "deletion failed" }, { status: 502 });
     }
+
+    return Response.json({
+      purgedCount: householdsToPurge.length,
+      households: householdsToPurge,
+    });
+  } catch (err) {
     console.error("purge-households: unexpected failure", err);
     return Response.json({ error: "purge failed" }, { status: 502 });
   }
