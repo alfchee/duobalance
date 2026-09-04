@@ -55,6 +55,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, "error").mockImplementation(() => undefined);
   vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  vi.spyOn(console, "info").mockImplementation(() => undefined);
   // Disable the Workers fetch path by default — legacy sendNotification tests cover Node.
   // Make generateRequestDetails throw so the code logs a warn and falls back.
   generateRequestDetails.mockImplementation(() => {
@@ -184,18 +185,23 @@ describe("sendBillReminderPush", () => {
       expect(sendNotification).not.toHaveBeenCalled();
     });
 
-    it("classifies 404/410 from fetch as gone", async () => {
+    it.each([404, 410])("classifies %i from fetch as gone", async (statusCode) => {
       generateRequestDetails.mockReturnValue({
         endpoint: subscription.endpoint,
         method: "POST",
         headers: {},
         body: "{}",
       });
-      vi.mocked(globalThis.fetch).mockResolvedValue(new Response(null, { status: 410 }));
+      vi.mocked(globalThis.fetch).mockResolvedValue(new Response(null, { status: statusCode }));
+      vi.spyOn(console, "info").mockImplementation(() => undefined);
 
       const result = await sendBillReminderPush(subscription, 1, "en");
 
       expect(result).toBe("gone");
+      expect(console.info).toHaveBeenCalledWith(
+        expect.stringContaining("subscription gone"),
+        expect.objectContaining({ status: statusCode }),
+      );
     });
 
     it("logs and falls back to sendNotification when fetch path throws", async () => {

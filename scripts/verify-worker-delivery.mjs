@@ -40,8 +40,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const liveEmail = args.includes("--live-email");
 const livePush = args.includes("--live-push");
-const toArg = args[args.indexOf("--to") + 1];
-const subArg = args[args.indexOf("--subscription") + 1];
+const toIdx = args.indexOf("--to");
+const toArg = toIdx !== -1 ? args[toIdx + 1] : undefined;
+const subIdx = args.indexOf("--subscription");
+const subArg = subIdx !== -1 ? args[subIdx + 1] : undefined;
 
 let failed = false;
 function fail(msg) {
@@ -206,26 +208,39 @@ if (livePush) {
     console.log("[verify-worker-delivery] live push → test subscription");
     try {
       const sub = JSON.parse(subArg);
-      // Dynamically import the helper so the same fetch path the cron uses is exercised.
-      const { sendBillReminderPush } = await import(path.join(root, "src/lib/web-push.ts"));
-      // This will fail outside a built Worker, but the import + generateRequestDetails
-      // smoke above already proves the compat layer. We still attempt it for local workerd.
-      const result = await sendBillReminderPush(
-        {
-          id: "verify-sub",
-          member_id: "verify-member",
-          endpoint: sub.endpoint,
-          p256dh: sub.keys?.p256dh ?? sub.p256dh,
-          auth: sub.keys?.auth ?? sub.auth,
-        },
-        1,
-        "en",
-      );
-      if (result === "sent")
-        pass("live push delivered (sent) — verify device received notification");
-      else if (result === "gone")
-        warn("live push returned gone (subscription expired) — generate a fresh subscription");
-      else fail(`live push returned ${result} — check Workers logs for details`);
+      let sendBillReminderPush;
+      try {
+        ({ sendBillReminderPush } = await import(path.join(root, "src/lib/web-push.ts")));
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes("ERR_UNKNOWN_FILE_EXTENSION") || msg.includes("Unknown file extension")) {
+          warn(
+            "live push .ts import not available in plain node — run via `npx tsx scripts/verify-worker-delivery.mjs --live-push` or `wrangler dev` for a full delivery; generateRequestDetails smoke above already proves compat",
+          );
+          // Don't fail CI — the static checks are the gate; live push needs a TS loader.
+          sendBillReminderPush = null;
+        } else throw e;
+      }
+      if (!sendBillReminderPush) {
+        // Skipped gracefully — see warn above.
+      } else {
+        const result = await sendBillReminderPush(
+          {
+            id: "verify-sub",
+            member_id: "verify-member",
+            endpoint: sub.endpoint,
+            p256dh: sub.keys?.p256dh ?? sub.p256dh,
+            auth: sub.keys?.auth ?? sub.auth,
+          },
+          1,
+          "en",
+        );
+        if (result === "sent")
+          pass("live push delivered (sent) — verify device received notification");
+        else if (result === "gone")
+          warn("live push returned gone (subscription expired) — generate a fresh subscription");
+        else fail(`live push returned ${result} — check Workers logs for details`);
+      }
     } catch (e) {
       fail(`live push threw: ${e instanceof Error ? e.message : String(e)}`);
     }

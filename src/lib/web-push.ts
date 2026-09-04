@@ -138,7 +138,15 @@ export async function sendBillReminderPush(
         body: details.body as BodyInit,
       });
 
-      if (isGoneStatus(response.status)) return "gone";
+      if (isGoneStatus(response.status)) {
+        console.info("web-push: subscription gone (fetch path)", {
+          subscriptionId: subscription.id,
+          memberId: subscription.member_id,
+          endpointHost: safeHost(subscription.endpoint),
+          status: response.status,
+        });
+        return "gone";
+      }
       if (!response.ok) {
         const text = await response.text().catch(() => "");
         console.error("send-bill-reminders: push delivery failed (fetch path)", {
@@ -153,7 +161,15 @@ export async function sendBillReminderPush(
       return "sent";
     } catch (error) {
       // Classify WebPushError 404/410 if thrown (some runtimes throw instead of returning status).
-      if (error instanceof webpush.WebPushError && isGoneStatus(error.statusCode)) return "gone";
+      if (error instanceof webpush.WebPushError && isGoneStatus(error.statusCode)) {
+        console.info("web-push: subscription gone (generateRequestDetails path)", {
+          subscriptionId: subscription.id,
+          memberId: subscription.member_id,
+          endpointHost: safeHost(subscription.endpoint),
+          status: error.statusCode,
+        });
+        return "gone";
+      }
 
       // Log the fetch-path failure at warn — we will still try the legacy
       // path so a single compat gap doesn't silently suppress delivery.
@@ -176,7 +192,15 @@ export async function sendBillReminderPush(
     );
     return "sent";
   } catch (error) {
-    if (error instanceof webpush.WebPushError && isGoneStatus(error.statusCode)) return "gone";
+    if (error instanceof webpush.WebPushError && isGoneStatus(error.statusCode)) {
+      console.info("web-push: subscription gone (sendNotification path)", {
+        subscriptionId: subscription.id,
+        memberId: subscription.member_id,
+        endpointHost: safeHost(subscription.endpoint),
+        status: error.statusCode,
+      });
+      return "gone";
+    }
     console.error("send-bill-reminders: push delivery failed", {
       subscriptionId: subscription.id,
       memberId: subscription.member_id,
