@@ -63,14 +63,23 @@ export async function runSendBillReminders(
     }
   }
 
-  const { data: allMembers, error: allMembersError } = await supabase
-    .from("household_members")
-    .select("id, user_id, display_name, household_id")
-    .in("id", Array.from(responsibleMemberIds))
-    .is("removed_at", null);
+  let allMembers: Array<{
+    id: string;
+    user_id: string;
+    display_name: string;
+    household_id: string;
+  }> = [];
+  if (responsibleMemberIds.size > 0) {
+    const { data, error: allMembersError } = await supabase
+      .from("household_members")
+      .select("id, user_id, display_name, household_id")
+      .in("id", Array.from(responsibleMemberIds))
+      .is("removed_at", null);
 
-  if (allMembersError) {
-    throw new Error(`member lookup failed: ${String(allMembersError)}`);
+    if (allMembersError) {
+      throw new Error(`member lookup failed: ${String(allMembersError)}`);
+    }
+    allMembers = (data ?? []) as typeof allMembers;
   }
 
   const memberToUserId = new Map<string, string>();
@@ -135,12 +144,16 @@ export async function runSendBillReminders(
   const memberIds = Array.from(
     new Set(((allHouseholdMembers ?? []) as Array<{ id: string }>).map((member) => member.id)),
   );
-  const { data: subscriptionRows, error: subscriptionError } = await supabase
-    .from("push_subscriptions")
-    .select("id, member_id, endpoint, p256dh, auth")
-    .in("member_id", memberIds);
-  if (subscriptionError) {
-    throw new Error(`push subscription lookup failed: ${String(subscriptionError)}`);
+  let subscriptionRows: StoredPushSubscription[] = [];
+  if (memberIds.length > 0) {
+    const { data, error: subscriptionError } = await supabase
+      .from("push_subscriptions")
+      .select("id, member_id, endpoint, p256dh, auth")
+      .in("member_id", memberIds);
+    if (subscriptionError) {
+      throw new Error(`push subscription lookup failed: ${String(subscriptionError)}`);
+    }
+    subscriptionRows = (data ?? []) as StoredPushSubscription[];
   }
   const subscriptionsByMember = new Map<string, StoredPushSubscription[]>();
   for (const subscription of (subscriptionRows ?? []) as StoredPushSubscription[]) {

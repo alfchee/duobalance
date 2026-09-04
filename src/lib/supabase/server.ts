@@ -45,26 +45,3 @@ export function createSupabaseServiceRoleClient() {
     },
   });
 }
-
-export function createSupabaseCronClient(
-  cloudflareEnv: Record<string, unknown>,
-): ReturnType<typeof createClient<Database>> {
-  const url =
-    (cloudflareEnv.NEXT_PUBLIC_SUPABASE_URL as string | undefined) ??
-    env.NEXT_PUBLIC_SUPABASE_URL ??
-    process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    (cloudflareEnv.SUPABASE_SERVICE_ROLE_KEY as string | undefined) ??
-    getServiceRoleKey() ??
-    (process.env.SUPABASE_SERVICE_ROLE_KEY as string | undefined);
-  if (!key || !url) {
-    throw new Error("Supabase env not set — see issue #9");
-  }
-  return createClient<Database>(url, key, {
-    auth: {
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-      persistSession: false,
-    },
-  });
-}

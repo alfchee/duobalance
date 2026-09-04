@@ -20,7 +20,7 @@ import { runFxRefresh } from "@/lib/fx/refresh";
 import { generateAllInstances } from "@/lib/bill-instances";
 import { runSendBillReminders } from "@/lib/cron/send-bill-reminders";
 import { runPurgeHouseholds } from "@/lib/cron/purge-households";
-import { createSupabaseCronClient } from "@/lib/supabase/server";
+import { createSupabaseCronClient } from "@/lib/supabase/cron";
 
 // Minimal Cloudflare Worker types so `tsc --noEmit` passes without
 // `@cloudflare/workers-types` or a generated `cloudflare-env.d.ts`.
@@ -93,15 +93,16 @@ export default {
   },
 
   async scheduled(event: ScheduledEvent, env: CloudflareEnv, ctx: ExecutionContext): Promise<void> {
-    populateProcessEnv(env as Record<string, unknown>);
-
-    const supabase = createSupabaseCronClient(env as Record<string, unknown>);
     const job = CRON_MAP[event.cron];
 
     if (!job) {
       console.warn(`[scheduled] unrecognized cron "${event.cron}" — no job dispatched`);
       return;
     }
+
+    populateProcessEnv(env as Record<string, unknown>);
+
+    const supabase = createSupabaseCronClient(env as Record<string, unknown>);
 
     console.info(`[scheduled] dispatching "${job}" for cron "${event.cron}"`);
 
@@ -142,8 +143,17 @@ export default {
 
     // Cloudflare recommends `ctx.waitUntil` for scheduled work; also await
     // so the invocation doesn't terminate early in `wrangler dev --test-scheduled`.
+    // Non-retryable config errors (missing RESEND_API_KEY, Supabase env) should
+    // not trigger Cloudflare's retry — call noRetry() and swallow the error.
     const promise = run().catch((err) => {
+      const message = err instanceof Error ? err.message : String(err);
+      const isNonRetryable =
+        message.includes("RESEND_API_KEY") || message.includes("Supabase env not set");
       console.error(`[scheduled] "${job}" failed for cron "${event.cron}"`, err);
+      if (isNonRetryable) {
+        event.noRetry?.();
+        return;
+      }
       throw err;
     });
     ctx.waitUntil(promise);

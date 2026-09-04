@@ -1,5 +1,9 @@
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
-import { PURGE_SANITY_CAP, runPurgeHouseholds } from "@/lib/cron/purge-households";
+import {
+  PURGE_SANITY_CAP,
+  PurgeSanityCapError,
+  runPurgeHouseholds,
+} from "@/lib/cron/purge-households";
 
 export const revalidate = 1;
 
@@ -26,23 +30,21 @@ async function handle(request: Request) {
     }
     return Response.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    const isSanityCap = message.includes("sanity cap");
-    const capErr = err as Error & { count?: number; cap?: number };
-    if (isSanityCap) {
+    if (err instanceof PurgeSanityCapError) {
       console.error("purge-households: sanity cap exceeded", {
-        count: capErr.count,
-        cap: capErr.cap,
+        count: err.count,
+        cap: err.cap,
       });
       return Response.json(
         {
           error: "purge count exceeds sanity cap",
-          count: capErr.count,
-          cap: capErr.cap,
+          count: err.count,
+          cap: err.cap,
         },
         { status: 422 },
       );
     }
+    const message = err instanceof Error ? err.message : String(err);
     if (message.includes("lookup failed")) {
       console.error("purge-households: lookup failed", err);
       return Response.json({ error: "lookup failed" }, { status: 502 });

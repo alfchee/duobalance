@@ -13,6 +13,19 @@ export type PurgeResult = {
   households: Array<{ id: string; name: string; deleted_at: string }>;
 };
 
+export class PurgeSanityCapError extends Error {
+  readonly count: number;
+  readonly cap: number;
+  readonly code = "SANITY_CAP" as const;
+
+  constructor(count: number, cap: number) {
+    super("purge count exceeds sanity cap");
+    this.name = "PurgeSanityCapError";
+    this.count = count;
+    this.cap = cap;
+  }
+}
+
 export async function runPurgeHouseholds(supabase: SupabaseClient<Database>): Promise<PurgeResult> {
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -30,18 +43,7 @@ export async function runPurgeHouseholds(supabase: SupabaseClient<Database>): Pr
   const householdsToPurge = expiredHouseholds ?? [];
 
   if (householdsToPurge.length > PURGE_SANITY_CAP) {
-    const err = new Error("purge count exceeds sanity cap") as Error & {
-      count: number;
-      cap: number;
-      households: typeof householdsToPurge;
-    };
-    (err as unknown as { count: number }).count = householdsToPurge.length;
-    (err as unknown as { cap: number }).cap = PURGE_SANITY_CAP;
-    throw Object.assign(err, {
-      count: householdsToPurge.length,
-      cap: PURGE_SANITY_CAP,
-      code: "SANITY_CAP",
-    });
+    throw new PurgeSanityCapError(householdsToPurge.length, PURGE_SANITY_CAP);
   }
 
   if (householdsToPurge.length === 0) {
