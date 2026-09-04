@@ -7,8 +7,8 @@ coverage
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
-.open-next
-.wrangler
+.open-next/
+.wrangler/
 cloudflare-env.d.ts
 next-env.d.ts
 *.tsbuildinfo
