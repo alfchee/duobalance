@@ -13,10 +13,41 @@ enabled = true
 [triggers]
 crons = ["0 6 * * *", "0 7 * * *", "0 12 * * *", "0 3 * * *"]
 
-# Environment variables are injected via `wrangler secret put` and dashboard vars.
-# For local dev, populate `.dev.vars` (gitignored) or `.env.local` — wrangler dev
-# loads them automatically. See `opennextjs-cloudflare` docs for vars/secrets.
-# Cron schedules (#155): the custom worker's `scheduled()` dispatches on
+# Public vars — safe to embed in client bundles or required for email/link
+# generation at runtime. These are committed and deployed via `wrangler deploy`.
+# Override per-environment in the Cloudflare dashboard when needed:
+#   Workers & Pages > duobalance > Settings > Variables
+# For local `wrangler dev` / `npm run preview`, populate `.dev.vars` (gitignored)
+# or keep `.env.local` — `opennextjs-cloudflare` loads both.
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_example"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "example-anon-key-compat"
+NEXT_PUBLIC_API_BASE_URL = ""
+NEXT_PUBLIC_VAPID_PUBLIC_KEY = "example-vapid-public-key"
+# Server-side alias for the same public key material — web-push reads
+# `process.env.VAPID_PUBLIC_KEY`. Keeping both avoids touching handler code
+# per #156 (minimise diff). Same value as NEXT_PUBLIC_VAPID_PUBLIC_KEY.
+VAPID_PUBLIC_KEY = "example-vapid-public-key"
+APP_URL = "https://duobalance.app"
+FEEDBACK_RECIPIENT_EMAIL = "hola@duobalance.app"
+RESEND_FROM = "DuoBalance <hola@duobalance.app>"
+RESEND_REPLY_TO = "hola@duobalance.app"
+
+# Secrets — NEVER put these in [vars]. They bypass RLS or enable external
+# services and must not reach a client bundle.
+# Set via `wrangler secret put <NAME>` or Cloudflare dashboard secrets:
+#   SUPABASE_SERVICE_ROLE_KEY  — Supabase service_role JWT (bypasses RLS)
+#   SUPABASE_SECRET_KEY        — sb_secret_… alias for the same role (when present)
+#   EXCHANGERATE_API_KEY       — exchangerate-api.com key for fx-refresh cron
+#   RESEND_API_KEY             — Resend API key for invite/feedback/bill emails
+#   CRON_SECRET                — Bearer token for manual /api/cron/* HTTP invocations
+#   VAPID_PRIVATE_KEY          — VAPID private key for web-push
+#   VAPID_SUBJECT              — VAPID subject (mailto: URL)
+# Local dev: put real values in `.dev.vars` (gitignored) — wrangler dev loads it.
+# See `docs/cloudflare-env-mapping.md` for the full Vercel → Wrangler mapping.
+
+# Cron dispatch (#155): the custom worker's `scheduled()` dispatches on
 # `event.cron` to the matching job — no HTTP round-trip to self.
 #   0 6 * * *  → fx-refresh
 #   0 7 * * *  → generate-bill-instances

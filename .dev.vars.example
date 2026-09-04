@@ -1,0 +1,25 @@
+# Copy to .dev.vars (gitignored) for `wrangler dev` / `npm run preview`.
+# Real values go here — never commit .dev.vars. For deployed Workers, use
+# `wrangler secret put <NAME>` or the Cloudflare dashboard secrets.
+#
+# Public vars are already in wrangler.toml [vars] with committed placeholders;
+# you can override them here for local Cloudflare testing if needed.
+NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_example
+NEXT_PUBLIC_SUPABASE_ANON_KEY=example-anon-key-compat
+NEXT_PUBLIC_API_BASE_URL=
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=example-vapid-public-key
+VAPID_PUBLIC_KEY=example-vapid-public-key
+APP_URL=https://duobalance.app
+FEEDBACK_RECIPIENT_EMAIL=hola@duobalance.app
+RESEND_FROM="DuoBalance <hola@duobalance.app>"
+RESEND_REPLY_TO=hola@duobalance.app
+
+# Secrets — required for local `wrangler dev` to exercise handlers/crons
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SECRET_KEY=
+EXCHANGERATE_API_KEY=
+RESEND_API_KEY=
+CRON_SECRET=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:ops@duobalance.app
