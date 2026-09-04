@@ -170,8 +170,16 @@ export async function runSendBillReminders(
       members: Map<string, { items: ReminderItem[]; displayName: string }>;
     }
   >();
+  // Pre-index instance IDs by household+responsible key to avoid O(n²) filtering
+  // inside the per-group send loop (items is scanned once, not per group).
+  const instanceIdsByGroup = new Map<string, string[]>();
 
   for (const item of items) {
+    const groupKey = `${item.household_id}:${item.responsible_member_id ?? "joint"}`;
+    const bucket = instanceIdsByGroup.get(groupKey) ?? [];
+    bucket.push(item.instance_id);
+    instanceIdsByGroup.set(groupKey, bucket);
+
     let hh = grouped.get(item.household_id);
     if (!hh) {
       hh = { name: item.household_name, locale: item.household_locale, members: new Map() };
@@ -204,13 +212,7 @@ export async function runSendBillReminders(
 
       const toEmails: string[] = [];
       const recipientMemberIds: string[] = [];
-      const memberInstanceIds = items
-        .filter((i) =>
-          key === "joint"
-            ? i.household_id === hhId && i.responsible_member_id === null
-            : i.responsible_member_id === key,
-        )
-        .map((i) => i.instance_id);
+      const memberInstanceIds = instanceIdsByGroup.get(`${hhId}:${key}`) ?? [];
 
       if (key === "joint") {
         const hhMembers = householdMemberIds.get(hhId) ?? [];

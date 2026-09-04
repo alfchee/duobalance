@@ -97,6 +97,7 @@ export default {
 
     if (!job) {
       console.warn(`[scheduled] unrecognized cron "${event.cron}" — no job dispatched`);
+      event.noRetry?.();
       return;
     }
 
