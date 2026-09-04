@@ -16,7 +16,11 @@ import type { Database } from "./types";
 import { env } from "@/lib/env";
 
 function getServiceRoleKey(): string | undefined {
-  return z.string().min(1).optional().parse(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return z
+    .string()
+    .min(1)
+    .optional()
+    .parse(process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY);
 }
 
 export async function createSupabaseRouteHandler() {

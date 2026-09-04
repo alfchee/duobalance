@@ -10,7 +10,11 @@ import type { Database } from "./types";
 import { env } from "@/lib/env";
 
 function getServiceRoleKey(): string | undefined {
-  return z.string().min(1).optional().parse(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return z
+    .string()
+    .min(1)
+    .optional()
+    .parse(process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY);
 }
 
 export function createSupabaseCronClient(
@@ -22,8 +26,8 @@ export function createSupabaseCronClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
     (cloudflareEnv.SUPABASE_SERVICE_ROLE_KEY as string | undefined) ??
-    getServiceRoleKey() ??
-    (process.env.SUPABASE_SERVICE_ROLE_KEY as string | undefined);
+    (cloudflareEnv.SUPABASE_SECRET_KEY as string | undefined) ??
+    getServiceRoleKey();
   if (!key || !url) {
     throw new Error("Supabase env not set — see issue #9");
   }
