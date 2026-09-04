@@ -90,6 +90,9 @@ jobs:
           echo "handler.mjs size: $size bytes"
           if [ "$size" -gt 26214400 ]; then echo "Worker handler exceeds 25 MiB"; exit 1; fi
 
+      - name: Verify no secret in wrangler vars or client bundle
+        run: node scripts/verify-cloudflare-env.mjs --build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
 
