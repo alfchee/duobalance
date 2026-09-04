@@ -49,14 +49,21 @@ async function listFiles(directory) {
 // as a post-step after `opennextjs-cloudflare build`, the deployed hashes
 // live in .open-next; otherwise they live in .next. We collect from
 // whichever exists (union when both exist so a stale .next after an
-// incremental build cannot leave the precache incomplete). This is additive:
-// the Tauri path (BUILD_TARGET=tauri) still reads from .next only and is
-// unaffected, and local `next dev` does not need .open-next at all.
+// incremental build cannot leave the precache incomplete).
 const isOpenNextPostStep = process.argv.includes("--opennext") || process.env.OPENNEXT === "1";
+const isTauri = process.env.BUILD_TARGET === "tauri";
 
 const staticDirectories = [];
-if (existsSync(nextStaticDirectory)) staticDirectories.push(nextStaticDirectory);
-if (existsSync(openNextStaticDirectory)) staticDirectories.push(openNextStaticDirectory);
+if (isTauri) {
+  // Tauri (output: export) must not include .open-next — otherwise a
+  // previous web `opennext` build left on disk would pollute the Tauri
+  // precache with the web buildId and `out/_next/static` (copied only
+  // from .next) would not contain those chunks.
+  if (existsSync(nextStaticDirectory)) staticDirectories.push(nextStaticDirectory);
+} else {
+  if (existsSync(nextStaticDirectory)) staticDirectories.push(nextStaticDirectory);
+  if (existsSync(openNextStaticDirectory)) staticDirectories.push(openNextStaticDirectory);
+}
 
 // When invoked as --opennext but .open-next not yet built, fall back to .next
 // so CI that runs the script before opennext still produces a valid public
@@ -121,9 +128,9 @@ console.log(
 // .open-next/assets. When the script runs as a post-step, public/sw-assets.js
 // has already been copied to .open-next/assets during the initial build, so
 // we overwrite it here with the open-next-aware version (same content if the
-// two static dirs were in sync,补 if they diverged). This satisfies the AC:
+// two static dirs were in sync, or if they diverged). This satisfies the AC:
 // "precache list matches the deployed asset set" — hashes come from .open-next.
-if (existsSync(openNextAssetsDirectory)) {
+if (!isTauri && existsSync(openNextAssetsDirectory)) {
   await writeFile(join(openNextAssetsDirectory, "sw-assets.js"), content);
   console.log(`generate-service-worker: wrote .open-next/assets/sw-assets.js (version ${version})`);
 }

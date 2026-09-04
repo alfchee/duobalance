@@ -38,10 +38,15 @@ const buildAssets = union(listFiles(dir) for dir in staticDirectories);
   it the script still prefers whatever exists, so `npm run build` (Tauri/web)
   continues to work. When `--opennext` is requested but `.open-next` is not
   yet built, it warns and falls back to `.next/static`.
-- Writes to `public/sw-assets.js` **and** `.open-next/assets/sw-assets.js`
+- `BUILD_TARGET=tauri` is scoped: the generator reads **only** `.next/static`
+  and does **not** union `.open-next` nor write to `.open-next/assets/sw-assets.js`.
+  This prevents a previous web `opennext` build left on disk from polluting the
+  Tauri precache with the web buildId (otherwise `out/sw-assets.js` would list
+  chunks not present in `out/_next/static`).
+- Writes to `public/sw-assets.js` **and** (when not Tauri) `.open-next/assets/sw-assets.js`
   when `.open-next/assets` exists, so the deployed `sw-assets.js` is always the
   open-next-aware version. The `out/` Tauri export (`out/_next/static` + `out/sw-assets.js`)
-  is left unchanged.
+  is left unchanged and never depends on `.open-next`.
 
 ### `package.json` — post-step
 
@@ -135,10 +140,12 @@ node scripts/verify-pwa-assets.mjs --live --url https://staging.duobalance.app
 #   npx playwright test --grep @pwa-offline  # if such spec exists
 #   # or manually: await context.setOffline(true); await page.reload();
 
-# 4) Tauri build unaffected
+# 4) Tauri build unaffected (generator excludes .open-next for Tauri)
 BUILD_TARGET=tauri npm run build
 # → out/sw-assets.js + out/_next/static exist and public/sw-assets.js still valid
-node scripts/verify-pwa-assets.mjs  # should still pass (checks .next, ignores .open-next mismatch when both present only warns)
+# The generator does not union .open-next for Tauri, so a stale web
+# .open-next left on disk does not pollute the Tauri precache.
+node scripts/verify-pwa-assets.mjs  # should still pass; prior web buildId mismatch is now warn-only for Tauri
 ls out/sw-assets.js out/_next/static  # exists
 ```
 

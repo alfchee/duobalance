@@ -101,10 +101,8 @@ async function main() {
       );
     else pass("generate-service-worker: unions both static dirs (or falls back)");
 
-    // Check that the script no longer reads only .next/static in isolation
-    const onlyNextStatic = /listFiles\(nextStaticDirectory\)/.test(gsw) && !hasOpenNextDir;
-    if (onlyNextStatic)
-      fail("generate-service-worker: must not only read .next/static for Cloudflare builds");
+    // No longer needed: the union logic covers the old `listFiles(nextStaticDirectory)` check.
+    // If reintroduced, ensure `openNextStaticDirectory` is also considered.
   } catch (e) {
     fail(`could not read generate-service-worker.mjs: ${e}`);
   }
@@ -209,11 +207,16 @@ async function main() {
               path.join(root, ".open-next/assets/_next/static"),
             );
             const notInDeployed = staticEntries.filter((e) => !deployedFiles.has(e));
-            if (notInDeployed.length > 0)
-              fail(
-                `precache contains ${notInDeployed.length} entries not in .open-next/assets/_next/static — precache would 404 on Cloudflare. Did you run generate-service-worker --opennext after opennext build? Example: ${notInDeployed[0]}`,
-              );
-            else pass("sw-assets.js: _next/static entries subset of .open-next deployed set");
+            if (notInDeployed.length > 0) {
+              // For `BUILD_TARGET=tauri` a stale web `.open-next` is expected on
+              // disk — the generator now excludes `.open-next` for Tauri, so the
+              // precache will contain the Tauri buildId not present in the web
+              // `.open-next`. Treat as warn to match docs, not a hard fail.
+              const isTauri = process.env.BUILD_TARGET === "tauri";
+              const msg = `precache contains ${notInDeployed.length} entries not in .open-next/assets/_next/static — precache would 404 on Cloudflare. Did you run generate-service-worker --opennext after opennext build? Example: ${notInDeployed[0]}`;
+              if (isTauri) warn(msg);
+              else fail(msg);
+            } else pass("sw-assets.js: _next/static entries subset of .open-next deployed set");
             const extraDeployed = [...deployedFiles].filter((f) => !staticEntries.includes(f));
             if (extraDeployed.length > 0)
               warn(
