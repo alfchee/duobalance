@@ -149,7 +149,9 @@ export default {
     const promise = run().catch((err) => {
       const message = err instanceof Error ? err.message : String(err);
       const isNonRetryable =
-        message.includes("RESEND_API_KEY") || message.includes("Supabase env not set");
+        message.includes("RESEND_API_KEY") ||
+        message.includes("Supabase env not set") ||
+        message.includes("EXCHANGERATE_API_KEY");
       console.error(`[scheduled] "${job}" failed for cron "${event.cron}"`, err);
       if (isNonRetryable) {
         event.noRetry?.();
