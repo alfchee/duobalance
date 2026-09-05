@@ -73,7 +73,7 @@ npx wrangler deploy --env staging  # or wrangler dev for local workerd
 # 2) Prove Resend from the Worker — check inbox, not just exit code
 node scripts/verify-worker-delivery.mjs --live-email --to you@example.com
 # Alternative: hit the deployed cron directly (same Resend path the cron uses)
-curl -H "Authorization: Bearer $CRON_SECRET" https://staging.duobalance.app/api/cron/send-bill-reminders
+curl -H "Authorization: Bearer $CRON_SECRET" https://staging.duobalanceapp.com/api/cron/send-bill-reminders
 
 # 3) Prove web-push end to end — subscribe a real device first:
 #    Open the app on a device, allow notifications, copy the subscription object
@@ -82,7 +82,7 @@ node scripts/verify-worker-delivery.mjs --live-push --subscription '{"endpoint":
 
 # Or exercise the full cron loop with a due bill instance:
 # Insert a bill_instance with due_on = today and reminded_at = null, then:
-curl -H "Authorization: Bearer $CRON_SECRET" https://staging.duobalance.app/api/cron/send-bill-reminders
+curl -H "Authorization: Bearer $CRON_SECRET" https://staging.duobalanceapp.com/api/cron/send-bill-reminders
 # → {"sent":1,"instances":1} and a push/email arrives. Failures appear in:
 npx wrangler tail --env staging
 ```

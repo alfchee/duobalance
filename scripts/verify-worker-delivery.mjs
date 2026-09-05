@@ -172,7 +172,7 @@ if (liveEmail) {
     try {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const from = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>";
+      const from = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalanceapp.com>";
       const { error, data } = await resend.emails.send({
         from,
         to: [toArg],

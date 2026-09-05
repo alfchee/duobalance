@@ -23,9 +23,9 @@ Safe to commit and to ship in the client bundle (`NEXT_PUBLIC_*`). Deployed via
 | `NEXT_PUBLIC_API_BASE_URL`             | Environment Variable          | `[vars]`   | public | `""` on web (same-origin). Absolute URL only for `tauri://localhost`                                                          |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Environment Variable          | `[vars]`   | public | Client VAPID key for push subscription                                                                                        |
 | `VAPID_PUBLIC_KEY`                     | Environment Variable          | `[vars]`   | public | Server alias for `web-push` (`src/lib/web-push.ts:15`). Same material as above; kept separate to avoid handler churn per #156 |
-| `APP_URL`                              | Environment Variable          | `[vars]`   | public | Deployed origin (`https://duobalance.app`) — builds invite accept links                                                       |
+| `APP_URL`                              | Environment Variable          | `[vars]`   | public | Deployed origin (`https://duobalanceapp.com`) — builds invite accept links                                                    |
 | `FEEDBACK_RECIPIENT_EMAIL`             | Environment Variable          | `[vars]`   | public | Recipient for `feedback` route (`src/lib/feedback-email.ts:26`)                                                               |
-| `RESEND_FROM`                          | Environment Variable          | `[vars]`   | public | `From` header (`DuoBalance <hola@duobalance.app>`)                                                                            |
+| `RESEND_FROM`                          | Environment Variable          | `[vars]`   | public | `From` header (`DuoBalance <hola@duobalanceapp.com>`)                                                                         |
 | `RESEND_REPLY_TO`                      | Environment Variable          | `[vars]`   | public | Optional reply-to for Resend — public email address                                                                           |
 
 ## Secrets — `wrangler secret put` / dashboard secrets

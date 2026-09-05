@@ -263,7 +263,7 @@ export function LandingPage() {
             title={t("footer.company")}
             links={[
               { href: "#story", label: t("footer.story") },
-              { href: "mailto:soporte@duobalance.app", label: t("footer.contact") },
+              { href: "mailto:soporte@duobalanceapp.com", label: t("footer.contact") },
             ]}
           />
           <FooterLinks

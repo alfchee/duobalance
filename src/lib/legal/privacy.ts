@@ -26,7 +26,7 @@ export const PRIVACY_POLICY: Record<"es" | "en", LegalDocument> = {
 El responsable del tratamiento de los datos personales recabados a través de **DuoBalance** es el equipo de desarrollo de DuoBalance ("nosotros" o "el Responsable").
 
 - **Dirección de contacto legal:** Apartado Postal / Dirección de Notificaciones de Privacidad, Managua, Nicaragua.
-- **Correo electrónico de contacto:** \`privacy@duobalance.app\`
+- **Correo electrónico de contacto:** \`privacy@duobalanceapp.com\`
 
 Marco normativo principal de referencia: **Ley N° 787 de Protección de Datos Personales de la República de Nicaragua**, junto con principios generales de protección de datos de las jurisdicciones de nuestro mercado objetivo en las Américas (incluyendo LFPDPPP de México y LGPD de Brasil).
 
@@ -90,7 +90,7 @@ Mantendremos esta lista actualizada ante cualquier cambio en nuestros proveedore
 ## 6. Retención de Datos y Eliminación
 
 - **Periodo de retención:** Conservamos sus datos personales únicamente mientras su cuenta y/o su hogar permanezcan activos en DuoBalance.
-- **Eliminación de datos:** Puede solicitar la eliminación completa de su cuenta u hogar en cualquier momento desde la sección de Configuración de la aplicación o enviando una solicitud a \`privacy@duobalance.app\`. Al confirmar la eliminación, todos los datos asociados al hogar y a su perfil personal son eliminados permanentemente de nuestra base de datos activa.
+- **Eliminación de datos:** Puede solicitar la eliminación completa de su cuenta u hogar en cualquier momento desde la sección de Configuración de la aplicación o enviando una solicitud a \`privacy@duobalanceapp.com\`. Al confirmar la eliminación, todos los datos asociados al hogar y a su perfil personal son eliminados permanentemente de nuestra base de datos activa.
 
 ---
 
@@ -102,7 +102,7 @@ Usted tiene los siguientes derechos respecto a sus datos personales:
 - **Derecho de Exportación (Portabilidad):** DuoBalance incluye una herramienta nativa de **Exportación de Datos** (disponible en *Configuración → Sus Datos*) que le permite descargar en cualquier momento una copia completa de su información financiera en formato JSON y CSV.
 - **Derecho de Cancelación / Eliminación:** Puede solicitar la supresión total de su cuenta e información personal.
 
-Para ejercer sus derechos de forma manual o realizar cualquier consulta sobre privacidad, puede escribir a: \`privacy@duobalance.app\`.
+Para ejercer sus derechos de forma manual o realizar cualquier consulta sobre privacidad, puede escribir a: \`privacy@duobalanceapp.com\`.
 
 ---
 
@@ -118,7 +118,7 @@ Para ejercer sus derechos de forma manual o realizar cualquier consulta sobre pr
 
 Si tiene preguntas, comentarios o inquietudes referentes a esta Política de Privacidad o al tratamiento de sus datos, por favor contáctenos a través de:
 
-- **Correo electrónico:** \`privacy@duobalance.app\`
+- **Correo electrónico:** \`privacy@duobalanceapp.com\`
 - **Atención:** Oficial de Protección de Datos / Equipo DuoBalance
 `,
   },
@@ -141,7 +141,7 @@ Si tiene preguntas, comentarios o inquietudes referentes a esta Política de Pri
 The data controller responsible for personal data collected through **DuoBalance** is the DuoBalance development team ("we", "us", or "the Controller").
 
 - **Legal Contact Address:** P.O. Box / Privacy Notice Representative, Managua, Nicaragua.
-- **Contact Email:** \`privacy@duobalance.app\`
+- **Contact Email:** \`privacy@duobalanceapp.com\`
 
 Primary governing law of reference: **Law No. 787 on Personal Data Protection of the Republic of Nicaragua**, along with general data protection principles across our target jurisdictions in the Americas (including Mexico's LFPDPPP and Brazil's LGPD).
 
@@ -205,7 +205,7 @@ We will keep this list updated whenever our service providers change.
 ## 6. Data Retention and Account Deletion
 
 - **Retention Period:** We retain your personal data only as long as your account and/or household remain active in DuoBalance.
-- **Account Deletion:** You may request complete deletion of your account or household at any time from the Settings section of the app or by contacting \`privacy@duobalance.app\`. Upon deletion, all data associated with the household and your profile will be permanently removed from our active database.
+- **Account Deletion:** You may request complete deletion of your account or household at any time from the Settings section of the app or by contacting \`privacy@duobalanceapp.com\`. Upon deletion, all data associated with the household and your profile will be permanently removed from our active database.
 
 ---
 
@@ -217,7 +217,7 @@ You have the following rights regarding your personal data:
 - **Right to Export (Portability):** DuoBalance includes a built-in **Data Export** tool (available in *Settings → Your Data*) allowing you to download a complete copy of your financial data in JSON and CSV formats at any time.
 - **Right to Deletion:** You may request the full erasure of your account and personal data.
 
-To exercise your rights manually or submit any privacy inquiry, contact us at: \`privacy@duobalance.app\`.
+To exercise your rights manually or submit any privacy inquiry, contact us at: \`privacy@duobalanceapp.com\`.
 
 ---
 
@@ -233,7 +233,7 @@ To exercise your rights manually or submit any privacy inquiry, contact us at: \
 
 If you have questions, comments, or concerns regarding this Privacy Policy or data processing, please contact us at:
 
-- **Email:** \`privacy@duobalance.app\`
+- **Email:** \`privacy@duobalanceapp.com\`
 - **Attention:** Data Protection Representative / DuoBalance Team
 `,
   },

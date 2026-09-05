@@ -40,7 +40,7 @@ const subscription: StoredPushSubscription = {
 };
 
 function setVapidEnv() {
-  process.env.VAPID_SUBJECT = "mailto:test@duobalance.app";
+  process.env.VAPID_SUBJECT = "mailto:test@duobalanceapp.com";
   process.env.VAPID_PUBLIC_KEY = "public-key";
   process.env.VAPID_PRIVATE_KEY = "private-key";
 }
@@ -93,7 +93,7 @@ describe("sendBillReminderPush", () => {
 
     expect(result).toBe("sent");
     expect(setVapidDetails).toHaveBeenCalledWith(
-      "mailto:test@duobalance.app",
+      "mailto:test@duobalanceapp.com",
       "public-key",
       "private-key",
     );

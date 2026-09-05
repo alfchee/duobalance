@@ -8,7 +8,7 @@ import { formatMoney } from "@/lib/money";
 function getResendConfig() {
   return {
     apiKey: process.env.RESEND_API_KEY,
-    from: process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>",
+    from: process.env.RESEND_FROM ?? "DuoBalance <hola@duobalanceapp.com>",
     replyTo: process.env.RESEND_REPLY_TO,
   };
 }

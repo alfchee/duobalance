@@ -53,7 +53,7 @@ describe("sendInviteEmail", () => {
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "DuoBalance <hola@duobalance.app>",
+        from: "DuoBalance <hola@duobalanceapp.com>",
         to: "partner@example.com",
         subject: "Ana te invitó a Casa 123",
       }),

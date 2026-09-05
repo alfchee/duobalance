@@ -52,6 +52,9 @@ if (!fs.existsSync(wranglerPath)) {
   // Extract the [vars] block — naive but sufficient for our flat toml.
   const varsMatch = toml.match(/\[vars\]([\s\S]*?)(?=\n\[|\n# Secrets|\n# Cron|$)/);
   const varsBlock = varsMatch ? varsMatch[1] : "";
+  // Also extract staging vars if present.
+  const stagingMatch = toml.match(/\[env\.staging\.vars\]([\s\S]*?)(?=\n\[|\n# Cron|$)/);
+  const stagingBlock = stagingMatch ? stagingMatch[1] : "";
   const hasVars = /\[vars\]/.test(toml);
 
   if (!hasVars) {
@@ -70,6 +73,23 @@ if (!fs.existsSync(wranglerPath)) {
       fail("a secret appears to have been renamed to NEXT_PUBLIC_* in [vars] — not allowed");
     }
     if (!failed) pass("wrangler.toml [vars] contains no secrets");
+
+    // Also guard staging vars if present.
+    if (stagingMatch) {
+      for (const secret of SECRETS) {
+        const inStaging = new RegExp(`^\\s*${secret}\\s*=`, "m").test(stagingBlock);
+        if (inStaging) {
+          fail(
+            `secret "${secret}" appears in wrangler.toml [env.staging.vars] — move to \`wrangler secret put --env staging\``,
+          );
+        }
+      }
+      if (RENAMED_SECRET_PATTERN.test(stagingBlock)) {
+        fail(
+          "a secret appears to have been renamed to NEXT_PUBLIC_* in [env.staging.vars] — not allowed",
+        );
+      } else if (!failed) pass("wrangler.toml [env.staging.vars] contains no secrets");
+    }
   }
 
   // Also check the whole file for an accidental NEXT_PUBLIC_ service-role rename
@@ -103,6 +123,19 @@ if (!fs.existsSync(wranglerPath)) {
     fail(
       `VAPID_PUBLIC_KEY and NEXT_PUBLIC_VAPID_PUBLIC_KEY diverge in [vars] — keep them equal or use a single source with fallback in web-push.ts`,
     );
+  }
+  if (stagingMatch) {
+    const stVapidPublic = stagingBlock
+      .match(/^\s*VAPID_PUBLIC_KEY\s*=\s*"?([^"\n]+)"?/m)?.[1]
+      ?.trim();
+    const stNextVapidPublic = stagingBlock
+      .match(/^\s*NEXT_PUBLIC_VAPID_PUBLIC_KEY\s*=\s*"?([^"\n]+)"?/m)?.[1]
+      ?.trim();
+    if (stVapidPublic && stNextVapidPublic && stVapidPublic !== stNextVapidPublic) {
+      fail(
+        `VAPID_PUBLIC_KEY and NEXT_PUBLIC_VAPID_PUBLIC_KEY diverge in [env.staging.vars] — keep them equal`,
+      );
+    }
   }
 }
 

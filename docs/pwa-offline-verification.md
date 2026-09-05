@@ -120,7 +120,7 @@ npx opennextjs-cloudflare build && node scripts/generate-service-worker.mjs --op
 npx wrangler deploy --env staging  # or npm run deploy
 
 # 2) Quick fetch check — proves sw-assets.js is served and assets are 200
-node scripts/verify-pwa-assets.mjs --live --url https://staging.duobalance.app
+node scripts/verify-pwa-assets.mjs --live --url https://staging.duobalanceapp.com
 # Expect: /sw.js and /sw-assets.js 200, sampled _next/static chunks 200
 
 # 3) True offline proof — on the Cloudflare deployment, not wrangler dev
@@ -128,7 +128,7 @@ node scripts/verify-pwa-assets.mjs --live --url https://staging.duobalance.app
 
 # In a real browser (desktop or device) against the deployed origin:
 
-# a) Visit https://staging.duobalance.app — let service worker install (DevTools → Application → Service Workers → Status: activated).
+# a) Visit https://staging.duobalanceapp.com — let service worker install (DevTools → Application → Service Workers → Status: activated).
 #    DevTools → Application → Cache Storage → duobalance-shell-<version> should show ~60-70 entries including /offline.html + /_next/static/chunks/*.js + documents.
 # b) DevTools → Application → Service Workers → check "Offline" (or disable network / airplane mode on device).
 # c) Hard-reload or navigate: / , /balances, /bills, /help/adding-accounts —

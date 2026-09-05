@@ -21,9 +21,9 @@ function escapeHtml(value: string): string {
 
 export async function sendFeedbackEmail(params: SendFeedbackEmailParams): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>";
+  const from = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalanceapp.com>";
   const recipient =
-    process.env.FEEDBACK_RECIPIENT_EMAIL ?? process.env.RESEND_REPLY_TO ?? "hola@duobalance.app";
+    process.env.FEEDBACK_RECIPIENT_EMAIL ?? process.env.RESEND_REPLY_TO ?? "hola@duobalanceapp.com";
 
   if (!apiKey) {
     throw new FeedbackEmailError("RESEND_API_KEY is not set — feedback email not sent");

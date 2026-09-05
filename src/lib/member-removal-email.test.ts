@@ -48,7 +48,7 @@ describe("sendMemberRemovalEmail", () => {
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "DuoBalance <hola@duobalance.app>",
+        from: "DuoBalance <hola@duobalanceapp.com>",
         to: "bob@example.com",
         subject: "Has sido removido del hogar Casa Duo",
       }),

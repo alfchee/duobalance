@@ -28,7 +28,7 @@
  *
  * Usage:
  *   node scripts/verify-supabase-cookies.mjs
- *   node scripts/verify-supabase-cookies.mjs --live --url https://staging.duobalance.app
+ *   node scripts/verify-supabase-cookies.mjs --live --url https://staging.duobalanceapp.com
  *
  * See docs/supabase-cookie-verification.md for the full manual checklist.
  */
@@ -282,7 +282,7 @@ async function main() {
   if (live) {
     if (!stagingUrl) {
       fail(
-        "--live requires --url <stagingUrl> or STAGING_URL env (e.g. https://staging.duobalance.app)",
+        "--live requires --url <stagingUrl> or STAGING_URL env (e.g. https://staging.duobalanceapp.com)",
       );
     } else {
       console.log(
