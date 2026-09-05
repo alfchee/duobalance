@@ -20,6 +20,7 @@ import { runFxRefresh } from "@/lib/fx/refresh";
 import { generateAllInstances } from "@/lib/bill-instances";
 import { runSendBillReminders } from "@/lib/cron/send-bill-reminders";
 import { runPurgeHouseholds } from "@/lib/cron/purge-households";
+import { isCronDisabled } from "@/lib/cron/guard";
 import { createSupabaseCronClient } from "@/lib/supabase/cron";
 
 // Minimal Cloudflare Worker types so `tsc --noEmit` passes without
@@ -107,13 +108,9 @@ export default {
     // Setting CRON_DISABLED=true on Vercel makes the Next cron routes no-op.
     // The same check here keeps Cloudflare honest if the var is ever set there
     // (e.g. during a rollback test) and makes the behaviour explicit in logs.
-    const cronDisabled =
-      (env as Record<string, unknown>).CRON_DISABLED === "true" ||
-      (env as Record<string, unknown>).CRON_DISABLED === "1" ||
-      String((env as Record<string, unknown>).CRON_DISABLED ?? "").toLowerCase() === "true" ||
-      process.env.CRON_DISABLED === "true" ||
-      process.env.CRON_DISABLED === "1";
-    if (cronDisabled) {
+    // Use the shared helper so Vercel (process.env) and Cloudflare (env) agree
+    // on "true"/"True"/"TRUE"/"1" and on numeric/boolean coercion.
+    if (isCronDisabled(env as Record<string, unknown>)) {
       console.info(`[scheduled] ${job} skipped — CRON_DISABLED is set`);
       return;
     }
