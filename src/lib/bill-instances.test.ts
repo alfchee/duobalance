@@ -290,4 +290,38 @@ describe("generateAllInstances", () => {
 
     expect(results).toEqual({ "bill-1": 1 });
   });
+
+  // #160 — double-fire idempotency: the unique (bill_id, due_on) + ON CONFLICT DO NOTHING
+  // means a second run must not create duplicates. The first upsert returns the
+  // inserted id, the second returns 0 because the row already exists.
+  it("is idempotent — double invocation creates no duplicate rows", async () => {
+    const bills = [{ id: "bill-1", household_id: "household-1", default_amount: 50 }];
+    const bounds = { "bill-1": { data: oneDayBounds, error: null } };
+
+    const supabaseFirst = makeSupabase({ bills, bounds, insertedIds: ["instance-1"] });
+    const first = await generateAllInstances(supabaseFirst);
+    expect(first).toEqual({ "bill-1": 1 });
+
+    // Second run with identical bounds/horizon: DB's ON CONFLICT DO NOTHING returns 0 new rows.
+    const supabaseSecond = makeSupabase({ bills, bounds, insertedIds: [] });
+    const second = await generateAllInstances(supabaseSecond);
+    expect(second).toEqual({}); // no bill has count > 0, so result is empty
+    // Direct helper level as well:
+    const supabaseHelperFirst = makeSupabase({ insertedIds: ["instance-1"] });
+    const countFirst = await generateInstancesForBill(
+      supabaseHelperFirst,
+      oneDayBounds,
+      "bill-1",
+      "household-1",
+    );
+    expect(countFirst).toBe(1);
+    const supabaseHelperSecond = makeSupabase({ insertedIds: [] });
+    const countSecond = await generateInstancesForBill(
+      supabaseHelperSecond,
+      oneDayBounds,
+      "bill-1",
+      "household-1",
+    );
+    expect(countSecond).toBe(0);
+  });
 });

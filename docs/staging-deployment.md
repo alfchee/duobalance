@@ -621,12 +621,63 @@ STAGING_URL=https://staging.duobalanceapp.com CRON_SECRET=… TEST_EMAIL=… \
 
 ---
 
+## 5) Cutover runbook — Cloudflare becomes primary, Vercel stays for rollback
+
+The migration keeps `vercel.json` in place and Vercel deployed for 7 days.
+Without a guard both platforms would double-fire all four crons daily —
+`send-bill-reminders` would send two emails, `fx-refresh` would burn double
+quota. `CRON_DISABLED` makes Vercel crons a no-op (each route returns
+`200 { disabled: true }` and `worker.ts:scheduled` logs `[scheduled] … skipped`).
+
+**Required order — do not enable Cloudflare crons before Vercel is disabled:**
+
+```bash
+# 1) Verify staging is green (the gate above)
+STAGING_URL=https://staging.duobalanceapp.com npm run test:e2e
+node scripts/verify-staging.mjs --live --url https://staging.duobalanceapp.com --e2e
+# → 48 passed
+
+# 2) Disable Vercel crons — this is the required step before any Cloudflare cron is trusted.
+#    Vercel Dashboard → duobalance → Settings → Environment Variables → add:
+#      CRON_DISABLED = true   (Environment: Production, Preview, Development)
+#    Then redeploy Vercel so the var is baked into the runtime:
+#      Vercel → Deployments → Redeploy (or `vercel --prod`)
+#    Verify the guard is live:
+curl -i -H "Authorization: Bearer $CRON_SECRET" https://duobalanceapp.com/api/cron/fx-refresh
+# → 200 { disabled: true, job: "fx-refresh" } and Vercel logs "[cron] fx-refresh skipped — CRON_DISABLED is set"
+# Repeat for the other three:
+for p in generate-bill-instances purge-households send-bill-reminders; do
+  curl -i -H "Authorization: Bearer $CRON_SECRET" https://duobalanceapp.com/api/cron/$p
+done
+# Each → 200 { disabled: true }
+
+# 3) Deploy Cloudflare production (crons are in wrangler.toml [triggers])
+npm run deploy  # → wrangler deploy --keep-vars (top-level [vars])
+# Verify Cloudflare is not disabled (CRON_DISABLED is not set on Cloudflare):
+curl -i -H "Authorization: Bearer $CRON_SECRET" https://duobalanceapp.com/api/cron/fx-refresh
+# → 200 { rateDate: "…" } (or proxied via the Worker, same)
+npx wrangler tail  # watch [scheduled] dispatching … after the next UTC trigger
+
+# 4) Keep Vercel deployed for one full cron cycle (epic #152 DoD). Do not delete
+#    vercel.json. Cloudflare is primary; Vercel is rollback.
+```
+
+**Rollback (one variable):** Vercel Dashboard → delete `CRON_DISABLED` (or set
+`false`) → Redeploy Vercel. Vercel crons resume, Cloudflare crons can be left
+or disabled by setting `CRON_DISABLED=true` on Cloudflare. Idempotency of
+`generate-bill-instances` (`ON CONFLICT DO NOTHING`, `docs/cron-idempotency.md`)
+and `purge-households` (select-then-delete, second run → `purgedCount 0`) means a
+transient double-fire during the flip cannot duplicate rows.
+
+**Why vercel.json stays:** rollback is flipping `CRON_DISABLED` back, not
+re-adding cron definitions.
+
 ## Rollback / DoD note
 
 Keep Vercel deployed for one full cron cycle after cutover (epic #152 DoD). If
 staging reveals a host defect that requires a test change, fix the host and
-re-deploy — do not relax the test. `CRON_DISABLED` (#160) is the only overlap
-between hosts.
+re-deploy — do not relax the test. `CRON_DISABLED` (#160, `src/lib/cron/guard.ts`,
+`docs/cron-idempotency.md`) is the only overlap between hosts.
 
 ---
 

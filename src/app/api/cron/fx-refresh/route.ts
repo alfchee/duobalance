@@ -20,6 +20,7 @@
 // dynamically per-request regardless of the revalidate value.
 
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
+import { cronDisabledResponse, isCronDisabled } from "@/lib/cron/guard";
 import { runFxRefresh } from "@/lib/fx/refresh";
 
 export const revalidate = 1;
@@ -33,6 +34,8 @@ export async function POST(request: Request) {
 }
 
 async function handle(request: Request) {
+  if (isCronDisabled()) return cronDisabledResponse("fx-refresh");
+
   if (!isAuthorized(request)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }

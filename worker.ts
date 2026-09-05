@@ -103,6 +103,21 @@ export default {
 
     populateProcessEnv(env as Record<string, unknown>);
 
+    // #160 — when Vercel is kept as rollback, both platforms would double-fire.
+    // Setting CRON_DISABLED=true on Vercel makes the Next cron routes no-op.
+    // The same check here keeps Cloudflare honest if the var is ever set there
+    // (e.g. during a rollback test) and makes the behaviour explicit in logs.
+    const cronDisabled =
+      (env as Record<string, unknown>).CRON_DISABLED === "true" ||
+      (env as Record<string, unknown>).CRON_DISABLED === "1" ||
+      String((env as Record<string, unknown>).CRON_DISABLED ?? "").toLowerCase() === "true" ||
+      process.env.CRON_DISABLED === "true" ||
+      process.env.CRON_DISABLED === "1";
+    if (cronDisabled) {
+      console.info(`[scheduled] ${job} skipped — CRON_DISABLED is set`);
+      return;
+    }
+
     const supabase = createSupabaseCronClient(env as Record<string, unknown>);
 
     console.info(`[scheduled] dispatching "${job}" for cron "${event.cron}"`);

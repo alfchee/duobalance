@@ -1,4 +1,5 @@
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
+import { cronDisabledResponse, isCronDisabled } from "@/lib/cron/guard";
 import {
   PURGE_SANITY_CAP,
   PurgeSanityCapError,
@@ -18,6 +19,8 @@ export async function POST(request: Request) {
 }
 
 async function handle(request: Request) {
+  if (isCronDisabled()) return cronDisabledResponse("purge-households");
+
   if (!isAuthorized(request)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
