@@ -6,6 +6,7 @@
 // cron/fx-refresh/route.ts for why `dynamic = "force-static"` must not be used.
 
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
+import { cronDisabledResponse, isCronDisabled } from "@/lib/cron/guard";
 import { runSendBillReminders } from "@/lib/cron/send-bill-reminders";
 
 export const revalidate = 1;
@@ -19,6 +20,8 @@ export async function POST(request: Request) {
 }
 
 async function handle(request: Request) {
+  if (isCronDisabled()) return cronDisabledResponse("send-bill-reminders");
+
   if (!isAuthorized(request)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
