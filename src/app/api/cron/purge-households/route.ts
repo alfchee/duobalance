@@ -62,6 +62,8 @@ async function handle(request: Request) {
 }
 
 function isAuthorized(request: Request): boolean {
+  // Destructive job — never accept the spoofable vercel-cron/1.0 User-Agent,
+  // even in development. A bearer secret is required unconditionally.
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   return request.headers.get("authorization") === `Bearer ${secret}`;

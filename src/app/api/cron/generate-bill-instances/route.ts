@@ -39,6 +39,9 @@ async function handle(request: Request) {
 }
 
 function isAuthorized(request: Request): boolean {
+  // No vercel-cron UA fallback here — even in dev, a bearer secret is required.
+  // This keeps the auth check identical in production; purge-households is
+  // destructive and the others should not fail open if CRON_SECRET is unset.
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   return request.headers.get("authorization") === `Bearer ${secret}`;
