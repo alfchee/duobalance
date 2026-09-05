@@ -30,7 +30,7 @@
  *
  * Usage:
  *   node scripts/verify-pwa-assets.mjs
- *   node scripts/verify-pwa-assets.mjs --live --url https://staging.duobalance.app
+ *   node scripts/verify-pwa-assets.mjs --live --url https://staging.duobalanceapp.com
  */
 
 import fs from "node:fs";
@@ -275,7 +275,7 @@ async function main() {
   // 6) Live checks — only with --live
   if (live) {
     if (!liveUrl) {
-      fail("--live requires --url <deployedOrigin> (e.g. https://staging.duobalance.app)");
+      fail("--live requires --url <deployedOrigin> (e.g. https://staging.duobalanceapp.com)");
     } else {
       console.log(`[verify-pwa-assets] live check against ${liveUrl}`);
       try {

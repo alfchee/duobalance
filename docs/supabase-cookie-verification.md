@@ -149,9 +149,9 @@ npx opennextjs-cloudflare build
 npx wrangler deploy --env staging   # or wrangler dev for local workerd
 
 # 2) Quick probe — proves login works on the Worker at all
-STAGING_URL=https://staging.duobalance.app \
+STAGING_URL=https://staging.duobalanceapp.com \
 TEST_EMAIL=you+test1@example.com TEST_PASSWORD='<pw>' \
-node scripts/verify-supabase-cookies.mjs --live --url https://staging.duobalance.app
+node scripts/verify-supabase-cookies.mjs --live --url https://staging.duobalanceapp.com
 # Expect: live login ok, getUser ok
 
 # 3) Full refresh cycle — the only proof that matters for this issue
@@ -175,16 +175,16 @@ node scripts/verify-supabase-cookies.mjs --live --url https://staging.duobalance
 #
 # Option C — curl with cookie jar (headless):
 #   JAR=$(mktemp)
-#   curl -c $JAR -b $JAR -X POST https://staging.duobalance.app/api/auth/login \
+#   curl -c $JAR -b $JAR -X POST https://staging.duobalanceapp.com/api/auth/login \
 #        -H 'Content-Type: application/json' \
 #        -d '{"email":"you+test1@example.com","password":"<pw>"}'
 #   # Idle 3660s … then:
-#   curl -c $JAR -b $JAR https://staging.duobalance.app/api/export?householdId=<id>
+#   curl -c $JAR -b $JAR https://staging.duobalanceapp.com/api/export?householdId=<id>
 #   # → 200 (not 401). Inspect Set-Cookie on the 200 for refreshed sb-* cookies.
 
 # 4) Accept-invite for second user (proves @supabase/ssr PKCE + cookie flow end-to-end)
 #   As owner (first user), create an invite:
-#     curl -b $JAR -X POST https://staging.duobalance.app/api/invites \
+#     curl -b $JAR -X POST https://staging.duobalanceapp.com/api/invites \
 #          -H 'Content-Type: application/json' -d '{"household_id":"<hh>","email":"you+test2@example.com"}'
 #   Copy the token from the household_invites row (or the email if Resend is live).
 #   As second user (new browser profile/incognito), complete signup + accept_invite RPC:

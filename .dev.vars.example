@@ -10,10 +10,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=example-anon-key-compat
 NEXT_PUBLIC_API_BASE_URL=
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=example-vapid-public-key
 VAPID_PUBLIC_KEY=example-vapid-public-key
-APP_URL=https://duobalance.app
-FEEDBACK_RECIPIENT_EMAIL=hola@duobalance.app
-RESEND_FROM="DuoBalance <hola@duobalance.app>"
-RESEND_REPLY_TO=hola@duobalance.app
+APP_URL=https://duobalanceapp.com
+FEEDBACK_RECIPIENT_EMAIL=hola@duobalanceapp.com
+RESEND_FROM="DuoBalance <hola@duobalanceapp.com>"
+RESEND_REPLY_TO=hola@duobalanceapp.com
 
 # Secrets — required for local `wrangler dev` to exercise handlers/crons
 SUPABASE_SERVICE_ROLE_KEY=
@@ -22,4 +22,4 @@ EXCHANGERATE_API_KEY=
 RESEND_API_KEY=
 CRON_SECRET=
 VAPID_PRIVATE_KEY=
-VAPID_SUBJECT=mailto:ops@duobalance.app
+VAPID_SUBJECT=mailto:ops@duobalanceapp.com

@@ -7,7 +7,7 @@ import { Resend } from "resend";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const APP_URL = process.env.APP_URL;
-const FROM = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>";
+const FROM = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalanceapp.com>";
 const REPLY_TO = process.env.RESEND_REPLY_TO;
 
 export class InviteEmailError extends Error {}

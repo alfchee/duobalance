@@ -54,7 +54,7 @@ describe("sendReminderDigest", () => {
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "DuoBalance <hola@duobalance.app>",
+        from: "DuoBalance <hola@duobalanceapp.com>",
         to: ["partner@example.com"],
         subject: "Tienes 1 factura(s) por pagar en Casa 123",
       }),
