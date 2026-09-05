@@ -38,6 +38,7 @@ describe("cron auth — production must not accept spoofed User-Agent", () => {
 
   it("fx-refresh still allows vercel-cron UA in non-production when no secret", async () => {
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("EXCHANGERATE_API_KEY", "test-key");
     // Mock supabase + provider so the handler can succeed after auth
     const { createSupabaseRouteHandler } = await import("@/lib/supabase/server");
     const fakeClient = {
@@ -60,27 +61,26 @@ describe("cron auth — production must not accept spoofed User-Agent", () => {
         }),
       ),
     );
-    process.env.EXCHANGERATE_API_KEY = "test-key";
 
     const res = await fxGet(
       new Request("http://localhost/api/cron/fx-refresh", {
         headers: { "user-agent": "vercel-cron/1.0" },
       }),
     );
-    // In dev, fallback is allowed → should not be 401 (either 200 or 502 depending on mock)
-    expect(res.status).not.toBe(401);
-    delete process.env.EXCHANGERATE_API_KEY;
+    expect(res.status).toBe(200);
     vi.unstubAllGlobals();
   });
 
-  it("generate-bill-instances rejects vercel-cron UA even in production with no secret", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-    const res = await genGet(
-      new Request("http://localhost/api/cron/generate-bill-instances", {
-        headers: { "user-agent": "vercel-cron/1.0" },
-      }),
-    );
-    expect(res.status).toBe(401);
+  it("generate-bill-instances rejects vercel-cron UA in production and in dev (no fallback)", async () => {
+    for (const env of ["production", "development"] as const) {
+      vi.stubEnv("NODE_ENV", env);
+      const res = await genGet(
+        new Request("http://localhost/api/cron/generate-bill-instances", {
+          headers: { "user-agent": "vercel-cron/1.0" },
+        }),
+      );
+      expect(res.status).toBe(401);
+    }
   });
 
   it("purge-households (destructive) rejects vercel-cron UA in production and in dev", async () => {
@@ -95,14 +95,16 @@ describe("cron auth — production must not accept spoofed User-Agent", () => {
     }
   });
 
-  it("send-bill-reminders rejects vercel-cron UA in production with no secret", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-    const res = await remindersGet(
-      new Request("http://localhost/api/cron/send-bill-reminders", {
-        headers: { "user-agent": "vercel-cron/1.0" },
-      }),
-    );
-    expect(res.status).toBe(401);
+  it("send-bill-reminders rejects vercel-cron UA in production and in dev (no fallback)", async () => {
+    for (const env of ["production", "development"] as const) {
+      vi.stubEnv("NODE_ENV", env);
+      const res = await remindersGet(
+        new Request("http://localhost/api/cron/send-bill-reminders", {
+          headers: { "user-agent": "vercel-cron/1.0" },
+        }),
+      );
+      expect(res.status).toBe(401);
+    }
   });
 
   it("all crons reject unauthenticated bearer with wrong secret in production", async () => {

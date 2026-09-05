@@ -108,7 +108,7 @@ corruption in that case.
 
 The cron handlers authenticate on `Authorization: Bearer <CRON_SECRET>` with a
 historical fallback `User-Agent: vercel-cron/1.0` (now gated to `NODE_ENV !==
-"production"` in `src/app/api/cron/fx-refresh/route.ts:14`). If the fallback
+"production"` in `src/app/api/cron/fx-refresh/route.ts`). If the fallback
 were reachable in production it is an auth bypass — `purge-households` is
 destructive. The repo is public, so the secret's blast radius matters.
 
@@ -119,9 +119,10 @@ destructive. The repo is public, so the secret's blast radius matters.
   and wrong-bearer requests are `401` in production, and the `vercel-cron` UA
   is rejected for the destructive job even in development.
 - **Rotate regardless:** `CRON_SECRET` has appeared in staging logs and issue
-  comments (e.g. `G0^nKsXI4tP0ICTRv9Nd7O2!` in staging `verify-staging` logs)
-  and was in the public repo's blast radius. Rotate before any Dev.to/LinkedIn
-  announcement:
+  comments (e.g. `<redacted>` in staging `verify-staging` logs) and was in the
+  public repo's blast radius. Even if already rotated, treat the old value as
+  compromised — replace with a placeholder in docs. Rotate before any
+  Dev.to/LinkedIn announcement:
 
   ```bash
   # 1) Generate a new high-entropy secret (32 bytes hex or base64)
