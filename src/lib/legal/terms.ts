@@ -70,7 +70,7 @@ Estos Términos de Servicio se rigen e interpretan de conformidad con las leyes 
 
 Si tiene alguna duda o consulta sobre estos Términos de Servicio, puede comunicarse con nosotros en:
 
-- **Correo electrónico:** \`privacy@duobalance.app\`
+- **Correo electrónico:** \`privacy@duobalanceapp.com\`
 `,
   },
   en: {
@@ -142,7 +142,7 @@ These Terms of Service are governed by and construed in accordance with the laws
 
 For any questions or inquiries regarding these Terms of Service, please contact us at:
 
-- **Email:** \`privacy@duobalance.app\`
+- **Email:** \`privacy@duobalanceapp.com\`
 `,
   },
 };

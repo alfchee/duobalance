@@ -1,0 +1,151 @@
+name = "duobalance"
+main = "./worker.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+# Keep dashboard-managed vars/secrets on `wrangler deploy` (#161 — `npm run deploy`
+# was wiping vars set via the Dashboard). Secrets are never deleted, but vars
+# are replaced by default unless `keep_vars = true`. See `wrangler deploy
+# --help --keep-vars`. With this on, a deploy still sets vars from this file
+# but keeps any dashboard vars not listed here (e.g. a staging Supabase URL
+# you set only in the Dashboard).
+keep_vars = true
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[observability]
+enabled = true
+
+[triggers]
+crons = ["0 6 * * *", "0 7 * * *", "0 12 * * *", "0 3 * * *"]
+
+# Public vars — safe to embed in client bundles or required for email/link
+# generation at runtime. These are committed and deployed via `wrangler deploy`.
+# Override per-environment in the Cloudflare dashboard when needed:
+#   Workers & Pages > duobalance > Settings > Variables
+# For local `wrangler dev` / `npm run preview`, populate `.dev.vars` (gitignored)
+# or keep `.env.local` — `opennextjs-cloudflare` loads both.
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://xfjhzkgaxbycubcsurdn.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Skbn9yZ8iBEOVD0Cz8JtjA_sH4NtLjJ"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "example-anon-key-compat"
+NEXT_PUBLIC_API_BASE_URL = ""
+NEXT_PUBLIC_VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
+# Server-side alias for the same public key material — web-push reads
+# `process.env.VAPID_PUBLIC_KEY`. Keeping both avoids touching handler code
+# per #156 (minimise diff). Same value as NEXT_PUBLIC_VAPID_PUBLIC_KEY.
+VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
+APP_URL = "https://duobalanceapp.com"
+FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
+RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
+RESEND_REPLY_TO = "hola@duobalanceapp.com"
+
+[[routes]]
+pattern = "duobalanceapp.com"
+zone_name = "duobalanceapp.com"
+custom_domain = true
+
+# Secrets — NEVER put these in [vars]. They bypass RLS or enable external
+# services and must not reach a client bundle.
+# Set via `wrangler secret put <NAME>` or Cloudflare dashboard secrets:
+#   SUPABASE_SERVICE_ROLE_KEY  — Supabase service_role JWT (bypasses RLS)
+#   SUPABASE_SECRET_KEY        — sb_secret_… alias for the same role (when present)
+#   EXCHANGERATE_API_KEY       — exchangerate-api.com key for fx-refresh cron
+#   RESEND_API_KEY             — Resend API key for invite/feedback/bill emails
+#   CRON_SECRET                — Bearer token for manual /api/cron/* HTTP invocations
+#   VAPID_PRIVATE_KEY          — VAPID private key for web-push
+#   VAPID_SUBJECT              — VAPID subject (mailto: URL)
+# Local dev: put real values in `.dev.vars` (gitignored) — wrangler dev loads it.
+# See `docs/cloudflare-env-mapping.md` for the full Vercel → Wrangler mapping.
+
+# Cron dispatch (#155): the custom worker's `scheduled()` dispatches on
+# `event.cron` to the matching job — no HTTP round-trip to self.
+#   0 6 * * *  → fx-refresh
+#   0 7 * * *  → generate-bill-instances
+#   0 12 * * * → send-bill-reminders
+#   0 3 * * *  → purge-households
+# Manual HTTP invocation (GET/POST /api/cron/*) still requires CRON_SECRET.
+
+# Staging environment — #161.
+# `wrangler deploy --env staging` deploys to `duobalance-staging` (Wrangler
+# suffixes the env name) that backs https://staging.duobalanceapp.com plus its
+# *.workers.dev preview. Production is the top-level `[vars]` / secrets.
+#
+# Vars vs secrets — the gotcha that hit staging (#161 fix):
+# - `NEXT_PUBLIC_*`, `APP_URL`, `FEEDBACK_*`, `RESEND_FROM/REPLY_TO`,
+#   `VAPID_PUBLIC_KEY` are **Vars** (public, may be in `wrangler.toml` or the
+#   Dashboard → Variables). `wrangler deploy` replaces the remote var set with
+#   the local file unless `keep_vars = true` (top-level) or you pass
+#   `--keep-vars`. With it, local vars are applied but dashboard-only vars are
+#   kept. Without it the `npm run deploy:staging` in the log wiped the
+#   dashboard's `NEXT_PUBLIC_SUPABASE_URL = https://xfjhzkg…` back to the
+#   placeholder `https://example-staging.supabase.co`.
+# - `SUPABASE_SERVICE_ROLE_KEY`, `EXCHANGERATE_API_KEY`, `RESEND_API_KEY`,
+#   `CRON_SECRET`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` are **Secrets** (never
+#   in `[vars]`). Set them via `wrangler secret put --env staging` or the
+#   Dashboard → Secrets, not Variables. The log's `EXCHANGERATE_API_KEY` /
+#   `RESEND_API_KEY` appeared under `vars` because they had been added as
+#   Variables in the Dashboard — move them to Secrets and delete the var.
+# - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+#   showed "conflict with existing remote secrets" for the same reason: they
+#   had been created as Secrets in the Dashboard but are Vars in this file.
+#   Delete those two Secrets and recreate them as Variables (staging) with the
+#   staging publishable/anon key.
+#
+# Staging MUST use its own Supabase project or a clearly separated dataset —
+# the purge and bill-generation crons write real rows (see #161 Notes).
+#
+# Recommended staging flow:
+#   1. Staging public vars below (`[env.staging.vars]`) are the source of truth
+#      — real values, public (Supabase publishable/VAPID are browser-safe) and
+#      committed so `wrangler dev`/`CI` have them without Dashboard. You may
+#      also set them in Dashboard → Variables (staging), but a var that exists
+#      in this file overwrites the Dashboard even with `keep_vars = true`.
+#      Keep them in sync or delete the key from this file and manage it only
+#      in Dashboard for that key.
+#   2. Set secrets via `wrangler secret put --env staging` (values are staging-only):
+#        SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SECRET_KEY, EXCHANGERATE_API_KEY,
+#        RESEND_API_KEY, CRON_SECRET, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+#   3. Deploy with `npm run deploy:staging` (adds `--keep-vars`); Dashboard-only
+#      vars not listed below are kept, file vars win on collision.
+#
+# Custom domain — `staging.duobalanceapp.com` was added via the Dashboard
+# (Worker → Settings → Domains & Routes → Add Custom Domain). The route is
+# Dashboard-managed; `keep_vars` keeps it, and the `[[env.staging.routes]]`
+# below declares it in code so a future `wrangler deploy` without
+# `--keep-vars` would not delete it. `*.workers.dev` is always kept.
+[env.staging]
+# Staging public vars — the file is the source of truth, the Dashboard is the
+# overlay. With `keep_vars = true` a `wrangler deploy --keep-vars` keeps any
+# Dashboard-only var, but a var that exists in this file overwrites the
+# Dashboard. The previous `npm run deploy:staging` wiped the Dashboard's
+# `NEXT_PUBLIC_SUPABASE_URL = https://xfjhzkgaxbycubcsurdn.supabase.co` back
+# to the placeholder `https://example-staging.supabase.co` (see log). Fix:
+# either keep the file and Dashboard in sync, or delete the key from this file
+# and manage it only in the Dashboard. The real staging values are committed
+# here because they are public (publishable key is browser-safe). For
+# `wrangler dev --env staging` the same values are read from `.dev.vars`.
+[env.staging.vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://xfjhzkgaxbycubcsurdn.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Skbn9yZ8iBEOVD0Cz8JtjA_sH4NtLjJ"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "example-anon-key-compat-staging"
+NEXT_PUBLIC_API_BASE_URL = ""
+NEXT_PUBLIC_VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
+VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
+APP_URL = "https://staging.duobalanceapp.com"
+FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
+RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
+RESEND_REPLY_TO = "hola@duobalanceapp.com"
+
+[[env.staging.routes]]
+pattern = "staging.duobalanceapp.com"
+zone_name = "duobalanceapp.com"
+custom_domain = true
+
+# Free plan allows 5 cron triggers per account. With 4 for production and 4
+# for staging we would exceed it (8). Keep staging at 0 for now so production
+# can have its 4; staging crons are still testable via `wrangler dev
+# --test-scheduled` and via HTTP `Authorization: Bearer $CRON_SECRET`.
+[env.staging.triggers]
+crons = []

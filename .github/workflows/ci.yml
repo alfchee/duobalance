@@ -81,6 +81,23 @@ jobs:
         env:
           BUILD_TARGET: web
 
+      - name: Cloudflare Worker smoke build
+        run: |
+          npx opennextjs-cloudflare build
+          test -f .open-next/worker.js
+          test -d .open-next/assets
+          size=$(stat -c%s .open-next/server-functions/default/handler.mjs)
+          echo "handler.mjs size: $size bytes"
+          if [ "$size" -gt 26214400 ]; then echo "Worker handler exceeds 25 MiB"; exit 1; fi
+
+      - name: Regenerate service worker for OpenNext and verify PWA assets
+        run: |
+          node scripts/generate-service-worker.mjs --opennext
+          node scripts/verify-pwa-assets.mjs
+
+      - name: Verify no secret in wrangler vars or client bundle
+        run: node scripts/verify-cloudflare-env.mjs --build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
 
@@ -105,3 +122,52 @@ jobs:
       - name: Stop Supabase local stack
         if: always()
         run: npx supabase stop --no-backup
+
+  # --------------------------------------------------------------------------
+  # Deploy to Cloudflare Workers on push to main — #163
+  # The `ci` job already runs the OpenNext smoke build on every PR, so a PR
+  # that breaks the Cloudflare build fails CI before merge. On merge to main
+  # this job deploys production to Cloudflare. Vercel's own GitHub app keeps
+  # deploying in parallel during the transition window (vercel.json stays),
+  # so both deploy paths coexist until Vercel is retired.
+  # --------------------------------------------------------------------------
+  deploy:
+    name: deploy (Cloudflare)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Cloudflare Worker
+        run: |
+          npx opennextjs-cloudflare build
+          test -f .open-next/worker.js
+          test -d .open-next/assets
+          size=$(stat -c%s .open-next/server-functions/default/handler.mjs)
+          echo "handler.mjs size: $size bytes"
+          if [ "$size" -gt 26214400 ]; then echo "Worker handler exceeds 25 MiB"; exit 1; fi
+          node scripts/generate-service-worker.mjs --opennext
+          node scripts/verify-pwa-assets.mjs
+          node scripts/verify-cloudflare-env.mjs --build
+
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy --keep-vars
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

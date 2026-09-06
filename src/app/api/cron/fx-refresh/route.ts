@@ -20,6 +20,7 @@
 // dynamically per-request regardless of the revalidate value.
 
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
+import { cronDisabledResponse, isCronDisabled } from "@/lib/cron/guard";
 import { runFxRefresh } from "@/lib/fx/refresh";
 
 export const revalidate = 1;
@@ -33,6 +34,8 @@ export async function POST(request: Request) {
 }
 
 async function handle(request: Request) {
+  if (isCronDisabled()) return cronDisabledResponse("fx-refresh");
+
   if (!isAuthorized(request)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -52,5 +55,9 @@ function isAuthorized(request: Request): boolean {
   if (secret) {
     return request.headers.get("authorization") === `Bearer ${secret}`;
   }
+  // No secret configured — local-dev convenience only. Never allow the
+  // spoofable vercel-cron header in production, otherwise anyone can set
+  // User-Agent and trigger the job (purge-households is destructive).
+  if (process.env.NODE_ENV === "production") return false;
   return request.headers.get("user-agent") === "vercel-cron/1.0";
 }

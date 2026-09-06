@@ -15,21 +15,43 @@ import { z } from "zod";
 import type { Database } from "./types";
 import { env } from "@/lib/env";
 
-const serviceRoleKey = z.string().min(1).optional().parse(process.env.SUPABASE_SERVICE_ROLE_KEY);
+function getServiceRoleKey(): string | undefined {
+  return z
+    .string()
+    .min(1)
+    .optional()
+    .parse(process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY);
+}
 
 export async function createSupabaseRouteHandler() {
+  const serviceRoleKey = getServiceRoleKey();
   if (!serviceRoleKey || !env.NEXT_PUBLIC_SUPABASE_URL) {
     throw new Error("Supabase env not set — see issue #9");
   }
   const cookieStore = await cookies();
   return createServerClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, serviceRoleKey, {
     cookies: {
-      getAll: () => cookieStore.getAll(),
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        } catch (error) {
+          // Route handlers are writable, but Server Components are not —
+          // log so a TOKEN_REFRESHED that cannot persist surfaces in
+          // `wrangler tail` instead of silently dropping the session
+          // after jwt_expiry. workerd's cookie polyfill surfaces here
+          // if the compat layer changes.
+          console.warn("[supabase] setAll failed — session refresh may not persist", error);
+        }
+      },
     },
   });
 }
 
 export function createSupabaseServiceRoleClient() {
+  const serviceRoleKey = getServiceRoleKey();
   if (!serviceRoleKey || !env.NEXT_PUBLIC_SUPABASE_URL) {
     throw new Error("Supabase env not set — see issue #9");
   }
