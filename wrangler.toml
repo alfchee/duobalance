@@ -92,16 +92,18 @@ RESEND_REPLY_TO = "hola@duobalanceapp.com"
 # the purge and bill-generation crons write real rows (see #161 Notes).
 #
 # Recommended staging flow:
-#   1. Set staging public vars once in the Dashboard → Variables (staging):
-#        NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-#        NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-#        VAPID_PUBLIC_KEY, APP_URL (= https://staging.duobalanceapp.com)
-#      The placeholders below stay for `wrangler dev` / CI but are kept via
-#      `keep_vars = true`, so the Dashboard values are not wiped on deploy.
+#   1. Staging public vars below (`[env.staging.vars]`) are the source of truth
+#      — real values, public (Supabase publishable/VAPID are browser-safe) and
+#      committed so `wrangler dev`/`CI` have them without Dashboard. You may
+#      also set them in Dashboard → Variables (staging), but a var that exists
+#      in this file overwrites the Dashboard even with `keep_vars = true`.
+#      Keep them in sync or delete the key from this file and manage it only
+#      in Dashboard for that key.
 #   2. Set secrets via `wrangler secret put --env staging` (values are staging-only):
 #        SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SECRET_KEY, EXCHANGERATE_API_KEY,
 #        RESEND_API_KEY, CRON_SECRET, VAPID_PRIVATE_KEY, VAPID_SUBJECT
-#   3. Deploy with `npm run deploy:staging` (adds `--keep-vars`).
+#   3. Deploy with `npm run deploy:staging` (adds `--keep-vars`); Dashboard-only
+#      vars not listed below are kept, file vars win on collision.
 #
 # Custom domain — `staging.duobalanceapp.com` was added via the Dashboard
 # (Worker → Settings → Domains & Routes → Add Custom Domain). The route is
