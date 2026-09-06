@@ -5,9 +5,13 @@
 import { Resend } from "resend";
 import { formatMoney } from "@/lib/money";
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.RESEND_FROM ?? "DuoBalance <hola@duobalance.app>";
-const REPLY_TO = process.env.RESEND_REPLY_TO;
+function getResendConfig() {
+  return {
+    apiKey: process.env.RESEND_API_KEY,
+    from: process.env.RESEND_FROM ?? "DuoBalance <hola@duobalanceapp.com>",
+    replyTo: process.env.RESEND_REPLY_TO,
+  };
+}
 
 export class ReminderEmailError extends Error {}
 
@@ -92,7 +96,14 @@ function escapeHtml(value: string): string {
 }
 
 export async function sendReminderDigest(params: ReminderDigestParams): Promise<void> {
+  const { apiKey: RESEND_API_KEY, from: FROM, replyTo: REPLY_TO } = getResendConfig();
   if (!RESEND_API_KEY) {
+    console.error("bill-reminder-email: RESEND_API_KEY is not set — email not sent", {
+      toCount: params.to.length,
+      toDomains: [...new Set(params.to.map((e) => e.split("@")[1] ?? "unknown"))],
+      householdName: params.householdName,
+      itemCount: params.items.length,
+    });
     throw new ReminderEmailError("RESEND_API_KEY is not set — reminder email not sent");
   }
 
@@ -103,17 +114,43 @@ export async function sendReminderDigest(params: ReminderDigestParams): Promise<
 
   const { html, text } = DIGEST_BODY[locale]!(params);
 
-  const resend = new Resend(RESEND_API_KEY);
-  const { error } = await resend.emails.send({
-    from: FROM,
-    to: params.to,
-    subject,
-    html,
-    text,
-    ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
-  });
+  try {
+    const resend = new Resend(RESEND_API_KEY);
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: params.to,
+      subject,
+      html,
+      text,
+      ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
+    });
 
-  if (error) {
-    throw new ReminderEmailError(`Resend failed: ${error.message}`);
+    if (error) {
+      console.error("bill-reminder-email: Resend delivery failed", {
+        toCount: params.to.length,
+        toDomains: [...new Set(params.to.map((e) => e.split("@")[1] ?? "unknown"))],
+        householdName: params.householdName,
+        itemCount: params.items.length,
+        error: error.message,
+      });
+      throw new ReminderEmailError(`Resend failed: ${error.message}`);
+    }
+
+    console.info("bill-reminder-email: reminder digest sent", {
+      toCount: params.to.length,
+      toDomains: [...new Set(params.to.map((e) => e.split("@")[1] ?? "unknown"))],
+      householdName: params.householdName,
+      itemCount: params.items.length,
+    });
+  } catch (err) {
+    if (err instanceof ReminderEmailError) throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("bill-reminder-email: unexpected delivery error", {
+      toCount: params.to.length,
+      toDomains: [...new Set(params.to.map((e) => e.split("@")[1] ?? "unknown"))],
+      householdName: params.householdName,
+      error: message,
+    });
+    throw new ReminderEmailError(`Resend failed: ${message}`);
   }
 }

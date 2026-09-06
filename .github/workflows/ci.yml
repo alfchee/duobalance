@@ -81,6 +81,23 @@ jobs:
         env:
           BUILD_TARGET: web
 
+      - name: Cloudflare Worker smoke build
+        run: |
+          npx opennextjs-cloudflare build
+          test -f .open-next/worker.js
+          test -d .open-next/assets
+          size=$(stat -c%s .open-next/server-functions/default/handler.mjs)
+          echo "handler.mjs size: $size bytes"
+          if [ "$size" -gt 26214400 ]; then echo "Worker handler exceeds 25 MiB"; exit 1; fi
+
+      - name: Regenerate service worker for OpenNext and verify PWA assets
+        run: |
+          node scripts/generate-service-worker.mjs --opennext
+          node scripts/verify-pwa-assets.mjs
+
+      - name: Verify no secret in wrangler vars or client bundle
+        run: node scripts/verify-cloudflare-env.mjs --build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
 
