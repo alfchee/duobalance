@@ -3,7 +3,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
 export const revalidate = 1;
-export const dynamic = "force-dynamic";
 
 const EXPORT_TABLES = [
   "accounts",
