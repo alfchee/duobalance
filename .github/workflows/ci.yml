@@ -155,6 +155,19 @@ jobs:
         run: npm ci
 
       - name: Build Cloudflare Worker
+        env:
+          # Public env needed at build time for Next.js to embed in the client
+          # bundle and to avoid prerender failures (e.g. /api/export). Values
+          # mirror wrangler.toml [vars] (production) — public, safe to keep in
+          # the workflow. Secrets (service role, Resend, etc.) are not needed
+          # at build time and are injected at runtime via `wrangler secret`.
+          NEXT_PUBLIC_SUPABASE_URL: https://xfjhzkgaxbycubcsurdn.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Skbn9yZ8iBEOVD0Cz8JtjA_sH4NtLjJ
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: example-anon-key-compat
+          NEXT_PUBLIC_API_BASE_URL: ""
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
+          VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
+          APP_URL: https://duobalanceapp.com
         run: |
           npx opennextjs-cloudflare build
           test -f .open-next/worker.js
