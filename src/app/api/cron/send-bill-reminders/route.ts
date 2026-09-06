@@ -54,6 +54,8 @@ async function handle(request: Request) {
 }
 
 function isAuthorized(request: Request): boolean {
+  // No vercel-cron UA fallback — bearer secret required unconditionally.
+  // Keeping this identical in dev and prod avoids a production-only bypass.
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   return request.headers.get("authorization") === `Bearer ${secret}`;

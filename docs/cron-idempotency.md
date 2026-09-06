@@ -104,6 +104,48 @@ corruption in that case.
   itself is not made idempotent because email delivery cannot be deduplicated
   solely in SQL.
 
+## Security — `CRON_SECRET` rotation before public traffic (# Dev.to check)
+
+The cron handlers authenticate on `Authorization: Bearer <CRON_SECRET>` with a
+historical fallback `User-Agent: vercel-cron/1.0` (now gated to `NODE_ENV !==
+"production"` in `src/app/api/cron/fx-refresh/route.ts`). If the fallback
+were reachable in production it is an auth bypass — `purge-households` is
+destructive. The repo is public, so the secret's blast radius matters.
+
+- **Fallback gated:** `fx-refresh` now `if (process.env.NODE_ENV === "production") return false`
+  before checking `vercel-cron/1.0`. `purge-households` (and the other two)
+  require the bearer unconditionally (`if (!secret) return false`). Verified
+  by `src/app/api/cron/cron-auth-bypass.test.ts` — unauthenticated, spoofed-UA,
+  and wrong-bearer requests are `401` in production, and the `vercel-cron` UA
+  is rejected for the destructive job even in development.
+- **Rotate regardless:** `CRON_SECRET` has appeared in staging logs and issue
+  comments (e.g. `<redacted>` in staging `verify-staging` logs) and was in the
+  public repo's blast radius. Even if already rotated, treat the old value as
+  compromised — replace with a placeholder in docs. Rotate before any
+  Dev.to/LinkedIn announcement:
+
+  ```bash
+  # 1) Generate a new high-entropy secret (32 bytes hex or base64)
+  openssl rand -hex 32        # or: openssl rand -base64 32
+  # 2) Vercel — production + preview + development
+  #    Dashboard → duobalance → Settings → Environment Variables → CRON_SECRET = <new>
+  #    → Redeploy (or `vercel --prod`)
+  #    Verify old 401s, new 200s:
+  curl -i -H "Authorization: Bearer <old>" https://duobalanceapp.com/api/cron/purge-households # → 401
+  curl -i -H "Authorization: Bearer <new>" https://duobalanceapp.com/api/cron/purge-households # → 200
+  curl -i -H "User-Agent: vercel-cron/1.0" https://duobalanceapp.com/api/cron/purge-households # → 401 in prod
+  # 3) Cloudflare — staging + production Workers
+  printf "<new>" | wrangler secret put CRON_SECRET --env staging
+  printf "<new>" | wrangler secret put CRON_SECRET          # production (top-level)
+  # or: wrangler secret put CRON_SECRET # then paste, then --env staging separately
+  wrangler secret list --env staging; wrangler secret list
+  # 4) Local
+  #    .env.local / .dev.vars → CRON_SECRET=<new>
+  ```
+
+  Do not commit the new value; `.env.example` documents the var as empty.
+  `scripts/verify-staging.mjs --live` expects `CRON_SECRET` in the shell, not in git.
+
 ## References
 
 - #160 — Add CRON_DISABLED guard so Vercel crons do not double-fire during rollback
@@ -112,3 +154,4 @@ corruption in that case.
 - `src/app/api/cron/*/route.ts` — each cron now returns `{ disabled: true }` 200 when `CRON_DISABLED=true|1`
 - `worker.ts:scheduled` — same guard for Cloudflare triggers
 - `supabase/migrations/20260810170000_bills_templates_and_instances.sql` — `bill_instances` unique `(bill_id, due_on)`
+- `src/app/api/cron/cron-auth-bypass.test.ts` — unauthenticated / spoofed UA rejected in production

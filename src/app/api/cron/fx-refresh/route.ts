@@ -55,5 +55,9 @@ function isAuthorized(request: Request): boolean {
   if (secret) {
     return request.headers.get("authorization") === `Bearer ${secret}`;
   }
+  // No secret configured — local-dev convenience only. Never allow the
+  // spoofable vercel-cron header in production, otherwise anyone can set
+  // User-Agent and trigger the job (purge-households is destructive).
+  if (process.env.NODE_ENV === "production") return false;
   return request.headers.get("user-agent") === "vercel-cron/1.0";
 }
