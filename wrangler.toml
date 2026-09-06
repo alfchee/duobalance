@@ -27,15 +27,15 @@ crons = ["0 6 * * *", "0 7 * * *", "0 12 * * *", "0 3 * * *"]
 # For local `wrangler dev` / `npm run preview`, populate `.dev.vars` (gitignored)
 # or keep `.env.local` — `opennextjs-cloudflare` loads both.
 [vars]
-NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co"
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_example"
+NEXT_PUBLIC_SUPABASE_URL = "https://xfjhzkgaxbycubcsurdn.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Skbn9yZ8iBEOVD0Cz8JtjA_sH4NtLjJ"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "example-anon-key-compat"
 NEXT_PUBLIC_API_BASE_URL = ""
-NEXT_PUBLIC_VAPID_PUBLIC_KEY = "example-vapid-public-key"
+NEXT_PUBLIC_VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
 # Server-side alias for the same public key material — web-push reads
 # `process.env.VAPID_PUBLIC_KEY`. Keeping both avoids touching handler code
 # per #156 (minimise diff). Same value as NEXT_PUBLIC_VAPID_PUBLIC_KEY.
-VAPID_PUBLIC_KEY = "example-vapid-public-key"
+VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
 APP_URL = "https://duobalanceapp.com"
 FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
 RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
@@ -121,7 +121,7 @@ RESEND_REPLY_TO = "hola@duobalanceapp.com"
 # `wrangler dev --env staging` the same values are read from `.dev.vars`.
 [env.staging.vars]
 NEXT_PUBLIC_SUPABASE_URL = "https://xfjhzkgaxbycubcsurdn.supabase.co"
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_example_staging"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Skbn9yZ8iBEOVD0Cz8JtjA_sH4NtLjJ"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "example-anon-key-compat-staging"
 NEXT_PUBLIC_API_BASE_URL = ""
 NEXT_PUBLIC_VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
@@ -135,3 +135,10 @@ RESEND_REPLY_TO = "hola@duobalanceapp.com"
 pattern = "staging.duobalanceapp.com"
 zone_name = "duobalanceapp.com"
 custom_domain = true
+
+# Free plan allows 5 cron triggers per account. With 4 for production and 4
+# for staging we would exceed it (8). Keep staging at 0 for now so production
+# can have its 4; staging crons are still testable via `wrangler dev
+# --test-scheduled` and via HTTP `Authorization: Bearer $CRON_SECRET`.
+[env.staging.triggers]
+crons = []
