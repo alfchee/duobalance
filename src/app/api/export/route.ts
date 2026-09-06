@@ -145,6 +145,18 @@ export async function GET(request: Request) {
   if (process.env.BUILD_TARGET === "tauri") {
     return Response.json({ error: "unavailable" }, { status: 401 });
   }
+  // Allow `next build` to prerender without Supabase env (Cloudflare deploy
+  // on main previously failed with "Supabase env not set" during prerender
+  // of /api/export). At runtime the env is set via wrangler vars / Dashboard.
+  // Only for production build without env — not in tests (NODE_ENV=test)
+  // where the route is mocked and should proceed to auth checks.
+  if (
+    (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY)) &&
+    process.env.NODE_ENV === "production"
+  ) {
+    return Response.json({ error: "not configured" }, { status: 200 });
+  }
   const supabase = await createRouteContext();
   let user;
   try {
