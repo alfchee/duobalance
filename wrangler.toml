@@ -41,11 +41,6 @@ FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
 RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
 RESEND_REPLY_TO = "hola@duobalanceapp.com"
 
-[[routes]]
-pattern = "duobalanceapp.com"
-zone_name = "duobalanceapp.com"
-custom_domain = true
-
 # Secrets — NEVER put these in [vars]. They bypass RLS or enable external
 # services and must not reach a client bundle.
 # Set via `wrangler secret put <NAME>` or Cloudflare dashboard secrets:
@@ -111,10 +106,12 @@ custom_domain = true
 #      vars not listed below are kept, file vars win on collision.
 #
 # Custom domain — `staging.duobalanceapp.com` was added via the Dashboard
-# (Worker → Settings → Domains & Routes → Add Custom Domain). The route is
-# Dashboard-managed; `keep_vars` keeps it, and the `[[env.staging.routes]]`
-# below declares it in code so a future `wrangler deploy` without
-# `--keep-vars` would not delete it. `*.workers.dev` is always kept.
+# (Worker → Settings → Domains & Routes → Add Custom Domain) and is
+# Dashboard-managed. `wrangler.toml` intentionally has no `[[routes]]` so
+# the CI `CLOUDFLARE_API_TOKEN` can stay scoped to Workers deploy only
+# (Account: Workers Scripts:Edit, no Zone:Read). `keep_vars` keeps vars,
+# `*.workers.dev` is always kept. If you add `[[routes]]` back, the deploy
+# will need Zone:Read + Workers Routes:Edit for duobalanceapp.com.
 [env.staging]
 # Staging public vars — the file is the source of truth, the Dashboard is the
 # overlay. With `keep_vars = true` a `wrangler deploy --keep-vars` keeps any
@@ -137,11 +134,6 @@ APP_URL = "https://staging.duobalanceapp.com"
 FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
 RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
 RESEND_REPLY_TO = "hola@duobalanceapp.com"
-
-[[env.staging.routes]]
-pattern = "staging.duobalanceapp.com"
-zone_name = "duobalanceapp.com"
-custom_domain = true
 
 # Free plan allows 5 cron triggers per account. With 4 for production and 4
 # for staging we would exceed it (8). Keep staging at 0 for now so production
