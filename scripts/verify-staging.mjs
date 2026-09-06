@@ -156,12 +156,23 @@ try {
     "RESEND_FROM",
   ];
   // Extract staging vars block (after [env.staging.vars] until next [ or EOF)
+  // Use line-by-line scan so a comment containing "[env.staging.vars]" does not
+  // match as the header (copilot review: previous indexOf found the comment).
   const stagingBlock = (() => {
-    const start = toml.indexOf("[env.staging.vars]");
-    if (start === -1) return "";
-    const rest = toml.slice(start);
-    const nextBracket = rest.slice("[env.staging.vars]".length).search(/\n\[/);
-    return nextBracket === -1 ? rest : rest.slice(0, "[env.staging.vars]".length + nextBracket);
+    const lines = toml.split("\n");
+    let inBlock = false;
+    const blockLines = [];
+    for (const line of lines) {
+      if (line.trim() === "[env.staging.vars]") {
+        inBlock = true;
+        continue;
+      }
+      if (inBlock) {
+        if (line.trim().startsWith("[")) break;
+        blockLines.push(line);
+      }
+    }
+    return blockLines.join("\n");
   })();
   for (const v of requiredStagingVars) {
     if (!new RegExp(`^\\s*${v}\\s*=`, "m").test(stagingBlock)) {
