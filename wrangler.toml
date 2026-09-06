@@ -41,6 +41,11 @@ FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
 RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
 RESEND_REPLY_TO = "hola@duobalanceapp.com"
 
+[[routes]]
+pattern = "duobalanceapp.com"
+zone_name = "duobalanceapp.com"
+custom_domain = true
+
 # Secrets — NEVER put these in [vars]. They bypass RLS or enable external
 # services and must not reach a client bundle.
 # Set via `wrangler secret put <NAME>` or Cloudflare dashboard secrets:
