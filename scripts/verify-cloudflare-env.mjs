@@ -52,9 +52,25 @@ if (!fs.existsSync(wranglerPath)) {
   // Extract the [vars] block — naive but sufficient for our flat toml.
   const varsMatch = toml.match(/\[vars\]([\s\S]*?)(?=\n\[|\n# Secrets|\n# Cron|$)/);
   const varsBlock = varsMatch ? varsMatch[1] : "";
-  // Also extract staging vars if present.
-  const stagingMatch = toml.match(/\[env\.staging\.vars\]([\s\S]*?)(?=\n\[|\n# Cron|$)/);
-  const stagingBlock = stagingMatch ? stagingMatch[1] : "";
+  // Also extract staging vars if present. Use line-anchored scan so a comment
+  // containing "[env.staging.vars]" does not get picked as the header.
+  const stagingBlock = (() => {
+    const lines = toml.split("\n");
+    let inBlock = false;
+    const blockLines = [];
+    for (const line of lines) {
+      if (line.trim() === "[env.staging.vars]") {
+        inBlock = true;
+        continue;
+      }
+      if (inBlock) {
+        if (line.trim().startsWith("[")) break;
+        blockLines.push(line);
+      }
+    }
+    return blockLines.join("\n");
+  })();
+  const hasStagingVars = toml.split("\n").some((l) => l.trim() === "[env.staging.vars]");
   const hasVars = /\[vars\]/.test(toml);
 
   if (!hasVars) {
@@ -75,7 +91,7 @@ if (!fs.existsSync(wranglerPath)) {
     if (!failed) pass("wrangler.toml [vars] contains no secrets");
 
     // Also guard staging vars if present.
-    if (stagingMatch) {
+    if (hasStagingVars) {
       for (const secret of SECRETS) {
         const inStaging = new RegExp(`^\\s*${secret}\\s*=`, "m").test(stagingBlock);
         if (inStaging) {
@@ -124,7 +140,7 @@ if (!fs.existsSync(wranglerPath)) {
       `VAPID_PUBLIC_KEY and NEXT_PUBLIC_VAPID_PUBLIC_KEY diverge in [vars] — keep them equal or use a single source with fallback in web-push.ts`,
     );
   }
-  if (stagingMatch) {
+  if (hasStagingVars) {
     const stVapidPublic = stagingBlock
       .match(/^\s*VAPID_PUBLIC_KEY\s*=\s*"?([^"\n]+)"?/m)?.[1]
       ?.trim();
