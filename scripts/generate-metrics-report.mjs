@@ -238,8 +238,8 @@ const report = [
        from cohorts c
        group by cohort_week
      )
-     select '| Signup week | Households | Week 2 active | Week 3 active | Week 4 active |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
-            coalesce(string_agg('| ' || to_char(cohort_week, 'YYYY-MM-DD') || ' | ' || households || ' | ' || case when week_2_eligible = 0 then 'not mature' else week_2_active || ' (' || to_char(100.0 * week_2_active / week_2_eligible, 'FM990.0') || '%)' end || ' | ' || case when week_3_eligible = 0 then 'not mature' else week_3_active || ' (' || to_char(100.0 * week_3_active / week_3_eligible, 'FM990.0') || '%)' end || ' | ' || case when week_4_eligible = 0 then 'not mature' else week_4_active || ' (' || to_char(100.0 * week_4_active / week_4_eligible, 'FM990.0') || '%)' end || ' |', E'\n' order by cohort_week desc), '| No active households | 0 | n/a | n/a | n/a |')
+      select '| Signup week | Households | Week 2 active | Week 3 active | Week 4 active |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
+            coalesce(string_agg('| ' || to_char(cohort_week, 'YYYY-MM-DD') || ' | ' || households || ' | ' || case when week_2_eligible = 0 then 'not mature' else week_2_active || ' / ' || week_2_eligible || ' (' || to_char(100.0 * week_2_active / nullif(week_2_eligible, 0), 'FM990.0') || '%)' end || ' | ' || case when week_3_eligible = 0 then 'not mature' else week_3_active || ' / ' || week_3_eligible || ' (' || to_char(100.0 * week_3_active / nullif(week_3_eligible, 0), 'FM990.0') || '%)' end || ' | ' || case when week_4_eligible = 0 then 'not mature' else week_4_active || ' / ' || week_4_eligible || ' (' || to_char(100.0 * week_4_active / nullif(week_4_eligible, 0), 'FM990.0') || '%)' end || ' |', E'\n' order by cohort_week desc), '| No active households | 0 | n/a | n/a | n/a |')
      from retention;`,
     "No retention data.",
   ),
@@ -278,7 +278,7 @@ const report = [
   "- Completed onboarding (deprecated): the previous combined definition — at least one non-archived account, one transaction, one budget, and two active members. Kept for continuity; use setup-complete and partner-joined for new analysis.",
   "- Active household (for weekly activity): a household with at least one transaction entered during the specified week.",
   "- Both members active: at least two distinct household members entered transactions during the specified week.",
-  "- Retention cohort: households grouped by the UTC week in which the household was created. Week 2, 3, and 4 are each measured in their respective seven-day interval after creation.",
+  "- Retention cohort: households grouped by the UTC week in which the household was created. Week 2, 3, and 4 are each measured in their respective seven-day interval after creation. The denominator for each percentage is the number of cohort households whose retention window has fully elapsed (eligible): `week_N_eligible = count(*) filter (where now() >= created_at + N weeks)`. The table shows `active / eligible (rate%)` so `rate = 100 * active / eligible`; `not mature` means eligible = 0 (window not yet elapsed). This makes every percentage reproducible from the two numbers visible in the same cell.",
   "- Historical recomputation (08-20, 08-22, 08-24, 09-03): each snapshot counts households `created_at < snapshot + 1 day` and not deleted at end-of-day (`deleted_at is null or deleted_at > snapshot + 1 day`), and checks accounts/transactions/membership with `created_at < snapshot + 1 day` and `removed_at` as of the snapshot, so the trend is comparable under the revised definitions. `is_archived` reflects current archival state (no archived_at timestamp exists) and `budget_created` has no creation timestamp — both historical values are approximations, documented as such.",
   "",
 ].join("\n");
