@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { TeachEmptyState } from "@/components/ui/teach-empty-state";
 import { HelpButton } from "@/components/help/help-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -408,14 +409,15 @@ export function BillsView() {
       </section>
 
       {bills.length === 0 ? (
-        <div className="rounded-4xl border border-dashed p-8 text-center">
-          <ReceiptText className="mx-auto size-9 text-muted-foreground" />
-          <h2 className="mt-4 font-black tracking-tight">{t("empty.title")}</h2>
-          <p className="text-sm text-muted-foreground">{t("empty.description")}</p>
-          <Button className="mt-5" onClick={beginCreate}>
-            {t("empty.action")}
-          </Button>
-        </div>
+        <TeachEmptyState
+          icon={ReceiptText}
+          title={t("empty.title")}
+          description={t("empty.description")}
+          primaryLabel={t("empty.action")}
+          onPrimary={beginCreate}
+          guideLabel={t("empty.guide")}
+          guideHref="/help/recurrence-and-marking-paid"
+        />
       ) : weeks.length === 0 ? (
         <div className="rounded-4xl border border-dashed p-8 text-center text-sm text-muted-foreground">
           <CalendarDays className="mx-auto mb-3 size-8" />

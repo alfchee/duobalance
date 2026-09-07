@@ -15,6 +15,30 @@
     "reports": "Relatórios",
     "help": "Ajuda"
   },
+  "balances": {
+    "emptyTeach": {
+      "title": "Seus saldos ficam aqui",
+      "description": "Cada despesa ou receita atualiza um saldo. Adicione o primeiro lançamento e criamos uma conta Dinheiro automaticamente.",
+      "primary": "Adicionar primeiro lançamento",
+      "guide": "Como os saldos funcionam →"
+    }
+  },
+  "budget": {
+    "empty": {
+      "title": "Registre primeiro, depois planeje",
+      "description": "Bons orçamentos nascem de gastos reais. Registre por 2 a 4 semanas e depois defina limites que refletem como você realmente gasta.",
+      "primary": "Adicionar lançamento",
+      "guide": "Como criar um bom orçamento →"
+    }
+  },
+  "bills": {
+    "empty": {
+      "title": "Nunca perca o que se repete",
+      "description": "Contas são para aluguel, serviços e assinaturas — tudo que volta todo mês. Adicione uma para vê-la no calendário.",
+      "action": "Adicionar conta",
+      "guide": "Como as contas funcionam →"
+    }
+  },
   "household": {
     "switcher": {
       "title": "Trocar grupo",
