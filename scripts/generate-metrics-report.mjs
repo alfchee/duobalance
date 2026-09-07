@@ -117,11 +117,17 @@ const report = [
        select h.id
        from active_households h
        where exists (select 1 from public.budgets b where b.household_id = h.id)
-     ), partner_joined as (
-       select h.id
-       from active_households h
-       where (select count(*) from public.household_members m where m.household_id = h.id and m.removed_at is null) >= 2
-     ), completed_onboarding_deprecated as (
+      ), partner_joined as (
+        select h.id
+        from active_households h
+        where (select count(*) from public.household_members m where m.household_id = h.id and m.removed_at is null) >= 2
+      ), setup_and_partner_joined as (
+        select h.id
+        from active_households h
+        where exists (select 1 from public.accounts a where a.household_id = h.id and not a.is_archived)
+          and exists (select 1 from public.transactions t where t.household_id = h.id)
+          and (select count(*) from public.household_members m where m.household_id = h.id and m.removed_at is null) >= 2
+      ), completed_onboarding_deprecated as (
        select h.id
        from active_households h
        where exists (select 1 from public.accounts a where a.household_id = h.id and not a.is_archived)
@@ -148,7 +154,7 @@ const report = [
             '| Budget-created rate (of active households) | ' || coalesce(to_char(100.0 * (select count(*) from budget_created) / nullif((select count(*) from active_households), 0), 'FM990.0') || '%', 'n/a') || ' |' || E'\n' ||
             '| Partner-joined households | ' || (select count(*) from partner_joined) || ' |' || E'\n' ||
             '| Partner-joined rate (of active households) | ' || coalesce(to_char(100.0 * (select count(*) from partner_joined) / nullif((select count(*) from active_households), 0), 'FM990.0') || '%', 'n/a') || ' |' || E'\n' ||
-            '| Setup-complete → partner-joined conversion | ' || coalesce(to_char(100.0 * (select count(*) from partner_joined) / nullif((select count(*) from setup_complete), 0), 'FM990.0') || '%', 'n/a') || ' |' || E'\n' ||
+            '| Setup-complete → partner-joined conversion | ' || coalesce(to_char(100.0 * (select count(*) from setup_and_partner_joined) / nullif((select count(*) from setup_complete), 0), 'FM990.0') || '%', 'n/a') || ' |' || E'\n' ||
             '| Completed onboarding households (deprecated — see Definitions) | ' || (select count(*) from completed_onboarding_deprecated) || ' |' || E'\n' ||
             '| Household onboarding completion rate (deprecated) | ' || coalesce(to_char(100.0 * (select count(*) from completed_onboarding_deprecated) / nullif((select count(*) from active_households), 0), 'FM990.0') || '%', 'n/a') || ' |' || E'\n' ||
             '| Signed-up owners with completed onboarding (deprecated) | ' || (select count(distinct o.user_id) from first_owners o join completed_onboarding_deprecated c on c.id = o.household_id) || ' |' || E'\n' ||
@@ -173,24 +179,29 @@ const report = [
          (select count(*) from public.households h where h.created_at < s.snapshot_date + interval '1 day' and (h.deleted_at is null or h.deleted_at > s.snapshot_date + interval '1 day')
             and exists (select 1 from public.budgets b where b.household_id = h.id)
          ) as budget_created,
-         (select count(*) from public.households h where h.created_at < s.snapshot_date + interval '1 day' and (h.deleted_at is null or h.deleted_at > s.snapshot_date + interval '1 day')
-            and (select count(*) from public.household_members m where m.household_id = h.id and m.joined_at < s.snapshot_date + interval '1 day' and (m.removed_at is null or m.removed_at > s.snapshot_date + interval '1 day')) >= 2
-         ) as partner_joined,
-         (select count(*) from public.households h where h.created_at < s.snapshot_date + interval '1 day' and (h.deleted_at is null or h.deleted_at > s.snapshot_date + interval '1 day')
+          (select count(*) from public.households h where h.created_at < s.snapshot_date + interval '1 day' and (h.deleted_at is null or h.deleted_at > s.snapshot_date + interval '1 day')
+             and (select count(*) from public.household_members m where m.household_id = h.id and m.joined_at < s.snapshot_date + interval '1 day' and (m.removed_at is null or m.removed_at > s.snapshot_date + interval '1 day')) >= 2
+          ) as partner_joined,
+          (select count(*) from public.households h where h.created_at < s.snapshot_date + interval '1 day' and (h.deleted_at is null or h.deleted_at > s.snapshot_date + interval '1 day')
             and exists (select 1 from public.accounts a where a.household_id = h.id and not a.is_archived and a.created_at < s.snapshot_date + interval '1 day')
             and exists (select 1 from public.transactions t where t.household_id = h.id and t.created_at < s.snapshot_date + interval '1 day')
-            and exists (select 1 from public.budgets b where b.household_id = h.id)
             and (select count(*) from public.household_members m where m.household_id = h.id and m.joined_at < s.snapshot_date + interval '1 day' and (m.removed_at is null or m.removed_at > s.snapshot_date + interval '1 day')) >= 2
-         ) as completed_deprecated
-       from snapshots s
-     )
-     select '| As of | Active households | Setup-complete | Partner-joined | Setup→Partner conversion | Budget-created | Combined (deprecated) |' || E'\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |' || E'\n' ||
+          ) as setup_and_partner_joined,
+          (select count(*) from public.households h where h.created_at < s.snapshot_date + interval '1 day' and (h.deleted_at is null or h.deleted_at > s.snapshot_date + interval '1 day')
+             and exists (select 1 from public.accounts a where a.household_id = h.id and not a.is_archived and a.created_at < s.snapshot_date + interval '1 day')
+             and exists (select 1 from public.transactions t where t.household_id = h.id and t.created_at < s.snapshot_date + interval '1 day')
+             and exists (select 1 from public.budgets b where b.household_id = h.id)
+             and (select count(*) from public.household_members m where m.household_id = h.id and m.joined_at < s.snapshot_date + interval '1 day' and (m.removed_at is null or m.removed_at > s.snapshot_date + interval '1 day')) >= 2
+          ) as completed_deprecated
+        from snapshots s
+      )
+      select '| As of | Active households | Setup-complete | Partner-joined | Setup→Partner conversion | Budget-created | Combined (deprecated) |' || E'\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |' || E'\n' ||
             coalesce(string_agg(
               '| ' || to_char(snapshot_date, 'YYYY-MM-DD') || ' | ' ||
               active_households || ' | ' ||
               setup_complete || ' | ' ||
               partner_joined || ' | ' ||
-              coalesce(to_char(100.0 * partner_joined / nullif(setup_complete, 0), 'FM990.0') || '%', 'n/a') || ' | ' ||
+              coalesce(to_char(100.0 * setup_and_partner_joined / nullif(setup_complete, 0), 'FM990.0') || '%', 'n/a') || ' | ' ||
               budget_created || ' | ' ||
               completed_deprecated || ' |',
               E'\n' order by snapshot_date
@@ -263,12 +274,12 @@ const report = [
   "- Setup-complete: an active household has at least one non-archived account and at least one transaction. No member-count condition — a solo household that is fully set up counts as setup-complete.",
   "- Budget-created: an active household has at least one budget. This is a separate, later milestone (tracking → planning) and is not required for setup-complete. Historical budget counts are approximate because the current budget table has no creation timestamp.",
   "- Partner-joined: an active household has two or more active members.",
-  "- Setup-complete → partner-joined conversion: `partner_joined / setup_complete` (n/a when no household is setup-complete).",
+  "- Setup-complete → partner-joined conversion: households that are both setup-complete **and** partner-joined divided by setup-complete (funnel conversion; `partner_joined` alone is reported separately so this never exceeds 100%). n/a when no household is setup-complete.",
   "- Completed onboarding (deprecated): the previous combined definition — at least one non-archived account, one transaction, one budget, and two active members. Kept for continuity; use setup-complete and partner-joined for new analysis.",
   "- Active household (for weekly activity): a household with at least one transaction entered during the specified week.",
   "- Both members active: at least two distinct household members entered transactions during the specified week.",
   "- Retention cohort: households grouped by the UTC week in which the household was created. Week 2, 3, and 4 are each measured in their respective seven-day interval after creation.",
-  "- Historical recomputation (08-20, 08-22, 08-24, 09-03): each snapshot counts households `created_at < snapshot + 1 day` and not deleted as of the snapshot, and checks accounts/transactions/membership with `created_at < snapshot + 1 day` and `removed_at` as of the snapshot, so the trend is comparable under the revised definitions.",
+  "- Historical recomputation (08-20, 08-22, 08-24, 09-03): each snapshot counts households `created_at < snapshot + 1 day` and not deleted at end-of-day (`deleted_at is null or deleted_at > snapshot + 1 day`), and checks accounts/transactions/membership with `created_at < snapshot + 1 day` and `removed_at` as of the snapshot, so the trend is comparable under the revised definitions. `is_archived` reflects current archival state (no archived_at timestamp exists) and `budget_created` has no creation timestamp — both historical values are approximations, documented as such.",
   "",
 ].join("\n");
 
