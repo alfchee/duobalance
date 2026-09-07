@@ -10,8 +10,23 @@ vi.mock("@/lib/supabase/server", () => ({
         data: { user: { id: "00000000-0000-4000-8000-000000000001", email: "user@example.com" } },
       }),
     },
-    from: vi.fn().mockReturnValue({
-      insert: vi.fn().mockResolvedValue({ error: null }),
+    from: vi.fn().mockImplementation((table: string) => {
+      const chain: Record<string, unknown> = {};
+      chain.select = vi.fn().mockReturnValue(chain);
+      chain.eq = vi.fn().mockReturnValue(chain);
+      chain.is = vi.fn().mockReturnValue(chain);
+      chain.maybeSingle = vi.fn().mockResolvedValue({
+        data:
+          table === "household_members"
+            ? {
+                id: "00000000-0000-4000-8000-000000000003",
+                household_id: "00000000-0000-4000-8000-000000000002",
+                user_id: "00000000-0000-4000-8000-000000000001",
+              }
+            : null,
+      });
+      chain.insert = vi.fn().mockResolvedValue({ error: null });
+      return chain;
     }),
   }),
 }));
@@ -100,11 +115,15 @@ describe("POST /api/feedback", () => {
   });
 
   it("requires an authenticated user", async () => {
+    const chain: Record<string, unknown> = {};
+    chain.select = vi.fn().mockReturnValue(chain);
+    chain.eq = vi.fn().mockReturnValue(chain);
+    chain.is = vi.fn().mockReturnValue(chain);
+    chain.maybeSingle = vi.fn().mockResolvedValue({ data: null });
+    chain.insert = vi.fn().mockResolvedValue({ error: null });
     vi.mocked(createSupabaseRouteHandler).mockResolvedValueOnce({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
-      from: vi.fn().mockReturnValue({
-        insert: vi.fn().mockResolvedValue({ error: null }),
-      }),
+      from: vi.fn().mockReturnValue(chain),
     } as never);
     const request = new Request("http://localhost/api/feedback", {
       method: "POST",
@@ -126,6 +145,18 @@ describe("POST /api/feedback", () => {
   });
 
   it("limits feedback submissions per authenticated user", async () => {
+    const chain: Record<string, unknown> = {};
+    chain.select = vi.fn().mockReturnValue(chain);
+    chain.eq = vi.fn().mockReturnValue(chain);
+    chain.is = vi.fn().mockReturnValue(chain);
+    chain.maybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: "00000000-0000-4000-8000-000000000004",
+        household_id: "00000000-0000-4000-8000-000000000002",
+        user_id: "00000000-0000-4000-8000-000000000004",
+      },
+    });
+    chain.insert = vi.fn().mockResolvedValue({ error: null });
     vi.mocked(createSupabaseRouteHandler).mockResolvedValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({
@@ -134,9 +165,7 @@ describe("POST /api/feedback", () => {
           },
         }),
       },
-      from: vi.fn().mockReturnValue({
-        insert: vi.fn().mockResolvedValue({ error: null }),
-      }),
+      from: vi.fn().mockReturnValue(chain),
     } as never);
     const body = JSON.stringify({ diagnostics: {} });
 
@@ -155,8 +184,25 @@ describe("POST /api/feedback", () => {
 
   it("persists feedback to DB alongside email delivery", async () => {
     const { sendFeedbackEmail } = await import("@/lib/feedback-email");
-    const mockFrom = vi.fn().mockReturnValue({
-      insert: vi.fn().mockResolvedValue({ error: null }),
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    const createMemberChain = (data: unknown) => {
+      const chain: Record<string, unknown> = {};
+      chain.select = vi.fn().mockReturnValue(chain);
+      chain.eq = vi.fn().mockReturnValue(chain);
+      chain.is = vi.fn().mockReturnValue(chain);
+      chain.maybeSingle = vi.fn().mockResolvedValue({ data });
+      chain.insert = insertMock;
+      return chain;
+    };
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === "household_members") {
+        return createMemberChain({
+          id: "00000000-0000-4000-8000-000000000007",
+          household_id: "00000000-0000-4000-8000-000000000006",
+          user_id: "00000000-0000-4000-8000-000000000005",
+        });
+      }
+      return createMemberChain(null);
     });
     vi.mocked(createSupabaseRouteHandler).mockResolvedValueOnce({
       auth: {
@@ -182,14 +228,43 @@ describe("POST /api/feedback", () => {
     const response = await POST(request);
     expect(response.status).toBe(204);
     expect(mockFrom).toHaveBeenCalledWith("feedback_submissions");
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        household_id: "00000000-0000-4000-8000-000000000006",
+        user_id: "00000000-0000-4000-8000-000000000005",
+        member_id: "00000000-0000-4000-8000-000000000007",
+        category: "general",
+        message: "Great app",
+      }),
+    );
     expect(sendFeedbackEmail).toHaveBeenCalled();
   });
 
   it("still sends email even if DB persist fails", async () => {
     const { sendFeedbackEmail } = await import("@/lib/feedback-email");
+    const { collectDiagnosticContext } = await import("@/lib/diagnostics");
     vi.mocked(sendFeedbackEmail).mockResolvedValueOnce(undefined);
-    const mockFrom = vi.fn().mockReturnValue({
-      insert: vi.fn().mockResolvedValue({ error: { message: "db error" } }),
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      const chain: Record<string, unknown> = {};
+      chain.select = vi.fn().mockReturnValue(chain);
+      chain.eq = vi.fn().mockReturnValue(chain);
+      chain.is = vi.fn().mockReturnValue(chain);
+      if (table === "household_members") {
+        chain.maybeSingle = vi.fn().mockResolvedValue({
+          data: {
+            id: "00000000-0000-4000-8000-000000000009",
+            household_id: "00000000-0000-4000-8000-000000000006",
+            user_id: "00000000-0000-4000-8000-000000000008",
+          },
+        });
+      } else {
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null });
+      }
+      chain.insert =
+        table === "feedback_submissions"
+          ? vi.fn().mockResolvedValue({ error: { message: "db error" } })
+          : vi.fn().mockResolvedValue({ error: null });
+      return chain;
     });
     vi.mocked(createSupabaseRouteHandler).mockResolvedValueOnce({
       auth: {
@@ -202,9 +277,14 @@ describe("POST /api/feedback", () => {
       from: mockFrom,
     } as never);
 
+    const diagnostics = collectDiagnosticContext({
+      householdId: "00000000-0000-4000-8000-000000000006",
+      memberId: "00000000-0000-4000-8000-000000000009",
+    });
+
     const request = new Request("http://localhost/api/feedback", {
       method: "POST",
-      body: JSON.stringify({ diagnostics: {} }),
+      body: JSON.stringify({ diagnostics }),
     });
 
     const response = await POST(request);

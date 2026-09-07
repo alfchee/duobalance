@@ -1,11 +1,12 @@
 -- Persist qualitative feedback alongside email delivery so the metrics report can
 -- count submissions and list answers. Stores household and user, submission time,
--- and the answers. Keeps email path unchanged; RLS restricts reads to the
--- submitting household (and service_role for admin tooling).
+-- and the answers. Keeps email path unchanged; RLS restricts reads to any
+-- member of the submitting household (is_member) for household-scoped rows,
+-- or to the submitting user for null-household rows; service_role bypasses RLS for admin tooling.
 
 create table public.feedback_submissions (
   id uuid primary key default gen_random_uuid(),
-  household_id uuid references public.households(id) on delete cascade,
+  household_id uuid references public.households(id) on delete set null,
   user_id uuid not null,
   member_id uuid references public.household_members(id) on delete set null,
   category text not null check (category in ('problem_report', 'satisfaction_prompt', 'general')),
@@ -27,6 +28,8 @@ create index feedback_submissions_user_created_idx
   on public.feedback_submissions (user_id, created_at desc);
 create index feedback_submissions_category_idx
   on public.feedback_submissions (category);
+create index feedback_submissions_created_idx
+  on public.feedback_submissions (created_at desc);
 
 alter table public.feedback_submissions enable row level security;
 
@@ -41,17 +44,17 @@ create policy feedback_submissions_insert_authenticated
     )
   );
 
--- Authenticated users can read feedback for households they belong to, or their own when household is null.
+-- Authenticated users can read feedback for households they belong to (any member can see
+-- all household feedback), or their own when household is null.
 create policy feedback_submissions_select_authenticated
   on public.feedback_submissions for select to authenticated
   using (
-    household_id is not null and public.is_member(household_id)
-    or household_id is null and user_id = auth.uid()
+    (household_id is not null and public.is_member(household_id))
+    or (household_id is null and user_id = auth.uid())
   );
 
 -- No update/delete via RLS; only service_role (admin) can modify if needed. Authenticated users cannot update/delete their own submissions to keep history.
 -- Intentionally no update/delete policies for authenticated.
 
-grant select on public.feedback_submissions to anon, authenticated;
-grant insert on public.feedback_submissions to authenticated;
--- service_role bypasses RLS, no extra grant needed for admin tooling
+grant select, insert, update, delete on public.feedback_submissions to anon, authenticated;
+-- service_role bypasses RLS, no extra grant needed for admin tooling; anon grant lets RLS decide (baseline in 20260101000011_helpers_triggers_rls.sql)

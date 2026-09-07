@@ -40,7 +40,7 @@ begin
 end
 $$;
 
-select plan(9);
+select plan(13);
 
 -- As Alice, can read her own household's feedback, cannot read Bob's
 select tests.authenticate_as('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@test.local');
@@ -107,6 +107,33 @@ select lives_ok(
   $$ insert into public.feedback_submissions (household_id, user_id, category, message, diagnostics)
      values (null, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 'general', 'Bob no-household feedback', '{}'::jsonb) $$,
   'Bob can INSERT feedback with null household_id'
+);
+
+select results_eq(
+  $$ select count(*)::int from public.feedback_submissions where household_id is null and user_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid $$,
+  $$ values (1::int) $$,
+  'Bob sees his null-household feedback'
+);
+
+select tests.authenticate_as('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@test.local');
+select is_empty(
+  $$ select * from public.feedback_submissions where household_id is null and user_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid $$,
+  'Alice cannot see Bob null-household feedback'
+);
+
+-- Update/delete are denied for authenticated (history, only service_role can modify)
+select tests.authenticate_as('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@test.local');
+select throws_ok(
+  $$ update public.feedback_submissions set message = 'pwned' where id = 'faaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid $$,
+  '42501',
+  null,
+  'Alice cannot UPDATE feedback (no policy)'
+);
+select throws_ok(
+  $$ delete from public.feedback_submissions where id = 'faaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid $$,
+  '42501',
+  null,
+  'Alice cannot DELETE feedback (no policy)'
 );
 
 -- Anon cannot read
