@@ -587,10 +587,41 @@ const report = [
      from weekly_activity;`,
     "No member activity data.",
   ),
-  "## Qualitative Feedback",
-  "",
-  "Feedback reports are delivered by email through Resend and are not persisted in the database. This database-only report cannot enumerate reports or summarize answers to the qualitative questions. Export or archive the feedback mailbox separately, then attach that source to the evaluation.",
-  "",
+  section(
+    "Qualitative Feedback",
+    `with totals as (
+       select count(*) as total,
+         count(*) filter (where category = 'problem_report') as problem_report,
+         count(*) filter (where category = 'satisfaction_prompt') as satisfaction_prompt,
+         count(*) filter (where category = 'general') as general
+       from public.feedback_submissions
+     ), recent as (
+       select
+         row_number() over (order by created_at desc) as rn,
+         id, household_id, user_id, category, left(message, 120) as message_preview, created_at
+       from public.feedback_submissions
+       order by created_at desc
+       limit 5
+     )
+     select
+       '| Metric | Value |' || E'\n| --- | ---: |' || E'\n' ||
+       '| Total feedback submissions | ' || (select total from totals) || ' |' || E'\n' ||
+       '| Problem reports | ' || (select problem_report from totals) || ' |' || E'\n' ||
+       '| Satisfaction prompts (2-week) | ' || (select satisfaction_prompt from totals) || ' |' || E'\n' ||
+       '| General feedback | ' || (select general from totals) || ' |' ||
+       E'\n\n**Recent submissions (last 5, message truncated to 120 chars)**\n\n' ||
+       '| # | Household | Category | Message preview | Submitted at (UTC) |' || E'\n| --- | --- | --- | --- | --- |' || E'\n' ||
+       coalesce(
+          (select string_agg(
+            '| ' || rn || ' | ' || coalesce(household_id::text, 'none') || ' | ' || category || ' | ' || coalesce(replace(replace(message_preview, '|', '/'), E'\n', ' '), '(empty)') || ' | ' || to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') || ' |',
+            E'\n' order by rn
+          ) from recent),
+          '| — | — | — | No submissions yet | — |'
+       ) ||
+       E'\n\n*Feedback stores user-written free text and may contain personal detail. Keep out of diagnostic exports. RLS: only the submitting household (is_member) and service_role can read; cross-household reads are denied. Email delivery via Resend is unchanged and still sent in parallel with DB persist. Backfill from the Resend inbox is not automated — export the mailbox and insert manually if practical.*'
+     from totals;`,
+    "No qualitative feedback yet.",
+  ),
   "## Definitions",
 
   "- Setup-complete: an active household has at least one non-archived account and at least one transaction. No member-count condition — a solo household that is fully set up counts as setup-complete.",
@@ -605,6 +636,7 @@ const report = [
   "- Activation funnel: ordered steps 1 Signed up → 2 Email confirmed → 3 Household created → 4 First account created → 5 First transaction entered → 6 First budget created → 7 Partner invited → 8 Partner accepted. Furthest step per household is the highest step whose timestamp exists (exactly one step per household). Drop-off Lost at step = previous reached − current reached. Time in step, repeat sessions, guide-viewed, and entry point for first transaction require client-side event tracking not yet in the database (see funnel notes); adding guide-viewed between 5 and 6 later will not change historic furthest-step values because steps are named, not renumbered.",
   "- Time to first transaction: `first_transaction_at - signed_up_at` per user (signed_up from `auth.users.created_at`, first transaction from `public.transactions` via `household_members`). Distribution buckets: Under 5 minutes, 5 minutes – 1 hour, 1 hour – 1 day, Over 1 day, Never (no transaction). The under-5-minute target has its own bucket line. Percentiles p25/p50 (median)/p75 are computed with `percentile_cont` over `extract(epoch from time_to_first)` for users with a transaction; raw counts `n with transaction` and `Never` are printed next to each percentile so p75 at n=8 is read as noisy. Owner vs partner segmentation uses the household role of the user's earliest membership (`household_members.role`). Users with no membership are counted as `unknown` and appear in All users but not in owner/partner columns.",
   "- Guide exposure (time-to-first-transaction): cohort relative to guide launch, guide viewed/not viewed before first transaction, and launch email received/not for existing users will segment the same distribution when the starter guide and email ship. All current users are the pre-launch baseline; post-launch guide-viewed and email-received require client-side event tracking not yet in the database and are placeholders that will not invalidate the baseline.",
+  "- Qualitative feedback: persisted in `public.feedback_submissions` (household_id, user_id, member_id, category, message, diagnostics jsonb, created_at) alongside email delivery via Resend; RLS restricts reads to the submitting household (`is_member(household_id)`) and service_role for admin tooling, cross-household reads denied; may contain personal detail, keep out of diagnostic exports. Backfill from the Resend inbox is not automated — export and insert manually if practical.",
   "",
 ].join("\n");
 
