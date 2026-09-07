@@ -243,6 +243,231 @@ const report = [
      from retention;`,
     "No retention data.",
   ),
+  "## Activation Funnel — Notes on Measurability",
+  "",
+  "Ordered funnel: 1 — Signed up (`auth.users`), 2 — Email confirmed (`auth.users.email_confirmed_at`), 3 — Household created (`public.households`), 4 — First account created (`public.accounts` non-archived), 5 — First transaction entered (`public.transactions`), 6 — First budget created (`public.budgets`), 7 — Partner invited (`public.household_invites` role=partner), 8 — Partner accepted (`public.household_members` partner joined or `household_invites.accepted_at`). All steps are derived from existing tables — no new client-side tracking was added for this report. Steps that require client-side tracking and are **not yet derivable** are noted explicitly below rather than silently omitted: time in step (e.g., 11 min on Balances), repeat sessions before first transaction, guide-viewed (starter guide experiment), and entry point for the first transaction (empty state vs main button vs guide link). Guide viewed will be added as a funnel step between 5 and 6 when the starter guide ships, designed as an optional milestone so earlier cohorts remain comparable.",
+  "",
+  "Funnel time-between-steps is available from `created_at` timestamps (e.g., household → account → transaction); budget uses `period_month` as an approximation (no `created_at` on current `public.budgets`, see historical note) but precise time-in-screen and session counts require instrumentation that is not yet in the database. Entry point and guide-viewed will require a small client event table; they are placeholders in the funnel definition so adding them later does not invalidate historical furthest-step values.",
+  "",
+  section(
+    "Activation Funnel — Drop-off (overall)",
+    `with active_households as (
+       select h.id from public.households h where h.deleted_at is null
+     ), owner as (
+       select m.household_id, min(u.created_at) as signed_up_at, min(u.email_confirmed_at) as email_confirmed_at
+       from public.household_members m
+       join auth.users u on u.id = m.user_id
+       where m.removed_at is null and m.role = 'owner'
+       group by m.household_id
+     ), account_first as (
+       select h.id as household_id, min(a.created_at) as first_account_at
+       from active_households h
+       join public.accounts a on a.household_id = h.id and not a.is_archived
+       group by h.id
+     ), transaction_first as (
+       select h.id as household_id, min(t.created_at) as first_transaction_at
+       from active_households h
+       join public.transactions t on t.household_id = h.id
+       group by h.id
+     ), budget_first as (
+       select h.id as household_id, min(b.period_month)::timestamptz as first_budget_at
+       from active_households h
+       join public.budgets b on b.household_id = h.id
+       group by h.id
+     ), invite_first as (
+       select h.id as household_id, min(i.created_at) as first_invite_at
+       from active_households h
+       join public.household_invites i on i.household_id = h.id and i.role = 'partner'
+       group by h.id
+     ), partner_joined as (
+       select h.id as household_id, min(m.joined_at) as partner_joined_at
+       from active_households h
+       join public.household_members m on m.household_id = h.id and m.role = 'partner' and m.removed_at is null
+       group by h.id
+     ), funnel_counts as (
+       select
+         (select count(*) from owner) as signed_up,
+         (select count(*) from owner where email_confirmed_at is not null) as email_confirmed,
+         (select count(*) from active_households) as household_created,
+         (select count(*) from account_first) as first_account,
+         (select count(*) from transaction_first) as first_transaction,
+         (select count(*) from budget_first) as first_budget,
+         (select count(*) from invite_first) as partner_invited,
+         (select count(*) from partner_joined) as partner_accepted
+     ), steps(step, name, reached) as (
+       values
+         (1, '1 — Signed up', (select signed_up from funnel_counts)),
+         (2, '2 — Email confirmed', (select email_confirmed from funnel_counts)),
+         (3, '3 — Household created', (select household_created from funnel_counts)),
+         (4, '4 — First account created', (select first_account from funnel_counts)),
+         (5, '5 — First transaction entered', (select first_transaction from funnel_counts)),
+         (6, '6 — First budget created', (select first_budget from funnel_counts)),
+         (7, '7 — Partner invited', (select partner_invited from funnel_counts)),
+         (8, '8 — Partner accepted', (select partner_accepted from funnel_counts))
+     ), drop_off as (
+       select
+         s.step,
+         s.name,
+         s.reached,
+         lag(s.reached) over (order by s.step) as prev_reached,
+         case when lag(s.reached) over (order by s.step) is null then 0 else greatest(lag(s.reached) over (order by s.step) - s.reached, 0) end as lost_at_step,
+         case when lag(s.reached) over (order by s.step) is null or lag(s.reached) over (order by s.step) = 0 then '—' else to_char(100.0 * greatest(lag(s.reached) over (order by s.step) - s.reached, 0) / lag(s.reached) over (order by s.step), 'FM990.0') || '%' end as lost_pct,
+         case when (select signed_up from funnel_counts) = 0 then '—' else to_char(100.0 * s.reached / (select signed_up from funnel_counts), 'FM990.0') || '%' end as cumulative_pct
+       from steps s
+     )
+      select '| Step | Reached | Lost at step | Lost % of previous | Cumulative % of signed up |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
+            string_agg('| ' || name || ' | ' || reached || ' | ' || lost_at_step || ' | ' || lost_pct || ' | ' || cumulative_pct || ' |', E'\n' order by step) ||
+            E'\n| **Largest drop: ' || (select name from drop_off order by lost_at_step desc, step asc limit 1) || '** | ' || (select reached from drop_off order by lost_at_step desc, step asc limit 1) || ' | ' || (select lost_at_step from drop_off order by lost_at_step desc, step asc limit 1) || ' | ' || (select lost_pct from drop_off order by lost_at_step desc, step asc limit 1) || ' | — |'
+     from drop_off;`,
+    "No funnel data.",
+  ),
+  section(
+    "Activation Funnel — Furthest Step per Household",
+    `with active_households as (
+       select h.id, h.created_at, row_number() over (order by h.created_at, h.id) as household_number
+       from public.households h where h.deleted_at is null
+     ), owner as (
+       select m.household_id, min(u.created_at) as signed_up_at, min(u.email_confirmed_at) as email_confirmed_at
+       from public.household_members m
+       join auth.users u on u.id = m.user_id
+       where m.removed_at is null and m.role = 'owner'
+       group by m.household_id
+     ), account_first as (
+       select a.household_id, min(a.created_at) as first_account_at
+       from public.accounts a where not a.is_archived group by a.household_id
+     ), transaction_first as (
+       select t.household_id, min(t.created_at) as first_transaction_at
+       from public.transactions t group by t.household_id
+     ), budget_first as (
+       select b.household_id, min(b.period_month)::timestamptz as first_budget_at
+       from public.budgets b group by b.household_id
+     ), invite_first as (
+       select i.household_id, min(i.created_at) as first_invite_at
+       from public.household_invites i where i.role = 'partner' group by i.household_id
+     ), partner_joined as (
+       select m.household_id, min(m.joined_at) as partner_joined_at
+       from public.household_members m where m.role = 'partner' and m.removed_at is null group by m.household_id
+     ), household_funnel as (
+       select
+         h.id,
+         h.household_number,
+         h.created_at as household_created_at,
+         o.signed_up_at,
+         o.email_confirmed_at,
+         a.first_account_at,
+         t.first_transaction_at,
+         b.first_budget_at,
+         i.first_invite_at,
+         p.partner_joined_at,
+         case
+           when p.partner_joined_at is not null then 8
+           when i.first_invite_at is not null then 7
+           when b.first_budget_at is not null then 6
+           when t.first_transaction_at is not null then 5
+           when a.first_account_at is not null then 4
+           when h.created_at is not null then 3
+           when o.email_confirmed_at is not null then 2
+           when o.signed_up_at is not null then 1
+           else 0
+         end as furthest_step,
+         case
+           when p.partner_joined_at is not null then p.partner_joined_at
+           when i.first_invite_at is not null then i.first_invite_at
+           when b.first_budget_at is not null then b.first_budget_at
+           when t.first_transaction_at is not null then t.first_transaction_at
+           when a.first_account_at is not null then a.first_account_at
+           when h.created_at is not null then h.created_at
+           when o.email_confirmed_at is not null then o.email_confirmed_at
+           when o.signed_up_at is not null then o.signed_up_at
+           else null
+         end as furthest_at,
+         case
+           when p.partner_joined_at is not null then '8 — Partner accepted'
+           when i.first_invite_at is not null then '7 — Partner invited'
+           when b.first_budget_at is not null then '6 — First budget created'
+           when t.first_transaction_at is not null then '5 — First transaction entered'
+           when a.first_account_at is not null then '4 — First account created'
+           when h.created_at is not null then '3 — Household created'
+           when o.email_confirmed_at is not null then '2 — Email confirmed'
+           when o.signed_up_at is not null then '1 — Signed up'
+           else '0 — Unknown'
+         end as furthest_name
+       from active_households h
+       left join owner o on o.household_id = h.id
+       left join account_first a on a.household_id = h.id
+       left join transaction_first t on t.household_id = h.id
+       left join budget_first b on b.household_id = h.id
+       left join invite_first i on i.household_id = h.id
+       left join partner_joined p on p.household_id = h.id
+     )
+      select '| Household | Furthest step | Reached at (UTC) | Time ago |' || E'\n| --- | --- | --- | --- |' || E'\n' ||
+            coalesce(string_agg(
+              '| Household ' || household_number || ' | ' || furthest_name || ' | ' || coalesce(to_char(furthest_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI'), '—') || ' | ' ||
+              case when furthest_at is null then '—' else to_char(extract(epoch from (now() - furthest_at))/86400, 'FM990.0') || ' days ago' end || ' |',
+              E'\n' order by household_number
+            ), '| No active households | — | — | — |') ||
+            E'\n\n**Distribution by furthest step**\n\n' ||
+            '| Furthest step | Households | % of active households |' || E'\n| --- | ---: | ---: |' || E'\n' ||
+            coalesce((select string_agg('| ' || furthest_name || ' | ' || cnt || ' | ' || to_char(100.0 * cnt / nullif((select count(*) from household_funnel),0), 'FM990.0') || '% |', E'\n' order by furthest_step)
+              from (select furthest_step, furthest_name, count(*) as cnt from household_funnel group by furthest_step, furthest_name) s), '| — | 0 | — |') ||
+            E'\n\n**Where zero-transaction households stopped**\n\n' ||
+            '| Furthest step (no transaction) | Households |' || E'\n| --- | ---: |' || E'\n' ||
+            coalesce((select string_agg('| ' || furthest_name || ' | ' || cnt || ' |', E'\n' order by furthest_step)
+              from (select furthest_step, furthest_name, count(*) as cnt from household_funnel where first_transaction_at is null group by furthest_step, furthest_name) z), '| All households have a transaction | 0 |')
+     from household_funnel;`,
+    "No funnel data.",
+  ),
+  section(
+    "Activation Funnel by Cohort (household created week)",
+    `with active_households as (
+       select h.id, h.created_at, date_trunc('week', h.created_at) as cohort_week
+       from public.households h where h.deleted_at is null
+     ), owner as (
+       select m.household_id, min(u.created_at) as signed_up_at, min(u.email_confirmed_at) as email_confirmed_at
+       from public.household_members m join auth.users u on u.id = m.user_id where m.removed_at is null and m.role = 'owner' group by m.household_id
+     ), account_first as (
+       select a.household_id, min(a.created_at) as first_account_at from public.accounts a where not a.is_archived group by a.household_id
+     ), transaction_first as (
+       select t.household_id, min(t.created_at) as first_transaction_at from public.transactions t group by t.household_id
+     ), budget_first as (
+       select b.household_id, min(b.period_month)::timestamptz as first_budget_at from public.budgets b group by b.household_id
+     ), invite_first as (
+       select i.household_id, min(i.created_at) as first_invite_at from public.household_invites i where i.role = 'partner' group by i.household_id
+     ), partner_joined as (
+       select m.household_id, min(m.joined_at) as partner_joined_at from public.household_members m where m.role = 'partner' and m.removed_at is null group by m.household_id
+     ), household_funnel as (
+       select h.id, h.cohort_week, h.created_at,
+         o.signed_up_at, o.email_confirmed_at, a.first_account_at, t.first_transaction_at, b.first_budget_at, i.first_invite_at, p.partner_joined_at,
+         case when p.partner_joined_at is not null then 8 when i.first_invite_at is not null then 7 when b.first_budget_at is not null then 6 when t.first_transaction_at is not null then 5 when a.first_account_at is not null then 4 when h.created_at is not null then 3 when o.email_confirmed_at is not null then 2 when o.signed_up_at is not null then 1 else 0 end as furthest_step
+       from active_households h
+       left join owner o on o.household_id = h.id
+       left join account_first a on a.household_id = h.id
+       left join transaction_first t on t.household_id = h.id
+       left join budget_first b on b.household_id = h.id
+       left join invite_first i on i.household_id = h.id
+       left join partner_joined p on p.household_id = h.id
+      ), cohorts as (
+        select cohort_week, count(*) as households,
+          count(*) filter (where first_account_at is not null) as with_account,
+          count(*) filter (where first_transaction_at is not null) as with_transaction,
+          count(*) filter (where first_budget_at is not null) as with_budget,
+          count(*) filter (where first_invite_at is not null) as invited,
+          count(*) filter (where partner_joined_at is not null) as accepted
+        from household_funnel group by cohort_week
+      )
+     select '| Cohort (week of household created) | Households | With account | With transaction | With budget | Partner invited | Partner accepted |' || E'\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |' || E'\n' ||
+            coalesce(string_agg(
+              '| ' || to_char(cohort_week, 'YYYY-MM-DD') || ' | ' || households || ' | ' ||
+              with_account || ' (' || to_char(100.0 * with_account / nullif(households,0), 'FM990.0') || '%) | ' ||
+              with_transaction || ' (' || to_char(100.0 * with_transaction / nullif(households,0), 'FM990.0') || '%) | ' ||
+              with_budget || ' (' || to_char(100.0 * with_budget / nullif(households,0), 'FM990.0') || '%) | ' ||
+              invited || ' (' || to_char(100.0 * invited / nullif(households,0), 'FM990.0') || '%) | ' ||
+              accepted || ' (' || to_char(100.0 * accepted / nullif(households,0), 'FM990.0') || '%) |',
+              E'\n' order by cohort_week desc
+            ), '| No cohorts | 0 | — | — | — | — | — |')
+     from cohorts;`,
+    "No cohort funnel data.",
+  ),
   section(
     "Both Members Active",
     `with weeks as (
@@ -280,6 +505,7 @@ const report = [
   "- Both members active: at least two distinct household members entered transactions during the specified week.",
   "- Retention cohort: households grouped by the UTC week in which the household was created. Week 2, 3, and 4 are each measured in their respective seven-day interval after creation. The denominator for each percentage is the number of cohort households whose retention window has fully elapsed (eligible): `week_N_eligible = count(*) filter (where now() >= created_at + N weeks)`. The table shows `active / eligible (rate%)` so `rate = 100 * active / eligible`; `not mature` means eligible = 0 (window not yet elapsed). This makes every percentage reproducible from the two numbers visible in the same cell.",
   "- Historical recomputation (08-20, 08-22, 08-24, 09-03): each snapshot counts households `created_at < snapshot + 1 day` and not deleted at end-of-day (`deleted_at is null or deleted_at > snapshot + 1 day`), and checks accounts/transactions/membership with `created_at < snapshot + 1 day` and `removed_at` as of the snapshot, so the trend is comparable under the revised definitions. `is_archived` reflects current archival state (no archived_at timestamp exists) and `budget_created` has no creation timestamp — both historical values are approximations, documented as such.",
+  "- Activation funnel: ordered steps 1 Signed up → 2 Email confirmed → 3 Household created → 4 First account created → 5 First transaction entered → 6 First budget created → 7 Partner invited → 8 Partner accepted. Furthest step per household is the highest step whose timestamp exists (exactly one step per household). Drop-off Lost at step = previous reached − current reached. Time in step, repeat sessions, guide-viewed, and entry point for first transaction require client-side event tracking not yet in the database (see funnel notes); adding guide-viewed between 5 and 6 later will not change historic furthest-step values because steps are named, not renumbered.",
   "",
 ].join("\n");
 
