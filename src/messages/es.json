@@ -271,7 +271,8 @@
         "date": "Elige hoy o una fecha de hasta un día en el futuro.",
         "rate": "Ingresa un tipo de cambio válido.",
         "generic": "No se pudo guardar el movimiento. Tus cambios se revirtieron.",
-        "offlineTransfer": "Las transferencias requieren conexión y no se guardaron."
+        "offlineTransfer": "Las transferencias requieren conexión y no se guardaron.",
+        "offline": "Estás sin conexión — no pudimos crear la cuenta Efectivo. Reconéctate e inténtalo de nuevo."
       },
       "implicitAccountHint": "Crearemos una cuenta Efectivo automáticamente — podrás renombrarla luego."
     }

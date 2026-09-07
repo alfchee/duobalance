@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAccounts, useAccountMutations } from "@/hooks/useAccounts";
 import { useHousehold } from "@/hooks/useHousehold";
+import {
+  clearCreatingDefaultCash,
+  getDefaultCashName,
+  isCreatingDefaultCash,
+  markCreatingDefaultCash,
+} from "@/lib/accounts/default-cash";
+import type { AccountWithBalance } from "@/lib/accounts";
 
 /**
  * Client-side fallback for #192: ensures a household with zero visible accounts
@@ -11,24 +19,36 @@ import { useHousehold } from "@/hooks/useHousehold";
  * through (e.g. created before the migration, or a race where the backfill
  * hasn't run yet) so the transaction sheet is never blocked.
  *
- * Guarded to run at most once per householdId.
+ * Guarded to run at most once per householdId and deduplicated against the
+ * transaction sheet's inline creation via the shared `creatingHouseholds` set.
  */
 export function useEnsureDefaultAccount(householdId: string | null) {
-  const { baseCurrency } = useHousehold();
+  const { baseCurrency, locale } = useHousehold();
   const { data: accounts, isLoading } = useAccounts(householdId);
   const { create } = useAccountMutations(householdId);
+  const queryClient = useQueryClient();
   const attemptedRef = useRef<string | null>(null);
+
+  const hasUsableAccount = (accounts ?? []).some((a) => !a.is_archived);
+  const createPending = create.isPending;
 
   useEffect(() => {
     if (!householdId || !baseCurrency || isLoading) return;
-    if ((accounts?.length ?? 0) > 0) return;
-    if (create.isPending) return;
+    if (hasUsableAccount) return;
+    if (createPending) return;
+    if (isCreatingDefaultCash(householdId)) return;
     if (attemptedRef.current === householdId) return;
+
+    // Final guard: re-read cache in case sheet just created it.
+    const cached = queryClient.getQueryData<AccountWithBalance[]>(["accounts", householdId]) ?? [];
+    if (cached.some((a) => !a.is_archived)) return;
+
     attemptedRef.current = householdId;
+    markCreatingDefaultCash(householdId);
 
     void create
       .mutateAsync({
-        name: "Cash",
+        name: getDefaultCashName(locale),
         kind: "cash",
         currency: baseCurrency,
         balance_mode: "ledger",
@@ -39,8 +59,13 @@ export function useEnsureDefaultAccount(householdId: string | null) {
         owner_member_id: null,
       })
       .catch(() => {
-        // Allow retry if it failed (e.g. transient network)
         attemptedRef.current = null;
+      })
+      .finally(() => {
+        clearCreatingDefaultCash(householdId);
       });
-  }, [householdId, baseCurrency, isLoading, accounts, create]);
+    // `create` is intentionally not in deps — its reference changes per render
+    // and would retrigger the effect; `createPending` above is the stable gate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [householdId, baseCurrency, locale, isLoading, hasUsableAccount, createPending, queryClient]);
 }

@@ -20,6 +20,7 @@ import {
 import { FirstRunPrompt } from "./first-run-prompt";
 
 export const DISMISS_PREFIX = "duobalance:dismissedChecklist:";
+export const FIRST_RUN_DISMISS_PREFIX = "duobalance:dismissedFirstRun:";
 
 export function GettingStartedChecklist() {
   const t = useTranslations("onboarding.checklist");
@@ -30,36 +31,47 @@ export function GettingStartedChecklist() {
   const { openCreate: openAccountCreate } = useAccountsUiStore();
   const { create: createInvite } = useInviteMutations(householdId);
 
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissedChecklist, setDismissedChecklist] = useState(true);
+  const [dismissedFirstRun, setDismissedFirstRun] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteError, setInviteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!householdId) return;
-    const stored = localStorage.getItem(`${DISMISS_PREFIX}${householdId}`);
-    setDismissed(stored === "true");
+    setDismissedChecklist(localStorage.getItem(`${DISMISS_PREFIX}${householdId}`) === "true");
+    setDismissedFirstRun(
+      localStorage.getItem(`${FIRST_RUN_DISMISS_PREFIX}${householdId}`) === "true",
+    );
   }, [householdId]);
 
-  function handleDismiss() {
+  function handleDismissChecklist() {
     if (!householdId) return;
     localStorage.setItem(`${DISMISS_PREFIX}${householdId}`, "true");
-    setDismissed(true);
+    setDismissedChecklist(true);
   }
 
-  if (!householdId || progress.isLoading || dismissed) {
+  function handleDismissFirstRun() {
+    if (!householdId) return;
+    localStorage.setItem(`${FIRST_RUN_DISMISS_PREFIX}${householdId}`, "true");
+    setDismissedFirstRun(true);
+  }
+
+  if (!householdId || progress.isLoading) {
     return null;
   }
 
   // #192: brand-new users see only the first-run prompt — single CTA to record one expense.
   // No account/budget/partner step blocks the transaction form.
-  // Existing users who already have transactions are unaffected; they see the
-  // post-transaction prompts (or nothing if already complete/dismissed).
+  // Dismissing the first-run prompt (`dismissedFirstRun`) does NOT suppress the
+  // post-transaction checklist; dismissing the checklist (`dismissedChecklist`)
+  // suppresses both stages to preserve existing users' choice.
   if (!progress.hasTransactions) {
-    return <FirstRunPrompt onDismiss={handleDismiss} dismissLabel={tFirstRun("dismiss")} />;
+    if (dismissedFirstRun || dismissedChecklist) return null;
+    return <FirstRunPrompt onDismiss={handleDismissFirstRun} dismissLabel={tFirstRun("dismiss")} />;
   }
 
-  if (progress.isComplete) {
+  if (dismissedChecklist || progress.isComplete) {
     return null;
   }
 
@@ -105,7 +117,7 @@ export function GettingStartedChecklist() {
             type="button"
             variant="ghost"
             size="icon"
-            onClick={handleDismiss}
+            onClick={handleDismissChecklist}
             className="-mr-2 -mt-2 size-8 text-muted-foreground hover:text-foreground"
             aria-label={t("dismiss")}
           >

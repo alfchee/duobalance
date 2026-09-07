@@ -199,7 +199,10 @@
   },
   "transactions": {
     "form": {
-      "implicitAccountHint": "Criaremos uma conta Dinheiro automaticamente — você pode renomeá-la depois."
+      "implicitAccountHint": "Criaremos uma conta Dinheiro automaticamente — você pode renomeá-la depois.",
+      "errors": {
+        "offline": "Você está offline — não foi possível criar a conta Dinheiro. Reconecte e tente novamente."
+      }
     }
   }
 }

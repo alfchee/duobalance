@@ -21,6 +21,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAccountMutations, useAccounts } from "@/hooks/useAccounts";
 import { useCategorizationRules, useCategories } from "@/hooks/useCategories";
 import { useCurrencies } from "@/hooks/useCurrencies";
@@ -32,6 +33,12 @@ import {
   useTransactionDescriptions,
   useTransactionMutations,
 } from "@/hooks/useTransactions";
+import {
+  clearCreatingDefaultCash,
+  getDefaultCashName,
+  isCreatingDefaultCash,
+  markCreatingDefaultCash,
+} from "@/lib/accounts/default-cash";
 import { matchCategory } from "@/lib/categories";
 import { todayInHousehold } from "@/lib/dates";
 import {
@@ -482,12 +489,14 @@ function TransactionEntryContent({
   );
   const { create, update, remove } = useTransactionMutations(householdId, memberId);
   const { create: createAccount } = useAccountMutations(householdId);
+  const queryClient = useQueryClient();
   const onboardingProgress = useOnboardingProgress(householdId);
   const { connectionState, queueTransaction } = useOfflineQueue();
-  const pending =
-    create.isPending || update.isPending || remove.isPending || createAccount.isPending;
   const categoryKind = draft.isExpense ? "expense" : "income";
   const usableAccounts = accounts.filter((account) => !account.is_archived);
+  const pending =
+    create.isPending || update.isPending || remove.isPending || createAccount.isPending;
+  const awaitingAutoAccount = !draft.accountId && usableAccounts.length > 0;
   const usableCategories = categories.filter(
     (category) => !category.is_archived && category.kind === categoryKind,
   );
@@ -583,39 +592,81 @@ function TransactionEntryContent({
     const fxRate = Number(draft.fxRate);
     if (!description || description.length > 200) return setError("description");
     // #192: implicitly create a Cash account if none exists so the user is
-    // never blocked on account setup before the first transaction.
+    // never blocked on account setup before the first transaction. Deduplicated
+    // against `useEnsureDefaultAccount` via `creatingHouseholds` — without the
+    // unique(household_id,name) constraint a race would leave duplicate Cash rows.
     let effectiveAccountId = draft.accountId;
     let effectiveCurrency = draft.currency;
     let effectiveMinorUnit = minorUnit;
     if (!effectiveAccountId) {
       if (usableAccounts.length > 0) return setError("account");
       if (!householdId || !baseCurrency) return setError("generic");
-      // draft.currency should already be baseCurrency via the effect above,
-      // but fall back to baseCurrency if still empty.
-      effectiveCurrency = draft.currency || baseCurrency;
-      effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
-      if (effectiveMinorUnit == null) return setError("amount");
-      if (amount == null || amount === 0) return setError("amount");
-      try {
-        const newAccount = await createAccount.mutateAsync({
-          name: "Cash",
-          kind: "cash",
-          currency: baseCurrency,
-          balance_mode: "ledger",
-          opening_balance: 0,
-          manual_balance: null,
-          credit_limit: null,
-          is_shared: true,
-          owner_member_id: null,
-        });
-        const createdId = (newAccount as { id?: string })?.id;
-        if (createdId) effectiveAccountId = createdId;
-        else {
-          // Fallback: re-read from cache; if still missing, abort.
-          return setError("generic");
-        }
-      } catch {
+      // If BalancesView's hook is already creating, wait for it instead of
+      // inserting a second row.
+      if (isCreatingDefaultCash(householdId)) {
         return setError("generic");
+      }
+      // Re-check cache after hook may have just inserted.
+      const cached = queryClient.getQueryData<AccountWithBalance[]>(["accounts", householdId]);
+      const existingUsable = cached?.find((a) => !a.is_archived);
+      if (existingUsable) {
+        effectiveAccountId = existingUsable.id;
+        effectiveCurrency = existingUsable.currency;
+        effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+      } else {
+        // draft.currency should already be baseCurrency via the effect above,
+        // but fall back to baseCurrency if still empty.
+        effectiveCurrency = draft.currency || baseCurrency;
+        effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+        if (effectiveMinorUnit == null) return setError("amount");
+        if (amount == null || amount === 0) return setError("amount");
+        markCreatingDefaultCash(householdId);
+        try {
+          const newAccount = await createAccount.mutateAsync({
+            name: getDefaultCashName(locale),
+            kind: "cash",
+            currency: baseCurrency,
+            balance_mode: "ledger",
+            opening_balance: 0,
+            manual_balance: null,
+            credit_limit: null,
+            is_shared: true,
+            owner_member_id: null,
+          });
+          const createdId = (newAccount as { id?: string })?.id;
+          if (createdId) effectiveAccountId = createdId;
+          else {
+            // Fallback: re-read from cache; if still missing, abort.
+            const refreshed = queryClient.getQueryData<AccountWithBalance[]>([
+              "accounts",
+              householdId,
+            ]);
+            const fallback = refreshed?.find((a) => !a.is_archived);
+            if (fallback) effectiveAccountId = fallback.id;
+            else return setError("generic");
+          }
+        } catch (err) {
+          if (isTransientWriteError(err)) {
+            clearCreatingDefaultCash(householdId);
+            return setError("offline");
+          }
+          // Race: another tab/process inserted first — reuse it.
+          const refreshed = queryClient.getQueryData<AccountWithBalance[]>([
+            "accounts",
+            householdId,
+          ]);
+          const fallback = refreshed?.find((a) => !a.is_archived);
+          if (fallback) {
+            effectiveAccountId = fallback.id;
+            effectiveCurrency = fallback.currency;
+            effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+          } else {
+            clearCreatingDefaultCash(householdId);
+            return setError("generic");
+          }
+        } finally {
+          clearCreatingDefaultCash(householdId);
+        }
       }
     }
     if (amount == null || amount === 0) return setError("amount");
@@ -1038,6 +1089,7 @@ function TransactionEntryContent({
             className="flex-1"
             disabled={
               pending ||
+              awaitingAutoAccount ||
               minorUnit == null ||
               (!selectedAccount && usableAccounts.length > 0) ||
               (!baseCurrency && usableAccounts.length === 0)
