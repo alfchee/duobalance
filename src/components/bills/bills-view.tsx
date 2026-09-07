@@ -300,10 +300,12 @@ export function BillsView() {
             <HelpButton article="recurrence-and-marking-paid" />
           </div>
         </div>
-        <Button className="shrink-0" size="sm" onClick={beginCreate}>
-          <Plus />
-          {t("new")}
-        </Button>
+        {bills.length === 0 ? null : (
+          <Button className="shrink-0" size="sm" onClick={beginCreate}>
+            <Plus />
+            {t("new")}
+          </Button>
+        )}
       </div>
 
       <section className="rounded-2xl bg-secondary p-4 sm:p-5" aria-label={t("calendarLabel")}>

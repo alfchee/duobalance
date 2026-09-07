@@ -4,16 +4,17 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type TeachEmptyStateProps = {
+type TeachEmptyStateBase = {
   icon: LucideIcon;
   title: string;
   description: string;
   primaryLabel: string;
-  onPrimary?: () => void;
-  primaryHref?: string;
   guideLabel: string;
   guideHref: string;
 };
+
+type TeachEmptyStateProps = TeachEmptyStateBase &
+  ({ onPrimary: () => void; primaryHref?: never } | { primaryHref: string; onPrimary?: never });
 
 export function TeachEmptyState({
   icon: Icon,

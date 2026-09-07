@@ -174,7 +174,7 @@ export function BudgetView() {
           />
         </>
       )}
-      {!hasBudgets && previousDrafts.length > 0 ? (
+      {!hasBudgets && previousDrafts.length > 0 && rows.length > 0 ? (
         <Button
           className="w-full rounded-full py-6 text-base"
           variant="secondary"
