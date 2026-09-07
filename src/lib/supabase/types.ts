@@ -587,6 +587,61 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback_submissions: {
+        Row: {
+          category: string
+          created_at: string
+          diagnostics: Json
+          household_id: string | null
+          id: string
+          member_id: string | null
+          message: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          diagnostics?: Json
+          household_id?: string | null
+          id?: string
+          member_id?: string | null
+          message?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          diagnostics?: Json
+          household_id?: string | null
+          id?: string
+          member_id?: string | null
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_submissions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_submissions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_submissions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fx_fetch_log: {
         Row: {
           currencies_updated: number | null
@@ -1811,3 +1866,4 @@ export const Constants = {
     },
   },
 } as const
+
