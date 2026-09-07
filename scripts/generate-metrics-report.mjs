@@ -253,33 +253,41 @@ const report = [
     "Activation Funnel — Drop-off (overall)",
     `with active_households as (
        select h.id from public.households h where h.deleted_at is null
-     ), account_first as (
-       select a.household_id, min(a.created_at) as first_account_at
-       from public.accounts a
-       where not a.is_archived
-       group by a.household_id
-     ), transaction_first as (
-       select t.household_id, min(t.created_at) as first_transaction_at
-       from public.transactions t
-       group by t.household_id
-     ), budget_first as (
-       select b.household_id, min(b.period_month)::timestamptz as first_budget_at
-       from public.budgets b
-       group by b.household_id
-     ), invite_first as (
-       select i.household_id, min(i.created_at) as first_invite_at
-       from public.household_invites i
-       where i.role = 'partner'
-       group by i.household_id
-     ), partner_joined as (
-       select m.household_id, min(m.joined_at) as partner_joined_at
+     ), owner as (
+       select m.household_id, min(u.created_at) as signed_up_at, min(u.email_confirmed_at) as email_confirmed_at
        from public.household_members m
-       where m.role = 'partner' and m.removed_at is null
+       join auth.users u on u.id = m.user_id
+       where m.removed_at is null and m.role = 'owner'
        group by m.household_id
+     ), account_first as (
+       select h.id as household_id, min(a.created_at) as first_account_at
+       from active_households h
+       join public.accounts a on a.household_id = h.id and not a.is_archived
+       group by h.id
+     ), transaction_first as (
+       select h.id as household_id, min(t.created_at) as first_transaction_at
+       from active_households h
+       join public.transactions t on t.household_id = h.id
+       group by h.id
+     ), budget_first as (
+       select h.id as household_id, min(b.period_month)::timestamptz as first_budget_at
+       from active_households h
+       join public.budgets b on b.household_id = h.id
+       group by h.id
+     ), invite_first as (
+       select h.id as household_id, min(i.created_at) as first_invite_at
+       from active_households h
+       join public.household_invites i on i.household_id = h.id and i.role = 'partner'
+       group by h.id
+     ), partner_joined as (
+       select h.id as household_id, min(m.joined_at) as partner_joined_at
+       from active_households h
+       join public.household_members m on m.household_id = h.id and m.role = 'partner' and m.removed_at is null
+       group by h.id
      ), funnel_counts as (
        select
-         (select count(*) from auth.users) as signed_up,
-         (select count(*) from auth.users where email_confirmed_at is not null) as email_confirmed,
+         (select count(*) from owner) as signed_up,
+         (select count(*) from owner where email_confirmed_at is not null) as email_confirmed,
          (select count(*) from active_households) as household_created,
          (select count(*) from account_first) as first_account,
          (select count(*) from transaction_first) as first_transaction,
@@ -307,9 +315,9 @@ const report = [
          case when (select signed_up from funnel_counts) = 0 then '—' else to_char(100.0 * s.reached / (select signed_up from funnel_counts), 'FM990.0') || '%' end as cumulative_pct
        from steps s
      )
-     select '| Step | Reached | Lost at step | Lost % of previous | Cumulative % of signed up |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
+      select '| Step | Reached | Lost at step | Lost % of previous | Cumulative % of signed up |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
             string_agg('| ' || name || ' | ' || reached || ' | ' || lost_at_step || ' | ' || lost_pct || ' | ' || cumulative_pct || ' |', E'\n' order by step) ||
-            E'\n| **Largest drop** | ' || (select name from drop_off order by lost_at_step desc, step asc limit 1) || ' | ' || (select lost_at_step from drop_off order by lost_at_step desc, step asc limit 1) || ' | ' || (select lost_pct from drop_off order by lost_at_step desc, step asc limit 1) || ' | — |'
+            E'\n| **Largest drop: ' || (select name from drop_off order by lost_at_step desc, step asc limit 1) || '** | ' || (select reached from drop_off order by lost_at_step desc, step asc limit 1) || ' | ' || (select lost_at_step from drop_off order by lost_at_step desc, step asc limit 1) || ' | ' || (select lost_pct from drop_off order by lost_at_step desc, step asc limit 1) || ' | — |'
      from drop_off;`,
     "No funnel data.",
   ),
@@ -392,9 +400,9 @@ const report = [
        left join invite_first i on i.household_id = h.id
        left join partner_joined p on p.household_id = h.id
      )
-     select '| Household | Furthest step | Reached at (UTC) | Time ago |' || E'\n| --- | --- | --- | --- |' || E'\n' ||
+      select '| Household | Furthest step | Reached at (UTC) | Time ago |' || E'\n| --- | --- | --- | --- |' || E'\n' ||
             coalesce(string_agg(
-              '| Household ' || household_number || ' | ' || furthest_name || ' | ' || coalesce(to_char(furthest_at, 'YYYY-MM-DD HH24:MI'), '—') || ' | ' ||
+              '| Household ' || household_number || ' | ' || furthest_name || ' | ' || coalesce(to_char(furthest_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI'), '—') || ' | ' ||
               case when furthest_at is null then '—' else to_char(extract(epoch from (now() - furthest_at))/86400, 'FM990.0') || ' days ago' end || ' |',
               E'\n' order by household_number
             ), '| No active households | — | — | — |') ||

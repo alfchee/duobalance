@@ -122,12 +122,17 @@ describe("activation funnel — #167", () => {
     // SQL computes lost as previous - current, clamped to 0 for non-monotonic funnel
     expect(reportMjs).toContain("greatest(lag(s.reached) over (order by s.step) - s.reached, 0)");
     expect(reportMjs).toContain("order by lost_at_step desc, step asc limit 1");
-    // Owner CTE must not be dead in drop-off section
+    // Owner CTE must be present and scoped to active_households (fixes mixed-entity drop-off)
     const dropOffSection =
       reportMjs
         .split("Activation Funnel — Drop-off")[1]
         ?.split("Activation Funnel — Furthest")[0] || "";
-    expect(dropOffSection).not.toContain("owner as (");
+    expect(dropOffSection).toContain("owner as (");
+    expect(dropOffSection).toContain("join public.accounts");
+    expect(dropOffSection).toContain("from owner");
+    // Largest drop row must be aligned: Step column is Largest drop name, Reached is count
+    expect(reportMjs).toContain("**Largest drop:");
+    expect(reportMjs).toContain("select reached from drop_off");
   });
 
   it("answers where zero-transaction households stopped", () => {
@@ -188,6 +193,8 @@ describe("activation funnel — #167", () => {
     expect(reportMjs).toContain("furthest_at");
     expect(reportMjs).toContain("days ago");
     expect(reportMjs).toContain("Distribution by furthest step");
+    // UTC must be explicit, not session timezone
+    expect(reportMjs).toContain("AT TIME ZONE 'UTC'");
   });
 
   it("segments by signup cohort", () => {
