@@ -46,7 +46,10 @@ export function useOnboardingProgress(householdId: string | null) {
 
   const isLoading =
     accountsLoading || txLoading || budgetsLoading || membersLoading || invitesLoading;
-  const isComplete = hasAccounts && hasTransactions && hasBudgets && hasPartner;
+  // #198: budgets are no longer part of the required checklist, so isComplete
+  // does not require hasBudgets. hasBudgets is still exposed for the
+  // deferred budget suggestion prompt.
+  const isComplete = hasAccounts && hasTransactions && hasPartner;
 
   return {
     isLoading,

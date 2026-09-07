@@ -739,6 +739,7 @@
       "title": "Primero registrar, luego presupuestar",
       "description": "Un buen presupuesto nace de datos reales. Sigue registrando 2 a 4 semanas y luego crea límites que reflejen tu gasto real.",
       "primary": "Agregar un movimiento",
+      "secondary": "O crear un presupuesto manualmente",
       "guide": "Cómo crear un buen presupuesto →"
     },
     "copyDialog": {
@@ -749,6 +750,26 @@
       "confirm": "Copiar presupuestos",
       "copying": "Copiando…",
       "error": "No se pudieron copiar los presupuestos. Intenta de nuevo."
+    },
+    "suggestion": {
+      "title": "¿Listo para crear un presupuesto?",
+      "description": "Registraste {count, plural, one {# movimiento} other {# movimientos}} — crea presupuestos a partir de tu gasto real.",
+      "derivedLabel": "Sugerido según tus últimos 30 días",
+      "cta": "Crear presupuestos desde tu gasto",
+      "dismiss": "Ahora no",
+      "hint": "Los montos vienen pre-llenados con tus transacciones y puedes editarlos antes de guardar.",
+      "moreCategories": "+{count} más"
+    },
+    "suggestionDialog": {
+      "title": "Crea presupuestos desde tu gasto",
+      "description": "Revisa los montos sugeridos de tus últimos 30 días. Edita cualquiera antes de crear.",
+      "derivedLabel": "Sugerido — de tus propias transacciones",
+      "spentLabel": "Gastaste {amount} en los últimos 30 días",
+      "cancel": "Cancelar",
+      "confirm": "Crear presupuestos",
+      "creating": "Creando…",
+      "validationAmount": "Ingresa un monto válido de cero o más.",
+      "error": "No se pudieron crear los presupuestos. Intenta de nuevo."
     }
   },
   "bills": {

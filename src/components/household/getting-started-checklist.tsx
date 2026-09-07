@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Check, ChevronRight, UserPlus, X } from "lucide-react";
 import { useHousehold } from "@/hooks/useHousehold";
@@ -25,7 +24,6 @@ export const FIRST_RUN_DISMISS_PREFIX = "duobalance:dismissedFirstRun:";
 export function GettingStartedChecklist() {
   const t = useTranslations("onboarding.checklist");
   const tFirstRun = useTranslations("onboarding.firstRun");
-  const router = useRouter();
   const { householdId } = useHousehold();
   const progress = useOnboardingProgress(householdId);
   const { openCreate: openAccountCreate } = useAccountsUiStore();
@@ -76,14 +74,15 @@ export function GettingStartedChecklist() {
   }
 
   // After the first transaction, remaining setup is offered as dismissible
-  // prompts — account, budget, partner — never as a blocker.
+  // prompts — account, partner — never as a blocker.
+  // Budget setup is intentionally not part of this checklist (#198): it is
+  // surfaced later as a data-driven suggestion derived from recorded spend.
   const completedCount =
     (progress.hasAccounts ? 1 : 0) +
     (progress.hasTransactions ? 1 : 0) +
-    (progress.hasBudgets ? 1 : 0) +
     (progress.hasPartner ? 1 : 0);
 
-  const percentage = Math.round((completedCount / 4) * 100);
+  const percentage = Math.round((completedCount / 3) * 100);
 
   async function handleSendInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -110,7 +109,7 @@ export function GettingStartedChecklist() {
             </span>
             <h3 className="mt-2 text-lg font-black tracking-tight">{t("title")}</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {t("progressCount", { completed: completedCount, total: 4 })}
+              {t("progressCount", { completed: completedCount, total: 3 })}
             </p>
           </div>
           <Button
@@ -182,46 +181,7 @@ export function GettingStartedChecklist() {
             </div>
           </div>
 
-          {/* Step 3: Set a budget */}
-          <div
-            className={`flex items-center justify-between rounded-xl border p-3 text-sm transition-colors ${
-              progress.hasBudgets
-                ? "bg-secondary/40 border-transparent"
-                : "bg-background border-border"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className={`grid size-6 place-items-center rounded-full text-xs font-bold ${
-                  progress.hasBudgets
-                    ? "bg-success text-success-foreground"
-                    : "border-2 border-muted-foreground/40 text-muted-foreground"
-                }`}
-              >
-                {progress.hasBudgets ? <Check className="size-3.5" /> : "3"}
-              </span>
-              <span
-                className={
-                  progress.hasBudgets ? "line-through text-muted-foreground" : "font-medium"
-                }
-              >
-                {t("stepBudget")}
-              </span>
-            </div>
-            {!progress.hasBudgets ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/budget")}
-                className="h-8 gap-1 text-xs font-bold"
-              >
-                {t("actionSet")} <ChevronRight className="size-3" />
-              </Button>
-            ) : null}
-          </div>
-
-          {/* Step 4: Invite partner */}
+          {/* Step 3: Invite partner */}
           <div
             className={`flex items-center justify-between rounded-xl border p-3 text-sm transition-colors ${
               progress.hasPartner
@@ -237,7 +197,7 @@ export function GettingStartedChecklist() {
                     : "border-2 border-muted-foreground/40 text-muted-foreground"
                 }`}
               >
-                {progress.hasPartner ? <Check className="size-3.5" /> : "4"}
+                {progress.hasPartner ? <Check className="size-3.5" /> : "3"}
               </span>
               <span
                 className={
