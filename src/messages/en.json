@@ -414,7 +414,13 @@
     "breakdownBaseRate": "Base rate: {date}",
     "breakdownEmpty": "All your accounts are in the household's base currency.",
     "breakdownClose": "Close",
-    "rateUsed": "1 USD = {rate} · {date}"
+    "rateUsed": "1 USD = {rate} · {date}",
+    "emptyTeach": {
+      "title": "Your balances live here",
+      "description": "Every expense and income updates a balance. Add your first transaction — we'll create a Cash account for you automatically.",
+      "primary": "Add first transaction",
+      "guide": "How balances work →"
+    }
   },
   "onboarding": {
     "checklist": {
@@ -730,8 +736,10 @@
     "overBy": "{amount} over",
     "noBudget": "No budget set",
     "empty": {
-      "title": "Start your monthly budget",
-      "description": "Set budgets by category to see how your spending is tracking."
+      "title": "Track first, budget later",
+      "description": "Good budgets come from real spending. Keep tracking for 2–4 weeks, then set limits that fit how you actually spend.",
+      "primary": "Add a transaction",
+      "guide": "How to build a good budget →"
     },
     "copyDialog": {
       "title": "Copy last month's budgets",
@@ -759,9 +767,10 @@
     "error": "Something went wrong. Try again.",
     "emptyMonth": "No bills are due this month.",
     "empty": {
-      "title": "Start tracking bills",
-      "description": "Add rent, utilities, internet, or any regular household payment.",
-      "action": "Add a bill"
+      "title": "Never miss what repeats",
+      "description": "Bills are for rent, utilities and subscriptions — anything that comes back every month. Add one to see it on your calendar.",
+      "action": "Add a bill",
+      "guide": "How bills work →"
     },
     "status": {
       "due": "Due",

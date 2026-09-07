@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy, PieChart, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { TeachEmptyState } from "@/components/ui/teach-empty-state";
+import { useTransactionsUiStore } from "@/store/transactions";
 import { BudgetCategoryList } from "@/components/budgets/budget-category-list";
 import { BudgetHeader } from "@/components/budgets/budget-header";
 import { BudgetRing } from "@/components/budgets/budget-ring";
@@ -87,6 +89,7 @@ export function BudgetView() {
   const previousMonth = moveBudgetMonth(periodMonth, -1);
   const monthLabel = getBudgetMonthLabel(periodMonth, locale);
   const editingBudget = rows.find((row) => row.id === editingBudgetId) ?? null;
+  const openTransaction = useTransactionsUiStore((s) => s.openCreate);
 
   if (loading) return <BudgetViewSkeleton />;
   if (error)
@@ -134,34 +137,44 @@ export function BudgetView() {
           totalBudget={totalBudget}
         />
       </section>
-      <Button className="w-full rounded-full py-6 text-base" onClick={() => openCreate()}>
-        <Plus className="size-5" />
-        {t("new")}
-      </Button>
       {rows.length === 0 ? (
-        <BudgetEmptyState title={t("empty.title")} description={t("empty.description")} />
-      ) : (
-        <BudgetCategoryList
-          currency={currency}
-          locale={locale}
-          numberFormat={numberFormat}
-          periodMonth={periodMonth}
-          rows={rows}
-          visibleToHousehold={scope === "household"}
-          translations={{
-            categories: t("categories"),
-            noBudget: t("noBudget"),
-            overBy: (values) => t("overBy", values),
-            percentUsed: (values) => t("percentUsed", values),
-            visibleToYou: t("visibleToYou"),
-          }}
-          actions={{ create: t("new"), edit: t("edit"), delete: t("delete") }}
-          onEdit={openEdit}
-          onDelete={requestDelete}
-          onCreate={openCreate}
+        <TeachEmptyState
+          icon={PieChart}
+          title={t("empty.title")}
+          description={t("empty.description")}
+          primaryLabel={t("empty.primary")}
+          onPrimary={() => openTransaction("transaction")}
+          guideLabel={t("empty.guide")}
+          guideHref="/help/household-vs-personal-budgets"
         />
+      ) : (
+        <>
+          <Button className="w-full rounded-full py-6 text-base" onClick={() => openCreate()}>
+            <Plus className="size-5" />
+            {t("new")}
+          </Button>
+          <BudgetCategoryList
+            currency={currency}
+            locale={locale}
+            numberFormat={numberFormat}
+            periodMonth={periodMonth}
+            rows={rows}
+            visibleToHousehold={scope === "household"}
+            translations={{
+              categories: t("categories"),
+              noBudget: t("noBudget"),
+              overBy: (values) => t("overBy", values),
+              percentUsed: (values) => t("percentUsed", values),
+              visibleToYou: t("visibleToYou"),
+            }}
+            actions={{ create: t("new"), edit: t("edit"), delete: t("delete") }}
+            onEdit={openEdit}
+            onDelete={requestDelete}
+            onCreate={openCreate}
+          />
+        </>
       )}
-      {!hasBudgets && previousDrafts.length > 0 ? (
+      {!hasBudgets && previousDrafts.length > 0 && rows.length > 0 ? (
         <Button
           className="w-full rounded-full py-6 text-base"
           variant="secondary"
@@ -299,15 +312,5 @@ function BudgetViewError({
         {retryLabel}
       </Button>
     </div>
-  );
-}
-
-function BudgetEmptyState({ description, title }: { description: string; title: string }) {
-  return (
-    <section className="rounded-[40px] border border-dashed bg-background p-10 text-center shadow-ring">
-      <PieChart className="mx-auto size-12 text-muted-foreground" />
-      <h2 className="mt-5 text-xl font-black tracking-tight">{title}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-    </section>
   );
 }

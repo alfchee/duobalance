@@ -15,6 +15,31 @@
     "reports": "Relatórios",
     "help": "Ajuda"
   },
+  "transactions": {
+    "form": {
+      "implicitAccountHint": "Criaremos uma conta Dinheiro automaticamente — você pode renomeá-la depois.",
+      "errors": {
+        "offline": "Você está offline — não foi possível criar a conta Dinheiro. Reconecte e tente novamente."
+      }
+    }
+  },
+  "balances": {
+    "emptyTeach": {
+      "title": "Seus saldos ficam aqui",
+      "description": "Cada despesa ou receita atualiza um saldo. Adicione o primeiro lançamento e criamos uma conta Dinheiro automaticamente.",
+      "primary": "Adicionar primeiro lançamento",
+      "guide": "Como os saldos funcionam →"
+    }
+  },
+  "onboarding": {
+    "firstRun": {
+      "title": "Registre sua primeira despesa",
+      "subtitle": "Um toque para começar — depois você pode adicionar contas, orçamentos e convidar seu parceiro.",
+      "action": "Registrar despesa",
+      "hint": "Criaremos uma conta Dinheiro automaticamente — você pode renomeá-la depois em Ajustes.",
+      "dismiss": "Dispensar"
+    }
+  },
   "household": {
     "switcher": {
       "title": "Trocar grupo",
@@ -33,61 +58,21 @@
       "required": "Preencha todos os campos obrigatórios."
     }
   },
-  "reports": {
-    "title": "Relatórios",
-    "subtitle": "Acompanhe suas tendências de despesas e receitas ao longo do tempo.",
-    "loadError": "Não foi possível carregar os dados dos relatórios.",
-    "retry": "Tentar novamente",
-    "currencyNotice": "Valores em {currency}",
-    "dateRanges": {
-      "label": "Período",
-      "this_month": "Este mês",
-      "3m": "Últimos 3 meses",
-      "6m": "Últimos 6 meses",
-      "12m": "Últimos 12 meses",
-      "ytd": "Ano até o momento",
-      "custom": "Personalizado"
-    },
-    "customDates": {
-      "from": "De",
-      "to": "Até",
-      "incomplete": "Selecione uma data de início e de fim para ver este relatório."
-    },
-    "memberFilter": {
-      "label": "Por membro",
-      "all": "Todos os membros"
-    },
-    "reconciliation": {
-      "title": "Reconciliação",
-      "matching": "Total por categoria coincide com o total mensal ({amount})",
-      "mismatch": "Total por categoria ({catTotal}) difere do total mensal ({monthlyTotal})"
-    },
-    "charts": {
-      "expenseByCategory": {
-        "title": "Despesas por categoria",
-        "empty": "Nenhuma despesa encontrada para este período."
-      },
-      "incomeByCategory": {
-        "title": "Receitas por categoria",
-        "empty": "Nenhuma receita encontrada para este período."
-      },
-      "monthlyExpenses": {
-        "title": "Despesas mensais",
-        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
-      },
-      "monthlyIncomes": {
-        "title": "Receitas mensais",
-        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
-      },
-      "monthlyBalance": {
-        "title": "Balanço mensal",
-        "subtitle": "Economia líquida ao longo do tempo",
-        "rollingAvg": "Média móvel de 3 meses",
-        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
-      }
-    },
-    "uncategorized": "Sem categoria",
-    "transactionsCount": "{count, plural, =1 {1 transação} other {# transações}}"
+  "budget": {
+    "empty": {
+      "title": "Registre primeiro, depois planeje",
+      "description": "Bons orçamentos nascem de gastos reais. Registre por 2 a 4 semanas e depois defina limites que refletem como você realmente gasta.",
+      "primary": "Adicionar lançamento",
+      "guide": "Como criar um bom orçamento →"
+    }
+  },
+  "bills": {
+    "empty": {
+      "title": "Nunca perca o que se repete",
+      "description": "Contas são para aluguel, serviços e assinaturas — tudo que volta todo mês. Adicione uma para vê-la no calendário.",
+      "action": "Adicionar conta",
+      "guide": "Como as contas funcionam →"
+    }
   },
   "settings": {
     "locale": {
@@ -152,6 +137,62 @@
       }
     }
   },
+  "reports": {
+    "title": "Relatórios",
+    "subtitle": "Acompanhe suas tendências de despesas e receitas ao longo do tempo.",
+    "loadError": "Não foi possível carregar os dados dos relatórios.",
+    "retry": "Tentar novamente",
+    "currencyNotice": "Valores em {currency}",
+    "dateRanges": {
+      "label": "Período",
+      "this_month": "Este mês",
+      "3m": "Últimos 3 meses",
+      "6m": "Últimos 6 meses",
+      "12m": "Últimos 12 meses",
+      "ytd": "Ano até o momento",
+      "custom": "Personalizado"
+    },
+    "customDates": {
+      "from": "De",
+      "to": "Até",
+      "incomplete": "Selecione uma data de início e de fim para ver este relatório."
+    },
+    "memberFilter": {
+      "label": "Por membro",
+      "all": "Todos os membros"
+    },
+    "reconciliation": {
+      "title": "Reconciliação",
+      "matching": "Total por categoria coincide com o total mensal ({amount})",
+      "mismatch": "Total por categoria ({catTotal}) difere do total mensal ({monthlyTotal})"
+    },
+    "charts": {
+      "expenseByCategory": {
+        "title": "Despesas por categoria",
+        "empty": "Nenhuma despesa encontrada para este período."
+      },
+      "incomeByCategory": {
+        "title": "Receitas por categoria",
+        "empty": "Nenhuma receita encontrada para este período."
+      },
+      "monthlyExpenses": {
+        "title": "Despesas mensais",
+        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
+      },
+      "monthlyIncomes": {
+        "title": "Receitas mensais",
+        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
+      },
+      "monthlyBalance": {
+        "title": "Balanço mensal",
+        "subtitle": "Economia líquida ao longo do tempo",
+        "rollingAvg": "Média móvel de 3 meses",
+        "empty": "São necessários pelo menos 2 meses de dados para exibir gráficos de tendência mensal."
+      }
+    },
+    "uncategorized": "Sem categoria",
+    "transactionsCount": "{count, plural, =1 {1 transação} other {# transações}}"
+  },
   "help": {
     "title": "Central de Ajuda",
     "searchPlaceholder": "Buscar artigos de ajuda...",
@@ -187,22 +228,5 @@
     "promptSubmit": "Enviar feedback",
     "dismiss": "Não mostrar novamente",
     "cancel": "Cancelar"
-  },
-  "onboarding": {
-    "firstRun": {
-      "title": "Registre sua primeira despesa",
-      "subtitle": "Um toque para começar — depois você pode adicionar contas, orçamentos e convidar seu parceiro.",
-      "action": "Registrar despesa",
-      "hint": "Criaremos uma conta Dinheiro automaticamente — você pode renomeá-la depois em Ajustes.",
-      "dismiss": "Dispensar"
-    }
-  },
-  "transactions": {
-    "form": {
-      "implicitAccountHint": "Criaremos uma conta Dinheiro automaticamente — você pode renomeá-la depois.",
-      "errors": {
-        "offline": "Você está offline — não foi possível criar a conta Dinheiro. Reconecte e tente novamente."
-      }
-    }
   }
 }

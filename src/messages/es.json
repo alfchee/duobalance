@@ -414,7 +414,13 @@
     "breakdownBaseRate": "Tasa base: {date}",
     "breakdownEmpty": "Todas tus cuentas están en la moneda base del hogar.",
     "breakdownClose": "Cerrar",
-    "rateUsed": "1 USD = {rate} · {date}"
+    "rateUsed": "1 USD = {rate} · {date}",
+    "emptyTeach": {
+      "title": "Aquí viven tus saldos",
+      "description": "Cada gasto o ingreso actualiza un saldo. Agrega tu primer movimiento y creamos una cuenta Efectivo automáticamente.",
+      "primary": "Agregar primer movimiento",
+      "guide": "Cómo funcionan los saldos →"
+    }
   },
   "onboarding": {
     "checklist": {
@@ -730,8 +736,10 @@
     "overBy": "Excedido por {amount}",
     "noBudget": "Sin presupuesto definido",
     "empty": {
-      "title": "Crea tu presupuesto mensual",
-      "description": "Define presupuestos por categoría para ver cómo avanzan tus gastos."
+      "title": "Primero registrar, luego presupuestar",
+      "description": "Un buen presupuesto nace de datos reales. Sigue registrando 2 a 4 semanas y luego crea límites que reflejen tu gasto real.",
+      "primary": "Agregar un movimiento",
+      "guide": "Cómo crear un buen presupuesto →"
     },
     "copyDialog": {
       "title": "Copiar presupuestos del mes anterior",
@@ -759,9 +767,10 @@
     "error": "Algo salió mal. Inténtalo de nuevo.",
     "emptyMonth": "No vencen cuentas este mes.",
     "empty": {
-      "title": "Comienza a controlar tus cuentas",
-      "description": "Agrega alquiler, servicios, internet o cualquier pago recurrente del hogar.",
-      "action": "Agregar cuenta"
+      "title": "Que nada se te pase cada mes",
+      "description": "Las cuentas son para alquiler, servicios y suscripciones — lo que vuelve cada mes. Agrega una para verla en tu calendario.",
+      "action": "Agregar cuenta",
+      "guide": "Cómo funcionan las cuentas →"
     },
     "status": {
       "due": "Pendiente",
