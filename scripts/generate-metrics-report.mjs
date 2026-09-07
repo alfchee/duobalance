@@ -173,10 +173,9 @@ const report = [
     `with user_role as (
        select distinct on (m.user_id)
          m.user_id,
-         m.role::text as user_role,
-         u.created_at as signed_up_at
+         m.role::text as user_role
        from auth.users u
-       join public.household_members m on m.user_id = u.id
+       join public.household_members m on m.user_id = u.id and m.removed_at is null
        order by m.user_id, m.joined_at, m.id
      ), all_users as (
        select
@@ -196,10 +195,11 @@ const report = [
        left join public.household_members m on m.user_id = au.id
        left join public.transactions t on t.entered_by = m.id
        group by au.id, au.signed_up_at, au.user_role
-     ), bucketed as (
+      ), bucketed as (
        select
          case
            when first_transaction_at is null then 'Never'
+           when time_to_first < interval '0' then 'Negative (data anomaly)'
            when time_to_first < interval '5 minutes' then 'Under 5 minutes'
            when time_to_first < interval '1 hour' then '5 minutes – 1 hour'
            when time_to_first < interval '1 day' then '1 hour – 1 day'
@@ -209,8 +209,9 @@ const report = [
          count(*) as cnt
        from user_first
        group by bucket, user_role
-     ), buckets_ordered as (
+      ), buckets_ordered as (
        select * from (values
+         ('Negative (data anomaly)', 0),
          ('Under 5 minutes', 1),
          ('5 minutes – 1 hour', 2),
          ('1 hour – 1 day', 3),
@@ -229,7 +230,7 @@ const report = [
        group by bo.bucket, bo.ord
      ), totals as (
        select count(*) as all_total, count(*) filter (where user_role = 'owner') as owner_total, count(*) filter (where user_role = 'partner') as partner_total, count(*) filter (where first_transaction_at is null) as never_total from user_first
-     ), percentiles as (
+      ), percentiles as (
        select
          to_char(percentile_cont(0.25) within group (order by extract(epoch from time_to_first))/60.0, 'FM999999990.0') as p25_all,
          to_char(percentile_cont(0.25) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'owner')/60.0, 'FM999999990.0') as p25_owner,
@@ -240,11 +241,11 @@ const report = [
          to_char(percentile_cont(0.75) within group (order by extract(epoch from time_to_first))/60.0, 'FM999999990.0') as p75_all,
          to_char(percentile_cont(0.75) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'owner')/60.0, 'FM999999990.0') as p75_owner,
          to_char(percentile_cont(0.75) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'partner')/60.0, 'FM999999990.0') as p75_partner,
-         count(*) filter (where first_transaction_at is not null) as n_all,
-         count(*) filter (where first_transaction_at is not null and user_role = 'owner') as n_owner,
-         count(*) filter (where first_transaction_at is not null and user_role = 'partner') as n_partner
+         count(*) filter (where first_transaction_at is not null and time_to_first >= interval '0') as n_all,
+         count(*) filter (where first_transaction_at is not null and time_to_first >= interval '0' and user_role = 'owner') as n_owner,
+         count(*) filter (where first_transaction_at is not null and time_to_first >= interval '0' and user_role = 'partner') as n_partner
        from user_first
-       where first_transaction_at is not null
+       where first_transaction_at is not null and time_to_first >= interval '0'
      )
      select
        '| Bucket | All users | Owners | Partners |' || E'\n| --- | ---: | ---: | ---: |' || E'\n' ||
