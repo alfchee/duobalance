@@ -44,9 +44,13 @@ export function useOnboardingProgress(householdId: string | null) {
   const { data: invites, isLoading: invitesLoading } = usePendingInvites(householdId);
   const hasPartner = (members?.length ?? 0) > 1 || (invites?.length ?? 0) > 0;
 
-  const isLoading =
-    accountsLoading || txLoading || budgetsLoading || membersLoading || invitesLoading;
-  const isComplete = hasAccounts && hasTransactions && hasBudgets && hasPartner;
+  const isLoading = accountsLoading || txLoading || membersLoading || invitesLoading;
+  // #198: budgets are no longer part of the required checklist, so isComplete
+  // and isLoading do not require hasBudgets. hasBudgets is still queried and
+  // exposed for the deferred budget suggestion prompt, but does not block the
+  // checklist rendering.
+  void budgetsLoading;
+  const isComplete = hasAccounts && hasTransactions && hasPartner;
 
   return {
     isLoading,

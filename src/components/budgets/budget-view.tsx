@@ -10,6 +10,7 @@ import { BudgetHeader } from "@/components/budgets/budget-header";
 import { BudgetRing } from "@/components/budgets/budget-ring";
 import { CopyBudgetsDialog } from "@/components/budgets/copy-budgets-dialog";
 import { BudgetEditorDialog, DeleteBudgetDialog } from "@/components/budgets/budget-editor-dialog";
+import { BudgetSuggestionPrompt } from "@/components/budgets/budget-suggestion-prompt";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBudgetMutations, useBudgetSpending, useBudgetStatus } from "@/hooks/useBudgets";
@@ -137,16 +138,27 @@ export function BudgetView() {
           totalBudget={totalBudget}
         />
       </section>
+      <BudgetSuggestionPrompt periodMonth={periodMonth} />
       {rows.length === 0 ? (
-        <TeachEmptyState
-          icon={PieChart}
-          title={t("empty.title")}
-          description={t("empty.description")}
-          primaryLabel={t("empty.primary")}
-          onPrimary={() => openTransaction("transaction")}
-          guideLabel={t("empty.guide")}
-          guideHref="/help/household-vs-personal-budgets"
-        />
+        <>
+          <TeachEmptyState
+            icon={PieChart}
+            title={t("empty.title")}
+            description={t("empty.description")}
+            primaryLabel={t("empty.primary")}
+            onPrimary={() => openTransaction("transaction")}
+            guideLabel={t("empty.guide")}
+            guideHref="/help/household-vs-personal-budgets"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full rounded-full"
+            onClick={() => openCreate()}
+          >
+            {t("empty.secondary")}
+          </Button>
+        </>
       ) : (
         <>
           <Button className="w-full rounded-full py-6 text-base" onClick={() => openCreate()}>

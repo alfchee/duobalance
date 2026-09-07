@@ -63,7 +63,32 @@
       "title": "Registre primeiro, depois planeje",
       "description": "Bons orçamentos nascem de gastos reais. Registre por 2 a 4 semanas e depois defina limites que refletem como você realmente gasta.",
       "primary": "Adicionar lançamento",
+      "secondary": "Ou criar um orçamento manualmente",
       "guide": "Como criar um bom orçamento →"
+    },
+    "suggestion": {
+      "title": "Pronto para criar um orçamento?",
+      "description": "Você registrou {count, plural, one {# transação} other {# transações}} — crie orçamentos a partir do seu gasto real.",
+      "derivedLabel": "Sugerido com base nos últimos 30 dias",
+      "derivedLabelFallback": "Sugerido com base no seu gasto recente",
+      "cta": "Criar orçamentos a partir do seu gasto",
+      "dismiss": "Agora não",
+      "hint": "Valores pré-preenchidos com suas transações e editáveis antes de salvar.",
+      "moreCategories": "+{count} mais"
+    },
+    "suggestionDialog": {
+      "title": "Criar orçamentos a partir do seu gasto",
+      "description": "Revise os valores sugeridos dos últimos 30 dias. Edite qualquer um antes de criar.",
+      "descriptionFallback": "Revise os valores sugeridos do seu gasto recente. Edite qualquer um antes de criar.",
+      "derivedLabel": "Sugerido — das suas próprias transações",
+      "derivedLabelFallback": "Sugerido — das suas transações recentes",
+      "spentLabel": "Você gastou {amount} nos últimos 30 dias",
+      "spentLabelFallback": "Você gastou {amount} recentemente",
+      "cancel": "Cancelar",
+      "confirm": "Criar orçamentos",
+      "creating": "Criando…",
+      "validationAmount": "Informe um valor válido de zero ou mais.",
+      "error": "Não foi possível criar os orçamentos. Tente novamente."
     }
   },
   "bills": {

@@ -739,6 +739,7 @@
       "title": "Track first, budget later",
       "description": "Good budgets come from real spending. Keep tracking for 2–4 weeks, then set limits that fit how you actually spend.",
       "primary": "Add a transaction",
+      "secondary": "Or create a budget manually",
       "guide": "How to build a good budget →"
     },
     "copyDialog": {
@@ -749,6 +750,30 @@
       "confirm": "Copy budgets",
       "copying": "Copying…",
       "error": "Couldn't copy the budgets. Try again."
+    },
+    "suggestion": {
+      "title": "Ready to set a budget?",
+      "description": "You've recorded {count, plural, one {# transaction} other {# transactions}} — build budgets from your actual spending.",
+      "derivedLabel": "Suggested based on your last 30 days",
+      "derivedLabelFallback": "Suggested based on your recent spending",
+      "cta": "Create budgets from your spending",
+      "dismiss": "Not now",
+      "hint": "Amounts are pre-filled from your own transactions and can be edited before saving.",
+      "moreCategories": "+{count} more"
+    },
+    "suggestionDialog": {
+      "title": "Build budgets from your spending",
+      "description": "Review suggested amounts derived from your last 30 days. Edit any before creating.",
+      "descriptionFallback": "Review suggested amounts derived from your recent spending. Edit any before creating.",
+      "derivedLabel": "Suggested — from your own transactions",
+      "derivedLabelFallback": "Suggested — from your recent transactions",
+      "spentLabel": "You spent {amount} last 30 days",
+      "spentLabelFallback": "You spent {amount} recently",
+      "cancel": "Cancel",
+      "confirm": "Create budgets",
+      "creating": "Creating…",
+      "validationAmount": "Enter a valid amount of zero or more.",
+      "error": "Couldn't create the budgets. Try again."
     }
   },
   "bills": {

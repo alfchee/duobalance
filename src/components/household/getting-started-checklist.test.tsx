@@ -81,9 +81,9 @@ describe("GettingStartedChecklist", () => {
 
     expect(screen.getByText("badge")).toBeTruthy();
     expect(screen.getByText("title")).toBeTruthy();
-    // Transaction step is now completed (check) rather than an action,
-    // but the remaining setup prompts are still shown.
-    expect(screen.getByText("stepBudget")).toBeTruthy();
+    // Budget is no longer part of the checklist (#198) — it is surfaced
+    // later as a data-driven suggestion. Only account (done) + partner remain.
     expect(screen.getByText("stepPartner")).toBeTruthy();
+    expect(screen.queryByText("stepBudget")).toBeNull();
   });
 });
