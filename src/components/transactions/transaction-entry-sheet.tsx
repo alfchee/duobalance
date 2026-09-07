@@ -21,7 +21,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useAccounts } from "@/hooks/useAccounts";
+import { useAccountMutations, useAccounts } from "@/hooks/useAccounts";
 import { useCategorizationRules, useCategories } from "@/hooks/useCategories";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { useFxOverrides } from "@/hooks/useFxOverrides";
@@ -481,9 +481,11 @@ function TransactionEntryContent({
     isForeignCurrency,
   );
   const { create, update, remove } = useTransactionMutations(householdId, memberId);
+  const { create: createAccount } = useAccountMutations(householdId);
   const onboardingProgress = useOnboardingProgress(householdId);
   const { connectionState, queueTransaction } = useOfflineQueue();
-  const pending = create.isPending || update.isPending || remove.isPending;
+  const pending =
+    create.isPending || update.isPending || remove.isPending || createAccount.isPending;
   const categoryKind = draft.isExpense ? "expense" : "income";
   const usableAccounts = accounts.filter((account) => !account.is_archived);
   const usableCategories = categories.filter(
@@ -512,6 +514,15 @@ function TransactionEntryContent({
       }));
     }
   }, [draft.accountId, usableAccounts]);
+
+  // #192: if the household has no accounts yet, default the currency to the
+  // household base so the amount keypad and minorUnit are usable before the
+  // implicit Cash account finishes creating.
+  useEffect(() => {
+    if (!draft.accountId && usableAccounts.length === 0 && baseCurrency && !draft.currency) {
+      setDraft((current) => ({ ...current, currency: baseCurrency, fxRate: "1" }));
+    }
+  }, [baseCurrency, draft.accountId, draft.currency, usableAccounts.length]);
 
   useEffect(() => {
     if (!categoryOverridden) {
@@ -571,20 +582,55 @@ function TransactionEntryContent({
     const amount = parseMoneyInput(draft.amount, locale, numberFormat);
     const fxRate = Number(draft.fxRate);
     if (!description || description.length > 200) return setError("description");
-    if (!draft.accountId) return setError("account");
+    // #192: implicitly create a Cash account if none exists so the user is
+    // never blocked on account setup before the first transaction.
+    let effectiveAccountId = draft.accountId;
+    let effectiveCurrency = draft.currency;
+    let effectiveMinorUnit = minorUnit;
+    if (!effectiveAccountId) {
+      if (usableAccounts.length > 0) return setError("account");
+      if (!householdId || !baseCurrency) return setError("generic");
+      // draft.currency should already be baseCurrency via the effect above,
+      // but fall back to baseCurrency if still empty.
+      effectiveCurrency = draft.currency || baseCurrency;
+      effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+      if (effectiveMinorUnit == null) return setError("amount");
+      if (amount == null || amount === 0) return setError("amount");
+      try {
+        const newAccount = await createAccount.mutateAsync({
+          name: "Cash",
+          kind: "cash",
+          currency: baseCurrency,
+          balance_mode: "ledger",
+          opening_balance: 0,
+          manual_balance: null,
+          credit_limit: null,
+          is_shared: true,
+          owner_member_id: null,
+        });
+        const createdId = (newAccount as { id?: string })?.id;
+        if (createdId) effectiveAccountId = createdId;
+        else {
+          // Fallback: re-read from cache; if still missing, abort.
+          return setError("generic");
+        }
+      } catch {
+        return setError("generic");
+      }
+    }
     if (amount == null || amount === 0) return setError("amount");
-    if (!draft.currency || !Number.isFinite(fxRate) || fxRate <= 0) return setError("rate");
+    if (!effectiveCurrency || !Number.isFinite(fxRate) || fxRate <= 0) return setError("rate");
     if (!draft.occurredOn || (today && draft.occurredOn > addDays(today, 1)))
       return setError("date");
-    if (minorUnit == null) return setError("amount");
+    if (effectiveMinorUnit == null) return setError("amount");
 
     const input = {
-      account_id: draft.accountId,
+      account_id: effectiveAccountId,
       amount: draft.isExpense
-        ? -roundToMinorUnit(amount, minorUnit)
-        : roundToMinorUnit(amount, minorUnit),
+        ? -roundToMinorUnit(amount, effectiveMinorUnit)
+        : roundToMinorUnit(amount, effectiveMinorUnit),
       category_id: draft.categoryId,
-      currency: draft.currency,
+      currency: effectiveCurrency,
       description,
       fx_rate: fxRate,
       notes: draft.notes.trim() || null,
@@ -611,13 +657,13 @@ function TransactionEntryContent({
         if (!queuedInput) return setError("generic");
         await create.mutateAsync(queuedInput);
       }
-      localStorage.setItem(LAST_ACCOUNT_STORAGE_KEY, draft.accountId);
+      localStorage.setItem(LAST_ACCOUNT_STORAGE_KEY, effectiveAccountId);
       onClose();
     } catch (submitError) {
       if (!transaction && queuedInput && isTransientWriteError(submitError)) {
         try {
           await queueTransaction(queuedInput);
-          localStorage.setItem(LAST_ACCOUNT_STORAGE_KEY, draft.accountId);
+          localStorage.setItem(LAST_ACCOUNT_STORAGE_KEY, effectiveAccountId);
           onClose();
           return;
         } catch {
@@ -840,18 +886,24 @@ function TransactionEntryContent({
 
         <div className="space-y-2">
           <Label>{t("form.account")}</Label>
-          <Select value={draft.accountId} onValueChange={setAccount}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t("form.accountPlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {usableAccounts.map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {usableAccounts.length === 0 ? (
+            <p className="rounded-xl border border-dashed bg-secondary/50 px-3 py-2.5 text-xs text-muted-foreground">
+              {t("form.implicitAccountHint")}
+            </p>
+          ) : (
+            <Select value={draft.accountId} onValueChange={setAccount}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t("form.accountPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {usableAccounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -984,7 +1036,12 @@ function TransactionEntryContent({
           <Button
             type="submit"
             className="flex-1"
-            disabled={pending || !selectedAccount || minorUnit == null}
+            disabled={
+              pending ||
+              minorUnit == null ||
+              (!selectedAccount && usableAccounts.length > 0) ||
+              (!baseCurrency && usableAccounts.length === 0)
+            }
           >
             {pending ? t("form.saving") : t("form.save")}
           </Button>

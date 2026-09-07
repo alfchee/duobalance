@@ -15,7 +15,10 @@
     "terms": "Terms of Service"
   },
   "landing": {
-    "nav": { "login": "Log in", "signup": "Start free" },
+    "nav": {
+      "login": "Log in",
+      "signup": "Start free"
+    },
     "hero": {
       "eyebrow": "Designed for shared and personal finances",
       "title": "Your finances should work the way your life does.",
@@ -245,7 +248,10 @@
       "fxRate": "Exchange rate",
       "rateLoading": "Looking up the rate for this date…",
       "rateSource": "{source} rate from {date}",
-      "rateSources": { "override": "Manual override", "feed": "ExchangeRate-API" },
+      "rateSources": {
+        "override": "Manual override",
+        "feed": "ExchangeRate-API"
+      },
       "more": "More options",
       "less": "Fewer options",
       "notes": "Notes",
@@ -266,7 +272,8 @@
         "rate": "Enter a valid exchange rate.",
         "generic": "Couldn't save the transaction. Your changes were rolled back.",
         "offlineTransfer": "Transfers require a connection and were not saved."
-      }
+      },
+      "implicitAccountHint": "We’ll create a Cash account automatically — you can rename it later."
     }
   },
   "connectivity": {
@@ -428,6 +435,13 @@
       "inviteCancel": "Cancel",
       "inviteSending": "Sending invitation…",
       "inviteSend": "Send invitation"
+    },
+    "firstRun": {
+      "title": "Record your first expense",
+      "subtitle": "One tap to start — you can add accounts, budgets and invite your partner afterwards.",
+      "action": "Record expense",
+      "hint": "We’ll create a Cash account for you automatically — you can rename it later in Settings.",
+      "dismiss": "Dismiss"
     }
   },
   "household": {

@@ -187,5 +187,19 @@
     "promptSubmit": "Enviar feedback",
     "dismiss": "Não mostrar novamente",
     "cancel": "Cancelar"
+  },
+  "onboarding": {
+    "firstRun": {
+      "title": "Registre sua primeira despesa",
+      "subtitle": "Um toque para começar — depois você pode adicionar contas, orçamentos e convidar seu parceiro.",
+      "action": "Registrar despesa",
+      "hint": "Criaremos uma conta Dinheiro automaticamente — você pode renomeá-la depois em Ajustes.",
+      "dismiss": "Dispensar"
+    }
+  },
+  "transactions": {
+    "form": {
+      "implicitAccountHint": "Criaremos uma conta Dinheiro automaticamente — você pode renomeá-la depois."
+    }
   }
 }

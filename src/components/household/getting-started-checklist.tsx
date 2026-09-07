@@ -7,7 +7,6 @@ import { Check, ChevronRight, UserPlus, X } from "lucide-react";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { useAccountsUiStore } from "@/store/accounts";
-import { useTransactionsUiStore } from "@/store/transactions";
 import { useInviteMutations } from "@/hooks/useInvites";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,16 +17,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FirstRunPrompt } from "./first-run-prompt";
 
-const DISMISS_PREFIX = "duobalance:dismissedChecklist:";
+export const DISMISS_PREFIX = "duobalance:dismissedChecklist:";
 
 export function GettingStartedChecklist() {
   const t = useTranslations("onboarding.checklist");
+  const tFirstRun = useTranslations("onboarding.firstRun");
   const router = useRouter();
   const { householdId } = useHousehold();
   const progress = useOnboardingProgress(householdId);
   const { openCreate: openAccountCreate } = useAccountsUiStore();
-  const { openCreate: openTransactionCreate } = useTransactionsUiStore();
   const { create: createInvite } = useInviteMutations(householdId);
 
   const [dismissed, setDismissed] = useState(true);
@@ -41,16 +41,30 @@ export function GettingStartedChecklist() {
     setDismissed(stored === "true");
   }, [householdId]);
 
-  if (!householdId || progress.isLoading || progress.isComplete || dismissed) {
-    return null;
-  }
-
   function handleDismiss() {
     if (!householdId) return;
     localStorage.setItem(`${DISMISS_PREFIX}${householdId}`, "true");
     setDismissed(true);
   }
 
+  if (!householdId || progress.isLoading || dismissed) {
+    return null;
+  }
+
+  // #192: brand-new users see only the first-run prompt — single CTA to record one expense.
+  // No account/budget/partner step blocks the transaction form.
+  // Existing users who already have transactions are unaffected; they see the
+  // post-transaction prompts (or nothing if already complete/dismissed).
+  if (!progress.hasTransactions) {
+    return <FirstRunPrompt onDismiss={handleDismiss} dismissLabel={tFirstRun("dismiss")} />;
+  }
+
+  if (progress.isComplete) {
+    return null;
+  }
+
+  // After the first transaction, remaining setup is offered as dismissible
+  // prompts — account, budget, partner — never as a blocker.
   const completedCount =
     (progress.hasAccounts ? 1 : 0) +
     (progress.hasTransactions ? 1 : 0) +
@@ -146,43 +160,14 @@ export function GettingStartedChecklist() {
             ) : null}
           </div>
 
-          {/* Step 2: Record transaction */}
-          <div
-            className={`flex items-center justify-between rounded-xl border p-3 text-sm transition-colors ${
-              progress.hasTransactions
-                ? "bg-secondary/40 border-transparent"
-                : "bg-background border-border"
-            }`}
-          >
+          {/* Step 2: Record transaction — always complete once we reach this checklist */}
+          <div className="flex items-center justify-between rounded-xl border p-3 text-sm transition-colors bg-secondary/40 border-transparent">
             <div className="flex items-center gap-3">
-              <span
-                className={`grid size-6 place-items-center rounded-full text-xs font-bold ${
-                  progress.hasTransactions
-                    ? "bg-success text-success-foreground"
-                    : "border-2 border-muted-foreground/40 text-muted-foreground"
-                }`}
-              >
-                {progress.hasTransactions ? <Check className="size-3.5" /> : "2"}
+              <span className="grid size-6 place-items-center rounded-full bg-success text-xs font-bold text-success-foreground">
+                <Check className="size-3.5" />
               </span>
-              <span
-                className={
-                  progress.hasTransactions ? "line-through text-muted-foreground" : "font-medium"
-                }
-              >
-                {t("stepTransaction")}
-              </span>
+              <span className="line-through text-muted-foreground">{t("stepTransaction")}</span>
             </div>
-            {!progress.hasTransactions ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => openTransactionCreate("transaction")}
-                className="h-8 gap-1 text-xs font-bold"
-              >
-                {t("actionRecord")} <ChevronRight className="size-3" />
-              </Button>
-            ) : null}
           </div>
 
           {/* Step 3: Set a budget */}

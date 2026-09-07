@@ -28,6 +28,7 @@ vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: () => ({
     data: [{ currency: "USD", id: "account-1", is_archived: false, name: "Checking" }],
   }),
+  useAccountMutations: () => ({ create: { isPending: false, mutateAsync: vi.fn() } }),
 }));
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: () => ({ data: [] }),

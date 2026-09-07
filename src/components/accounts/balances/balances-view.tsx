@@ -5,6 +5,8 @@ import { Plus } from "lucide-react";
 import { useBalancesScreen } from "@/hooks/useBalancesScreen";
 import { EmptyAccounts } from "@/components/accounts/empty-state";
 import { GettingStartedChecklist } from "@/components/household/getting-started-checklist";
+import { useEnsureDefaultAccount } from "@/hooks/useEnsureDefaultAccount";
+import { useHousehold } from "@/hooks/useHousehold";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAccountsUiStore } from "@/store/accounts";
@@ -19,6 +21,8 @@ import { BalancesHeader } from "./balances-header";
 export function BalancesView() {
   const t = useTranslations("balances");
   const { openCreate } = useAccountsUiStore();
+  const { householdId } = useHousehold();
+  useEnsureDefaultAccount(householdId);
   const {
     accounts,
     baseCurrency,

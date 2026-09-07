@@ -15,7 +15,10 @@
     "terms": "Términos de Servicio"
   },
   "landing": {
-    "nav": { "login": "Iniciar sesión", "signup": "Comenzar gratis" },
+    "nav": {
+      "login": "Iniciar sesión",
+      "signup": "Comenzar gratis"
+    },
     "hero": {
       "eyebrow": "Para finanzas personales y compartidas",
       "title": "Tus finanzas deben funcionar como funciona tu vida.",
@@ -245,7 +248,10 @@
       "fxRate": "Tipo de cambio",
       "rateLoading": "Buscando la tasa para esta fecha…",
       "rateSource": "Tasa de {source} del {date}",
-      "rateSources": { "override": "ajuste manual", "feed": "ExchangeRate-API" },
+      "rateSources": {
+        "override": "ajuste manual",
+        "feed": "ExchangeRate-API"
+      },
       "more": "Más opciones",
       "less": "Menos opciones",
       "notes": "Notas",
@@ -266,7 +272,8 @@
         "rate": "Ingresa un tipo de cambio válido.",
         "generic": "No se pudo guardar el movimiento. Tus cambios se revirtieron.",
         "offlineTransfer": "Las transferencias requieren conexión y no se guardaron."
-      }
+      },
+      "implicitAccountHint": "Crearemos una cuenta Efectivo automáticamente — podrás renombrarla luego."
     }
   },
   "connectivity": {
@@ -428,6 +435,13 @@
       "inviteCancel": "Cancelar",
       "inviteSending": "Enviando invitación…",
       "inviteSend": "Enviar invitación"
+    },
+    "firstRun": {
+      "title": "Registra tu primer gasto",
+      "subtitle": "Un toque para empezar — luego podrás añadir cuentas, presupuestos e invitar a tu pareja.",
+      "action": "Registrar gasto",
+      "hint": "Crearemos una cuenta Efectivo automáticamente — podrás renombrarla en Ajustes.",
+      "dismiss": "Descartar"
     }
   },
   "household": {
