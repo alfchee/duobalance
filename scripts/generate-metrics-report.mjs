@@ -164,6 +164,103 @@ const report = [
             '| Median signup-to-first-transaction time | ' || coalesce((select to_char(percentile_cont(0.5) within group (order by extract(epoch from first_transaction_at - signed_up_at)) / 60.0, 'FM999999990.0') || ' minutes' from signup_to_first_transaction), 'n/a') || ' |';`,
     "No activation data.",
   ),
+  "## Time to First Transaction — Guide Exposure (baseline pre-launch)",
+  "",
+  "Baseline before the starter guide and launch email: all current users are **pre-launch**. Post-launch segmentation (cohort before vs after guide launch, guide viewed vs not viewed before first transaction, and launch email received vs not for existing users) will be added when the guide ships; the current distribution below is the pre-launch baseline that cannot be reconstructed afterwards. Guide-viewed and email-received require client-side event tracking (see funnel notes) and are placeholders until the content experiment launches.",
+  "",
+  section(
+    "Time to First Transaction — Distribution (buckets, percentiles, never, by role)",
+    `with user_role as (
+       select distinct on (m.user_id)
+         m.user_id,
+         m.role::text as user_role
+       from auth.users u
+       join public.household_members m on m.user_id = u.id and m.removed_at is null
+       order by m.user_id, m.joined_at, m.id
+     ), all_users as (
+       select
+         u.id,
+         u.created_at as signed_up_at,
+         coalesce(ur.user_role, 'unknown') as user_role
+       from auth.users u
+       left join user_role ur on ur.user_id = u.id
+     ), user_first as (
+       select
+         au.id,
+         au.signed_up_at,
+         au.user_role,
+         min(t.created_at) as first_transaction_at,
+         min(t.created_at) - au.signed_up_at as time_to_first
+       from all_users au
+       left join public.household_members m on m.user_id = au.id
+       left join public.transactions t on t.entered_by = m.id
+       group by au.id, au.signed_up_at, au.user_role
+      ), bucketed as (
+       select
+         case
+           when first_transaction_at is null then 'Never'
+           when time_to_first < interval '0' then 'Negative (data anomaly)'
+           when time_to_first < interval '5 minutes' then 'Under 5 minutes'
+           when time_to_first < interval '1 hour' then '5 minutes – 1 hour'
+           when time_to_first < interval '1 day' then '1 hour – 1 day'
+           else 'Over 1 day'
+         end as bucket,
+         user_role,
+         count(*) as cnt
+       from user_first
+       group by bucket, user_role
+      ), buckets_ordered as (
+       select * from (values
+         ('Negative (data anomaly)', 0),
+         ('Under 5 minutes', 1),
+         ('5 minutes – 1 hour', 2),
+         ('1 hour – 1 day', 3),
+         ('Over 1 day', 4),
+         ('Never', 5)
+       ) as v(bucket, ord)
+     ), pivot as (
+       select
+         bo.bucket,
+         bo.ord,
+         coalesce(sum(b.cnt) filter (where true), 0) as all_cnt,
+         coalesce(sum(b.cnt) filter (where b.user_role = 'owner'), 0) as owner_cnt,
+         coalesce(sum(b.cnt) filter (where b.user_role = 'partner'), 0) as partner_cnt
+       from buckets_ordered bo
+       left join bucketed b on b.bucket = bo.bucket
+       group by bo.bucket, bo.ord
+     ), totals as (
+       select count(*) as all_total, count(*) filter (where user_role = 'owner') as owner_total, count(*) filter (where user_role = 'partner') as partner_total, count(*) filter (where first_transaction_at is null) as never_total from user_first
+      ), percentiles as (
+       select
+         to_char(percentile_cont(0.25) within group (order by extract(epoch from time_to_first))/60.0, 'FM999999990.0') as p25_all,
+         to_char(percentile_cont(0.25) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'owner')/60.0, 'FM999999990.0') as p25_owner,
+         to_char(percentile_cont(0.25) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'partner')/60.0, 'FM999999990.0') as p25_partner,
+         to_char(percentile_cont(0.5) within group (order by extract(epoch from time_to_first))/60.0, 'FM999999990.0') as p50_all,
+         to_char(percentile_cont(0.5) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'owner')/60.0, 'FM999999990.0') as p50_owner,
+         to_char(percentile_cont(0.5) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'partner')/60.0, 'FM999999990.0') as p50_partner,
+         to_char(percentile_cont(0.75) within group (order by extract(epoch from time_to_first))/60.0, 'FM999999990.0') as p75_all,
+         to_char(percentile_cont(0.75) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'owner')/60.0, 'FM999999990.0') as p75_owner,
+         to_char(percentile_cont(0.75) within group (order by extract(epoch from time_to_first)) filter (where user_role = 'partner')/60.0, 'FM999999990.0') as p75_partner,
+         count(*) filter (where first_transaction_at is not null and time_to_first >= interval '0') as n_all,
+         count(*) filter (where first_transaction_at is not null and time_to_first >= interval '0' and user_role = 'owner') as n_owner,
+         count(*) filter (where first_transaction_at is not null and time_to_first >= interval '0' and user_role = 'partner') as n_partner
+       from user_first
+       where first_transaction_at is not null and time_to_first >= interval '0'
+     )
+     select
+       '| Bucket | All users | Owners | Partners |' || E'\n| --- | ---: | ---: | ---: |' || E'\n' ||
+       string_agg('| ' || bucket || ' | ' || all_cnt || ' | ' || owner_cnt || ' | ' || partner_cnt || ' |', E'\n' order by ord) ||
+       E'\n| **Total** | ' || (select all_total from totals) || ' | ' || (select owner_total from totals) || ' | ' || (select partner_total from totals) || ' |' ||
+       E'\n\n**Percentiles — minutes to first transaction (only users with a transaction; raw counts next to each)**\n\n' ||
+       '| Stat | All users | Owners | Partners |' || E'\n| --- | ---: | ---: | ---: |' || E'\n' ||
+       '| p25 | ' || coalesce((select p25_all from percentiles), 'n/a') || ' | ' || coalesce((select p25_owner from percentiles), 'n/a') || ' | ' || coalesce((select p25_partner from percentiles), 'n/a') || ' |' || E'\n' ||
+       '| p50 (median) | ' || coalesce((select p50_all from percentiles), 'n/a') || ' | ' || coalesce((select p50_owner from percentiles), 'n/a') || ' | ' || coalesce((select p50_partner from percentiles), 'n/a') || ' |' || E'\n' ||
+       '| p75 | ' || coalesce((select p75_all from percentiles), 'n/a') || ' | ' || coalesce((select p75_owner from percentiles), 'n/a') || ' | ' || coalesce((select p75_partner from percentiles), 'n/a') || ' |' || E'\n' ||
+       '| n with transaction | ' || coalesce((select n_all::text from percentiles), '0') || ' | ' || coalesce((select n_owner::text from percentiles), '0') || ' | ' || coalesce((select n_partner::text from percentiles), '0') || ' |' || E'\n' ||
+       '| Never (no transaction) | ' || (select never_total from totals) || ' | ' || (select count(*) filter (where first_transaction_at is null and user_role = 'owner') from user_first) || ' | ' || (select count(*) filter (where first_transaction_at is null and user_role = 'partner') from user_first) || ' |'
+     from pivot, totals, percentiles;`,
+    "No time-to-first-transaction data.",
+  ),
   section(
     "Onboarding history (recomputed under revised definitions)",
     `with snapshots(snapshot_date) as (
@@ -506,6 +603,8 @@ const report = [
   "- Retention cohort: households grouped by the UTC week in which the household was created. Week 2, 3, and 4 are each measured in their respective seven-day interval after creation. The denominator for each percentage is the number of cohort households whose retention window has fully elapsed (eligible): `week_N_eligible = count(*) filter (where now() >= created_at + N weeks)`. The table shows `active / eligible (rate%)` so `rate = 100 * active / eligible`; `not mature` means eligible = 0 (window not yet elapsed). This makes every percentage reproducible from the two numbers visible in the same cell.",
   "- Historical recomputation (08-20, 08-22, 08-24, 09-03): each snapshot counts households `created_at < snapshot + 1 day` and not deleted at end-of-day (`deleted_at is null or deleted_at > snapshot + 1 day`), and checks accounts/transactions/membership with `created_at < snapshot + 1 day` and `removed_at` as of the snapshot, so the trend is comparable under the revised definitions. `is_archived` reflects current archival state (no archived_at timestamp exists) and `budget_created` has no creation timestamp — both historical values are approximations, documented as such.",
   "- Activation funnel: ordered steps 1 Signed up → 2 Email confirmed → 3 Household created → 4 First account created → 5 First transaction entered → 6 First budget created → 7 Partner invited → 8 Partner accepted. Furthest step per household is the highest step whose timestamp exists (exactly one step per household). Drop-off Lost at step = previous reached − current reached. Time in step, repeat sessions, guide-viewed, and entry point for first transaction require client-side event tracking not yet in the database (see funnel notes); adding guide-viewed between 5 and 6 later will not change historic furthest-step values because steps are named, not renumbered.",
+  "- Time to first transaction: `first_transaction_at - signed_up_at` per user (signed_up from `auth.users.created_at`, first transaction from `public.transactions` via `household_members`). Distribution buckets: Under 5 minutes, 5 minutes – 1 hour, 1 hour – 1 day, Over 1 day, Never (no transaction). The under-5-minute target has its own bucket line. Percentiles p25/p50 (median)/p75 are computed with `percentile_cont` over `extract(epoch from time_to_first)` for users with a transaction; raw counts `n with transaction` and `Never` are printed next to each percentile so p75 at n=8 is read as noisy. Owner vs partner segmentation uses the household role of the user's earliest membership (`household_members.role`). Users with no membership are counted as `unknown` and appear in All users but not in owner/partner columns.",
+  "- Guide exposure (time-to-first-transaction): cohort relative to guide launch, guide viewed/not viewed before first transaction, and launch email received/not for existing users will segment the same distribution when the starter guide and email ship. All current users are the pre-launch baseline; post-launch guide-viewed and email-received require client-side event tracking not yet in the database and are placeholders that will not invalidate the baseline.",
   "",
 ].join("\n");
 
