@@ -99,11 +99,14 @@ export async function POST(request: Request) {
   }
 
   let userEmail: string | undefined;
+  let userId: string | undefined;
+  let supabase: Awaited<ReturnType<typeof createSupabaseRouteHandler>> | undefined;
   try {
-    const supabase = await createSupabaseRouteHandler();
+    supabase = await createSupabaseRouteHandler();
     const { data } = await supabase.auth.getUser();
     if (data.user?.email && data.user.id) {
       userEmail = data.user.email;
+      userId = data.user.id;
       if (!canSubmitFeedback(data.user.id, Date.now())) {
         return Response.json({ error: "too many feedback submissions" }, { status: 429 });
       }
@@ -112,7 +115,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "authentication required" }, { status: 401 });
   }
 
-  if (!userEmail) {
+  if (!userEmail || !userId || !supabase) {
     return Response.json({ error: "authentication required" }, { status: 401 });
   }
 
@@ -127,6 +130,33 @@ export async function POST(request: Request) {
         }
       : undefined,
   };
+
+  // Persist alongside email — keep email path unchanged. Log DB errors but don't block email.
+  const rawHouseholdId =
+    diagnostics.householdId !== "none" && diagnostics.householdId ? diagnostics.householdId : null;
+  const rawMemberId =
+    diagnostics.memberId !== "none" && diagnostics.memberId ? diagnostics.memberId : null;
+  const isUuid = (v: string | null) =>
+    v !== null &&
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
+  const persistHouseholdId = rawHouseholdId && isUuid(rawHouseholdId) ? rawHouseholdId : null;
+  const persistMemberId = rawMemberId && isUuid(rawMemberId) ? rawMemberId : null;
+
+  try {
+    const { error: insertError } = await supabase.from("feedback_submissions").insert({
+      household_id: persistHouseholdId,
+      user_id: userId,
+      member_id: persistMemberId,
+      category,
+      message: message ?? "",
+      diagnostics: normalizedDiagnostics as unknown as Record<string, never>,
+    });
+    if (insertError) {
+      console.error("Feedback DB persist error:", insertError);
+    }
+  } catch (persistError) {
+    console.error("Feedback DB persist error:", persistError);
+  }
 
   try {
     await sendFeedbackEmail({

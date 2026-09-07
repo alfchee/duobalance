@@ -10,6 +10,9 @@ vi.mock("@/lib/supabase/server", () => ({
         data: { user: { id: "00000000-0000-4000-8000-000000000001", email: "user@example.com" } },
       }),
     },
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ error: null }),
+    }),
   }),
 }));
 
@@ -99,6 +102,9 @@ describe("POST /api/feedback", () => {
   it("requires an authenticated user", async () => {
     vi.mocked(createSupabaseRouteHandler).mockResolvedValueOnce({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
     } as never);
     const request = new Request("http://localhost/api/feedback", {
       method: "POST",
@@ -128,6 +134,9 @@ describe("POST /api/feedback", () => {
           },
         }),
       },
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
     } as never);
     const body = JSON.stringify({ diagnostics: {} });
 
@@ -142,5 +151,64 @@ describe("POST /api/feedback", () => {
       new Request("http://localhost/api/feedback", { method: "POST", body }),
     );
     expect(response.status).toBe(429);
+  });
+
+  it("persists feedback to DB alongside email delivery", async () => {
+    const { sendFeedbackEmail } = await import("@/lib/feedback-email");
+    const mockFrom = vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ error: null }),
+    });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValueOnce({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: { id: "00000000-0000-4000-8000-000000000005", email: "persist@example.com" },
+          },
+        }),
+      },
+      from: mockFrom,
+    } as never);
+
+    const diagnostics = collectDiagnosticContext({
+      householdId: "00000000-0000-4000-8000-000000000006",
+      memberId: "00000000-0000-4000-8000-000000000007",
+    });
+
+    const request = new Request("http://localhost/api/feedback", {
+      method: "POST",
+      body: JSON.stringify({ category: "general", message: "Great app", diagnostics }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(204);
+    expect(mockFrom).toHaveBeenCalledWith("feedback_submissions");
+    expect(sendFeedbackEmail).toHaveBeenCalled();
+  });
+
+  it("still sends email even if DB persist fails", async () => {
+    const { sendFeedbackEmail } = await import("@/lib/feedback-email");
+    vi.mocked(sendFeedbackEmail).mockResolvedValueOnce(undefined);
+    const mockFrom = vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ error: { message: "db error" } }),
+    });
+    vi.mocked(createSupabaseRouteHandler).mockResolvedValueOnce({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: { id: "00000000-0000-4000-8000-000000000008", email: "dbfail@example.com" },
+          },
+        }),
+      },
+      from: mockFrom,
+    } as never);
+
+    const request = new Request("http://localhost/api/feedback", {
+      method: "POST",
+      body: JSON.stringify({ diagnostics: {} }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(204);
+    expect(sendFeedbackEmail).toHaveBeenCalled();
   });
 });
