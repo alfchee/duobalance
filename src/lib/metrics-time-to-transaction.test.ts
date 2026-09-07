@@ -24,11 +24,19 @@ describe("time to first transaction — #168", () => {
     expect(reportMjs).toContain("Over 1 day");
     expect(reportMjs).toContain("Never");
     expect(reportMjs).toContain("Negative (data anomaly)");
-    // Buckets must be defined via interval checks
-    expect(reportMjs).toContain("interval '5 minutes'");
-    expect(reportMjs).toContain("interval '1 hour'");
-    expect(reportMjs).toContain("interval '1 day'");
-    expect(reportMjs).toContain("interval '0'");
+    // Buckets must be defined via interval checks in the distribution section (scoped to avoid false positives from activation/snapshot sections)
+    const distributionSection =
+      reportMjs
+        .split("Time to First Transaction — Distribution")[1]
+        ?.split("Onboarding history")[0] || "";
+    expect(distributionSection).toContain("interval '5 minutes'");
+    expect(distributionSection).toContain("interval '1 hour'");
+    expect(distributionSection).toContain("interval '1 day'");
+    expect(distributionSection).toContain("interval '0'");
+    expect(distributionSection).toContain("when time_to_first < interval '0' then 'Negative");
+    expect(distributionSection).toContain(
+      "when time_to_first < interval '5 minutes' then 'Under 5 minutes'",
+    );
     // Negative must not fall into Under 5 minutes
     expect(bucketForMs(-1000)).toBe("Negative (data anomaly)");
     expect(bucketForMs(0)).toBe("Under 5 minutes");
