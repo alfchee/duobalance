@@ -131,43 +131,116 @@ export async function POST(request: Request) {
       : undefined,
   };
 
-  // Persist alongside email — keep email path unchanged. Log DB errors but don't block email.
+  // Persist alongside email — keep email path unchanged. Validate household/member against service_role bypass.
   const rawHouseholdId =
     diagnostics.householdId !== "none" && diagnostics.householdId ? diagnostics.householdId : null;
   const rawMemberId =
     diagnostics.memberId !== "none" && diagnostics.memberId ? diagnostics.memberId : null;
+  // Zod already validates uuid vs "none", but keep a defensive check for service_role bypass.
   const isUuid = (v: string | null) =>
     v !== null &&
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
-  const persistHouseholdId = rawHouseholdId && isUuid(rawHouseholdId) ? rawHouseholdId : null;
-  const persistMemberId = rawMemberId && isUuid(rawMemberId) ? rawMemberId : null;
+  const persistHouseholdId: string | null =
+    rawHouseholdId && isUuid(rawHouseholdId) ? rawHouseholdId : null;
+  const persistMemberId: string | null = rawMemberId && isUuid(rawMemberId) ? rawMemberId : null;
 
-  try {
-    const { error: insertError } = await supabase.from("feedback_submissions").insert({
-      household_id: persistHouseholdId,
-      user_id: userId,
-      member_id: persistMemberId,
-      category,
-      message: message ?? "",
-      diagnostics: normalizedDiagnostics as unknown as Record<string, never>,
-    });
-    if (insertError) {
-      console.error("Feedback DB persist error:", insertError);
+  // Run DB persist and email in parallel — don't let DB latency block email, and don't fail email if DB fails.
+  // Explicit membership checks — service_role bypasses RLS, so we must enforce here.
+  const insertPromise = (async () => {
+    let finalHouseholdId: string | null = persistHouseholdId;
+    let finalMemberId: string | null = persistMemberId;
+    try {
+      if (finalHouseholdId) {
+        const { data: membership, error: membershipError } = await supabase
+          .from("household_members")
+          .select("id")
+          .eq("household_id", finalHouseholdId)
+          .eq("user_id", userId)
+          .is("removed_at", null)
+          .maybeSingle();
+        if (membershipError) {
+          console.warn("Feedback household lookup failed — dropping household_id", {
+            persistHouseholdId: finalHouseholdId,
+            userId,
+            error: membershipError,
+          });
+          finalHouseholdId = null;
+          finalMemberId = null;
+        } else if (!membership) {
+          console.warn("Feedback household mismatch — dropping household_id", {
+            persistHouseholdId: finalHouseholdId,
+            userId,
+          });
+          finalHouseholdId = null;
+          finalMemberId = null;
+        } else if (finalMemberId) {
+          const { data: member, error: memberError } = await supabase
+            .from("household_members")
+            .select("id, household_id, user_id")
+            .eq("id", finalMemberId)
+            .maybeSingle();
+          if (memberError) {
+            console.warn("Feedback member lookup failed — dropping member_id", {
+              persistMemberId: finalMemberId,
+              persistHouseholdId: finalHouseholdId,
+              error: memberError,
+            });
+            finalMemberId = null;
+          } else if (
+            !member ||
+            member.household_id !== finalHouseholdId ||
+            member.user_id !== userId
+          ) {
+            console.warn("Feedback member mismatch — dropping member_id", {
+              persistMemberId: finalMemberId,
+              persistHouseholdId: finalHouseholdId,
+            });
+            finalMemberId = null;
+          }
+        }
+      } else if (finalMemberId) {
+        const { data: member, error: memberError } = await supabase
+          .from("household_members")
+          .select("id, user_id")
+          .eq("id", finalMemberId)
+          .maybeSingle();
+        if (memberError) {
+          console.warn("Feedback member lookup failed — dropping member_id", {
+            persistMemberId: finalMemberId,
+            error: memberError,
+          });
+          finalMemberId = null;
+        } else if (!member || member.user_id !== userId) {
+          finalMemberId = null;
+        }
+      }
+      const { error: insertError } = await supabase.from("feedback_submissions").insert({
+        household_id: finalHouseholdId,
+        user_id: userId,
+        member_id: finalMemberId,
+        category,
+        message: message ?? "",
+        diagnostics: normalizedDiagnostics as unknown as Record<string, never>,
+      });
+      if (insertError) console.error("Feedback DB persist error:", insertError);
+    } catch (persistError) {
+      console.error("Feedback DB persist error:", persistError);
     }
-  } catch (persistError) {
-    console.error("Feedback DB persist error:", persistError);
-  }
+  })();
 
-  try {
-    await sendFeedbackEmail({
-      category,
-      message,
-      diagnostics: normalizedDiagnostics,
-      userEmail,
-    });
-    return new Response(null, { status: 204 });
-  } catch (error) {
-    console.error("Feedback route error:", error);
+  const emailPromise = sendFeedbackEmail({
+    category,
+    message,
+    diagnostics: normalizedDiagnostics,
+    userEmail,
+  });
+
+  const [, emailResult] = await Promise.allSettled([insertPromise, emailPromise]);
+
+  if (emailResult.status === "rejected") {
+    console.error("Feedback route error:", emailResult.reason);
     return Response.json({ error: "failed to send feedback" }, { status: 500 });
   }
+
+  return new Response(null, { status: 204 });
 }
