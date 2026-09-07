@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBudgetMutations } from "@/hooks/useBudgets";
 import { useHousehold } from "@/hooks/useHousehold";
-import { formatMoney, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
+import { formatMoney, formatMoneyInput, parseMoneyInput, roundToMinorUnit } from "@/lib/money";
 import type { BudgetSuggestion } from "@/hooks/useBudgetSuggestion";
 
 type Props = {
@@ -28,6 +28,7 @@ type Props = {
   minorUnit: number;
   periodMonth: string;
   ownerMemberId: string | null;
+  isFallback?: boolean;
   onCreated?: () => void;
 };
 
@@ -41,6 +42,7 @@ export function BudgetSuggestionDialog({
   minorUnit,
   periodMonth,
   ownerMemberId,
+  isFallback = false,
   onCreated,
 }: Props) {
   const t = useTranslations("budget.suggestionDialog");
@@ -52,10 +54,10 @@ export function BudgetSuggestionDialog({
   const initialDrafts = useMemo(() => {
     const map: Record<string, string> = {};
     for (const s of suggestions) {
-      map[s.categoryId] = s.suggestedAmount.toString();
+      map[s.categoryId] = formatMoneyInput(s.suggestedAmount, locale, numberFormat);
     }
     return map;
-  }, [suggestions]);
+  }, [suggestions, locale, numberFormat]);
 
   useEffect(() => {
     if (open) {
@@ -103,18 +105,26 @@ export function BudgetSuggestionDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto rounded-[24px]">
         <DialogHeader className="gap-1">
           <DialogTitle className="text-xl font-black tracking-tight">{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogDescription>
+            {isFallback ? t("descriptionFallback") : t("description")}
+          </DialogDescription>
         </DialogHeader>
         <div className="mt-2 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground">{t("derivedLabel")}</p>
+          <p className="text-xs font-semibold text-muted-foreground">
+            {isFallback ? t("derivedLabelFallback") : t("derivedLabel")}
+          </p>
           {suggestions.map((s) => (
             <div key={s.categoryId} className="flex items-center gap-3 rounded-xl border p-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold">{s.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {t("spentLabel", {
-                    amount: formatMoney(s.spent, currency, locale, numberFormat),
-                  })}
+                  {isFallback
+                    ? t("spentLabelFallback", {
+                        amount: formatMoney(s.spent, currency, locale, numberFormat),
+                      })
+                    : t("spentLabel", {
+                        amount: formatMoney(s.spent, currency, locale, numberFormat),
+                      })}
                 </p>
               </div>
               <div className="w-32 shrink-0">

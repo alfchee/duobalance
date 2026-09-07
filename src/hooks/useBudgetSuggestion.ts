@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useCategories } from "@/hooks/useCategories";
+import { todayInHousehold } from "@/lib/dates";
 
 export const BUDGET_SUGGESTION_TRANSACTION_THRESHOLD = 10;
 export const BUDGET_SUGGESTION_DISMISS_PREFIX = "duobalance:dismissedBudgetSuggestion:";
@@ -25,16 +26,34 @@ function requireSupabase() {
 
 function readDismissedAt(householdId: string | null): number | null {
   if (!householdId || typeof window === "undefined") return null;
-  const raw = localStorage.getItem(`${BUDGET_SUGGESTION_DISMISS_PREFIX}${householdId}`);
-  if (!raw) return null;
-  const ts = Number(raw);
-  return Number.isFinite(ts) ? ts : null;
+  try {
+    const raw = localStorage.getItem(`${BUDGET_SUGGESTION_DISMISS_PREFIX}${householdId}`);
+    if (!raw) return null;
+    const ts = Number(raw);
+    return Number.isFinite(ts) ? ts : null;
+  } catch {
+    return null;
+  }
+}
+
+function getSinceStr(timezone: string | null | undefined): string {
+  const tz = timezone ?? "UTC";
+  try {
+    const todayStr = todayInHousehold(tz);
+    const d = new Date(`${todayStr}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 30);
+    return d.toISOString().slice(0, 10);
+  } catch {
+    const since = new Date();
+    since.setUTCDate(since.getUTCDate() - 30);
+    return since.toISOString().slice(0, 10);
+  }
 }
 
 export function useBudgetSuggestion(
   householdId: string | null,
   ownerMemberId: string | null,
-  _periodMonth?: string,
+  timezone?: string | null,
 ) {
   const { data: categories = [] } = useCategories(householdId);
 
@@ -51,8 +70,6 @@ export function useBudgetSuggestion(
         ownerMemberId === null
           ? query.is("owner_member_id", null)
           : query.eq("owner_member_id", ownerMemberId);
-      // Also filter by period? Existence of any budget for household should hide suggestion
-      // across months — so don't filter by period_month.
       const { count, error } = await query;
       if (error) throw error;
       return (count ?? 0) > 0;
@@ -61,12 +78,21 @@ export function useBudgetSuggestion(
   });
 
   const { data: txStats, isLoading: txLoading } = useQuery({
-    queryKey: ["transactions", householdId, "budget-suggestion-stats", ownerMemberId],
+    queryKey: [
+      "transactions",
+      householdId,
+      "budget-suggestion-stats",
+      ownerMemberId,
+      timezone ?? "UTC",
+    ],
     queryFn: async () => {
       const supabase = requireSupabase();
       if (!householdId)
-        return { count: 0, byCategory: {} as Record<string, { spent: number; count: number }> };
-      // Count total expense transactions (for threshold)
+        return {
+          count: 0,
+          byCategory: {} as Record<string, { spent: number; count: number }>,
+          isFallback: false,
+        };
       let countQuery = supabase
         .from("transactions")
         .select("id", { count: "exact", head: true })
@@ -78,10 +104,7 @@ export function useBudgetSuggestion(
       const { count, error: countError } = await countQuery;
       if (countError) throw countError;
 
-      // Fetch recent spending per category (last 30 days window for suggestion)
-      const since = new Date();
-      since.setUTCDate(since.getUTCDate() - 30);
-      const sinceStr = since.toISOString().slice(0, 10);
+      const sinceStr = getSinceStr(timezone);
       let spendQuery = supabase
         .from("transactions")
         .select("category_id, base_amount, occurred_on")
@@ -89,7 +112,9 @@ export function useBudgetSuggestion(
         .lt("amount", 0)
         .is("transfer_group_id", null)
         .not("category_id", "is", null)
-        .gte("occurred_on", sinceStr);
+        .gte("occurred_on", sinceStr)
+        .order("occurred_on", { ascending: false })
+        .limit(1000);
       if (ownerMemberId) spendQuery = spendQuery.eq("spent_by", ownerMemberId);
       const { data, error } = await spendQuery;
       if (error) throw error;
@@ -107,8 +132,7 @@ export function useBudgetSuggestion(
         }
       }
 
-      // If no spend in last 30 days but there are older transactions,
-      // fall back to all-time spend so the prompt still has data.
+      let isFallback = false;
       if (Object.keys(byCategory).length === 0 && (count ?? 0) > 0) {
         let fallbackQuery = supabase
           .from("transactions")
@@ -117,6 +141,7 @@ export function useBudgetSuggestion(
           .lt("amount", 0)
           .is("transfer_group_id", null)
           .not("category_id", "is", null)
+          .order("occurred_on", { ascending: false })
           .limit(500);
         if (ownerMemberId) fallbackQuery = fallbackQuery.eq("spent_by", ownerMemberId);
         const { data: fallback, error: fallbackError } = await fallbackQuery;
@@ -132,9 +157,10 @@ export function useBudgetSuggestion(
             byCategory[row.category_id] = { spent, count: 1 };
           }
         }
+        if (Object.keys(byCategory).length > 0) isFallback = true;
       }
 
-      return { count: count ?? 0, byCategory };
+      return { count: count ?? 0, byCategory, isFallback };
     },
     enabled: !!householdId,
   });
@@ -143,7 +169,11 @@ export function useBudgetSuggestion(
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!householdId) return;
+    if (!householdId) {
+      setDismissedAt(null);
+      setHydrated(true);
+      return;
+    }
     setDismissedAt(readDismissedAt(householdId));
     setHydrated(true);
   }, [householdId]);
@@ -151,12 +181,16 @@ export function useBudgetSuggestion(
   const dismiss = useCallback(() => {
     if (!householdId) return;
     const now = Date.now();
-    localStorage.setItem(`${BUDGET_SUGGESTION_DISMISS_PREFIX}${householdId}`, String(now));
+    try {
+      localStorage.setItem(`${BUDGET_SUGGESTION_DISMISS_PREFIX}${householdId}`, String(now));
+    } catch {
+      // ignore storage-disabled
+    }
     setDismissedAt(now);
   }, [householdId]);
 
   const dismissedRecently = useMemo(() => {
-    if (!hydrated) return true; // avoid flash before reading storage
+    if (!hydrated) return true;
     if (dismissedAt === null) return false;
     return Date.now() - dismissedAt < BUDGET_SUGGESTION_DISMISS_COOLDOWN_MS;
   }, [dismissedAt, hydrated]);
@@ -183,6 +217,7 @@ export function useBudgetSuggestion(
     hasBudgets,
     transactionCount,
     suggestions,
+    isFallback: txStats?.isFallback ?? false,
     eligible,
     dismissedRecently,
     dismiss,

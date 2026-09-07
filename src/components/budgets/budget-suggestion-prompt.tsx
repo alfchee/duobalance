@@ -8,7 +8,6 @@ import { useHousehold } from "@/hooks/useHousehold";
 import { useBudgetSuggestion } from "@/hooks/useBudgetSuggestion";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { formatMoney } from "@/lib/money";
-import { startOfMonthInHousehold } from "@/lib/dates";
 import { useBudgetUiStore } from "@/store/budget";
 import { BudgetSuggestionDialog } from "./budget-suggestion-dialog";
 
@@ -24,13 +23,11 @@ export function BudgetSuggestionPrompt({ periodMonth }: Props) {
   const scope = useBudgetUiStore((s) => s.scope);
   const ownerMemberId = scope === "mine" ? memberId : null;
 
-  const suggestion = useBudgetSuggestion(householdId, ownerMemberId, periodMonth);
+  const suggestion = useBudgetSuggestion(householdId, ownerMemberId, timezone);
   const currency = baseCurrency ?? "USD";
   const [dialogOpen, setDialogOpen] = useState(false);
 
   if (suggestion.isLoading || !suggestion.eligible) return null;
-
-  const effectivePeriodMonth = periodMonth ?? startOfMonthInHousehold(timezone ?? "UTC");
 
   return (
     <>
@@ -46,7 +43,7 @@ export function BudgetSuggestionPrompt({ periodMonth }: Props) {
                 {t("description", { count: suggestion.transactionCount })}
               </p>
               <p className="mt-2 text-xs font-semibold text-amber-800 dark:text-amber-200">
-                {t("derivedLabel")}
+                {suggestion.isFallback ? t("derivedLabelFallback") : t("derivedLabel")}
               </p>
               <ul className="mt-2 grid gap-1.5">
                 {suggestion.suggestions.slice(0, 5).map((s) => (
@@ -103,8 +100,9 @@ export function BudgetSuggestionPrompt({ periodMonth }: Props) {
         locale={locale}
         numberFormat={numberFormat}
         minorUnit={currencies.find((c) => c.code === baseCurrency)?.minor_unit ?? 2}
-        periodMonth={effectivePeriodMonth}
+        periodMonth={periodMonth}
         ownerMemberId={ownerMemberId}
+        isFallback={suggestion.isFallback}
         onCreated={() => setDialogOpen(false)}
       />
     </>
