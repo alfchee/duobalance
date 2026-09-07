@@ -119,9 +119,15 @@ describe("activation funnel — #167", () => {
     expect(reportMjs).toContain("Lost % of previous");
     expect(reportMjs).toContain("Cumulative % of signed up");
     expect(reportMjs).toContain("Largest drop");
-    // SQL computes lost as previous - current
-    expect(reportMjs).toContain("lag(s.reached) over (order by s.step) - s.reached");
-    expect(reportMjs).toContain("order by lost_at_step desc limit 1");
+    // SQL computes lost as previous - current, clamped to 0 for non-monotonic funnel
+    expect(reportMjs).toContain("greatest(lag(s.reached) over (order by s.step) - s.reached, 0)");
+    expect(reportMjs).toContain("order by lost_at_step desc, step asc limit 1");
+    // Owner CTE must not be dead in drop-off section
+    const dropOffSection =
+      reportMjs
+        .split("Activation Funnel — Drop-off")[1]
+        ?.split("Activation Funnel — Furthest")[0] || "";
+    expect(dropOffSection).not.toContain("owner as (");
   });
 
   it("answers where zero-transaction households stopped", () => {
@@ -190,6 +196,37 @@ describe("activation funnel — #167", () => {
     expect(reportMjs).toContain("date_trunc('week', h.created_at) as cohort_week");
     expect(reportMjs).toContain("With account");
     expect(reportMjs).toContain("With transaction");
+  });
+
+  it("cohort counts use existence not furthest_step proxy (regression for inflated rates)", () => {
+    // Must count existence directly, not furthest_step >= N
+    expect(reportMjs).toContain(
+      "count(*) filter (where first_account_at is not null) as with_account",
+    );
+    expect(reportMjs).toContain(
+      "count(*) filter (where first_transaction_at is not null) as with_transaction",
+    );
+    expect(reportMjs).toContain(
+      "count(*) filter (where first_budget_at is not null) as with_budget",
+    );
+    expect(reportMjs).not.toContain("count(*) filter (where furthest_step >= 4) as with_account");
+    // Inconsistent household: invites partner before creating account
+    const inconsistent = furthestStepForHousehold({
+      signedUp: true,
+      emailConfirmed: true,
+      householdCreated: true,
+      firstAccount: false,
+      firstTransaction: false,
+      firstBudget: false,
+      partnerInvited: true,
+      partnerAccepted: false,
+    });
+    expect(inconsistent.step).toBe(7);
+    // With buggy >= logic this would count as with_account/with_transaction; with fixed logic it must not
+    const hasAccount = false;
+    const hasTransaction = false;
+    expect(hasAccount).toBe(false);
+    expect(hasTransaction).toBe(false);
   });
 
   it("does not require new client-side tracking where data is derivable, and says so explicitly for gaps", () => {

@@ -247,18 +247,12 @@ const report = [
   "",
   "Ordered funnel: 1 — Signed up (`auth.users`), 2 — Email confirmed (`auth.users.email_confirmed_at`), 3 — Household created (`public.households`), 4 — First account created (`public.accounts` non-archived), 5 — First transaction entered (`public.transactions`), 6 — First budget created (`public.budgets`), 7 — Partner invited (`public.household_invites` role=partner), 8 — Partner accepted (`public.household_members` partner joined or `household_invites.accepted_at`). All steps are derived from existing tables — no new client-side tracking was added for this report. Steps that require client-side tracking and are **not yet derivable** are noted explicitly below rather than silently omitted: time in step (e.g., 11 min on Balances), repeat sessions before first transaction, guide-viewed (starter guide experiment), and entry point for the first transaction (empty state vs main button vs guide link). Guide viewed will be added as a funnel step between 5 and 6 when the starter guide ships, designed as an optional milestone so earlier cohorts remain comparable.",
   "",
-  "Funnel time-between-steps is available from `created_at` timestamps (e.g., household → account → transaction) but precise time-in-screen and session counts require instrumentation that is not yet in the database. Entry point and guide-viewed will require a small client event table; they are placeholders in the funnel definition so adding them later does not invalidate historical furthest-step values.",
+  "Funnel time-between-steps is available from `created_at` timestamps (e.g., household → account → transaction); budget uses `period_month` as an approximation (no `created_at` on current `public.budgets`, see historical note) but precise time-in-screen and session counts require instrumentation that is not yet in the database. Entry point and guide-viewed will require a small client event table; they are placeholders in the funnel definition so adding them later does not invalidate historical furthest-step values.",
   "",
   section(
     "Activation Funnel — Drop-off (overall)",
     `with active_households as (
        select h.id from public.households h where h.deleted_at is null
-     ), owner as (
-       select m.household_id, min(u.created_at) as signed_up_at, min(u.email_confirmed_at) as email_confirmed_at
-       from public.household_members m
-       join auth.users u on u.id = m.user_id
-       where m.removed_at is null and m.role = 'owner'
-       group by m.household_id
      ), account_first as (
        select a.household_id, min(a.created_at) as first_account_at
        from public.accounts a
@@ -308,14 +302,14 @@ const report = [
          s.name,
          s.reached,
          lag(s.reached) over (order by s.step) as prev_reached,
-         case when lag(s.reached) over (order by s.step) is null then 0 else lag(s.reached) over (order by s.step) - s.reached end as lost_at_step,
-         case when lag(s.reached) over (order by s.step) is null or lag(s.reached) over (order by s.step) = 0 then '—' else to_char(100.0 * (lag(s.reached) over (order by s.step) - s.reached) / lag(s.reached) over (order by s.step), 'FM990.0') || '%' end as lost_pct,
+         case when lag(s.reached) over (order by s.step) is null then 0 else greatest(lag(s.reached) over (order by s.step) - s.reached, 0) end as lost_at_step,
+         case when lag(s.reached) over (order by s.step) is null or lag(s.reached) over (order by s.step) = 0 then '—' else to_char(100.0 * greatest(lag(s.reached) over (order by s.step) - s.reached, 0) / lag(s.reached) over (order by s.step), 'FM990.0') || '%' end as lost_pct,
          case when (select signed_up from funnel_counts) = 0 then '—' else to_char(100.0 * s.reached / (select signed_up from funnel_counts), 'FM990.0') || '%' end as cumulative_pct
        from steps s
      )
      select '| Step | Reached | Lost at step | Lost % of previous | Cumulative % of signed up |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
             string_agg('| ' || name || ' | ' || reached || ' | ' || lost_at_step || ' | ' || lost_pct || ' | ' || cumulative_pct || ' |', E'\n' order by step) ||
-            E'\n| **Largest drop** | ' || (select name from drop_off order by lost_at_step desc limit 1) || ' | ' || (select lost_at_step from drop_off order by lost_at_step desc limit 1) || ' | ' || (select lost_pct from drop_off order by lost_at_step desc limit 1) || ' | — |'
+            E'\n| **Largest drop** | ' || (select name from drop_off order by lost_at_step desc, step asc limit 1) || ' | ' || (select lost_at_step from drop_off order by lost_at_step desc, step asc limit 1) || ' | ' || (select lost_pct from drop_off order by lost_at_step desc, step asc limit 1) || ' | — |'
      from drop_off;`,
     "No funnel data.",
   ),
@@ -444,15 +438,15 @@ const report = [
        left join budget_first b on b.household_id = h.id
        left join invite_first i on i.household_id = h.id
        left join partner_joined p on p.household_id = h.id
-     ), cohorts as (
-       select cohort_week, count(*) as households,
-         count(*) filter (where furthest_step >= 4) as with_account,
-         count(*) filter (where furthest_step >= 5) as with_transaction,
-         count(*) filter (where furthest_step >= 6) as with_budget,
-         count(*) filter (where furthest_step >= 7) as invited,
-         count(*) filter (where furthest_step >= 8) as accepted
-       from household_funnel group by cohort_week
-     )
+      ), cohorts as (
+        select cohort_week, count(*) as households,
+          count(*) filter (where first_account_at is not null) as with_account,
+          count(*) filter (where first_transaction_at is not null) as with_transaction,
+          count(*) filter (where first_budget_at is not null) as with_budget,
+          count(*) filter (where first_invite_at is not null) as invited,
+          count(*) filter (where partner_joined_at is not null) as accepted
+        from household_funnel group by cohort_week
+      )
      select '| Cohort (week of household created) | Households | With account | With transaction | With budget | Partner invited | Partner accepted |' || E'\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |' || E'\n' ||
             coalesce(string_agg(
               '| ' || to_char(cohort_week, 'YYYY-MM-DD') || ' | ' || households || ' | ' ||
