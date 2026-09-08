@@ -9,13 +9,13 @@ import { trackGuideOpen, type GuideSource } from "@/lib/guide-events";
 
 const STORAGE_PREFIX = "duobalance:dismissed:sharedPrivateExplainer";
 
-function storageKey(userId: string): string {
-  return `${STORAGE_PREFIX}:${userId}`;
+function storageKey(userId?: string | null): string {
+  if (userId) return `${STORAGE_PREFIX}:${userId}`;
+  return STORAGE_PREFIX;
 }
 
 function readDismissed(userId?: string | null): boolean {
   if (typeof window === "undefined") return true;
-  if (!userId) return false;
   try {
     return localStorage.getItem(storageKey(userId)) === "true";
   } catch {
@@ -25,7 +25,6 @@ function readDismissed(userId?: string | null): boolean {
 
 function writeDismissed(userId?: string | null): void {
   if (typeof window === "undefined") return;
-  if (!userId) return;
   try {
     localStorage.setItem(storageKey(userId), "true");
   } catch {
@@ -46,6 +45,24 @@ export function SharedPrivateExplainer({ userId, source, className }: Props) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    // Migrate an anonymous dismissal to the per-user key when the user
+    // authenticates. This prevents the explainer from reappearing after
+    // login if it was already dismissed while unauthenticated, without
+    // keeping a shared anon key that would hide it for the next visitor.
+    if (userId) {
+      try {
+        const anonDismissed = localStorage.getItem(STORAGE_PREFIX) === "true";
+        const userDismissed = localStorage.getItem(storageKey(userId)) === "true";
+        if (anonDismissed && !userDismissed) {
+          localStorage.setItem(storageKey(userId), "true");
+        }
+        if (anonDismissed) {
+          localStorage.removeItem(STORAGE_PREFIX);
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
     setDismissed(readDismissed(userId));
     setHydrated(true);
   }, [userId]);
