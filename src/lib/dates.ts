@@ -26,6 +26,23 @@ export function todayInHousehold(timezone: string, now: Date = new Date()): stri
   return `${year}-${month}-${day}`;
 }
 
+export function dateInHousehold(timezone: string, date: Date): string {
+  const { year, month, day } = ymdPartsInTimezone(date, timezone);
+  return `${year}-${month}-${day}`;
+}
+
+export function addDays(ymd: string, days: number): string {
+  const value = new Date(`${ymd}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+export function diffDaysInclusive(start: string, end: string): number {
+  const a = new Date(`${start}T00:00:00Z`);
+  const b = new Date(`${end}T00:00:00Z`);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
 export function startOfMonthInHousehold(timezone: string, now: Date = new Date()): string {
   return `${todayInHousehold(timezone, now).slice(0, 8)}01`;
 }

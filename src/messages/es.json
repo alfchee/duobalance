@@ -452,6 +452,17 @@
       "dismiss": "Descartar",
       "guide": "Cómo empezar →",
       "guideHref": "/help/getting-started-creating-household#registro-inicial"
+    },
+    "firstWeek": {
+      "badge": "Primera semana",
+      "title": "Tu primera semana",
+      "subtitle": "Un inicio suave de 7 días. Cada día que anotas algo cuenta — saltarte un día no te hace retroceder.",
+      "progressLabel": "{count} de {total} días registrados",
+      "hint": "Los días sin registro simplemente quedan vacíos — sin rachas, sin reinicios.",
+      "dismiss": "Descartar",
+      "daySevenTitle": "Semana completa — ¿quieres ver?",
+      "daySevenBody": "Ya son siete días. Si te da curiosidad, mira tus totales — solo para observar, no para juzgar.",
+      "daySevenCta": "Ver tus totales"
     }
   },
   "household": {

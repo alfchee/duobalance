@@ -41,6 +41,17 @@
       "dismiss": "Dispensar",
       "guide": "Como começar →",
       "guideHref": "/help/getting-started-creating-household#configurao-inicial"
+    },
+    "firstWeek": {
+      "badge": "Primeira semana",
+      "title": "Sua primeira semana",
+      "subtitle": "Um começo suave de 7 dias. Todo dia que você anota algo conta — perder um dia não te faz voltar ao início.",
+      "progressLabel": "{count} de {total} dias registrados",
+      "hint": "Dias perdidos ficam vazios — sem sequências, sem reinício.",
+      "dismiss": "Dispensar",
+      "daySevenTitle": "Semana completa — quer ver?",
+      "daySevenBody": "Sete dias se passaram. Se tiver curiosidade, veja seus totais — só para observar, sem julgamento.",
+      "daySevenCta": "Ver seus totais"
     }
   },
   "household": {
