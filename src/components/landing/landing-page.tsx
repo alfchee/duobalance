@@ -27,6 +27,7 @@ const SHOWCASES: readonly Showcase[] = ["balances", "entry", "budget", "bills"];
 
 export function LandingPage() {
   const t = useTranslations("landing");
+  const locale = useLocale();
   const [showcase, setShowcase] = useState<Showcase>("balances");
 
   useEffect(() => {
@@ -271,6 +272,11 @@ export function LandingPage() {
             links={[
               { href: "/terms", label: t("footer.terms") },
               { href: "/privacy", label: t("footer.privacy") },
+              {
+                // pt-BR reuses Spanish legal page until dedicated pt-BR version ships (see #191).
+                href: locale === "en" ? "/disclaimer" : "/aviso-legal",
+                label: t("footer.disclaimer"),
+              },
             ]}
           />
         </div>

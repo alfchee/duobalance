@@ -280,5 +280,21 @@
     "promptSubmit": "Enviar feedback",
     "dismiss": "Não mostrar novamente",
     "cancel": "Cancelar"
+  },
+  "landing": {
+    "footer": {
+      "disclaimer": "Aviso legal",
+      "description": "Finanças honestas para duas pessoas.",
+      "legal": "Legal",
+      "terms": "Termos",
+      "privacy": "Privacidade",
+      "product": "Produto",
+      "howItWorks": "Como funciona",
+      "pricing": "Preços",
+      "faq": "FAQ",
+      "company": "Empresa",
+      "story": "História",
+      "contact": "Contato"
+    }
   }
 }

@@ -51,5 +51,7 @@ export default async function GuiaArticlePage({ params }: { params: Promise<{ sl
   const article = getGuideArticle("es", slug);
   if (!article) notFound();
 
-  return <GuideArticleLayout article={article} backHref="/" backLabel="Volver al inicio" />;
+  return (
+    <GuideArticleLayout article={article} backHref="/" backLabel="Volver al inicio" locale="es" />
+  );
 }

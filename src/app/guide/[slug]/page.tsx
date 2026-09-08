@@ -51,5 +51,5 @@ export default async function GuideArticlePage({ params }: { params: Promise<{ s
   const article = getGuideArticle("en", slug);
   if (!article) notFound();
 
-  return <GuideArticleLayout article={article} backHref="/" backLabel="Back to home" />;
+  return <GuideArticleLayout article={article} backHref="/" backLabel="Back to home" locale="en" />;
 }
