@@ -129,7 +129,10 @@ function markdownToHtml(content) {
   function flushList() {
     if (!currentList) return;
     const tag = currentList.type === "ul" ? "ul" : "ol";
-    const cls = currentList.type === "ul" ? "my-3 space-y-1.5 list-disc pl-5" : "my-3 space-y-1.5 list-decimal pl-5";
+    const cls =
+      currentList.type === "ul"
+        ? "my-3 space-y-1.5 list-disc pl-5"
+        : "my-3 space-y-1.5 list-decimal pl-5";
     html += `<${tag} class="${cls}">`;
     for (const item of currentList.items) {
       html += `<li class="text-sm leading-relaxed text-foreground">${renderInlineHtml(item)}</li>`;
@@ -150,9 +153,12 @@ function markdownToHtml(content) {
       const text = headingMatch[2].trim();
       const id = slugify(text);
       const inner = renderInlineHtml(text);
-      if (level === 1) html += `<h1 id="${id}" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">${inner}</h1>`;
-      else if (level === 2) html += `<h2 id="${id}" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">${inner}</h2>`;
-      else html += `<h3 id="${id}" class="mb-2 mt-4 text-base font-semibold tracking-tight text-foreground">${inner}</h3>`;
+      if (level === 1)
+        html += `<h1 id="${id}" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">${inner}</h1>`;
+      else if (level === 2)
+        html += `<h2 id="${id}" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">${inner}</h2>`;
+      else
+        html += `<h3 id="${id}" class="mb-2 mt-4 text-base font-semibold tracking-tight text-foreground">${inner}</h3>`;
       continue;
     }
     const ulMatch = trimmed.match(/^[-*]\s+(.+)$/);
