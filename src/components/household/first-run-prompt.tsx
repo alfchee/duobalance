@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTransactionsUiStore } from "@/store/transactions";
+import { trackGuideOpen } from "@/lib/guide-events";
 
 export function FirstRunPrompt({
   onDismiss,
@@ -14,6 +16,7 @@ export function FirstRunPrompt({
 }) {
   const t = useTranslations("onboarding.firstRun");
   const openCreate = useTransactionsUiStore((s) => s.openCreate);
+  const guideHref = t("guideHref");
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6 shadow-ring">
@@ -46,7 +49,15 @@ export function FirstRunPrompt({
         <ArrowRight className="size-4" />
       </Button>
 
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{t("hint")}</p>
+      <Link
+        href={guideHref}
+        onClick={() => void trackGuideOpen(guideHref, "first-run")}
+        className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline"
+      >
+        {t("guide")}
+      </Link>
+
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t("hint")}</p>
     </div>
   );
 }

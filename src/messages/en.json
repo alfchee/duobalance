@@ -419,7 +419,8 @@
       "title": "Your balances live here",
       "description": "Every expense and income updates a balance. Add your first transaction — we'll create a Cash account for you automatically.",
       "primary": "Add first transaction",
-      "guide": "How balances work →"
+      "guide": "How balances work →",
+      "guideHref": "/help/recording-transaction-fast#quick-entry-workflow"
     }
   },
   "onboarding": {
@@ -448,7 +449,9 @@
       "subtitle": "One tap to start — you can add accounts, budgets and invite your partner afterwards.",
       "action": "Record expense",
       "hint": "We’ll create a Cash account for you automatically — you can rename it later in Settings.",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "guide": "How to get started →",
+      "guideHref": "/help/getting-started-creating-household#initial-setup"
     }
   },
   "household": {
@@ -740,7 +743,8 @@
       "description": "Good budgets come from real spending. Keep tracking for 2–4 weeks, then set limits that fit how you actually spend.",
       "primary": "Add a transaction",
       "secondary": "Or create a budget manually",
-      "guide": "How to build a good budget →"
+      "guide": "How to build a good budget →",
+      "guideHref": "/help/household-vs-personal-budgets#household-budgets"
     },
     "copyDialog": {
       "title": "Copy last month's budgets",
@@ -795,7 +799,8 @@
       "title": "Never miss what repeats",
       "description": "Bills are for rent, utilities and subscriptions — anything that comes back every month. Add one to see it on your calendar.",
       "action": "Add a bill",
-      "guide": "How bills work →"
+      "guide": "How bills work →",
+      "guideHref": "/help/recurrence-and-marking-paid#setting-up-recurrence"
     },
     "status": {
       "due": "Due",
@@ -1143,6 +1148,10 @@
     "backToHelp": "Back to Help",
     "relatedArticles": "Related articles",
     "updatedOn": "Updated on {date}",
+    "starterTitle": "New here? Start with the guide",
+    "starterDescription": "Learn how DuoBalance works in 2 minutes — one expense first, everything else later.",
+    "starterCta": "Open starter guide →",
+    "starterHref": "/help/getting-started-creating-household#initial-setup",
     "categories": {
       "accounts": "Accounts & Balances",
       "transactions": "Transactions",

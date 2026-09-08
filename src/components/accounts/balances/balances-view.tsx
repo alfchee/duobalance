@@ -100,7 +100,8 @@ export function BalancesView() {
           primaryLabel={tTeach("primary")}
           onPrimary={() => openTransaction("transaction")}
           guideLabel={tTeach("guide")}
-          guideHref="/help/recording-transaction-fast"
+          guideHref={tTeach("guideHref")}
+          guideSource="balances-empty"
         />
       )}
 

@@ -1,16 +1,50 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight, FileText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { MarkdownRenderer } from "@/components/help/markdown-renderer";
 import { getArticle } from "@/lib/help/help-service";
+import { trackGuideOpen } from "@/lib/guide-events";
 import { Card } from "@/components/ui/card";
 
 export function HelpArticleClient({ slug }: { slug: string }) {
   const t = useTranslations("help");
   const locale = useLocale();
   const article = getArticle(locale, slug);
+
+  // Deep-link support: scroll to hash fragment and record guide open for funnel.
+  useEffect(() => {
+    function scrollToHash() {
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
+      // Robust: retry until element found (handles hydration / slow PWA WebView)
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior, block: "start" });
+          return;
+        }
+        attempts += 1;
+        if (attempts < 5) requestAnimationFrame(tryScroll);
+      };
+      requestAnimationFrame(() => requestAnimationFrame(tryScroll));
+    }
+
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+
+    // Record guide open — slug + optional anchor. Dedupe in trackGuideOpen prevents double-count
+    // with link onClick (empty-state → article).
+    const anchor = window.location.hash.slice(1) || null;
+    void trackGuideOpen(`/help/${slug}${anchor ? `#${anchor}` : ""}`, "help-center");
+
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, [slug]);
 
   if (!article) {
     return (
@@ -82,6 +116,9 @@ export function HelpArticleClient({ slug }: { slug: string }) {
                 <Link
                   key={rel.frontmatter.slug}
                   href={`/help/${rel.frontmatter.slug}`}
+                  onClick={() =>
+                    void trackGuideOpen(`/help/${rel.frontmatter.slug}`, "help-center")
+                  }
                   className="group flex items-center justify-between gap-3 rounded-2xl border bg-card p-4 transition-colors hover:bg-accent/40"
                 >
                   <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
