@@ -9,13 +9,13 @@ import { trackGuideOpen, type GuideSource } from "@/lib/guide-events";
 
 const STORAGE_PREFIX = "duobalance:dismissed:sharedPrivateExplainer";
 
-function storageKey(userId?: string | null): string {
-  if (userId) return `${STORAGE_PREFIX}:${userId}`;
-  return STORAGE_PREFIX;
+function storageKey(userId: string): string {
+  return `${STORAGE_PREFIX}:${userId}`;
 }
 
 function readDismissed(userId?: string | null): boolean {
   if (typeof window === "undefined") return true;
+  if (!userId) return false;
   try {
     return localStorage.getItem(storageKey(userId)) === "true";
   } catch {
@@ -25,6 +25,7 @@ function readDismissed(userId?: string | null): boolean {
 
 function writeDismissed(userId?: string | null): void {
   if (typeof window === "undefined") return;
+  if (!userId) return;
   try {
     localStorage.setItem(storageKey(userId), "true");
   } catch {
@@ -35,9 +36,10 @@ function writeDismissed(userId?: string | null): void {
 type Props = {
   userId?: string | null;
   source: GuideSource;
+  className?: string;
 };
 
-export function SharedPrivateExplainer({ userId, source }: Props) {
+export function SharedPrivateExplainer({ userId, source, className }: Props) {
   const t = useTranslations("household.sharedPrivateExplainer");
   const helpHref = t("helpHref");
   const [dismissed, setDismissed] = useState(true);
@@ -56,7 +58,11 @@ export function SharedPrivateExplainer({ userId, source }: Props) {
   if (!hydrated || dismissed) return null;
 
   return (
-    <div role="note" aria-label={t("title")} className="rounded-2xl border bg-card p-4 shadow-sm">
+    <div
+      role="note"
+      aria-label={t("title")}
+      className={`rounded-2xl border bg-card p-4 shadow-sm ${className ?? ""}`.trim()}
+    >
       <div className="flex items-start gap-3">
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
           <Info className="size-4" aria-hidden />

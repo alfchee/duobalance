@@ -232,9 +232,9 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
       </section>
 
       <section aria-label={t("pendingInvites")}>
-        <div className="mb-4">
-          <SharedPrivateExplainer userId={user?.id} source="members-invite" />
-        </div>
+        {isOwner ? (
+          <SharedPrivateExplainer userId={user?.id} source="members-invite" className="mb-4" />
+        ) : null}
         <div className="mb-2 flex items-baseline justify-between">
           <h2 className="text-sm font-medium">{t("pendingInvites")}</h2>
           {invites.isPending ? (
