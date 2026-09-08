@@ -110,9 +110,9 @@ export function HelpArticleClient({ slug }: { slug: string }) {
           </h1>
         </div>
 
-        {/* Article Body */}
+        {/* Article Body — pre-rendered HTML at build time to avoid per-request CPU (p50 71ms → static) */}
         <div className="rounded-2xl border bg-card p-5 sm:p-8 shadow-sm">
-          <MarkdownRenderer content={article.content} />
+          <MarkdownRenderer content={article.content} html={article.html} />
         </div>
 
         {/* Related Articles */}

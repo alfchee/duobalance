@@ -78,7 +78,10 @@ function renderInline(text: string): ReactNode[] {
   });
 }
 
-export function MarkdownRenderer({ content }: { content: string }) {
+export function MarkdownRenderer({ content, html }: { content: string; html?: string }) {
+  if (html) {
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  }
   const lines = content.split(/\r?\n/);
   const elements: ReactNode[] = [];
 

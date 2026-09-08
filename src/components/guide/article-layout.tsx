@@ -135,7 +135,12 @@ export function GuideArticleLayout({
         <TableOfContents headings={headings} locale={locale} />
 
         <div className="rounded-2xl border bg-card p-5 sm:p-8 shadow-sm">
-          <MarkdownRenderer content={content} />
+          {/* Pre-rendered HTML from build-guide-content.mjs avoids per-request markdown parsing */}
+          {article.html ? (
+            <div dangerouslySetInnerHTML={{ __html: article.html }} />
+          ) : (
+            <MarkdownRenderer content={content} />
+          )}
         </div>
 
         {/* Disclaimer slot — cannot be omitted; layout always renders it */}

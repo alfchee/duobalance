@@ -1,6 +1,8 @@
 import { ALL_HELP_SLUGS } from "@/lib/help/generated-content";
 import { HelpArticleClient } from "./help-article-client";
 
+export const dynamic = "force-static";
+
 export function generateStaticParams() {
   return ALL_HELP_SLUGS.map((slug) => ({ slug }));
 }
