@@ -31,8 +31,8 @@ export function LandingPage() {
   const t = useTranslations("landing");
   const locale = useLocale();
   const [showcase, setShowcase] = useState<Showcase>("balances");
-  // TODO(#191): add dedicated pt-BR guide route; pt-BR currently falls back to Spanish guide.
-  const guideHref = locale === "en" ? "/guide/starter-guide" : "/guia/por-donde-empezar";
+  // pt-BR reuses English guide until dedicated pt-BR guide ships (see #191); es keeps Spanish guide.
+  const guideHref = locale === "es" ? "/guia/por-donde-empezar" : "/guide/starter-guide";
 
   useEffect(() => {
     captureReferral(window.location.search, localStorage);
