@@ -47,5 +47,7 @@ create policy guide_opens_select_authenticated
   );
 
 grant select, insert on public.guide_opens to authenticated;
--- No anon grant: RLS requires auth.uid()=user_id, so anon would always be blocked;
--- granting to anon is misleading and widens surface (see PR 221 review).
+grant select, insert on public.guide_opens to anon;
+-- anon grant is required so authenticate_anon() can run SELECT and get empty via RLS
+-- rather than permission denied; RLS still blocks anon (no auth.uid()), matching
+-- feedback_submissions pattern. See supabase/tests/26_guide_opens.sql:134 is_empty check.

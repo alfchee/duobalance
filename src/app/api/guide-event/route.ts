@@ -71,20 +71,14 @@ export async function POST(request: Request) {
     console.warn("guide_opens membership lookup threw", { userId, err });
   }
 
-  const { error: insertError } = await (
-    supabase as unknown as {
-      from: (t: string) => { insert: (v: unknown) => Promise<{ error: unknown }> };
-    }
-  )
-    .from("guide_opens")
-    .insert({
-      household_id: householdId,
-      user_id: userId,
-      member_id: memberId,
-      slug,
-      anchor: anchor ?? null,
-      source: source ?? null,
-    } as never);
+  const { error: insertError } = await supabase.from("guide_opens").insert({
+    household_id: householdId,
+    user_id: userId,
+    member_id: memberId,
+    slug,
+    anchor: anchor ?? null,
+    source: source ?? null,
+  });
 
   if (insertError) {
     console.error("guide_opens insert error", insertError);
