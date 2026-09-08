@@ -47,4 +47,5 @@ create policy guide_opens_select_authenticated
   );
 
 grant select, insert on public.guide_opens to authenticated;
-grant select, insert on public.guide_opens to anon;
+-- No anon grant: RLS requires auth.uid()=user_id, so anon would always be blocked;
+-- granting to anon is misleading and widens surface (see PR 221 review).

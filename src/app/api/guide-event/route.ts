@@ -1,10 +1,20 @@
 import { z } from "zod";
 import { createSupabaseRouteHandler } from "@/lib/supabase/server";
 
+const GUIDE_SOURCES = [
+  "balances-empty",
+  "budget-empty",
+  "bills-empty",
+  "first-run",
+  "help-center",
+  "persistent-help",
+  "help-button",
+] as const;
+
 const bodySchema = z.object({
   slug: z.string().min(1).max(200),
   anchor: z.string().min(1).max(200).nullable().optional(),
-  source: z.string().min(1).max(80).nullable().optional(),
+  source: z.enum(GUIDE_SOURCES).nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -38,10 +48,12 @@ export async function POST(request: Request) {
   }
 
   // Resolve household/member via active membership — optional, best-effort.
+  // Best-effort: picks earliest household for multi-household users. Prefer active household
+  // via header/cookie when available; otherwise earliest joined. See column comment.
   let householdId: string | null = null;
   let memberId: string | null = null;
   try {
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from("household_members")
       .select("id, household_id")
       .eq("user_id", userId)
@@ -49,12 +61,14 @@ export async function POST(request: Request) {
       .order("joined_at", { ascending: true })
       .limit(1)
       .maybeSingle();
-    if (membership) {
+    if (membershipError) {
+      console.warn("guide_opens membership lookup failed", { userId, error: membershipError });
+    } else if (membership) {
       householdId = membership.household_id;
       memberId = membership.id;
     }
-  } catch {
-    // ignore — keep nulls
+  } catch (err) {
+    console.warn("guide_opens membership lookup threw", { userId, err });
   }
 
   const { error: insertError } = await (

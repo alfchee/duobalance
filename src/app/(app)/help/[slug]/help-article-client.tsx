@@ -16,16 +16,34 @@ export function HelpArticleClient({ slug }: { slug: string }) {
 
   // Deep-link support: scroll to hash fragment and record guide open for funnel.
   useEffect(() => {
-    const hash = window.location.hash.slice(1);
-    if (hash) {
-      // Small delay so markdown ids are in DOM
-      requestAnimationFrame(() => {
-        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+    function scrollToHash() {
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
+      // Robust: retry until element found (handles hydration / slow PWA WebView)
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior, block: "start" });
+          return;
+        }
+        attempts += 1;
+        if (attempts < 5) requestAnimationFrame(tryScroll);
+      };
+      requestAnimationFrame(() => requestAnimationFrame(tryScroll));
     }
-    // Record guide open — slug + optional anchor. Source is direct article view.
+
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+
+    // Record guide open — slug + optional anchor. Dedupe in trackGuideOpen prevents double-count
+    // with link onClick (empty-state → article).
     const anchor = window.location.hash.slice(1) || null;
     void trackGuideOpen(`/help/${slug}${anchor ? `#${anchor}` : ""}`, "help-center");
+
+    return () => window.removeEventListener("hashchange", scrollToHash);
   }, [slug]);
 
   if (!article) {
