@@ -31,6 +31,7 @@ export function LandingPage() {
   const t = useTranslations("landing");
   const locale = useLocale();
   const [showcase, setShowcase] = useState<Showcase>("balances");
+  // TODO(#191): add dedicated pt-BR guide route; pt-BR currently falls back to Spanish guide.
   const guideHref = locale === "en" ? "/guide/starter-guide" : "/guia/por-donde-empezar";
 
   useEffect(() => {
@@ -89,7 +90,7 @@ export function LandingPage() {
               className="mt-6 inline-flex max-w-2xl items-center gap-3 rounded-2xl border bg-background/90 p-4 text-left shadow-sm backdrop-blur hover:bg-background transition-colors"
             >
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
-                <BookOpen className="size-5" />
+                <BookOpen aria-hidden="true" className="size-5" />
               </span>
               <span className="min-w-0">
                 <span className="block text-xs font-bold uppercase tracking-[0.12em] text-primary">

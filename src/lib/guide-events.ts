@@ -121,12 +121,13 @@ export async function trackGuideOpen(href: string, source: GuideSource): Promise
   } catch {
     // ignore
   }
-  // Fire-and-forget: never block navigation on tracking failure.
+  // Fire-and-forget: never block navigation on tracking failure. keepalive survives page navigation (landing-hero).
   try {
     await apiFetch("/api/guide-event", {
       method: "POST",
       body: { slug, anchor, source, householdId: householdId ?? undefined },
-    });
+      keepalive: true as unknown as undefined,
+    } as unknown as Parameters<typeof apiFetch>[1]);
   } catch (err) {
     if (!isNetworkError(err) && !(typeof navigator !== "undefined" && !navigator.onLine)) {
       return;

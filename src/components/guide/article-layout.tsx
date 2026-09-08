@@ -35,22 +35,27 @@ export function GuideArticleLayout({
   const guideHref = `${relatedBase}/${frontmatter.slug}`;
   const trackedDepths = useRef<Set<number>>(new Set());
 
-  // Guide view + scroll-depth + anchor analytics (#197)
+  // Guide view + scroll-depth analytics (#197)
   useEffect(() => {
+    trackedDepths.current.clear();
     void trackGuideOpen(guideHref, "guide-view");
-    // Track anchor if present on initial load
-    const initialAnchor = window.location.hash.slice(1);
-    if (initialAnchor) void trackGuideOpen(`${guideHref}#${initialAnchor}`, "guide-anchor");
 
     function onScroll() {
       const scrollTop = window.scrollY;
       const viewportHeight = window.innerHeight;
       const docHeight = document.documentElement.scrollHeight;
-      if (docHeight <= viewportHeight) return;
-      const depth = Math.round(((scrollTop + viewportHeight) / docHeight) * 100);
-      const thresholds = [25, 50, 75, 100];
+      const thresholds = [25, 50, 75, 100] as const;
+      let depth: number;
+      if (docHeight <= viewportHeight) {
+        depth = 100;
+      } else {
+        depth = Math.ceil(((scrollTop + viewportHeight) / docHeight) * 100);
+        if (depth > 100) depth = 100;
+      }
       for (const t of thresholds) {
-        if (depth >= t && !trackedDepths.current.has(t)) {
+        // 100 handled as >=99 to survive sub-pixel/zoom cases
+        const reached = t === 100 ? depth >= 99 : depth >= t;
+        if (reached && !trackedDepths.current.has(t)) {
           trackedDepths.current.add(t);
           void trackGuideOpen(`${guideHref}#depth-${t}`, "guide-scroll");
         }
@@ -66,7 +71,7 @@ export function GuideArticleLayout({
       });
     }
     window.addEventListener("scroll", throttledOnScroll, { passive: true });
-    // Fire once to catch short articles
+    // Fire once to emit 100% for short articles and initial viewport
     onScroll();
     return () => window.removeEventListener("scroll", throttledOnScroll);
   }, [guideHref]);
