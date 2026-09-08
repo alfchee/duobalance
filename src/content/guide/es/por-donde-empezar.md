@@ -56,11 +56,9 @@ Sí, también los C$40 de la cuajada, el taxi, la recarga del teléfono. Especia
 
 De cada movimiento necesitas solo tres cosas:
 
-|                 |                                      |
-| --------------- | ------------------------------------ |
-| **Cuánto**      | El monto                             |
-| **Cuándo**      | La fecha                             |
-| **De qué tipo** | Una categoría, aunque sea aproximada |
+- **Cuánto**: El monto
+- **Cuándo**: La fecha
+- **De qué tipo**: Una categoría, aunque sea aproximada
 
 Eso es todo. No necesitas el nombre del negocio, ni una nota, ni la foto del recibo. La app está hecha para que esto te tome menos de cinco segundos, y esa velocidad es la que hace que lo sigas haciendo mañana.
 
@@ -147,5 +145,3 @@ Para decisiones específicas de tu situación — deudas, préstamos, inversione
 ---
 
 **Empieza con un movimiento. Hoy.** El resto se acomoda solo.
-
-> Nota sobre voseo: esta guía usa **tú** (tuteo) de forma deliberada para mantener neutralidad regional en todo el contenido educativo de la app. Los correos transaccionales de invitación usan **vos** por cercanía con lectores nicaragüenses. Ambos tratamientos son consistentes dentro de cada pieza.
