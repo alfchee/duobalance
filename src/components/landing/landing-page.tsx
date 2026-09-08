@@ -27,6 +27,7 @@ const SHOWCASES: readonly Showcase[] = ["balances", "entry", "budget", "bills"];
 
 export function LandingPage() {
   const t = useTranslations("landing");
+  const locale = useLocale();
   const [showcase, setShowcase] = useState<Showcase>("balances");
 
   useEffect(() => {
@@ -271,6 +272,10 @@ export function LandingPage() {
             links={[
               { href: "/terms", label: t("footer.terms") },
               { href: "/privacy", label: t("footer.privacy") },
+              {
+                href: locale === "en" ? "/disclaimer" : "/aviso-legal",
+                label: t("footer.disclaimer"),
+              },
             ]}
           />
         </div>

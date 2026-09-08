@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { Clock, ArrowLeft, Calendar } from "lucide-react";
+import { useLocale } from "next-intl";
 import type { GuideArticle } from "@/lib/guide/generated-content";
 import { MarkdownRenderer } from "@/components/help/markdown-renderer";
 import { TableOfContents } from "./table-of-contents";
@@ -18,6 +19,11 @@ export function GuideArticleLayout({
   backLabel?: string;
 }) {
   const { frontmatter, headings, content } = article;
+  const locale = useLocale();
+  const isEnglish = locale === "en";
+  const readingLabel = isEnglish ? "min read" : "min de lectura";
+  const relatedBase = isEnglish ? "/guide" : "/guia";
+  const nextLabel = isEnglish ? "Next" : "Siguiente";
 
   // Deep-link / hash scroll support, mirrors help-article-client
   useEffect(() => {
@@ -64,7 +70,7 @@ export function GuideArticleLayout({
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Clock className="size-3.5" />
-              {frontmatter.readingTime} min de lectura
+              {frontmatter.readingTime} {readingLabel}
             </span>
             <span>•</span>
             <span className="inline-flex items-center gap-1.5">
@@ -86,13 +92,13 @@ export function GuideArticleLayout({
         {frontmatter.related.length > 0 ? (
           <section className="rounded-2xl border bg-muted/20 p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              Siguiente
+              {nextLabel}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {frontmatter.related.map((slug) => (
                 <Link
                   key={slug}
-                  href={`/guia/${slug}`}
+                  href={`${relatedBase}/${slug}`}
                   className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-accent"
                 >
                   {slug}

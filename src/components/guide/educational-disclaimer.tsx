@@ -28,6 +28,8 @@ export function EducationalDisclaimer() {
   const linkLabel =
     locale === "en" ? "Learn more" : locale === "pt-BR" ? "Saiba mais" : "Saber más";
 
+  const href = locale === "en" ? "/disclaimer" : "/aviso-legal";
+
   return (
     <aside
       aria-label={label}
@@ -36,10 +38,7 @@ export function EducationalDisclaimer() {
       <p className="text-xs font-bold uppercase tracking-wide opacity-80">{label}</p>
       <p className="mt-2">{text}</p>
       <p className="mt-3">
-        <Link
-          href="/aviso-legal"
-          className="font-semibold underline underline-offset-2 hover:opacity-80"
-        >
+        <Link href={href} className="font-semibold underline underline-offset-2 hover:opacity-80">
           {linkLabel}
         </Link>
       </p>

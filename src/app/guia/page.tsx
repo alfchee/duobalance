@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import { getAllGuideArticles } from "@/lib/guide/guide-service";
+import { EducationalDisclaimer } from "@/components/guide/educational-disclaimer";
 
 export const dynamic = "force-static";
 
@@ -50,6 +51,12 @@ export default function GuiaIndexPage() {
           </Link>
         ))}
       </section>
+      <EducationalDisclaimer />
+      <p className="text-center text-xs text-muted-foreground">
+        <Link href="/aviso-legal" className="underline underline-offset-2 hover:text-foreground">
+          Aviso legal — contenido educativo
+        </Link>
+      </p>
     </main>
   );
 }
