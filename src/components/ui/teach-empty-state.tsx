@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackGuideOpen, type GuideSource } from "@/lib/guide-events";
 
 type TeachEmptyStateBase = {
   icon: LucideIcon;
@@ -11,6 +12,7 @@ type TeachEmptyStateBase = {
   primaryLabel: string;
   guideLabel: string;
   guideHref: string;
+  guideSource?: GuideSource;
 };
 
 type TeachEmptyStateProps = TeachEmptyStateBase &
@@ -25,7 +27,12 @@ export function TeachEmptyState({
   primaryHref,
   guideLabel,
   guideHref,
+  guideSource,
 }: TeachEmptyStateProps) {
+  function handleGuideClick() {
+    if (guideSource) void trackGuideOpen(guideHref, guideSource);
+  }
+
   return (
     <section className="rounded-2xl border border-dashed bg-card p-8 text-center shadow-sm">
       <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-secondary text-muted-foreground">
@@ -45,6 +52,7 @@ export function TeachEmptyState({
         )}
         <Link
           href={guideHref}
+          onClick={handleGuideClick}
           className="inline-flex items-center text-sm font-medium text-primary hover:underline"
         >
           {guideLabel}

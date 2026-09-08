@@ -139,6 +139,7 @@ async function main() {
     "src/app/api/bills/[id]/generate/route.ts",
     "src/app/api/export/route.ts",
     "src/app/api/feedback/route.ts",
+    "src/app/api/guide-event/route.ts",
     "src/app/api/invites/route.ts",
     "src/app/api/invites/[id]/route.ts",
     "src/app/api/invites/[id]/resend/route.ts",

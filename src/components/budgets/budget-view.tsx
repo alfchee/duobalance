@@ -148,7 +148,8 @@ export function BudgetView() {
             primaryLabel={t("empty.primary")}
             onPrimary={() => openTransaction("transaction")}
             guideLabel={t("empty.guide")}
-            guideHref="/help/household-vs-personal-budgets"
+            guideHref={t("empty.guideHref")}
+            guideSource="budget-empty"
           />
           <Button
             type="button"

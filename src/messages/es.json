@@ -419,7 +419,8 @@
       "title": "Aquí viven tus saldos",
       "description": "Cada gasto o ingreso actualiza un saldo. Agrega tu primer movimiento y creamos una cuenta Efectivo automáticamente.",
       "primary": "Agregar primer movimiento",
-      "guide": "Cómo funcionan los saldos →"
+      "guide": "Cómo funcionan los saldos →",
+      "guideHref": "/help/recording-transaction-fast#registro-rpido"
     }
   },
   "onboarding": {
@@ -448,7 +449,9 @@
       "subtitle": "Un toque para empezar — luego podrás añadir cuentas, presupuestos e invitar a tu pareja.",
       "action": "Registrar gasto",
       "hint": "Crearemos una cuenta Efectivo automáticamente — podrás renombrarla en Ajustes.",
-      "dismiss": "Descartar"
+      "dismiss": "Descartar",
+      "guide": "Cómo empezar →",
+      "guideHref": "/help/getting-started-creating-household#registro-inicial"
     }
   },
   "household": {
@@ -740,7 +743,8 @@
       "description": "Un buen presupuesto nace de datos reales. Sigue registrando 2 a 4 semanas y luego crea límites que reflejen tu gasto real.",
       "primary": "Agregar un movimiento",
       "secondary": "O crear un presupuesto manualmente",
-      "guide": "Cómo crear un buen presupuesto →"
+      "guide": "Cómo crear un buen presupuesto →",
+      "guideHref": "/help/household-vs-personal-budgets#presupuestos-del-hogar"
     },
     "copyDialog": {
       "title": "Copiar presupuestos del mes anterior",
@@ -795,7 +799,8 @@
       "title": "Que nada se te pase cada mes",
       "description": "Las cuentas son para alquiler, servicios y suscripciones — lo que vuelve cada mes. Agrega una para verla en tu calendario.",
       "action": "Agregar cuenta",
-      "guide": "Cómo funcionan las cuentas →"
+      "guide": "Cómo funcionan las cuentas →",
+      "guideHref": "/help/recurrence-and-marking-paid#configuracin-de-recurrencia"
     },
     "status": {
       "due": "Pendiente",
@@ -1143,6 +1148,10 @@
     "backToHelp": "Volver a la ayuda",
     "relatedArticles": "Artículos relacionados",
     "updatedOn": "Actualizado el {date}",
+    "starterTitle": "¿Nuevo? Empieza por la guía",
+    "starterDescription": "Aprende cómo funciona DuoBalance en 2 minutos — primero un gasto, lo demás después.",
+    "starterCta": "Abrir guía inicial →",
+    "starterHref": "/help/getting-started-creating-household#registro-inicial",
     "categories": {
       "accounts": "Cuentas y Saldos",
       "transactions": "Transacciones",

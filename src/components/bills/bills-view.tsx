@@ -418,7 +418,8 @@ export function BillsView() {
           primaryLabel={t("empty.action")}
           onPrimary={beginCreate}
           guideLabel={t("empty.guide")}
-          guideHref="/help/recurrence-and-marking-paid"
+          guideHref={t("empty.guideHref")}
+          guideSource="bills-empty"
         />
       ) : weeks.length === 0 ? (
         <div className="rounded-4xl border border-dashed p-8 text-center text-sm text-muted-foreground">
