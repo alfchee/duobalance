@@ -59,6 +59,13 @@
       "currency": "Moeda base",
       "inviteToken": "Código do convite",
       "required": "Preencha todos os campos obrigatórios."
+    },
+    "sharedPrivateExplainer": {
+      "title": "Contas compartilhadas e privadas",
+      "body": "Contas compartilhadas são visíveis para os dois — como Mercado ou Aluguel. Contas privadas só quem criou vê, assim gastos pessoais ficam privados. Os totais do lar ainda somam tudo. Façam uma revisão mensal juntos em vez de conferir cada compra.",
+      "dismiss": "Dispensar",
+      "learnMore": "Como funcionam as contas privadas →",
+      "helpHref": "/help/inviting-your-partner#contas-compartilhadas-e-privadas"
     }
   },
   "budget": {

@@ -9,6 +9,8 @@ const GUIDE_SOURCES = [
   "help-center",
   "persistent-help",
   "help-button",
+  "members-invite",
+  "accept-invite",
 ] as const;
 
 const bodySchema = z.object({
