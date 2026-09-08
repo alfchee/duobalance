@@ -273,6 +273,7 @@ export function LandingPage() {
               { href: "/terms", label: t("footer.terms") },
               { href: "/privacy", label: t("footer.privacy") },
               {
+                // pt-BR reuses Spanish legal page until dedicated pt-BR version ships (see #191).
                 href: locale === "en" ? "/disclaimer" : "/aviso-legal",
                 label: t("footer.disclaimer"),
               },

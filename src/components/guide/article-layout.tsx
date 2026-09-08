@@ -20,10 +20,12 @@ export function GuideArticleLayout({
 }) {
   const { frontmatter, headings, content } = article;
   const locale = useLocale();
-  const isEnglish = locale === "en";
-  const readingLabel = isEnglish ? "min read" : "min de lectura";
-  const relatedBase = isEnglish ? "/guide" : "/guia";
-  const nextLabel = isEnglish ? "Next" : "Siguiente";
+  // Explicit locale branching so pt-BR does not silently inherit Spanish.
+  // TODO(#191): add dedicated pt-BR guide route (/guia-pt or /guia) and switch relatedBase.
+  const readingLabel =
+    locale === "en" ? "min read" : locale === "pt-BR" ? "min de leitura" : "min de lectura";
+  const relatedBase = locale === "en" ? "/guide" : "/guia";
+  const nextLabel = locale === "en" ? "Next" : locale === "pt-BR" ? "Próximo" : "Siguiente";
 
   // Deep-link / hash scroll support, mirrors help-article-client
   useEffect(() => {

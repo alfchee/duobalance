@@ -28,6 +28,7 @@ export function EducationalDisclaimer() {
   const linkLabel =
     locale === "en" ? "Learn more" : locale === "pt-BR" ? "Saiba mais" : "Saber más";
 
+  // pt-BR reuses the Spanish legal page until a dedicated pt-BR version ships (see #191).
   const href = locale === "en" ? "/disclaimer" : "/aviso-legal";
 
   return (

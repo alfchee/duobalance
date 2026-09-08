@@ -5,7 +5,8 @@ import type { GuideHeading } from "@/lib/guide/generated-content";
 
 export function TableOfContents({ headings }: { headings: GuideHeading[] }) {
   const locale = useLocale();
-  const label = locale === "en" ? "In this guide" : "En esta guía";
+  const label =
+    locale === "en" ? "In this guide" : locale === "pt-BR" ? "Neste guia" : "En esta guía";
   const tocHeadings = headings.filter((h) => h.level === 2 || h.level === 3);
   if (tocHeadings.length === 0) return null;
 
