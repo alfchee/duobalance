@@ -1,6 +1,6 @@
--- Issue #22: categories, categorization_rules + seeded defaults.
+-- Issue #22 / #194: categories, categorization_rules + seeded defaults.
 -- Covers:
---   * Seeded defaults on household creation (es/en/pt-BR counts)
+--   * Seeded defaults on household creation (es/en/pt-BR counts — #194: 7 expense only)
 --   * RLS visibility (members see own household's rows, anon/non-member see nothing)
 --   * Partner role CRUD (AC #7)
 --   * Case-insensitive uniqueness per (household, parent, kind)
@@ -51,44 +51,44 @@ end
 $$;
 
 -- ============================================================================
--- 1. Seeded defaults count per locale (13 expense + 4 income = 17 each) + locale-specific names
+-- 1. Seeded defaults count per locale (7 expense only = 7 each — issue #194) + locale-specific names
 -- ============================================================================
 
 select results_eq(
   $$ select count(*)::int from public.categories
      where household_id = '11111111-1111-1111-1111-111111111111' $$,
-  $$ values (17::int) $$,
-  'es household: 17 default categories seeded (13 expense + 4 income)'
+  $$ values (7::int) $$,
+  'es household: 7 default categories seeded (7 expense, 0 income — #194)'
 );
 
 select results_eq(
   $$ select count(*)::int from public.categories
      where household_id = '22222222-2222-2222-2222-222222222222' $$,
-  $$ values (17::int) $$,
-  'en household: 17 default categories seeded'
+  $$ values (7::int) $$,
+  'en household: 7 default categories seeded'
 );
 
 select results_eq(
   $$ select count(*)::int from public.categories
      where household_id = '33333333-3333-3333-3333-333333333333' $$,
-  $$ values (17::int) $$,
-  'pt-BR household: 17 default categories seeded'
+  $$ values (7::int) $$,
+  'pt-BR household: 7 default categories seeded'
 );
 
 select results_eq(
   $$ select count(*)::int from public.categories
      where household_id = '11111111-1111-1111-1111-111111111111'
        and kind = 'expense' and is_default $$,
-  $$ values (13::int) $$,
-  'es household: 13 expense defaults marked is_default'
+  $$ values (7::int) $$,
+  'es household: 7 expense defaults marked is_default'
 );
 
 select results_eq(
   $$ select count(*)::int from public.categories
      where household_id = '11111111-1111-1111-1111-111111111111'
        and kind = 'income' and is_default $$,
-  $$ values (4::int) $$,
-  'es household: 4 income defaults marked is_default'
+  $$ values (0::int) $$,
+  'es household: 0 income defaults (income on demand — #194)'
 );
 
 -- Locale-specific spot-check a few names so we didn't seed the wrong set.
@@ -96,18 +96,18 @@ select ok(
   exists (
     select 1 from public.categories
     where household_id = '11111111-1111-1111-1111-111111111111'
-      and name = 'Comida y Bebida' and kind = 'expense'
+      and name = 'Comida' and kind = 'expense'
   ),
-  'es: Comida y Bebida expense category present'
+  'es: Comida expense category present (#194)'
 );
 
 select ok(
   exists (
     select 1 from public.categories
     where household_id = '22222222-2222-2222-2222-222222222222'
-      and name = 'Food & Drink' and kind = 'expense'
+      and name = 'Food' and kind = 'expense'
   ),
-  'en: Food & Drink expense category present'
+  'en: Food expense category present (#194)'
 );
 
 select ok(
@@ -120,30 +120,30 @@ select ok(
 );
 
 select ok(
-  exists (
+  not exists (
     select 1 from public.categories
     where household_id = '11111111-1111-1111-1111-111111111111'
-      and name = 'Salario' and kind = 'income'
+      and kind = 'income'
   ),
-  'es: Salario income category present'
+  'es: no income defaults seeded (#194 on-demand)'
 );
 
 select ok(
-  exists (
+  not exists (
     select 1 from public.categories
     where household_id = '22222222-2222-2222-2222-222222222222'
-      and name = 'Salary' and kind = 'income'
+      and kind = 'income'
   ),
-  'en: Salary income category present'
+  'en: no income defaults seeded'
 );
 
 select ok(
-  exists (
+  not exists (
     select 1 from public.categories
     where household_id = '33333333-3333-3333-3333-333333333333'
-      and name = 'Salário' and kind = 'income'
+      and kind = 'income'
   ),
-  'pt-BR: Salário income category present'
+  'pt-BR: no income defaults seeded'
 );
 
 -- ============================================================================
@@ -156,8 +156,8 @@ select tests.authenticate_as('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'partner@te
 
 select results_eq(
   $$ select count(*)::int from public.categories $$,
-  $$ values (17::int) $$,
-  'RLS: partner in 1 household sees exactly 17 categories (their household only)'
+  $$ values (7::int) $$,
+  'RLS: partner in 1 household sees exactly 7 categories (their household only) — #194'
 );
 
 select is_empty(
@@ -435,9 +435,9 @@ begin
   memb := (select id from public.household_members where household_id = hh limit 1);
 
   select id into comida from public.categories
-    where household_id = hh and name = 'Comida y Bebida';
+     where household_id = hh and name = 'Comida';
   select id into otros  from public.categories
-    where household_id = hh and name = 'Otros';
+     where household_id = hh and name = 'Otros';
 
   insert into public.transactions
     (id, household_id, account_id, category_id, amount,
@@ -447,12 +447,12 @@ begin
      hh, acc, comida, -500, 'NIO', current_date, 'lunch', memb);
 end $$;
 
-select pass('delete-in-use fixture: transaction referencing Comida y Bebida created');
+select pass('delete-in-use fixture: transaction referencing Comida created');
 
 -- Now delete. Trigger reassigns to Otros.
 delete from public.categories
   where household_id = '11111111-1111-1111-1111-111111111111'
-    and name = 'Comida y Bebida';
+    and name = 'Comida';
 
 select results_eq(
   $$ select c.name
@@ -482,13 +482,13 @@ begin
   insert into public.household_members (household_id, user_id, role, display_name)
     values (hh, usr, 'owner', 'NoFB Owner') returning id into memb;
 
-  -- Insert an account and a transaction referencing Comida y Bebida so the
+  -- Insert an account and a transaction referencing Comida so the
   -- delete trigger has something to protect.
   insert into public.accounts (household_id, name, kind, currency)
-    values (hh, 'NoFB Test Acc', 'checking', 'MXN') returning id into acc;
+     values (hh, 'NoFB Test Acc', 'checking', 'MXN') returning id into acc;
 
   select id into comida from public.categories
-    where household_id = hh and name = 'Comida y Bebida';
+    where household_id = hh and name = 'Comida';
 
   insert into public.transactions
     (id, household_id, account_id, category_id, amount,
@@ -505,7 +505,7 @@ update public.categories set name = 'Renamed Otros No Longer Matches'
 select throws_ok(
   $$ delete from public.categories
      where household_id = '44444444-4444-4444-4444-444444444444'
-       and name = 'Comida y Bebida' $$,
+       and name = 'Comida' $$,
   '2BP01',
   null,
   'delete-in-use: no fallback category raises 2BP01 dependent_objects_still_exist'

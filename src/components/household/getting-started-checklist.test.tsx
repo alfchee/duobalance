@@ -14,15 +14,17 @@ vi.mock("@/hooks/useHousehold", () => ({
   useHousehold: () => ({ householdId: "household-1" }),
 }));
 
+const progressMock = vi.fn(() => ({
+  isLoading: false,
+  hasAccounts: false,
+  hasTransactions: false,
+  hasBudgets: false,
+  hasPartner: false,
+  isComplete: false,
+}));
+
 vi.mock("@/hooks/useOnboardingProgress", () => ({
-  useOnboardingProgress: () => ({
-    isLoading: false,
-    hasAccounts: false,
-    hasTransactions: false,
-    hasBudgets: false,
-    hasPartner: false,
-    isComplete: false,
-  }),
+  useOnboardingProgress: () => progressMock(),
 }));
 
 vi.mock("@/store/accounts", () => ({
@@ -31,6 +33,10 @@ vi.mock("@/store/accounts", () => ({
 
 vi.mock("@/store/transactions", () => ({
   useTransactionsUiStore: () => ({ openCreate: vi.fn() }),
+}));
+
+vi.mock("./first-run-prompt", () => ({
+  FirstRunPrompt: () => <div>firstRun</div>,
 }));
 
 vi.mock("@/hooks/useInvites", () => ({
@@ -48,14 +54,36 @@ vi.mock("@/components/ui/dialog", () => ({
 import { GettingStartedChecklist } from "./getting-started-checklist";
 
 describe("GettingStartedChecklist", () => {
-  it("renders checklist when onboarding is incomplete", () => {
+  it("renders first-run prompt when no transactions yet", () => {
+    progressMock.mockReturnValue({
+      isLoading: false,
+      hasAccounts: false,
+      hasTransactions: false,
+      hasBudgets: false,
+      hasPartner: false,
+      isComplete: false,
+    });
+    render(<GettingStartedChecklist />);
+
+    expect(screen.getByText("firstRun")).toBeTruthy();
+  });
+
+  it("renders checklist with post-transaction prompts when transactions exist", () => {
+    progressMock.mockReturnValue({
+      isLoading: false,
+      hasAccounts: true,
+      hasTransactions: true,
+      hasBudgets: false,
+      hasPartner: false,
+      isComplete: false,
+    });
     render(<GettingStartedChecklist />);
 
     expect(screen.getByText("badge")).toBeTruthy();
     expect(screen.getByText("title")).toBeTruthy();
-    expect(screen.getByText("stepAccount")).toBeTruthy();
-    expect(screen.getByText("stepTransaction")).toBeTruthy();
-    expect(screen.getByText("stepBudget")).toBeTruthy();
+    // Budget is no longer part of the checklist (#198) — it is surfaced
+    // later as a data-driven suggestion. Only account (done) + partner remain.
     expect(screen.getByText("stepPartner")).toBeTruthy();
+    expect(screen.queryByText("stepBudget")).toBeNull();
   });
 });

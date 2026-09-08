@@ -13,6 +13,10 @@ vi.mock("@/hooks/useInvites", () => ({
   usePendingInvites: vi.fn(),
   useInviteMutations: vi.fn(),
 }));
+vi.mock("@/hooks/useSession", () => ({ useSession: vi.fn(() => ({ user: { id: "u-self" } })) }));
+vi.mock("@/components/household/shared-private-explainer", () => ({
+  SharedPrivateExplainer: () => null,
+}));
 
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";

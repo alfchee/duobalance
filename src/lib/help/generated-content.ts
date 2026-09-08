@@ -242,9 +242,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Administrar una invitación",
           id: "administrar-una-invitacin",
         },
+        {
+          level: 2,
+          text: "Cuentas compartidas y privadas",
+          id: "cuentas-compartidas-y-privadas",
+        },
       ],
       content:
-        "\n# ¿Cómo invitar a tu pareja a duobalance?\n\nAdministrar el presupuesto en pareja requiere que ambos tengan acceso al mismo hogar.\n\n## Pasos para enviar la invitación\n\n1. Ve a **Configuración** y selecciona la sección **Miembros del hogar**. Solo un propietario puede administrar invitaciones.\n2. Ingresa el correo electrónico de tu pareja.\n3. Haz clic en **Enviar invitación**.\n\n## Cómo acepta tu pareja\n\n- Tu pareja recibirá un enlace de invitación por correo electrónico.\n- Al abrir el enlace e iniciar sesión o registrarse, se vinculará automáticamente a tu hogar y ambos verán la misma información compartida inmediatamente.\n\n## Administrar una invitación\n\nLos propietarios pueden reenviar una invitación o revocarla antes de que se acepte. Una persona que ya es miembro activo no puede aceptar otra invitación al mismo hogar.\n",
+        "\n# ¿Cómo invitar a tu pareja a duobalance?\n\nAdministrar el presupuesto en pareja requiere que ambos tengan acceso al mismo hogar.\n\n## Pasos para enviar la invitación\n\n1. Ve a **Configuración** y selecciona la sección **Miembros del hogar**. Solo un propietario puede administrar invitaciones.\n2. Ingresa el correo electrónico de tu pareja.\n3. Haz clic en **Enviar invitación**.\n\n## Cómo acepta tu pareja\n\n- Tu pareja recibirá un enlace de invitación por correo electrónico.\n- Al abrir el enlace e iniciar sesión o registrarse, se vinculará automáticamente a tu hogar y ambos verán la misma información compartida inmediatamente.\n\n## Administrar una invitación\n\nLos propietarios pueden reenviar una invitación o revocarla antes de que se acepte. Una persona que ya es miembro activo no puede aceptar otra invitación al mismo hogar.\n\n## Cuentas compartidas y privadas\n\nLas cuentas compartidas las ven ambos — por ejemplo, Supermercado o Alquiler. Las cuentas privadas solo las ve su titular, así tu gasto personal puede quedar privado. Los totales del hogar igual suman todo. Revisen juntos una vez al mes en lugar de controlar cada compra.\n",
     },
     "adding-accounts": {
       frontmatter: {
@@ -914,9 +919,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Managing an invitation",
           id: "managing-an-invitation",
         },
+        {
+          level: 2,
+          text: "Shared vs private accounts",
+          id: "shared-vs-private-accounts",
+        },
       ],
       content:
-        "\n# How to invite your partner to duobalance\n\nManaging household finances works best when both partners have access to the same household workspace.\n\n## Steps to send an invitation\n\n1. Navigate to **Settings** and open **Household Members**. Only an owner can manage invitations.\n2. Enter your partner's email address.\n3. Click **Send Invitation**.\n\n## How your partner joins\n\n- Your partner will receive an email invitation link.\n- Clicking the link and signing in or registering will automatically link them to your household, granting access to shared accounts and budgets immediately.\n\n## Managing an invitation\n\nOwners can resend an invitation or revoke it before it is accepted. Someone who is already an active member cannot accept another invitation to the same household.\n",
+        "\n# How to invite your partner to duobalance\n\nManaging household finances works best when both partners have access to the same household workspace.\n\n## Steps to send an invitation\n\n1. Navigate to **Settings** and open **Household Members**. Only an owner can manage invitations.\n2. Enter your partner's email address.\n3. Click **Send Invitation**.\n\n## How your partner joins\n\n- Your partner will receive an email invitation link.\n- Clicking the link and signing in or registering will automatically link them to your household, granting access to shared accounts and budgets immediately.\n\n## Managing an invitation\n\nOwners can resend an invitation or revoke it before it is accepted. Someone who is already an active member cannot accept another invitation to the same household.\n\n## Shared vs private accounts\n\nShared accounts are visible to both of you — like Groceries or Rent. Private accounts stay visible only to their owner, so personal spending can stay personal. Household totals still include everything. Try a monthly review together instead of checking each purchase.\n",
     },
     "adding-accounts": {
       frontmatter: {
@@ -1586,9 +1596,14 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Gerenciar um convite",
           id: "gerenciar-um-convite",
         },
+        {
+          level: 2,
+          text: "Contas compartilhadas e privadas",
+          id: "contas-compartilhadas-e-privadas",
+        },
       ],
       content:
-        "\n# Como convidar seu parceiro para o duobalance\n\nO gerenciamento financeiro a dois funciona melhor quando ambos têm acesso ao mesmo espaço compartilhado.\n\n## Passos para enviar o convite\n\n1. Vá em **Configurações** e abra a seção **Membros do Lar**. Apenas um proprietário pode gerenciar convites.\n2. Digite o e-mail do seu parceiro.\n3. Clique em **Enviar Convite**.\n\n## Como seu parceiro entra\n\n- Seu parceiro receberá um link de convite por e-mail.\n- Ao clicar no link e entrar ou se cadastrar, ele será vinculado automaticamente ao seu lar, tendo acesso imediato às contas e orçamentos compartilhados.\n\n## Gerenciar um convite\n\nProprietários podem reenviar um convite ou revogá-lo antes de sua aceitação. Uma pessoa que já é membro ativo não pode aceitar outro convite para o mesmo lar.\n",
+        "\n# Como convidar seu parceiro para o duobalance\n\nO gerenciamento financeiro a dois funciona melhor quando ambos têm acesso ao mesmo espaço compartilhado.\n\n## Passos para enviar o convite\n\n1. Vá em **Configurações** e abra a seção **Membros do Lar**. Apenas um proprietário pode gerenciar convites.\n2. Digite o e-mail do seu parceiro.\n3. Clique em **Enviar Convite**.\n\n## Como seu parceiro entra\n\n- Seu parceiro receberá um link de convite por e-mail.\n- Ao clicar no link e entrar ou se cadastrar, ele será vinculado automaticamente ao seu lar, tendo acesso imediato às contas e orçamentos compartilhados.\n\n## Gerenciar um convite\n\nProprietários podem reenviar um convite ou revogá-lo antes de sua aceitação. Uma pessoa que já é membro ativo não pode aceitar outro convite para o mesmo lar.\n\n## Contas compartilhadas e privadas\n\nContas compartilhadas são visíveis para os dois — como Mercado ou Aluguel. Contas privadas só quem criou vê, assim gastos pessoais ficam privados. Os totais do lar ainda somam tudo. Façam uma revisão mensal juntos em vez de conferir cada compra.\n",
     },
     "adding-accounts": {
       frontmatter: {

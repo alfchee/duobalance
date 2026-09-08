@@ -30,3 +30,7 @@ Managing household finances works best when both partners have access to the sam
 ## Managing an invitation
 
 Owners can resend an invitation or revoke it before it is accepted. Someone who is already an active member cannot accept another invitation to the same household.
+
+## Shared vs private accounts
+
+Shared accounts are visible to both of you — like Groceries or Rent. Private accounts stay visible only to their owner, so personal spending can stay personal. Household totals still include everything. Try a monthly review together instead of checking each purchase.

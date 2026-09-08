@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { searchArticles, getArticlesByCategory, type Article } from "@/lib/help/help-service";
+import { trackGuideOpen } from "@/lib/guide-events";
 
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   accounts: Wallet,
@@ -58,6 +59,26 @@ export default function HelpPage() {
           className="h-11 rounded-full border bg-card pl-10 pr-4 text-sm shadow-sm transition-colors focus-visible:ring-2"
         />
       </div>
+
+      {/* Starter guide — persistent entry point, 1 tap from any main screen via Help (2 taps total: Help → guide) */}
+      {!isSearching ? (
+        <Link
+          href={t("starterHref")}
+          onClick={() => void trackGuideOpen(t("starterHref"), "help-center")}
+          className="flex items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 transition-colors hover:bg-primary/10"
+        >
+          <div className="min-w-0">
+            <p className="text-sm font-black tracking-tight text-primary">{t("starterTitle")}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              {t("starterDescription")}
+            </p>
+            <p className="mt-2 text-xs font-semibold text-primary">{t("starterCta")}</p>
+          </div>
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <BookOpen className="size-5" />
+          </span>
+        </Link>
+      ) : null}
 
       {/* Search Results Mode */}
       {isSearching ? (
@@ -116,9 +137,11 @@ export default function HelpPage() {
 }
 
 function ArticleRow({ article, categoryName }: { article: Article; categoryName: string }) {
+  const href = `/help/${article.frontmatter.slug}`;
   return (
     <Link
-      href={`/help/${article.frontmatter.slug}`}
+      href={href}
+      onClick={() => void trackGuideOpen(href, "help-center")}
       className="group flex items-center justify-between gap-4 rounded-2xl border bg-card p-4 transition-colors hover:bg-accent/40"
     >
       <div className="min-w-0 flex-1">
