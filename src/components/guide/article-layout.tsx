@@ -13,13 +13,17 @@ export function GuideArticleLayout({
   article,
   backHref = "/",
   backLabel = "Volver al inicio",
+  locale: contentLocale,
 }: {
   article: GuideArticle;
   backHref?: string;
   backLabel?: string;
+  locale?: string;
 }) {
   const { frontmatter, headings, content } = article;
-  const locale = useLocale();
+  const browserLocale = useLocale();
+  // Content locale drives labels/links; fallback to browser locale for backwards compat.
+  const locale = contentLocale ?? browserLocale;
   // Explicit locale branching so pt-BR does not silently inherit Spanish.
   // TODO(#191): add dedicated pt-BR guide route (/guia-pt or /guia) and switch relatedBase.
   const readingLabel =
@@ -82,14 +86,14 @@ export function GuideArticleLayout({
           </div>
         </header>
 
-        <TableOfContents headings={headings} />
+        <TableOfContents headings={headings} locale={locale} />
 
         <div className="rounded-2xl border bg-card p-5 sm:p-8 shadow-sm">
           <MarkdownRenderer content={content} />
         </div>
 
         {/* Disclaimer slot — cannot be omitted; layout always renders it */}
-        <EducationalDisclaimer />
+        <EducationalDisclaimer locale={locale} />
 
         {frontmatter.related.length > 0 ? (
           <section className="rounded-2xl border bg-muted/20 p-4">

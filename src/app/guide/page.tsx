@@ -51,12 +51,7 @@ export default function GuideIndexPage() {
           </Link>
         ))}
       </section>
-      <EducationalDisclaimer />
-      <p className="text-center text-xs text-muted-foreground">
-        <Link href="/disclaimer" className="underline underline-offset-2 hover:text-foreground">
-          Disclaimer — educational content
-        </Link>
-      </p>
+      <EducationalDisclaimer locale="en" />
     </main>
   );
 }

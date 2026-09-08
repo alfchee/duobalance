@@ -51,12 +51,7 @@ export default function GuiaIndexPage() {
           </Link>
         ))}
       </section>
-      <EducationalDisclaimer />
-      <p className="text-center text-xs text-muted-foreground">
-        <Link href="/aviso-legal" className="underline underline-offset-2 hover:text-foreground">
-          Aviso legal — contenido educativo
-        </Link>
-      </p>
+      <EducationalDisclaimer locale="es" />
     </main>
   );
 }

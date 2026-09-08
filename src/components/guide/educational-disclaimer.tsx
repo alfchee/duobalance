@@ -12,8 +12,9 @@ const DISCLAIMER_EN =
 const DISCLAIMER_PT =
   "O DuoBalance não é um consultor financeiro certificado. Este conteúdo apresenta princípios gerais e amplamente aceitos para organizar e entender seus gastos; não constitui aconselhamento financeiro. Para decisões específicas sobre dívidas, empréstimos, investimentos, negócios ou impostos, consulte um profissional qualificado.";
 
-export function EducationalDisclaimer() {
-  const locale = useLocale();
+export function EducationalDisclaimer({ locale: propLocale }: { locale?: string } = {}) {
+  const browserLocale = useLocale();
+  const locale = propLocale ?? browserLocale;
   let text = DISCLAIMER_ES;
   if (locale === "en") text = DISCLAIMER_EN;
   else if (locale === "pt-BR") text = DISCLAIMER_PT;
