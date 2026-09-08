@@ -78,7 +78,10 @@ function renderInline(text: string): ReactNode[] {
   });
 }
 
-export function MarkdownRenderer({ content }: { content: string }) {
+export function MarkdownRenderer({ content, html }: { content: string; html?: string }) {
+  if (html) {
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  }
   const lines = content.split(/\r?\n/);
   const elements: ReactNode[] = [];
 
@@ -121,8 +124,12 @@ export function MarkdownRenderer({ content }: { content: string }) {
       const text = headingMatch[2].trim();
       const id = text
         .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-");
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
 
       if (level === 1) {
         elements.push(

@@ -19,6 +19,7 @@ export type Article = {
   frontmatter: ArticleFrontmatter;
   headings: ArticleHeading[];
   content: string;
+  html: string;
 };
 
 export const ALL_HELP_SLUGS: string[] = [
@@ -76,11 +77,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Cómo cambiar de modo",
-          id: "cmo-cambiar-de-modo",
+          id: "como-cambiar-de-modo",
         },
       ],
       content:
         "\n# Modo saldo manual vs. libro diario\n\nEn duobalance cada cuenta puede funcionar en uno de dos modos de saldo: **Libro diario (Ledger)** o **Manual**.\n\n## Modo Libro Diario (Ledger)\n\nEn el modo Libro Diario, el saldo actual de la cuenta se calcula automáticamente sumando el saldo inicial más todas las transacciones asociadas a la cuenta.\n\n- **Cuándo usarlo:** Para cuentas principales donde registras cada gasto, ingreso o transferencia.\n- **Por qué podría no cuadrar:** Si falta alguna transacción o el saldo inicial configurado no era correcto.\n\n## Modo Saldo Manual\n\nEn el modo Manual, tú defines directamente cuál es el saldo actual de la cuenta actualizándolo periódicamente.\n\n- **Cuándo usarlo:** Para tarjetas de crédito, cuentas de inversión o cuentas secundarias donde no deseas registrar cada café o compra pequeña.\n- **Transacciones en modo manual:** Puedes registrar transacciones para que sumen a los presupuestos y reportes, pero dichas transacciones no alteran automáticamente el saldo fijado manualmente.\n\n## Cómo cambiar de modo\n\n1. Dirígete a **Saldos** o **Ajustes de Cuenta**.\n2. Haz clic en la cuenta que deseas modificar.\n3. Selecciona el modo de saldo preferido y guarda los cambios.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="modo-saldo-manual-vs-libro-diario" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Modo saldo manual vs. libro diario</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">En duobalance cada cuenta puede funcionar en uno de dos modos de saldo: <strong class="font-bold">Libro diario (Ledger)</strong> o <strong class="font-bold">Manual</strong>.</p><h2 id="modo-libro-diario-ledger" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Modo Libro Diario (Ledger)</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">En el modo Libro Diario, el saldo actual de la cuenta se calcula automáticamente sumando el saldo inicial más todas las transacciones asociadas a la cuenta.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Cuándo usarlo:</strong> Para cuentas principales donde registras cada gasto, ingreso o transferencia.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Por qué podría no cuadrar:</strong> Si falta alguna transacción o el saldo inicial configurado no era correcto.</li></ul><h2 id="modo-saldo-manual" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Modo Saldo Manual</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">En el modo Manual, tú defines directamente cuál es el saldo actual de la cuenta actualizándolo periódicamente.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Cuándo usarlo:</strong> Para tarjetas de crédito, cuentas de inversión o cuentas secundarias donde no deseas registrar cada café o compra pequeña.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Transacciones en modo manual:</strong> Puedes registrar transacciones para que sumen a los presupuestos y reportes, pero dichas transacciones no alteran automáticamente el saldo fijado manualmente.</li></ul><h2 id="como-cambiar-de-modo" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Cómo cambiar de modo</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Dirígete a <strong class="font-bold">Saldos</strong> o <strong class="font-bold">Ajustes de Cuenta</strong>.</li><li class="text-sm leading-relaxed text-foreground">Haz clic en la cuenta que deseas modificar.</li><li class="text-sm leading-relaxed text-foreground">Selecciona el modo de saldo preferido y guarda los cambios.</li></ol></div>',
     },
     "private-accounts-and-views": {
       frontmatter: {
@@ -105,7 +107,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "¿Por qué mi pareja y yo vemos totales diferentes?",
-          id: "por-qu-mi-pareja-y-yo-vemos-totales-diferentes",
+          id: "por-que-mi-pareja-y-yo-vemos-totales-diferentes",
         },
         {
           level: 2,
@@ -115,6 +117,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Cuentas privadas y visibilidad de saldos\n\nEn duobalance puedes elegir qué cuentas son compartidas con el hogar y cuáles son privadas.\n\n## Vistas: Todo, Mis cuentas y Compartidas\n\n- **Compartida (Shared):** Ambos miembros del hogar pueden ver el saldo, historial y transacciones de esta cuenta.\n- **Privada (Mine):** Solo el propietario de la cuenta puede ver el saldo detallado y los movimientos individuales.\n\n## ¿Por qué mi pareja y yo vemos totales diferentes?\n\nSi tienes una cuenta privada, tu total personal (vista "Todo" o "Mío") incluirá tus fondos privados, mientras que la vista de tu pareja no los incluirá. Esto es por diseño para respetar la privacidad financiera individual dentro del hogar.\n\n## Transacciones privadas en Presupuestos\n\nLas transacciones realizadas desde una cuenta privada aún pueden asignarse a presupuestos del hogar si tú decides categorizarlas como gasto compartido.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="cuentas-privadas-y-visibilidad-de-saldos" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Cuentas privadas y visibilidad de saldos</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">En duobalance puedes elegir qué cuentas son compartidas con el hogar y cuáles son privadas.</p><h2 id="vistas-todo-mis-cuentas-y-compartidas" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Vistas: Todo, Mis cuentas y Compartidas</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Compartida (Shared):</strong> Ambos miembros del hogar pueden ver el saldo, historial y transacciones de esta cuenta.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Privada (Mine):</strong> Solo el propietario de la cuenta puede ver el saldo detallado y los movimientos individuales.</li></ul><h2 id="por-que-mi-pareja-y-yo-vemos-totales-diferentes" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">¿Por qué mi pareja y yo vemos totales diferentes?</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Si tienes una cuenta privada, tu total personal (vista &quot;Todo&quot; o &quot;Mío&quot;) incluirá tus fondos privados, mientras que la vista de tu pareja no los incluirá. Esto es por diseño para respetar la privacidad financiera individual dentro del hogar.</p><h2 id="transacciones-privadas-en-presupuestos" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Transacciones privadas en Presupuestos</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Las transacciones realizadas desde una cuenta privada aún pueden asignarse a presupuestos del hogar si tú decides categorizarlas como gasto compartido.</p></div>',
     },
     "transfers-arent-expenses": {
       frontmatter: {
@@ -129,7 +132,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "¿Por qué las transferencias no son gastos?",
-          id: "por-qu-las-transferencias-no-son-gastos",
+          id: "por-que-las-transferencias-no-son-gastos",
         },
         {
           level: 2,
@@ -139,11 +142,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Cómo registrar una transferencia",
-          id: "cmo-registrar-una-transferencia",
+          id: "como-registrar-una-transferencia",
         },
       ],
       content:
         "\n# ¿Por qué las transferencias no son gastos?\n\nMover dinero entre dos cuentas de tu hogar (por ejemplo, desde tu cuenta corriente a tu tarjeta de crédito o a la cuenta de ahorros) no disminuye el patrimonio del hogar.\n\n## Patrimonio neutro\n\n- **Transferencias entre cuentas:** Solo mueven fondos de un lugar a otro. No son salidas de dinero reales, por lo que no se cuentan como gastos ni reducen tus presupuestos.\n- **Gastos reales:** Ocurren cuando el dinero sale del hogar hacia un tercero (supermercado, servicios, alquiler).\n\n## Cómo registrar una transferencia\n\nAl crear un movimiento, selecciona la pestaña **Transferencia**, elige la cuenta de origen y la cuenta de destino. Ambas cuentas actualizarán sus saldos sin afectar tus presupuestos mensuales.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="por-que-las-transferencias-no-son-gastos" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">¿Por qué las transferencias no son gastos?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Mover dinero entre dos cuentas de tu hogar (por ejemplo, desde tu cuenta corriente a tu tarjeta de crédito o a la cuenta de ahorros) no disminuye el patrimonio del hogar.</p><h2 id="patrimonio-neutro" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Patrimonio neutro</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Transferencias entre cuentas:</strong> Solo mueven fondos de un lugar a otro. No son salidas de dinero reales, por lo que no se cuentan como gastos ni reducen tus presupuestos.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Gastos reales:</strong> Ocurren cuando el dinero sale del hogar hacia un tercero (supermercado, servicios, alquiler).</li></ul><h2 id="como-registrar-una-transferencia" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Cómo registrar una transferencia</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Al crear un movimiento, selecciona la pestaña <strong class="font-bold">Transferencia</strong>, elige la cuenta de origen y la cuenta de destino. Ambas cuentas actualizarán sus saldos sin afectar tus presupuestos mensuales.</p></div>',
     },
     "who-spent-vs-who-typed": {
       frontmatter: {
@@ -158,21 +162,22 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "¿Quién gastó vs. quién lo registró?",
-          id: "quin-gast-vs-quin-lo-registr",
+          id: "quien-gasto-vs-quien-lo-registro",
         },
         {
           level: 2,
           text: "¿Por qué existe esta distinción?",
-          id: "por-qu-existe-esta-distincin",
+          id: "por-que-existe-esta-distincion",
         },
         {
           level: 2,
           text: "Corrección de atribución",
-          id: "correccin-de-atribucin",
+          id: "correccion-de-atribucion",
         },
       ],
       content:
         '\n# ¿Quién gastó vs. quién lo registró?\n\nAl registrar un movimiento en duobalance, distinguimos entre **Quién gastó (spent_by)** y **Quién registró (entered_by)**.\n\n## ¿Por qué existe esta distinción?\n\nEs muy común que una persona ingrese los recibos o facturas de ambas personas al final del día o de la semana.\n\n- **Gastado por (spent_by):** Indica de quién fue la compra o responsabilidad. Se utiliza para filtrar reportes personales y presupuestos individuales.\n- **Registrado por (entered_by):** Se asigna automáticamente al usuario con la sesión activa que creó la transacción.\n\n## Corrección de atribución\n\nPuedes editar una transacción existente en cualquier momento para cambiar la opción "Gastado por" si fue asignada incorrectamente.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="quien-gasto-vs-quien-lo-registro" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">¿Quién gastó vs. quién lo registró?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Al registrar un movimiento en duobalance, distinguimos entre <strong class="font-bold">Quién gastó (spent_by)</strong> y <strong class="font-bold">Quién registró (entered_by)</strong>.</p><h2 id="por-que-existe-esta-distincion" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">¿Por qué existe esta distinción?</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Es muy común que una persona ingrese los recibos o facturas de ambas personas al final del día o de la semana.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Gastado por (spent_by):</strong> Indica de quién fue la compra o responsabilidad. Se utiliza para filtrar reportes personales y presupuestos individuales.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Registrado por (entered_by):</strong> Se asigna automáticamente al usuario con la sesión activa que creó la transacción.</li></ul><h2 id="correccion-de-atribucion" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Corrección de atribución</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Puedes editar una transacción existente en cualquier momento para cambiar la opción &quot;Gastado por&quot; si fue asignada incorrectamente.</p></div>',
     },
     "getting-started-creating-household": {
       frontmatter: {
@@ -187,7 +192,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Primeros pasos: cómo crear tu hogar",
-          id: "primeros-pasos-cmo-crear-tu-hogar",
+          id: "primeros-pasos-como-crear-tu-hogar",
         },
         {
           level: 2,
@@ -202,11 +207,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Más de un hogar",
-          id: "ms-de-un-hogar",
+          id: "mas-de-un-hogar",
         },
       ],
       content:
         '\n# Primeros pasos: cómo crear tu hogar\n\nUn hogar en duobalance es el espacio compartido donde tú y tu pareja administran sus finanzas.\n\n## Registro inicial\n\n1. Crea tu cuenta con tu correo electrónico.\n2. Al iniciar sesión por primera vez, dale un nombre a tu hogar (por ejemplo, "Hogar García-López").\n3. Selecciona la **Moneda Base** del hogar. Todos los reportes globales consolidarán los montos en esta moneda.\n\n## Siguientes pasos recomendados\n\n- Invita a tu pareja desde **Configuración**, en **Miembros del hogar**.\n- Agrega tus primeras cuentas bancarias o de efectivo en **Saldos**.\n- Configura tus presupuestos principales en **Presupuesto**.\n\n## Más de un hogar\n\nUsa el nombre del hogar en la parte superior de la aplicación para crear, unirte o cambiar de hogar más adelante. Cada hogar conserva sus datos separados. Consulta [cómo cambiar de hogar y administrar miembros](/help/managing-households-and-members) para conocer el flujo completo.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="primeros-pasos-como-crear-tu-hogar" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Primeros pasos: cómo crear tu hogar</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Un hogar en duobalance es el espacio compartido donde tú y tu pareja administran sus finanzas.</p><h2 id="registro-inicial" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Registro inicial</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Crea tu cuenta con tu correo electrónico.</li><li class="text-sm leading-relaxed text-foreground">Al iniciar sesión por primera vez, dale un nombre a tu hogar (por ejemplo, &quot;Hogar García-López&quot;).</li><li class="text-sm leading-relaxed text-foreground">Selecciona la <strong class="font-bold">Moneda Base</strong> del hogar. Todos los reportes globales consolidarán los montos en esta moneda.</li></ol><h2 id="siguientes-pasos-recomendados" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Siguientes pasos recomendados</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Invita a tu pareja desde <strong class="font-bold">Configuración</strong>, en <strong class="font-bold">Miembros del hogar</strong>.</li><li class="text-sm leading-relaxed text-foreground">Agrega tus primeras cuentas bancarias o de efectivo en <strong class="font-bold">Saldos</strong>.</li><li class="text-sm leading-relaxed text-foreground">Configura tus presupuestos principales en <strong class="font-bold">Presupuesto</strong>.</li></ul><h2 id="mas-de-un-hogar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Más de un hogar</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Usa el nombre del hogar en la parte superior de la aplicación para crear, unirte o cambiar de hogar más adelante. Cada hogar conserva sus datos separados. Consulta <a href="/help/managing-households-and-members" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">cómo cambiar de hogar y administrar miembros</a> para conocer el flujo completo.</p></div>',
     },
     "inviting-your-partner": {
       frontmatter: {
@@ -225,22 +231,27 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "¿Cómo invitar a tu pareja a duobalance?",
-          id: "cmo-invitar-a-tu-pareja-a-duobalance",
+          id: "como-invitar-a-tu-pareja-a-duobalance",
         },
         {
           level: 2,
           text: "Pasos para enviar la invitación",
-          id: "pasos-para-enviar-la-invitacin",
+          id: "pasos-para-enviar-la-invitacion",
         },
         {
           level: 2,
           text: "Cómo acepta tu pareja",
-          id: "cmo-acepta-tu-pareja",
+          id: "como-acepta-tu-pareja",
         },
         {
           level: 2,
           text: "Administrar una invitación",
-          id: "administrar-una-invitacin",
+          id: "administrar-una-invitacion",
+        },
+        {
+          level: 2,
+          text: "Cuentas compartidas y privadas",
+          id: "cuentas-compartidas-y-privadas",
         },
         {
           level: 2,
@@ -250,6 +261,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# ¿Cómo invitar a tu pareja a duobalance?\n\nAdministrar el presupuesto en pareja requiere que ambos tengan acceso al mismo hogar.\n\n## Pasos para enviar la invitación\n\n1. Ve a **Configuración** y selecciona la sección **Miembros del hogar**. Solo un propietario puede administrar invitaciones.\n2. Ingresa el correo electrónico de tu pareja.\n3. Haz clic en **Enviar invitación**.\n\n## Cómo acepta tu pareja\n\n- Tu pareja recibirá un enlace de invitación por correo electrónico.\n- Al abrir el enlace e iniciar sesión o registrarse, se vinculará automáticamente a tu hogar y ambos verán la misma información compartida inmediatamente.\n\n## Administrar una invitación\n\nLos propietarios pueden reenviar una invitación o revocarla antes de que se acepte. Una persona que ya es miembro activo no puede aceptar otra invitación al mismo hogar.\n\n## Cuentas compartidas y privadas\n\nLas cuentas compartidas las ven ambos — por ejemplo, Supermercado o Alquiler. Las cuentas privadas solo las ve su titular, así tu gasto personal puede quedar privado. Los totales del hogar igual suman todo. Revisen juntos una vez al mes en lugar de controlar cada compra.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-invitar-a-tu-pareja-a-duobalance" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">¿Cómo invitar a tu pareja a duobalance?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Administrar el presupuesto en pareja requiere que ambos tengan acceso al mismo hogar.</p><h2 id="pasos-para-enviar-la-invitacion" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Pasos para enviar la invitación</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Ve a <strong class="font-bold">Configuración</strong> y selecciona la sección <strong class="font-bold">Miembros del hogar</strong>. Solo un propietario puede administrar invitaciones.</li><li class="text-sm leading-relaxed text-foreground">Ingresa el correo electrónico de tu pareja.</li><li class="text-sm leading-relaxed text-foreground">Haz clic en <strong class="font-bold">Enviar invitación</strong>.</li></ol><h2 id="como-acepta-tu-pareja" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Cómo acepta tu pareja</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Tu pareja recibirá un enlace de invitación por correo electrónico.</li><li class="text-sm leading-relaxed text-foreground">Al abrir el enlace e iniciar sesión o registrarse, se vinculará automáticamente a tu hogar y ambos verán la misma información compartida inmediatamente.</li></ul><h2 id="administrar-una-invitacion" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Administrar una invitación</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Los propietarios pueden reenviar una invitación o revocarla antes de que se acepte. Una persona que ya es miembro activo no puede aceptar otra invitación al mismo hogar.</p><h2 id="cuentas-compartidas-y-privadas" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Cuentas compartidas y privadas</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Las cuentas compartidas las ven ambos — por ejemplo, Supermercado o Alquiler. Las cuentas privadas solo las ve su titular, así tu gasto personal puede quedar privado. Los totales del hogar igual suman todo. Revisen juntos una vez al mes en lugar de controlar cada compra.</p></div>',
     },
     "adding-accounts": {
       frontmatter: {
@@ -274,6 +286,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Agregar cuentas: tipos, monedas y privacidad\n\nPuedes registrar todas tus cuentas bancarias, tarjetas de crédito, efectivo e inversiones.\n\n## Pasos para crear una cuenta\n\n1. Dirígete a la sección **Saldos** y haz clic en **+ Nueva cuenta**.\n2. Completa los detalles de la cuenta:\n   - **Nombre:** Un nombre descriptivo (ej. "Banco Estado Corriente" o "Efectivo").\n   - **Tipo:** Cuenta corriente, ahorros, tarjeta de crédito, efectivo o inversión.\n   - **Moneda:** Selecciona la moneda nativa de la cuenta.\n   - **Visibilidad:** Elige entre **Compartida** (visible para la pareja) o **Privada**.\n   - **Modo de saldo:** Elige **Libro diario** o **Manual**.\n3. Ingresa el **Saldo inicial** y guarda los cambios.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="agregar-cuentas-tipos-monedas-y-privacidad" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Agregar cuentas: tipos, monedas y privacidad</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Puedes registrar todas tus cuentas bancarias, tarjetas de crédito, efectivo e inversiones.</p><h2 id="pasos-para-crear-una-cuenta" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Pasos para crear una cuenta</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Dirígete a la sección <strong class="font-bold">Saldos</strong> y haz clic en <strong class="font-bold">+ Nueva cuenta</strong>.</li><li class="text-sm leading-relaxed text-foreground">Completa los detalles de la cuenta:</li></ol><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Nombre:</strong> Un nombre descriptivo (ej. &quot;Banco Estado Corriente&quot; o &quot;Efectivo&quot;).</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Tipo:</strong> Cuenta corriente, ahorros, tarjeta de crédito, efectivo o inversión.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Moneda:</strong> Selecciona la moneda nativa de la cuenta.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Visibilidad:</strong> Elige entre <strong class="font-bold">Compartida</strong> (visible para la pareja) o <strong class="font-bold">Privada</strong>.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Modo de saldo:</strong> Elige <strong class="font-bold">Libro diario</strong> o <strong class="font-bold">Manual</strong>.</li></ul><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Ingresa el <strong class="font-bold">Saldo inicial</strong> y guarda los cambios.</li></ol></div>',
     },
     "recording-transaction-fast": {
       frontmatter: {
@@ -292,12 +305,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Cómo registrar un movimiento rápidamente",
-          id: "cmo-registrar-un-movimiento-rpidamente",
+          id: "como-registrar-un-movimiento-rapidamente",
         },
         {
           level: 2,
           text: "Registro rápido",
-          id: "registro-rpido",
+          id: "registro-rapido",
         },
         {
           level: 2,
@@ -307,6 +320,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Cómo registrar un movimiento rápidamente\n\nduobalance está diseñado para que registrar un gasto te tome solo unos segundos desde tu teléfono o computador.\n\n## Registro rápido\n\n1. En escritorio, usa **Nuevo movimiento** en la barra lateral. En móvil, abre el botón redondo de menú y elige **Nuevo movimiento**.\n2. Ingresa el monto del movimiento.\n3. Elige el tipo: **Gasto**, **Ingreso** o **Transferencia**.\n4. Selecciona la categoría y la cuenta utilizada.\n5. Selecciona **Gastado por** (quién hizo el gasto).\n6. Presiona **Guardar**.\n\n## Consejos de rapidez\n\n- Si usas la misma categoría o cuenta frecuentemente, duobalance recordará tus elecciones recientes.\n- Comienza a escribir una descripción anterior para reutilizarla desde las sugerencias. Estas empiezan después de dos caracteres y muestran como máximo seis coincidencias.\n- Puedes agregar notas cortas si necesitas aclarar un detalle específico.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-registrar-un-movimiento-rapidamente" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Cómo registrar un movimiento rápidamente</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance está diseñado para que registrar un gasto te tome solo unos segundos desde tu teléfono o computador.</p><h2 id="registro-rapido" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Registro rápido</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">En escritorio, usa <strong class="font-bold">Nuevo movimiento</strong> en la barra lateral. En móvil, abre el botón redondo de menú y elige <strong class="font-bold">Nuevo movimiento</strong>.</li><li class="text-sm leading-relaxed text-foreground">Ingresa el monto del movimiento.</li><li class="text-sm leading-relaxed text-foreground">Elige el tipo: <strong class="font-bold">Gasto</strong>, <strong class="font-bold">Ingreso</strong> o <strong class="font-bold">Transferencia</strong>.</li><li class="text-sm leading-relaxed text-foreground">Selecciona la categoría y la cuenta utilizada.</li><li class="text-sm leading-relaxed text-foreground">Selecciona <strong class="font-bold">Gastado por</strong> (quién hizo el gasto).</li><li class="text-sm leading-relaxed text-foreground">Presiona <strong class="font-bold">Guardar</strong>.</li></ol><h2 id="consejos-de-rapidez" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Consejos de rapidez</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Si usas la misma categoría o cuenta frecuentemente, duobalance recordará tus elecciones recientes.</li><li class="text-sm leading-relaxed text-foreground">Comienza a escribir una descripción anterior para reutilizarla desde las sugerencias. Estas empiezan después de dos caracteres y muestran como máximo seis coincidencias.</li><li class="text-sm leading-relaxed text-foreground">Puedes agregar notas cortas si necesitas aclarar un detalle específico.</li></ul></div>',
     },
     "categories-and-auto-rules": {
       frontmatter: {
@@ -321,21 +335,22 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Categorías y reglas de autocategorización",
-          id: "categoras-y-reglas-de-autocategorizacin",
+          id: "categorias-y-reglas-de-autocategorizacion",
         },
         {
           level: 2,
           text: "Categorías por defecto y personalizadas",
-          id: "categoras-por-defecto-y-personalizadas",
+          id: "categorias-por-defecto-y-personalizadas",
         },
         {
           level: 2,
           text: "Reglas de autocategorización",
-          id: "reglas-de-autocategorizacin",
+          id: "reglas-de-autocategorizacion",
         },
       ],
       content:
         '\n# Categorías y reglas de autocategorización\n\nLas categorías organizan tus movimientos para que los presupuestos y reportes reflejen tus hábitos de consumo.\n\n## Categorías por defecto y personalizadas\n\nduobalance incluye categorías estándar como Alimentación, Servicios, Transporte y Vivienda. Puedes crear nuevas categorías o editar las existentes desde **Configuración > Categorías**.\n\n## Reglas de autocategorización\n\nLas reglas automáticas te permiten asignar categorías basadas en el texto de la descripción o comercio:\n\n- **Creación de reglas:** Cuando registras un comercio recurrente (ej. "Supermercado X"), puedes guardar una regla para que los movimientos futuros que contengan esa palabra clave se asignen automáticamente a la categoría correspondiente.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="categorias-y-reglas-de-autocategorizacion" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Categorías y reglas de autocategorización</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Las categorías organizan tus movimientos para que los presupuestos y reportes reflejen tus hábitos de consumo.</p><h2 id="categorias-por-defecto-y-personalizadas" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Categorías por defecto y personalizadas</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance incluye categorías estándar como Alimentación, Servicios, Transporte y Vivienda. Puedes crear nuevas categorías o editar las existentes desde <strong class="font-bold">Configuración &gt; Categorías</strong>.</p><h2 id="reglas-de-autocategorizacion" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Reglas de autocategorización</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Las reglas automáticas te permiten asignar categorías basadas en el texto de la descripción o comercio:</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Creación de reglas:</strong> Cuando registras un comercio recurrente (ej. &quot;Supermercado X&quot;), puedes guardar una regla para que los movimientos futuros que contengan esa palabra clave se asignen automáticamente a la categoría correspondiente.</li></ul></div>',
     },
     "household-vs-personal-budgets": {
       frontmatter: {
@@ -365,11 +380,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Cambiar de pestaña",
-          id: "cambiar-de-pestaa",
+          id: "cambiar-de-pestana",
         },
       ],
       content:
         "\n# Presupuestos del hogar vs. presupuestos personales\n\nduobalance te permite organizar los presupuestos en dos alcances: **Del Hogar** y **Mis Presupuestos**.\n\n## Presupuestos del Hogar\n\nAfectan los gastos compartidos del hogar (por ejemplo, alimentación, servicios, vivienda). Ambas personas contribuyen al límite y ven el progreso conjunto.\n\n## Presupuestos Personales\n\nSon privados para cada miembro (por ejemplo, pasatiempos o cuidado personal). Te permiten controlar tus gastos individuales sin interferir en los límites globales de la pareja.\n\n## Cambiar de pestaña\n\nUtiliza el selector en la parte superior de la pantalla de Presupuestos para alternar entre la vista **Hogar** y **Mío**.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="presupuestos-del-hogar-vs-presupuestos-personales" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Presupuestos del hogar vs. presupuestos personales</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance te permite organizar los presupuestos en dos alcances: <strong class="font-bold">Del Hogar</strong> y <strong class="font-bold">Mis Presupuestos</strong>.</p><h2 id="presupuestos-del-hogar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Presupuestos del Hogar</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Afectan los gastos compartidos del hogar (por ejemplo, alimentación, servicios, vivienda). Ambas personas contribuyen al límite y ven el progreso conjunto.</p><h2 id="presupuestos-personales" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Presupuestos Personales</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Son privados para cada miembro (por ejemplo, pasatiempos o cuidado personal). Te permiten controlar tus gastos individuales sin interferir en los límites globales de la pareja.</p><h2 id="cambiar-de-pestana" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Cambiar de pestaña</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Utiliza el selector en la parte superior de la pantalla de Presupuestos para alternar entre la vista <strong class="font-bold">Hogar</strong> y <strong class="font-bold">Mío</strong>.</p></div>',
     },
     "recurrence-and-marking-paid": {
       frontmatter: {
@@ -389,7 +405,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Configuración de recurrencia",
-          id: "configuracin-de-recurrencia",
+          id: "configuracion-de-recurrencia",
         },
         {
           level: 2,
@@ -399,6 +415,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Facturas recurrentes y marcar como pagado\n\nLa sección de Facturas te ayuda a dar seguimiento a compromisos fijos y periódicos como alquiler, suscripciones o servicios públicos.\n\n## Configuración de recurrencia\n\nAl crear una factura, puedes elegir el ciclo de repetición (mensual, quincenal, anual, etc.). duobalance generará automáticamente la instancia correspondiente para cada periodo.\n\n## Marcar como pagado\n\nCuando pagas una factura:\n\n1. Haz clic en la factura pendiente.\n2. Selecciona **Marcar como pagado**.\n3. Elige si deseas crear automáticamente una transacción de gasto vinculada a una de tus cuentas.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="facturas-recurrentes-y-marcar-como-pagado" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Facturas recurrentes y marcar como pagado</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">La sección de Facturas te ayuda a dar seguimiento a compromisos fijos y periódicos como alquiler, suscripciones o servicios públicos.</p><h2 id="configuracion-de-recurrencia" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Configuración de recurrencia</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Al crear una factura, puedes elegir el ciclo de repetición (mensual, quincenal, anual, etc.). duobalance generará automáticamente la instancia correspondiente para cada periodo.</p><h2 id="marcar-como-pagado" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Marcar como pagado</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Cuando pagas una factura:</p><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Haz clic en la factura pendiente.</li><li class="text-sm leading-relaxed text-foreground">Selecciona <strong class="font-bold">Marcar como pagado</strong>.</li><li class="text-sm leading-relaxed text-foreground">Elige si deseas crear automáticamente una transacción de gasto vinculada a una de tus cuentas.</li></ol></div>',
     },
     "reading-the-charts": {
       frontmatter: {
@@ -413,26 +430,27 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "¿Cómo interpretar los gráficos y reportes?",
-          id: "cmo-interpretar-los-grficos-y-reportes",
+          id: "como-interpretar-los-graficos-y-reportes",
         },
         {
           level: 2,
           text: "Gráfico por categorías",
-          id: "grfico-por-categoras",
+          id: "grafico-por-categorias",
         },
         {
           level: 2,
           text: "Evolución mensual e ingresos vs. gastos",
-          id: "evolucin-mensual-e-ingresos-vs-gastos",
+          id: "evolucion-mensual-e-ingresos-vs-gastos",
         },
         {
           level: 2,
           text: "Conversión de moneda en reportes",
-          id: "conversin-de-moneda-en-reportes",
+          id: "conversion-de-moneda-en-reportes",
         },
       ],
       content:
         "\n# ¿Cómo interpretar los gráficos y reportes?\n\nLa sección de Reportes convierte tus transacciones en visión financiera clara para el hogar.\n\n## Gráfico por categorías\n\nMuestra en qué categorías se concentra la mayor parte de tus gastos en el rango de fechas seleccionado.\n\n## Evolución mensual e ingresos vs. gastos\n\nCompara el flujo total de entradas y salidas mes a mes.\n\n- **Barras verdes:** Ingresos totales.\n- **Barras rojas:** Gastos totales.\n\n## Conversión de moneda en reportes\n\nTodos los montos se convierten a la moneda base de tu hogar utilizando los tipos de cambio registrados en la fecha correspondiente.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-interpretar-los-graficos-y-reportes" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">¿Cómo interpretar los gráficos y reportes?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">La sección de Reportes convierte tus transacciones en visión financiera clara para el hogar.</p><h2 id="grafico-por-categorias" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Gráfico por categorías</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Muestra en qué categorías se concentra la mayor parte de tus gastos en el rango de fechas seleccionado.</p><h2 id="evolucion-mensual-e-ingresos-vs-gastos" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Evolución mensual e ingresos vs. gastos</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Compara el flujo total de entradas y salidas mes a mes.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Barras verdes:</strong> Ingresos totales.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Barras rojas:</strong> Gastos totales.</li></ul><h2 id="conversion-de-moneda-en-reportes" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Conversión de moneda en reportes</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Todos los montos se convierten a la moneda base de tu hogar utilizando los tipos de cambio registrados en la fecha correspondiente.</p></div>',
     },
     "multi-currency-and-exchange-rates": {
       frontmatter: {
@@ -452,7 +470,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Obtención de tipos de cambio",
-          id: "obtencin-de-tipos-de-cambio",
+          id: "obtencion-de-tipos-de-cambio",
         },
         {
           level: 2,
@@ -462,6 +480,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Multimoneda y tipos de cambio\n\nduobalance te permite tener cuentas y movimientos en diferentes monedas (USD, EUR, CLP, BRL, etc.) mientras consolida los totales en la moneda base de tu hogar.\n\n## Obtención de tipos de cambio\n\n- duobalance actualiza diariamente las tasas de cambio de monedas mediante un servicio automático.\n- Cada transacción almacena la tasa de cambio vigente en el momento de su realización para no alterar los registros históricos.\n\n## Ajuste manual de tasa\n\nSi realizaste un cambio de divisas con una tasa especial o diferente a la de mercado:\n\n1. Al crear o editar la transacción en moneda extranjera, activa la opción de **Ajustar tasa de cambio**.\n2. Ingresa manualmente el valor pactado.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="multimoneda-y-tipos-de-cambio" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Multimoneda y tipos de cambio</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance te permite tener cuentas y movimientos en diferentes monedas (USD, EUR, CLP, BRL, etc.) mientras consolida los totales en la moneda base de tu hogar.</p><h2 id="obtencion-de-tipos-de-cambio" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Obtención de tipos de cambio</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">duobalance actualiza diariamente las tasas de cambio de monedas mediante un servicio automático.</li><li class="text-sm leading-relaxed text-foreground">Cada transacción almacena la tasa de cambio vigente en el momento de su realización para no alterar los registros históricos.</li></ul><h2 id="ajuste-manual-de-tasa" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Ajuste manual de tasa</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Si realizaste un cambio de divisas con una tasa especial o diferente a la de mercado:</p><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Al crear o editar la transacción en moneda extranjera, activa la opción de <strong class="font-bold">Ajustar tasa de cambio</strong>.</li><li class="text-sm leading-relaxed text-foreground">Ingresa manualmente el valor pactado.</li></ol></div>',
     },
     "number-format-currency-timezone": {
       frontmatter: {
@@ -476,7 +495,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Configuración de moneda, formato de números y zona horaria",
-          id: "configuracin-de-moneda-formato-de-nmeros-y-zona-horaria",
+          id: "configuracion-de-moneda-formato-de-numeros-y-zona-horaria",
         },
         {
           level: 2,
@@ -486,7 +505,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Formato de Números",
-          id: "formato-de-nmeros",
+          id: "formato-de-numeros",
         },
         {
           level: 2,
@@ -496,6 +515,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Configuración de moneda, formato de números y zona horaria\n\nPuedes personalizar la manera en que duobalance muestra los montos y fechas en la sección **Configuración**.\n\n## Moneda Base del Hogar\n\nEs la moneda principal en la que se calculan los totales y reportes del hogar.\n\n## Formato de Números\n\nElige entre separadores con punto (`1.234,56`) o con coma (`1,234.56`) según tus preferencias regionales.\n\nLas opciones de idioma y formato de números pertenecen a tu perfil de usuario, no al hogar. Te acompañan al cambiar de hogar y no modifican lo que ve tu pareja.\n\n## Zona Horaria\n\nAsegura que los cierres de mes y las fechas de facturas se calculen según tu hora local.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="configuracion-de-moneda-formato-de-numeros-y-zona-horaria" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Configuración de moneda, formato de números y zona horaria</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Puedes personalizar la manera en que duobalance muestra los montos y fechas en la sección <strong class="font-bold">Configuración</strong>.</p><h2 id="moneda-base-del-hogar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Moneda Base del Hogar</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Es la moneda principal en la que se calculan los totales y reportes del hogar.</p><h2 id="formato-de-numeros" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Formato de Números</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Elige entre separadores con punto (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-foreground">1.234,56</code>) o con coma (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-foreground">1,234.56</code>) según tus preferencias regionales.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">Las opciones de idioma y formato de números pertenecen a tu perfil de usuario, no al hogar. Te acompañan al cambiar de hogar y no modifican lo que ve tu pareja.</p><h2 id="zona-horaria" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Zona Horaria</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Asegura que los cierres de mes y las fechas de facturas se calculen según tu hora local.</p></div>',
     },
     "exporting-your-data": {
       frontmatter: {
@@ -515,11 +535,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Pasos para realizar una exportación",
-          id: "pasos-para-realizar-una-exportacin",
+          id: "pasos-para-realizar-una-exportacion",
         },
       ],
       content:
         "\n# Exportar tus datos financieros\n\nTus datos son siempre tuyos. Puedes respaldar o descargar el historial de transacciones y cuentas en cualquier momento.\n\n## Pasos para realizar una exportación\n\n1. Dirígete a **Configuración** y desplázate hasta **Datos y Privacidad**.\n2. Selecciona **Exportar datos**.\n3. Elige el formato deseado:\n   - **CSV:** Ideal para abrir en hojas de cálculo como Excel o Google Sheets.\n   - **JSON:** Formato completo estructurado para respaldos de datos.\n4. Presiona **Descargar archivo**.\n\nSi planeas eliminar un hogar, descarga una exportación desde la confirmación de eliminación primero. Los antiguos miembros solo pueden exportar los datos históricos a los que todavía tienen permiso de acceder; esto no restaura el acceso al hogar.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="exportar-tus-datos-financieros" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Exportar tus datos financieros</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Tus datos son siempre tuyos. Puedes respaldar o descargar el historial de transacciones y cuentas en cualquier momento.</p><h2 id="pasos-para-realizar-una-exportacion" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Pasos para realizar una exportación</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Dirígete a <strong class="font-bold">Configuración</strong> y desplázate hasta <strong class="font-bold">Datos y Privacidad</strong>.</li><li class="text-sm leading-relaxed text-foreground">Selecciona <strong class="font-bold">Exportar datos</strong>.</li><li class="text-sm leading-relaxed text-foreground">Elige el formato deseado:</li></ol><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">CSV:</strong> Ideal para abrir en hojas de cálculo como Excel o Google Sheets.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">JSON:</strong> Formato completo estructurado para respaldos de datos.</li></ul><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Presiona <strong class="font-bold">Descargar archivo</strong>.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">Si planeas eliminar un hogar, descarga una exportación desde la confirmación de eliminación primero. Los antiguos miembros solo pueden exportar los datos históricos a los que todavía tienen permiso de acceder; esto no restaura el acceso al hogar.</p></div>',
     },
     "privacy-what-we-can-and-cant-see": {
       frontmatter: {
@@ -534,7 +555,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Privacidad: qué podemos y qué no podemos ver",
-          id: "privacidad-qu-podemos-y-qu-no-podemos-ver",
+          id: "privacidad-que-podemos-y-que-no-podemos-ver",
         },
         {
           level: 2,
@@ -549,6 +570,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Privacidad: qué podemos y qué no podemos ver\n\nEn duobalance la privacidad financiera y la seguridad de tus datos son prioridades fundamentales.\n\n## Lo que ve tu pareja\n\n- Tu pareja ve únicamente la información de las cuentas que configures como **Compartidas** y las transacciones asociadas a ellas.\n- Tus cuentas **Privadas** y sus detalles individuales son invisibles para tu pareja.\n- Una persona que sale o es eliminada pierde el acceso a ese hogar. Sus movimientos históricos permanecen en los registros del hogar para mantener la continuidad.\n\n## Lo que ve la plataforma\n\n- duobalance utiliza cifrado y políticas de seguridad a nivel de base de datos (RLS) para que solo los miembros autorizados de tu hogar accedan a tu información.\n- No vendemos ni compartimos tus datos con anunciantes ni terceros.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="privacidad-que-podemos-y-que-no-podemos-ver" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Privacidad: qué podemos y qué no podemos ver</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">En duobalance la privacidad financiera y la seguridad de tus datos son prioridades fundamentales.</p><h2 id="lo-que-ve-tu-pareja" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Lo que ve tu pareja</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Tu pareja ve únicamente la información de las cuentas que configures como <strong class="font-bold">Compartidas</strong> y las transacciones asociadas a ellas.</li><li class="text-sm leading-relaxed text-foreground">Tus cuentas <strong class="font-bold">Privadas</strong> y sus detalles individuales son invisibles para tu pareja.</li><li class="text-sm leading-relaxed text-foreground">Una persona que sale o es eliminada pierde el acceso a ese hogar. Sus movimientos históricos permanecen en los registros del hogar para mantener la continuidad.</li></ul><h2 id="lo-que-ve-la-plataforma" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Lo que ve la plataforma</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">duobalance utiliza cifrado y políticas de seguridad a nivel de base de datos (RLS) para que solo los miembros autorizados de tu hogar accedan a tu información.</li><li class="text-sm leading-relaxed text-foreground">No vendemos ni compartimos tus datos con anunciantes ni terceros.</li></ul></div>',
     },
     "installing-on-mobile": {
       frontmatter: {
@@ -563,7 +585,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Cómo instalar duobalance en iPhone o Android",
-          id: "cmo-instalar-duobalance-en-iphone-o-android",
+          id: "como-instalar-duobalance-en-iphone-o-android",
         },
         {
           level: 2,
@@ -578,6 +600,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Cómo instalar duobalance en iPhone o Android\n\nduobalance funciona como una Aplicación Web Progresiva (PWA), lo que te permite instalarla en tu pantalla de inicio sin pasar por tiendas de aplicaciones.\n\n## En iPhone (iOS)\n\n1. Abre Safari y navega a la dirección web de duobalance.\n2. Toca el botón **Compartir** (icono de cuadrado con flecha hacia arriba).\n3. Desplázate y selecciona **Agregar a pantalla de inicio**.\n\n## En Android\n\n1. Abre Chrome u otro navegador compatible.\n2. Toca el menú de tres puntos en la esquina superior derecha.\n3. Selecciona **Instalar aplicación** o **Agregar a pantalla principal**.\n\nPara más detalles, puedes visitar la guía paso a paso en [/install](/install).\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-instalar-duobalance-en-iphone-o-android" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Cómo instalar duobalance en iPhone o Android</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance funciona como una Aplicación Web Progresiva (PWA), lo que te permite instalarla en tu pantalla de inicio sin pasar por tiendas de aplicaciones.</p><h2 id="en-iphone-ios" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">En iPhone (iOS)</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Abre Safari y navega a la dirección web de duobalance.</li><li class="text-sm leading-relaxed text-foreground">Toca el botón <strong class="font-bold">Compartir</strong> (icono de cuadrado con flecha hacia arriba).</li><li class="text-sm leading-relaxed text-foreground">Desplázate y selecciona <strong class="font-bold">Agregar a pantalla de inicio</strong>.</li></ol><h2 id="en-android" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">En Android</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Abre Chrome u otro navegador compatible.</li><li class="text-sm leading-relaxed text-foreground">Toca el menú de tres puntos en la esquina superior derecha.</li><li class="text-sm leading-relaxed text-foreground">Selecciona <strong class="font-bold">Instalar aplicación</strong> o <strong class="font-bold">Agregar a pantalla principal</strong>.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">Para más detalles, puedes visitar la guía paso a paso en <a href="/install" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">/install</a>.</p></div>',
     },
     "bill-reminders-not-arriving": {
       frontmatter: {
@@ -592,7 +615,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "¿Por qué no llegan los recordatorios de facturas?",
-          id: "por-qu-no-llegan-los-recordatorios-de-facturas",
+          id: "por-que-no-llegan-los-recordatorios-de-facturas",
         },
         {
           level: 2,
@@ -602,11 +625,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Canal de correo electrónico garantizado",
-          id: "canal-de-correo-electrnico-garantizado",
+          id: "canal-de-correo-electronico-garantizado",
         },
       ],
       content:
         "\n# ¿Por qué no llegan los recordatorios de facturas?\n\nSi configuraste un recordatorio de factura y no recibiste la notificación en tu teléfono o correo, considera las siguientes causas.\n\n## Notificaciones en iOS (iPhone)\n\nEn iOS, las notificaciones web push requieren que la aplicación esté instalada como PWA en la pantalla de inicio y que el sistema operativo sea iOS 16.4 o superior.\n\n- **Solución:** Sigue la guía en [/install](/install) para agregar duobalance a tu pantalla de inicio.\n\n## Canal de correo electrónico garantizado\n\nPara garantizar que nunca te pierdas un vencimiento, duobalance envía recordatorios por correo electrónico. Revisa tu carpeta de correo no deseado (spam) y agrega la dirección de duobalance a tus contactos de confianza.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="por-que-no-llegan-los-recordatorios-de-facturas" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">¿Por qué no llegan los recordatorios de facturas?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Si configuraste un recordatorio de factura y no recibiste la notificación en tu teléfono o correo, considera las siguientes causas.</p><h2 id="notificaciones-en-ios-iphone" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Notificaciones en iOS (iPhone)</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">En iOS, las notificaciones web push requieren que la aplicación esté instalada como PWA en la pantalla de inicio y que el sistema operativo sea iOS 16.4 o superior.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Solución:</strong> Sigue la guía en <a href="/install" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">/install</a> para agregar duobalance a tu pantalla de inicio.</li></ul><h2 id="canal-de-correo-electronico-garantizado" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Canal de correo electrónico garantizado</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Para garantizar que nunca te pierdas un vencimiento, duobalance envía recordatorios por correo electrónico. Revisa tu carpeta de correo no deseado (spam) y agrega la dirección de duobalance a tus contactos de confianza.</p></div>',
     },
     "balance-looks-wrong": {
       frontmatter: {
@@ -621,7 +645,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "¿Qué hacer si un saldo se ve incorrecto?",
-          id: "qu-hacer-si-un-saldo-se-ve-incorrecto",
+          id: "que-hacer-si-un-saldo-se-ve-incorrecto",
         },
         {
           level: 2,
@@ -631,6 +655,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# ¿Qué hacer si un saldo se ve incorrecto?\n\nSi notas una discrepancia entre el saldo que muestra duobalance y el saldo real de tu banco, sigue estos pasos de diagnóstico.\n\n## Comprobaciones paso a paso\n\n1. **Verifica el modo de saldo:** Asegúrate de saber si la cuenta está en modo **Libro diario** o **Manual**.\n2. **Revisa el saldo inicial:** Ve a **Saldos**, edita la cuenta y confirma que el saldo inicial configurado coincida con la realidad a la fecha de inicio.\n3. **Revisa transacciones omitidas:** Confirma que no falte ningún movimiento por registrar.\n4. **Revisa transferencias entre cuentas:** Verifica si una transferencia fue registrada como gasto en lugar de transferencia.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="que-hacer-si-un-saldo-se-ve-incorrecto" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">¿Qué hacer si un saldo se ve incorrecto?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Si notas una discrepancia entre el saldo que muestra duobalance y el saldo real de tu banco, sigue estos pasos de diagnóstico.</p><h2 id="comprobaciones-paso-a-paso" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Comprobaciones paso a paso</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Verifica el modo de saldo:</strong> Asegúrate de saber si la cuenta está en modo <strong class="font-bold">Libro diario</strong> o <strong class="font-bold">Manual</strong>.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Revisa el saldo inicial:</strong> Ve a <strong class="font-bold">Saldos</strong>, edita la cuenta y confirma que el saldo inicial configurado coincida con la realidad a la fecha de inicio.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Revisa transacciones omitidas:</strong> Confirma que no falte ningún movimiento por registrar.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Revisa transferencias entre cuentas:</strong> Verifica si una transferencia fue registrada como gasto en lugar de transferencia.</li></ol></div>',
     },
     "exchange-rates-stale": {
       frontmatter: {
@@ -645,16 +670,17 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "¿Por qué la tasa de cambio muestra una advertencia?",
-          id: "por-qu-la-tasa-de-cambio-muestra-una-advertencia",
+          id: "por-que-la-tasa-de-cambio-muestra-una-advertencia",
         },
         {
           level: 2,
           text: "¿Qué significa la advertencia?",
-          id: "qu-significa-la-advertencia",
+          id: "que-significa-la-advertencia",
         },
       ],
       content:
         "\n# ¿Por qué la tasa de cambio muestra una advertencia?\n\nCuando registras movimientos en una moneda distinta a la moneda base de tu hogar, duobalance utiliza tasas de cambio oficiales.\n\n## ¿Qué significa la advertencia?\n\nSi la tasa de cambio no se ha actualizado en las últimas 24 horas (por ejemplo, durante fines de semana o feriados bancarios), el sistema muestra un indicador de aviso.\n\n- **Efecto:** Puedes continuar registrando transacciones sin inconvenientes.\n- **Solución:** Las tasas se actualizarán automáticamente en la siguiente ejecución del proceso diario, o bien puedes ajustar manualmente la tasa en la pantalla de la transacción.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="por-que-la-tasa-de-cambio-muestra-una-advertencia" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">¿Por qué la tasa de cambio muestra una advertencia?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Cuando registras movimientos en una moneda distinta a la moneda base de tu hogar, duobalance utiliza tasas de cambio oficiales.</p><h2 id="que-significa-la-advertencia" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">¿Qué significa la advertencia?</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Si la tasa de cambio no se ha actualizado en las últimas 24 horas (por ejemplo, durante fines de semana o feriados bancarios), el sistema muestra un indicador de aviso.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Efecto:</strong> Puedes continuar registrando transacciones sin inconvenientes.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Solución:</strong> Las tasas se actualizarán automáticamente en la siguiente ejecución del proceso diario, o bien puedes ajustar manualmente la tasa en la pantalla de la transacción.</li></ul></div>',
     },
     "managing-households-and-members": {
       frontmatter: {
@@ -673,7 +699,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Cómo cambiar de hogar y administrar miembros",
-          id: "cmo-cambiar-de-hogar-y-administrar-miembros",
+          id: "como-cambiar-de-hogar-y-administrar-miembros",
         },
         {
           level: 2,
@@ -693,6 +719,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Cómo cambiar de hogar y administrar miembros\n\nPuedes pertenecer a más de un hogar. Cada hogar tiene sus propias cuentas, movimientos, presupuestos, cuentas por pagar, miembros y ajustes.\n\n## Cambiar o crear un hogar\n\n1. Toca el nombre del hogar actual en la parte superior de la aplicación.\n2. Selecciona otro hogar para abrir sus datos.\n3. En la misma ventana, elige **Crear hogar** para iniciar otro espacio o **Unirse con invitación** para entrar con un código de invitación.\n\nLa aplicación limpia las pantallas y selecciones temporales del hogar anterior al cambiar, para que nunca se mezclen los datos. Puedes crear hasta cinco hogares.\n\n## Invitar y administrar miembros\n\nLas personas propietarias pueden abrir **Configuración** y usar **Miembros del hogar** para enviar, reenviar o revocar invitaciones. También pueden transferir la propiedad a su pareja y decidir si seguirán como propietario o pasarán a ser pareja.\n\nSolo un propietario puede eliminar a una pareja. Antes de confirmar, decide qué ocurrirá con cada cuenta compartida que pertenezca a esa persona: transferirla a ti o convertirla en conjunta. La persona eliminada pierde acceso al hogar; sus movimientos históricos permanecen disponibles para el hogar.\n\n## Salir o eliminar un hogar\n\nAbre **Configuración** y desplázate hasta la zona de peligro para salir de un hogar. Un propietario debe transferir la propiedad antes de salir si quedan otros miembros. El último miembro puede salir.\n\nLas personas propietarias también pueden eliminar un hogar. Escribe el nombre exacto para confirmar. La eliminación se puede recuperar durante 30 días, pero exporta el hogar antes si necesitas una copia personal.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-cambiar-de-hogar-y-administrar-miembros" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Cómo cambiar de hogar y administrar miembros</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Puedes pertenecer a más de un hogar. Cada hogar tiene sus propias cuentas, movimientos, presupuestos, cuentas por pagar, miembros y ajustes.</p><h2 id="cambiar-o-crear-un-hogar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Cambiar o crear un hogar</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Toca el nombre del hogar actual en la parte superior de la aplicación.</li><li class="text-sm leading-relaxed text-foreground">Selecciona otro hogar para abrir sus datos.</li><li class="text-sm leading-relaxed text-foreground">En la misma ventana, elige <strong class="font-bold">Crear hogar</strong> para iniciar otro espacio o <strong class="font-bold">Unirse con invitación</strong> para entrar con un código de invitación.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">La aplicación limpia las pantallas y selecciones temporales del hogar anterior al cambiar, para que nunca se mezclen los datos. Puedes crear hasta cinco hogares.</p><h2 id="invitar-y-administrar-miembros" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Invitar y administrar miembros</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Las personas propietarias pueden abrir <strong class="font-bold">Configuración</strong> y usar <strong class="font-bold">Miembros del hogar</strong> para enviar, reenviar o revocar invitaciones. También pueden transferir la propiedad a su pareja y decidir si seguirán como propietario o pasarán a ser pareja.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">Solo un propietario puede eliminar a una pareja. Antes de confirmar, decide qué ocurrirá con cada cuenta compartida que pertenezca a esa persona: transferirla a ti o convertirla en conjunta. La persona eliminada pierde acceso al hogar; sus movimientos históricos permanecen disponibles para el hogar.</p><h2 id="salir-o-eliminar-un-hogar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Salir o eliminar un hogar</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Abre <strong class="font-bold">Configuración</strong> y desplázate hasta la zona de peligro para salir de un hogar. Un propietario debe transferir la propiedad antes de salir si quedan otros miembros. El último miembro puede salir.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">Las personas propietarias también pueden eliminar un hogar. Escribe el nombre exacto para confirmar. La eliminación se puede recuperar durante 30 días, pero exporta el hogar antes si necesitas una copia personal.</p></div>',
     },
     "mobile-navigation-and-quick-entry": {
       frontmatter: {
@@ -707,12 +734,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Cómo usar el menú móvil y el registro rápido de movimientos",
-          id: "cmo-usar-el-men-mvil-y-el-registro-rpido-de-movimientos",
+          id: "como-usar-el-menu-movil-y-el-registro-rapido-de-movimientos",
         },
         {
           level: 2,
           text: "Sugerencias de descripción",
-          id: "sugerencias-de-descripcin",
+          id: "sugerencias-de-descripcion",
         },
         {
           level: 2,
@@ -722,6 +749,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Cómo usar el menú móvil y el registro rápido de movimientos\n\nEn un teléfono, toca el botón redondo de menú en la esquina inferior izquierda para abrir el panel de navegación. Incluye Saldos, Movimientos, Presupuesto, Análisis, Cuentas, Configuración, Ayuda y cerrar sesión. Usa **Nuevo movimiento** al final del panel para abrir el registro rápido.\n\n## Sugerencias de descripción\n\nAl escribir la descripción de un movimiento, aparecen sugerencias después de ingresar al menos dos caracteres. Elige una descripción anterior coincidente para reutilizarla o sigue escribiendo para crear una nueva. Se muestran hasta seis sugerencias encima del campo para que el teclado en pantalla no las cubra.\n\n## Guardar un movimiento\n\nIngresa el monto, la descripción, la cuenta, la categoría y quién realizó el gasto; luego guarda. Aún puedes agregar notas u otros detalles cuando lo necesites.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-usar-el-menu-movil-y-el-registro-rapido-de-movimientos" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Cómo usar el menú móvil y el registro rápido de movimientos</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">En un teléfono, toca el botón redondo de menú en la esquina inferior izquierda para abrir el panel de navegación. Incluye Saldos, Movimientos, Presupuesto, Análisis, Cuentas, Configuración, Ayuda y cerrar sesión. Usa <strong class="font-bold">Nuevo movimiento</strong> al final del panel para abrir el registro rápido.</p><h2 id="sugerencias-de-descripcion" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Sugerencias de descripción</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Al escribir la descripción de un movimiento, aparecen sugerencias después de ingresar al menos dos caracteres. Elige una descripción anterior coincidente para reutilizarla o sigue escribiendo para crear una nueva. Se muestran hasta seis sugerencias encima del campo para que el teclado en pantalla no las cubra.</p><h2 id="guardar-un-movimiento" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Guardar un movimiento</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Ingresa el monto, la descripción, la cuenta, la categoría y quién realizó el gasto; luego guarda. Aún puedes agregar notas u otros detalles cuando lo necesites.</p></div>',
     },
   },
   en: {
@@ -758,6 +786,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Ledger vs. manual balance mode\n\nIn duobalance each account operates in one of two balance modes: **Ledger** or **Manual**.\n\n## Ledger Mode\n\nIn Ledger mode, the account balance is computed automatically from the opening balance plus all transactions linked to that account.\n\n- **When to use:** For main accounts where you record every expense, income, or transfer.\n- **Why it might differ:** If a transaction is missing or the initial balance was set incorrectly.\n\n## Manual Balance Mode\n\nIn Manual mode, you directly set the current balance by updating it periodically.\n\n- **When to use:** For credit cards, investment accounts, or secondary accounts where you don't want to track every small purchase.\n- **Transactions in manual mode:** You can still log transactions so they count toward budgets and reports, but they won't automatically alter the manually set balance.\n\n## How to switch modes\n\n1. Go to **Balances** or **Account Settings**.\n2. Tap the account you wish to modify.\n3. Select your preferred balance mode and save changes.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="ledger-vs-manual-balance-mode" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Ledger vs. manual balance mode</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">In duobalance each account operates in one of two balance modes: <strong class="font-bold">Ledger</strong> or <strong class="font-bold">Manual</strong>.</p><h2 id="ledger-mode" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Ledger Mode</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">In Ledger mode, the account balance is computed automatically from the opening balance plus all transactions linked to that account.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">When to use:</strong> For main accounts where you record every expense, income, or transfer.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Why it might differ:</strong> If a transaction is missing or the initial balance was set incorrectly.</li></ul><h2 id="manual-balance-mode" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Manual Balance Mode</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">In Manual mode, you directly set the current balance by updating it periodically.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">When to use:</strong> For credit cards, investment accounts, or secondary accounts where you don&#39;t want to track every small purchase.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Transactions in manual mode:</strong> You can still log transactions so they count toward budgets and reports, but they won&#39;t automatically alter the manually set balance.</li></ul><h2 id="how-to-switch-modes" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">How to switch modes</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Go to <strong class="font-bold">Balances</strong> or <strong class="font-bold">Account Settings</strong>.</li><li class="text-sm leading-relaxed text-foreground">Tap the account you wish to modify.</li><li class="text-sm leading-relaxed text-foreground">Select your preferred balance mode and save changes.</li></ol></div>',
     },
     "private-accounts-and-views": {
       frontmatter: {
@@ -792,6 +821,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Private accounts and balance visibility\n\nIn duobalance you can choose which accounts are shared with your household and which remain private.\n\n## Views: All, My Accounts, and Shared\n\n- **Shared:** Both household members can view the balance, history, and individual transactions of this account.\n- **Private (Mine):** Only the account owner can view detailed balances and individual line items.\n\n## Why do my partner and I see different totals?\n\nIf you hold a private account, your personal total ("All" or "Mine" view) includes your private funds, while your partner\'s view does not. This is by design to respect individual financial privacy within the household.\n\n## Private transactions in Budgets\n\nTransactions made from a private account can still be assigned to household budgets if you choose to categorize them as shared expenses.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="private-accounts-and-balance-visibility" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Private accounts and balance visibility</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">In duobalance you can choose which accounts are shared with your household and which remain private.</p><h2 id="views-all-my-accounts-and-shared" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Views: All, My Accounts, and Shared</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Shared:</strong> Both household members can view the balance, history, and individual transactions of this account.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Private (Mine):</strong> Only the account owner can view detailed balances and individual line items.</li></ul><h2 id="why-do-my-partner-and-i-see-different-totals" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Why do my partner and I see different totals?</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">If you hold a private account, your personal total (&quot;All&quot; or &quot;Mine&quot; view) includes your private funds, while your partner&#39;s view does not. This is by design to respect individual financial privacy within the household.</p><h2 id="private-transactions-in-budgets" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Private transactions in Budgets</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Transactions made from a private account can still be assigned to household budgets if you choose to categorize them as shared expenses.</p></div>',
     },
     "transfers-arent-expenses": {
       frontmatter: {
@@ -821,6 +851,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Why transfers aren't expenses\n\nMoving money between two household accounts (for example, from your checking account to your credit card or savings account) does not decrease total household wealth.\n\n## Net-zero wealth impact\n\n- **Inter-account transfers:** Simply move funds from one place to another. They are not actual outflows and therefore do not count as expenses or reduce your budget limits.\n- **Real expenses:** Occur when money leaves the household to a third party (groceries, utilities, rent).\n\n## How to log a transfer\n\nWhen creating a transaction, select the **Transfer** tab, then pick the origin account and destination account. Both account balances will update without affecting your monthly spending budgets.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="why-transfers-arent-expenses" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Why transfers aren&#39;t expenses</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Moving money between two household accounts (for example, from your checking account to your credit card or savings account) does not decrease total household wealth.</p><h2 id="net-zero-wealth-impact" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Net-zero wealth impact</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Inter-account transfers:</strong> Simply move funds from one place to another. They are not actual outflows and therefore do not count as expenses or reduce your budget limits.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Real expenses:</strong> Occur when money leaves the household to a third party (groceries, utilities, rent).</li></ul><h2 id="how-to-log-a-transfer" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">How to log a transfer</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">When creating a transaction, select the <strong class="font-bold">Transfer</strong> tab, then pick the origin account and destination account. Both account balances will update without affecting your monthly spending budgets.</p></div>',
     },
     "who-spent-vs-who-typed": {
       frontmatter: {
@@ -850,6 +881,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Who spent it vs. who recorded it\n\nWhen logging a transaction in duobalance, we distinguish between **Who spent it (spent_by)** and **Who recorded it (entered_by)**.\n\n## Why this distinction matters\n\nIt is common for one partner to enter receipts for both people at the end of the day or week.\n\n- **Spent by (spent_by):** Indicates whose purchase or responsibility it was. Used for filtering personal reports and individual budgets.\n- **Recorded by (entered_by):** Automatically assigned to the active user session that created the transaction entry.\n\n## Correcting attribution\n\nYou can edit any existing transaction at any time to update the "Spent by" field if it was assigned incorrectly.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="who-spent-it-vs-who-recorded-it" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Who spent it vs. who recorded it</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">When logging a transaction in duobalance, we distinguish between <strong class="font-bold">Who spent it (spent_by)</strong> and <strong class="font-bold">Who recorded it (entered_by)</strong>.</p><h2 id="why-this-distinction-matters" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Why this distinction matters</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">It is common for one partner to enter receipts for both people at the end of the day or week.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Spent by (spent_by):</strong> Indicates whose purchase or responsibility it was. Used for filtering personal reports and individual budgets.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Recorded by (entered_by):</strong> Automatically assigned to the active user session that created the transaction entry.</li></ul><h2 id="correcting-attribution" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Correcting attribution</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">You can edit any existing transaction at any time to update the &quot;Spent by&quot; field if it was assigned incorrectly.</p></div>',
     },
     "getting-started-creating-household": {
       frontmatter: {
@@ -884,6 +916,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Getting started: creating your household\n\nA household in duobalance is the shared workspace where you and your partner manage finances together.\n\n## Initial setup\n\n1. Create your account with your email address.\n2. Upon first signing in, name your household (e.g., "Taylor & Alex Household").\n3. Select your household\'s **Base Currency**. All aggregate reports will consolidate totals into this currency.\n\n## Recommended next steps\n\n- Invite your partner in **Settings** under **Household Members**.\n- Add your main bank or cash accounts under **Balances**.\n- Set up core category limits under **Budget**.\n\n## More than one household\n\nUse the household name at the top of the app to create, join, or switch households later. Each household keeps its data separate. See [managing households and members](/help/managing-households-and-members) for the full workflow.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="getting-started-creating-your-household" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Getting started: creating your household</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">A household in duobalance is the shared workspace where you and your partner manage finances together.</p><h2 id="initial-setup" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Initial setup</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Create your account with your email address.</li><li class="text-sm leading-relaxed text-foreground">Upon first signing in, name your household (e.g., &quot;Taylor &amp; Alex Household&quot;).</li><li class="text-sm leading-relaxed text-foreground">Select your household&#39;s <strong class="font-bold">Base Currency</strong>. All aggregate reports will consolidate totals into this currency.</li></ol><h2 id="recommended-next-steps" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Recommended next steps</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Invite your partner in <strong class="font-bold">Settings</strong> under <strong class="font-bold">Household Members</strong>.</li><li class="text-sm leading-relaxed text-foreground">Add your main bank or cash accounts under <strong class="font-bold">Balances</strong>.</li><li class="text-sm leading-relaxed text-foreground">Set up core category limits under <strong class="font-bold">Budget</strong>.</li></ul><h2 id="more-than-one-household" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">More than one household</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Use the household name at the top of the app to create, join, or switch households later. Each household keeps its data separate. See <a href="/help/managing-households-and-members" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">managing households and members</a> for the full workflow.</p></div>',
     },
     "inviting-your-partner": {
       frontmatter: {
@@ -927,6 +960,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# How to invite your partner to duobalance\n\nManaging household finances works best when both partners have access to the same household workspace.\n\n## Steps to send an invitation\n\n1. Navigate to **Settings** and open **Household Members**. Only an owner can manage invitations.\n2. Enter your partner's email address.\n3. Click **Send Invitation**.\n\n## How your partner joins\n\n- Your partner will receive an email invitation link.\n- Clicking the link and signing in or registering will automatically link them to your household, granting access to shared accounts and budgets immediately.\n\n## Managing an invitation\n\nOwners can resend an invitation or revoke it before it is accepted. Someone who is already an active member cannot accept another invitation to the same household.\n\n## Shared vs private accounts\n\nShared accounts are visible to both of you — like Groceries or Rent. Private accounts stay visible only to their owner, so personal spending can stay personal. Household totals still include everything. Try a monthly review together instead of checking each purchase.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="how-to-invite-your-partner-to-duobalance" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">How to invite your partner to duobalance</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Managing household finances works best when both partners have access to the same household workspace.</p><h2 id="steps-to-send-an-invitation" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Steps to send an invitation</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Navigate to <strong class="font-bold">Settings</strong> and open <strong class="font-bold">Household Members</strong>. Only an owner can manage invitations.</li><li class="text-sm leading-relaxed text-foreground">Enter your partner&#39;s email address.</li><li class="text-sm leading-relaxed text-foreground">Click <strong class="font-bold">Send Invitation</strong>.</li></ol><h2 id="how-your-partner-joins" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">How your partner joins</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Your partner will receive an email invitation link.</li><li class="text-sm leading-relaxed text-foreground">Clicking the link and signing in or registering will automatically link them to your household, granting access to shared accounts and budgets immediately.</li></ul><h2 id="managing-an-invitation" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Managing an invitation</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Owners can resend an invitation or revoke it before it is accepted. Someone who is already an active member cannot accept another invitation to the same household.</p><h2 id="shared-vs-private-accounts" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Shared vs private accounts</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Shared accounts are visible to both of you — like Groceries or Rent. Private accounts stay visible only to their owner, so personal spending can stay personal. Household totals still include everything. Try a monthly review together instead of checking each purchase.</p></div>',
     },
     "adding-accounts": {
       frontmatter: {
@@ -951,6 +985,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Adding accounts: types, currencies, and privacy\n\nYou can track bank accounts, credit cards, cash, and investments in duobalance.\n\n## Steps to create an account\n\n1. Go to **Balances** and click **+ New Account**.\n2. Fill in the account details:\n   - **Name:** A descriptive title (e.g., "Checking Account" or "Cash Wallet").\n   - **Type:** Checking, savings, credit card, cash, or investment.\n   - **Currency:** Choose the native currency of the account.\n   - **Visibility:** Choose **Shared** (visible to your partner) or **Private**.\n   - **Balance mode:** Select **Ledger** or **Manual**.\n3. Enter the **Opening Balance** and save changes.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="adding-accounts-types-currencies-and-privacy" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Adding accounts: types, currencies, and privacy</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">You can track bank accounts, credit cards, cash, and investments in duobalance.</p><h2 id="steps-to-create-an-account" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Steps to create an account</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Go to <strong class="font-bold">Balances</strong> and click <strong class="font-bold">+ New Account</strong>.</li><li class="text-sm leading-relaxed text-foreground">Fill in the account details:</li></ol><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Name:</strong> A descriptive title (e.g., &quot;Checking Account&quot; or &quot;Cash Wallet&quot;).</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Type:</strong> Checking, savings, credit card, cash, or investment.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Currency:</strong> Choose the native currency of the account.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Visibility:</strong> Choose <strong class="font-bold">Shared</strong> (visible to your partner) or <strong class="font-bold">Private</strong>.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Balance mode:</strong> Select <strong class="font-bold">Ledger</strong> or <strong class="font-bold">Manual</strong>.</li></ul><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Enter the <strong class="font-bold">Opening Balance</strong> and save changes.</li></ol></div>',
     },
     "recording-transaction-fast": {
       frontmatter: {
@@ -984,6 +1019,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# How to record a transaction quickly\n\nduobalance is optimized so logging expenses takes just a few seconds on desktop or mobile.\n\n## Quick entry workflow\n\n1. On desktop, use **New transaction** in the sidebar. On mobile, open the round menu button and choose **New transaction**.\n2. Enter the transaction amount.\n3. Choose the type: **Expense**, **Income**, or **Transfer**.\n4. Pick the category and account used.\n5. Set **Spent by** (who incurred the expense).\n6. Tap **Save**.\n\n## Speed tips\n\n- duobalance remembers your recent account and category selections.\n- Start typing a previous description to reuse it from the suggestions. Suggestions begin after two characters and show at most six matches.\n- Add short notes whenever you need to record extra context for your partner.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="how-to-record-a-transaction-quickly" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">How to record a transaction quickly</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance is optimized so logging expenses takes just a few seconds on desktop or mobile.</p><h2 id="quick-entry-workflow" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Quick entry workflow</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">On desktop, use <strong class="font-bold">New transaction</strong> in the sidebar. On mobile, open the round menu button and choose <strong class="font-bold">New transaction</strong>.</li><li class="text-sm leading-relaxed text-foreground">Enter the transaction amount.</li><li class="text-sm leading-relaxed text-foreground">Choose the type: <strong class="font-bold">Expense</strong>, <strong class="font-bold">Income</strong>, or <strong class="font-bold">Transfer</strong>.</li><li class="text-sm leading-relaxed text-foreground">Pick the category and account used.</li><li class="text-sm leading-relaxed text-foreground">Set <strong class="font-bold">Spent by</strong> (who incurred the expense).</li><li class="text-sm leading-relaxed text-foreground">Tap <strong class="font-bold">Save</strong>.</li></ol><h2 id="speed-tips" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Speed tips</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">duobalance remembers your recent account and category selections.</li><li class="text-sm leading-relaxed text-foreground">Start typing a previous description to reuse it from the suggestions. Suggestions begin after two characters and show at most six matches.</li><li class="text-sm leading-relaxed text-foreground">Add short notes whenever you need to record extra context for your partner.</li></ul></div>',
     },
     "categories-and-auto-rules": {
       frontmatter: {
@@ -1013,6 +1049,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Categories and auto-categorization rules\n\nCategories organize your transactions so budgets and reports reflect your actual spending habits.\n\n## Default and custom categories\n\nduobalance includes standard categories like Food & Dining, Utilities, Transportation, and Housing. You can add or edit custom categories under **Settings > Categories**.\n\n## Auto-categorization rules\n\nAuto-rules allow you to map merchant descriptions to categories automatically:\n\n- **Creating rules:** When logging a recurring vendor (e.g., "Grocery Store X"), you can save an auto-rule so future entries matching that keyword automatically populate the right category.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="categories-and-auto-categorization-rules" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Categories and auto-categorization rules</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Categories organize your transactions so budgets and reports reflect your actual spending habits.</p><h2 id="default-and-custom-categories" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Default and custom categories</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance includes standard categories like Food &amp; Dining, Utilities, Transportation, and Housing. You can add or edit custom categories under <strong class="font-bold">Settings &gt; Categories</strong>.</p><h2 id="auto-categorization-rules" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Auto-categorization rules</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Auto-rules allow you to map merchant descriptions to categories automatically:</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Creating rules:</strong> When logging a recurring vendor (e.g., &quot;Grocery Store X&quot;), you can save an auto-rule so future entries matching that keyword automatically populate the right category.</li></ul></div>',
     },
     "household-vs-personal-budgets": {
       frontmatter: {
@@ -1047,6 +1084,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Household vs. personal budgets\n\nduobalance allows you to organize budgets into two scopes: **Household** and **My Budgets**.\n\n## Household Budgets\n\nTrack shared living costs (such as rent, groceries, and utilities). Both partners contribute toward the limit and view shared progress.\n\n## Personal Budgets\n\nPrivate to each member (e.g., hobbies or personal care). They let you track individual spending without affecting global household limits.\n\n## Switching tabs\n\nUse the toggle at the top of the Budget screen to switch between **Household** and **Mine** views.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="household-vs-personal-budgets" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Household vs. personal budgets</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance allows you to organize budgets into two scopes: <strong class="font-bold">Household</strong> and <strong class="font-bold">My Budgets</strong>.</p><h2 id="household-budgets" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Household Budgets</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Track shared living costs (such as rent, groceries, and utilities). Both partners contribute toward the limit and view shared progress.</p><h2 id="personal-budgets" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Personal Budgets</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Private to each member (e.g., hobbies or personal care). They let you track individual spending without affecting global household limits.</p><h2 id="switching-tabs" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Switching tabs</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Use the toggle at the top of the Budget screen to switch between <strong class="font-bold">Household</strong> and <strong class="font-bold">Mine</strong> views.</p></div>',
     },
     "recurrence-and-marking-paid": {
       frontmatter: {
@@ -1076,6 +1114,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Recurring bills and marking as paid\n\nThe Bills section helps you keep track of fixed, recurring obligations such as rent, subscriptions, or utility payments.\n\n## Setting up recurrence\n\nWhen creating a bill, select the repeat cycle (monthly, biweekly, annually, etc.). duobalance will automatically generate the upcoming bill instance for each period.\n\n## Marking as paid\n\nWhen you pay a bill:\n\n1. Tap the pending bill.\n2. Select **Mark as Paid**.\n3. Choose whether to automatically record a corresponding expense transaction from one of your accounts.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="recurring-bills-and-marking-as-paid" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Recurring bills and marking as paid</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">The Bills section helps you keep track of fixed, recurring obligations such as rent, subscriptions, or utility payments.</p><h2 id="setting-up-recurrence" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Setting up recurrence</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">When creating a bill, select the repeat cycle (monthly, biweekly, annually, etc.). duobalance will automatically generate the upcoming bill instance for each period.</p><h2 id="marking-as-paid" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Marking as paid</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">When you pay a bill:</p><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Tap the pending bill.</li><li class="text-sm leading-relaxed text-foreground">Select <strong class="font-bold">Mark as Paid</strong>.</li><li class="text-sm leading-relaxed text-foreground">Choose whether to automatically record a corresponding expense transaction from one of your accounts.</li></ol></div>',
     },
     "reading-the-charts": {
       frontmatter: {
@@ -1110,6 +1149,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# How to read charts and reports\n\nThe Reports section turns your raw transactions into clear financial insights for your household.\n\n## Category Breakdown Chart\n\nShows which categories account for the largest portion of your spending during the selected date range.\n\n## Monthly Trend and Income vs. Expense\n\nCompares total money flowing in versus money going out month over month.\n\n- **Green bars:** Total income.\n- **Red bars:** Total expenses.\n\n## Currency conversion in reports\n\nAll foreign currency amounts are converted to your household's base currency using exchange rates recorded on the transaction dates.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="how-to-read-charts-and-reports" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">How to read charts and reports</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">The Reports section turns your raw transactions into clear financial insights for your household.</p><h2 id="category-breakdown-chart" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Category Breakdown Chart</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Shows which categories account for the largest portion of your spending during the selected date range.</p><h2 id="monthly-trend-and-income-vs-expense" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Monthly Trend and Income vs. Expense</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Compares total money flowing in versus money going out month over month.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Green bars:</strong> Total income.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Red bars:</strong> Total expenses.</li></ul><h2 id="currency-conversion-in-reports" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Currency conversion in reports</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">All foreign currency amounts are converted to your household&#39;s base currency using exchange rates recorded on the transaction dates.</p></div>',
     },
     "multi-currency-and-exchange-rates": {
       frontmatter: {
@@ -1139,6 +1179,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Multi-currency and exchange rates\n\nduobalance lets you maintain accounts and transactions in different currencies (USD, EUR, CLP, BRL, etc.) while consolidating all totals in your household base currency.\n\n## Automatic exchange rates\n\n- duobalance updates official currency exchange rates daily via an automated service.\n- Each transaction stores the exchange rate in effect on its date so historical records remain accurate.\n\n## Manual rate overrides\n\nIf you exchanged currency at a custom or non-market rate:\n\n1. When creating or editing the foreign currency transaction, enable **Override Exchange Rate**.\n2. Manually type the exact agreed rate.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="multi-currency-and-exchange-rates" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Multi-currency and exchange rates</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance lets you maintain accounts and transactions in different currencies (USD, EUR, CLP, BRL, etc.) while consolidating all totals in your household base currency.</p><h2 id="automatic-exchange-rates" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Automatic exchange rates</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">duobalance updates official currency exchange rates daily via an automated service.</li><li class="text-sm leading-relaxed text-foreground">Each transaction stores the exchange rate in effect on its date so historical records remain accurate.</li></ul><h2 id="manual-rate-overrides" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Manual rate overrides</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">If you exchanged currency at a custom or non-market rate:</p><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">When creating or editing the foreign currency transaction, enable <strong class="font-bold">Override Exchange Rate</strong>.</li><li class="text-sm leading-relaxed text-foreground">Manually type the exact agreed rate.</li></ol></div>',
     },
     "number-format-currency-timezone": {
       frontmatter: {
@@ -1173,6 +1214,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Currency, number format, and timezone settings\n\nYou can customize how duobalance displays amounts and dates under **Settings**.\n\n## Household Base Currency\n\nThe primary currency used to calculate household totals and summary reports.\n\n## Number Formatting\n\nChoose between period separators (`1,234.56`) or comma separators (`1.234,56`) based on your regional preferences.\n\nLanguage and number-format choices belong to your user profile, not the household. They follow you when you switch households and do not change what your partner sees.\n\n## Timezone\n\nEnsures month-end cutoffs and bill due dates are calculated according to your local time.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="currency-number-format-and-timezone-settings" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Currency, number format, and timezone settings</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">You can customize how duobalance displays amounts and dates under <strong class="font-bold">Settings</strong>.</p><h2 id="household-base-currency" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Household Base Currency</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">The primary currency used to calculate household totals and summary reports.</p><h2 id="number-formatting" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Number Formatting</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Choose between period separators (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-foreground">1,234.56</code>) or comma separators (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-foreground">1.234,56</code>) based on your regional preferences.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">Language and number-format choices belong to your user profile, not the household. They follow you when you switch households and do not change what your partner sees.</p><h2 id="timezone" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Timezone</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Ensures month-end cutoffs and bill due dates are calculated according to your local time.</p></div>',
     },
     "exporting-your-data": {
       frontmatter: {
@@ -1197,6 +1239,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Exporting your financial data\n\nYour data belongs to you. You can export or back up your complete transaction and account history at any time.\n\n## Steps to export\n\n1. Go to **Settings** and scroll down to **Data & Privacy**.\n2. Select **Export Data**.\n3. Choose your desired format:\n   - **CSV:** Best for opening in spreadsheets like Excel or Google Sheets.\n   - **JSON:** Complete structured backup format.\n4. Click **Download File**.\n\nIf you plan to delete a household, download an export from the deletion confirmation first. Former members can export only the historical data they are still allowed to access; this does not restore household access.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="exporting-your-financial-data" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Exporting your financial data</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Your data belongs to you. You can export or back up your complete transaction and account history at any time.</p><h2 id="steps-to-export" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Steps to export</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Go to <strong class="font-bold">Settings</strong> and scroll down to <strong class="font-bold">Data &amp; Privacy</strong>.</li><li class="text-sm leading-relaxed text-foreground">Select <strong class="font-bold">Export Data</strong>.</li><li class="text-sm leading-relaxed text-foreground">Choose your desired format:</li></ol><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">CSV:</strong> Best for opening in spreadsheets like Excel or Google Sheets.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">JSON:</strong> Complete structured backup format.</li></ul><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Click <strong class="font-bold">Download File</strong>.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">If you plan to delete a household, download an export from the deletion confirmation first. Former members can export only the historical data they are still allowed to access; this does not restore household access.</p></div>',
     },
     "privacy-what-we-can-and-cant-see": {
       frontmatter: {
@@ -1226,6 +1269,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Privacy: what we can and cannot see\n\nAt duobalance, financial privacy and data security are foundational principles.\n\n## What your partner sees\n\n- Your partner can only see accounts set as **Shared** and transactions associated with those accounts.\n- Your **Private** accounts and their detailed transaction histories remain invisible to your partner.\n- A member who leaves or is removed loses access to that household. Their historical entries remain in the household records for continuity.\n\n## What the platform sees\n\n- duobalance uses encryption and database-level Row Level Security (RLS) policies so only authorized members of your household can access your data.\n- We do not sell or share your personal financial data with advertisers or third parties.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="privacy-what-we-can-and-cannot-see" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Privacy: what we can and cannot see</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">At duobalance, financial privacy and data security are foundational principles.</p><h2 id="what-your-partner-sees" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">What your partner sees</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Your partner can only see accounts set as <strong class="font-bold">Shared</strong> and transactions associated with those accounts.</li><li class="text-sm leading-relaxed text-foreground">Your <strong class="font-bold">Private</strong> accounts and their detailed transaction histories remain invisible to your partner.</li><li class="text-sm leading-relaxed text-foreground">A member who leaves or is removed loses access to that household. Their historical entries remain in the household records for continuity.</li></ul><h2 id="what-the-platform-sees" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">What the platform sees</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">duobalance uses encryption and database-level Row Level Security (RLS) policies so only authorized members of your household can access your data.</li><li class="text-sm leading-relaxed text-foreground">We do not sell or share your personal financial data with advertisers or third parties.</li></ul></div>',
     },
     "installing-on-mobile": {
       frontmatter: {
@@ -1255,6 +1299,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# How to install duobalance on iPhone or Android\n\nduobalance runs as a Progressive Web App (PWA), letting you install it to your phone's Home Screen without an app store download.\n\n## On iPhone (iOS)\n\n1. Open Safari and navigate to duobalance.\n2. Tap the **Share** button (square with an upward arrow).\n3. Scroll down and tap **Add to Home Screen**.\n\n## On Android\n\n1. Open Chrome or another supported browser.\n2. Tap the three-dot menu icon in the upper-right corner.\n3. Tap **Install app** or **Add to Home screen**.\n\nFor a complete walkthrough, visit [/install](/install).\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="how-to-install-duobalance-on-iphone-or-android" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">How to install duobalance on iPhone or Android</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">duobalance runs as a Progressive Web App (PWA), letting you install it to your phone&#39;s Home Screen without an app store download.</p><h2 id="on-iphone-ios" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">On iPhone (iOS)</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Open Safari and navigate to duobalance.</li><li class="text-sm leading-relaxed text-foreground">Tap the <strong class="font-bold">Share</strong> button (square with an upward arrow).</li><li class="text-sm leading-relaxed text-foreground">Scroll down and tap <strong class="font-bold">Add to Home Screen</strong>.</li></ol><h2 id="on-android" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">On Android</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Open Chrome or another supported browser.</li><li class="text-sm leading-relaxed text-foreground">Tap the three-dot menu icon in the upper-right corner.</li><li class="text-sm leading-relaxed text-foreground">Tap <strong class="font-bold">Install app</strong> or <strong class="font-bold">Add to Home screen</strong>.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">For a complete walkthrough, visit <a href="/install" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">/install</a>.</p></div>',
     },
     "bill-reminders-not-arriving": {
       frontmatter: {
@@ -1284,6 +1329,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Why aren't bill reminders arriving?\n\nIf you set up a bill reminder but haven't received a push or email notification, check the following reasons.\n\n## iOS push notification requirements\n\nOn iOS, web push notifications require the app to be installed as a PWA on your Home Screen and your phone to be running iOS 16.4 or later.\n\n- **Solution:** Follow the guide at [/install](/install) to add duobalance to your Home Screen.\n\n## Guaranteed email reminders\n\nTo ensure you never miss a due date, duobalance also sends email notifications. Check your spam folder and mark duobalance emails as trusted.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="why-arent-bill-reminders-arriving" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Why aren&#39;t bill reminders arriving?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">If you set up a bill reminder but haven&#39;t received a push or email notification, check the following reasons.</p><h2 id="ios-push-notification-requirements" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">iOS push notification requirements</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">On iOS, web push notifications require the app to be installed as a PWA on your Home Screen and your phone to be running iOS 16.4 or later.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Solution:</strong> Follow the guide at <a href="/install" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">/install</a> to add duobalance to your Home Screen.</li></ul><h2 id="guaranteed-email-reminders" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Guaranteed email reminders</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">To ensure you never miss a due date, duobalance also sends email notifications. Check your spam folder and mark duobalance emails as trusted.</p></div>',
     },
     "balance-looks-wrong": {
       frontmatter: {
@@ -1308,6 +1354,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# What to do if a balance looks wrong\n\nIf you notice a discrepancy between duobalance and your actual bank statement, follow these troubleshooting steps.\n\n## Step-by-step diagnostic\n\n1. **Check the balance mode:** Confirm whether the account is in **Ledger** or **Manual** mode.\n2. **Review the opening balance:** Go to **Balances**, edit the account, and verify that the initial balance matched your real balance on the starting date.\n3. **Look for missing transactions:** Ensure no recent transactions were skipped.\n4. **Check transfer entries:** Verify whether a transfer was accidentally logged as a regular expense.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="what-to-do-if-a-balance-looks-wrong" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">What to do if a balance looks wrong</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">If you notice a discrepancy between duobalance and your actual bank statement, follow these troubleshooting steps.</p><h2 id="step-by-step-diagnostic" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Step-by-step diagnostic</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Check the balance mode:</strong> Confirm whether the account is in <strong class="font-bold">Ledger</strong> or <strong class="font-bold">Manual</strong> mode.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Review the opening balance:</strong> Go to <strong class="font-bold">Balances</strong>, edit the account, and verify that the initial balance matched your real balance on the starting date.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Look for missing transactions:</strong> Ensure no recent transactions were skipped.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Check transfer entries:</strong> Verify whether a transfer was accidentally logged as a regular expense.</li></ol></div>',
     },
     "exchange-rates-stale": {
       frontmatter: {
@@ -1332,6 +1379,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Why does an exchange rate show a warning?\n\nWhen logging transactions in currencies different from your base currency, duobalance applies official exchange rates.\n\n## What the warning means\n\nIf exchange rates haven't been refreshed in over 24 hours (for instance, over weekends or banking holidays), an informational badge appears.\n\n- **Impact:** You can continue logging transactions normally.\n- **Resolution:** Rates refresh automatically on the next daily background job, or you can manually override the exchange rate on any transaction.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="why-does-an-exchange-rate-show-a-warning" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Why does an exchange rate show a warning?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">When logging transactions in currencies different from your base currency, duobalance applies official exchange rates.</p><h2 id="what-the-warning-means" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">What the warning means</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">If exchange rates haven&#39;t been refreshed in over 24 hours (for instance, over weekends or banking holidays), an informational badge appears.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Impact:</strong> You can continue logging transactions normally.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Resolution:</strong> Rates refresh automatically on the next daily background job, or you can manually override the exchange rate on any transaction.</li></ul></div>',
     },
     "managing-households-and-members": {
       frontmatter: {
@@ -1370,6 +1418,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# How to switch households and manage members\n\nYou can belong to more than one household. Each household has its own accounts, transactions, budgets, bills, members, and settings.\n\n## Switching or creating a household\n\n1. Tap the current household name at the top of the app.\n2. Select another household to open its data.\n3. In the same window, choose **Create household** to start another workspace or **Join with invitation** to enter one with an invitation code.\n\nThe app clears the previous household's temporary screens and selections when you switch, so data is never mixed between households. You can create up to five households.\n\n## Inviting and managing members\n\nOwners can open **Settings** and use **Household Members** to send, resend, or revoke invitations. An owner can also transfer ownership to a partner. Choose whether to remain an owner or become a partner after the transfer.\n\nOnly an owner can remove a partner. Before confirming removal, decide what happens to each shared account owned by that partner: transfer it to yourself or make it joint. The removed member loses access to the household; their historical entries stay available to the household.\n\n## Leaving or deleting a household\n\nOpen **Settings** and scroll to the danger zone to leave a household. An owner must transfer ownership before leaving while other members remain. The final member can leave.\n\nOwners can also delete a household. Type its exact name to confirm. Deletion is recoverable for 30 days, but export the household first if you need a personal copy.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="how-to-switch-households-and-manage-members" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">How to switch households and manage members</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">You can belong to more than one household. Each household has its own accounts, transactions, budgets, bills, members, and settings.</p><h2 id="switching-or-creating-a-household" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Switching or creating a household</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Tap the current household name at the top of the app.</li><li class="text-sm leading-relaxed text-foreground">Select another household to open its data.</li><li class="text-sm leading-relaxed text-foreground">In the same window, choose <strong class="font-bold">Create household</strong> to start another workspace or <strong class="font-bold">Join with invitation</strong> to enter one with an invitation code.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">The app clears the previous household&#39;s temporary screens and selections when you switch, so data is never mixed between households. You can create up to five households.</p><h2 id="inviting-and-managing-members" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Inviting and managing members</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Owners can open <strong class="font-bold">Settings</strong> and use <strong class="font-bold">Household Members</strong> to send, resend, or revoke invitations. An owner can also transfer ownership to a partner. Choose whether to remain an owner or become a partner after the transfer.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">Only an owner can remove a partner. Before confirming removal, decide what happens to each shared account owned by that partner: transfer it to yourself or make it joint. The removed member loses access to the household; their historical entries stay available to the household.</p><h2 id="leaving-or-deleting-a-household" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Leaving or deleting a household</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Open <strong class="font-bold">Settings</strong> and scroll to the danger zone to leave a household. An owner must transfer ownership before leaving while other members remain. The final member can leave.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">Owners can also delete a household. Type its exact name to confirm. Deletion is recoverable for 30 days, but export the household first if you need a personal copy.</p></div>',
     },
     "mobile-navigation-and-quick-entry": {
       frontmatter: {
@@ -1399,6 +1448,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Using the mobile menu and quick transaction entry\n\nOn a phone, tap the round menu button in the lower-left corner to open the navigation drawer. It includes Balances, Transactions, Budget, Reports, Bills, Settings, Help, and sign out. Use **New transaction** at the bottom of the drawer to open quick entry.\n\n## Description suggestions\n\nWhen entering a transaction description, suggestions appear after you type at least two characters. Choose a matching previous description to reuse it, or keep typing to enter a new one. Up to six suggestions are shown above the field so the on-screen keyboard does not cover them.\n\n## Save a transaction\n\nEnter the amount, description, account, category, and who spent it, then save. You can still add notes or other details when needed.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="using-the-mobile-menu-and-quick-transaction-entry" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Using the mobile menu and quick transaction entry</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">On a phone, tap the round menu button in the lower-left corner to open the navigation drawer. It includes Balances, Transactions, Budget, Reports, Bills, Settings, Help, and sign out. Use <strong class="font-bold">New transaction</strong> at the bottom of the drawer to open quick entry.</p><h2 id="description-suggestions" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Description suggestions</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">When entering a transaction description, suggestions appear after you type at least two characters. Choose a matching previous description to reuse it, or keep typing to enter a new one. Up to six suggestions are shown above the field so the on-screen keyboard does not cover them.</p><h2 id="save-a-transaction" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Save a transaction</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Enter the amount, description, account, category, and who spent it, then save. You can still add notes or other details when needed.</p></div>',
     },
   },
   "pt-BR": {
@@ -1415,12 +1465,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Modo de saldo manual vs. livro diário",
-          id: "modo-de-saldo-manual-vs-livro-dirio",
+          id: "modo-de-saldo-manual-vs-livro-diario",
         },
         {
           level: 2,
           text: "Modo Livro Diário (Ledger)",
-          id: "modo-livro-dirio-ledger",
+          id: "modo-livro-diario-ledger",
         },
         {
           level: 2,
@@ -1435,6 +1485,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Modo de saldo manual vs. livro diário\n\nNo duobalance, cada conta funciona em um de dois modos de saldo: **Livro diário (Ledger)** ou **Manual**.\n\n## Modo Livro Diário (Ledger)\n\nNo modo Livro Diário, o saldo atual da conta é calculado automaticamente somando o saldo inicial e todas as transações associadas.\n\n- **Quando usar:** Para contas principais onde você registra cada gasto, receita ou transferência.\n- **Por que pode divergir:** Se faltar alguma transação ou se o saldo inicial configurado estiver incorreto.\n\n## Modo Saldo Manual\n\nNo modo Manual, você define diretamente qual é o saldo atual atualizando-o periodicamente.\n\n- **Quando usar:** Cartões de crédito, contas de investimento ou secundárias onde você não quer registrar pequenas compras.\n- **Transações no modo manual:** Você ainda pode registrar transações para somar aos orçamentos e relatórios, mas elas não alteram automaticamente o saldo manual.\n\n## Como alterar o modo\n\n1. Vá em **Saldos** ou **Configurações da Conta**.\n2. Clique na conta que deseja modificar.\n3. Selecione o modo de saldo preferido e salve as alterações.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="modo-de-saldo-manual-vs-livro-diario" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Modo de saldo manual vs. livro diário</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">No duobalance, cada conta funciona em um de dois modos de saldo: <strong class="font-bold">Livro diário (Ledger)</strong> ou <strong class="font-bold">Manual</strong>.</p><h2 id="modo-livro-diario-ledger" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Modo Livro Diário (Ledger)</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">No modo Livro Diário, o saldo atual da conta é calculado automaticamente somando o saldo inicial e todas as transações associadas.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Quando usar:</strong> Para contas principais onde você registra cada gasto, receita ou transferência.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Por que pode divergir:</strong> Se faltar alguma transação ou se o saldo inicial configurado estiver incorreto.</li></ul><h2 id="modo-saldo-manual" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Modo Saldo Manual</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">No modo Manual, você define diretamente qual é o saldo atual atualizando-o periodicamente.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Quando usar:</strong> Cartões de crédito, contas de investimento ou secundárias onde você não quer registrar pequenas compras.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Transações no modo manual:</strong> Você ainda pode registrar transações para somar aos orçamentos e relatórios, mas elas não alteram automaticamente o saldo manual.</li></ul><h2 id="como-alterar-o-modo" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Como alterar o modo</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Vá em <strong class="font-bold">Saldos</strong> ou <strong class="font-bold">Configurações da Conta</strong>.</li><li class="text-sm leading-relaxed text-foreground">Clique na conta que deseja modificar.</li><li class="text-sm leading-relaxed text-foreground">Selecione o modo de saldo preferido e salve as alterações.</li></ol></div>',
     },
     "private-accounts-and-views": {
       frontmatter: {
@@ -1454,7 +1505,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Visualizações: Tudo, Minhas contas e Compartilhadas",
-          id: "visualizaes-tudo-minhas-contas-e-compartilhadas",
+          id: "visualizacoes-tudo-minhas-contas-e-compartilhadas",
         },
         {
           level: 2,
@@ -1464,11 +1515,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Transações privadas em Orçamentos",
-          id: "transaes-privadas-em-oramentos",
+          id: "transacoes-privadas-em-orcamentos",
         },
       ],
       content:
         '\n# Contas privadas e visibilidade de saldos\n\nNo duobalance, você pode escolher quais contas são compartilhadas com o lar e quais permanecem privadas.\n\n## Visualizações: Tudo, Minhas contas e Compartilhadas\n\n- **Compartilhada:** Ambos os membros do lar podem ver o saldo, histórico e transações desta conta.\n- **Privada (Minhas):** Apenas o proprietário da conta pode ver o saldo detalhado e as transações individuais.\n\n## Por que vemos totais diferentes?\n\nSe você possui uma conta privada, seu total pessoal (visualização "Tudo" ou "Minhas") incluirá seus fundos privados, enquanto a visualização do seu parceiro não os incluirá. Isso garante a privacidade financeira individual no lar.\n\n## Transações privadas em Orçamentos\n\nTransações feitas a partir de uma conta privada ainda podem ser atribuídas aos orçamentos do lar se você decidir categorizá-las como despesa compartilhada.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="contas-privadas-e-visibilidade-de-saldos" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Contas privadas e visibilidade de saldos</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">No duobalance, você pode escolher quais contas são compartilhadas com o lar e quais permanecem privadas.</p><h2 id="visualizacoes-tudo-minhas-contas-e-compartilhadas" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Visualizações: Tudo, Minhas contas e Compartilhadas</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Compartilhada:</strong> Ambos os membros do lar podem ver o saldo, histórico e transações desta conta.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Privada (Minhas):</strong> Apenas o proprietário da conta pode ver o saldo detalhado e as transações individuais.</li></ul><h2 id="por-que-vemos-totais-diferentes" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Por que vemos totais diferentes?</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Se você possui uma conta privada, seu total pessoal (visualização &quot;Tudo&quot; ou &quot;Minhas&quot;) incluirá seus fundos privados, enquanto a visualização do seu parceiro não os incluirá. Isso garante a privacidade financeira individual no lar.</p><h2 id="transacoes-privadas-em-orcamentos" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Transações privadas em Orçamentos</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Transações feitas a partir de uma conta privada ainda podem ser atribuídas aos orçamentos do lar se você decidir categorizá-las como despesa compartilhada.</p></div>',
     },
     "transfers-arent-expenses": {
       frontmatter: {
@@ -1483,21 +1535,22 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Por que transferências não são despesas?",
-          id: "por-que-transferncias-no-so-despesas",
+          id: "por-que-transferencias-nao-sao-despesas",
         },
         {
           level: 2,
           text: "Impacto neutro no patrimônio",
-          id: "impacto-neutro-no-patrimnio",
+          id: "impacto-neutro-no-patrimonio",
         },
         {
           level: 2,
           text: "Como registrar uma transferência",
-          id: "como-registrar-uma-transferncia",
+          id: "como-registrar-uma-transferencia",
         },
       ],
       content:
         "\n# Por que transferências não são despesas?\n\nMover dinheiro entre duas contas do seu lar (por exemplo, da sua conta corrente para o cartão de crédito ou poupança) não diminui o patrimônio total do lar.\n\n## Impacto neutro no patrimônio\n\n- **Transferências entre contas:** Apenas movem fundos de um lugar para outro. Não são saídas reais de dinheiro e, portanto, não contam como despesas nem reduzem seus orçamentos.\n- **Despesas reais:** Ocorrem quando o dinheiro sai do lar para terceiros (supermercado, serviços, aluguel).\n\n## Como registrar uma transferência\n\nAo criar uma transação, selecione a aba **Transferência**, escolha a conta de origem e a conta de destino. Ambos os saldos serão atualizados sem afetar seus orçamentos mensais.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="por-que-transferencias-nao-sao-despesas" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Por que transferências não são despesas?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Mover dinheiro entre duas contas do seu lar (por exemplo, da sua conta corrente para o cartão de crédito ou poupança) não diminui o patrimônio total do lar.</p><h2 id="impacto-neutro-no-patrimonio" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Impacto neutro no patrimônio</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Transferências entre contas:</strong> Apenas movem fundos de um lugar para outro. Não são saídas reais de dinheiro e, portanto, não contam como despesas nem reduzem seus orçamentos.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Despesas reais:</strong> Ocorrem quando o dinheiro sai do lar para terceiros (supermercado, serviços, aluguel).</li></ul><h2 id="como-registrar-uma-transferencia" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Como registrar uma transferência</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Ao criar uma transação, selecione a aba <strong class="font-bold">Transferência</strong>, escolha a conta de origem e a conta de destino. Ambos os saldos serão atualizados sem afetar seus orçamentos mensais.</p></div>',
     },
     "who-spent-vs-who-typed": {
       frontmatter: {
@@ -1517,16 +1570,17 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Por que essa distinção existe?",
-          id: "por-que-essa-distino-existe",
+          id: "por-que-essa-distincao-existe",
         },
         {
           level: 2,
           text: "Corrigindo a atribuição",
-          id: "corrigindo-a-atribuio",
+          id: "corrigindo-a-atribuicao",
         },
       ],
       content:
         '\n# Quem gastou vs. quem registrou?\n\nAo registrar uma transação no duobalance, distinguimos entre **Quem gastou (spent_by)** e **Quem registrou (entered_by)**.\n\n## Por que essa distinção existe?\n\nÉ comum que uma pessoa lance os recibos ou notas de ambas as pessoas no final do dia ou da semana.\n\n- **Gasto por (spent_by):** Indica de quem foi a compra ou responsabilidade. Usado para filtrar relatórios pessoais e orçamentos individuais.\n- **Registrado por (entered_by):** Atribuído automaticamente ao usuário ativo que criou o registro.\n\n## Corrigindo a atribuição\n\nVocê pode editar qualquer transação existente a qualquer momento para alterar o campo "Gasto por" se tiver sido atribuído incorretamente.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="quem-gastou-vs-quem-registrou" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Quem gastou vs. quem registrou?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Ao registrar uma transação no duobalance, distinguimos entre <strong class="font-bold">Quem gastou (spent_by)</strong> e <strong class="font-bold">Quem registrou (entered_by)</strong>.</p><h2 id="por-que-essa-distincao-existe" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Por que essa distinção existe?</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">É comum que uma pessoa lance os recibos ou notas de ambas as pessoas no final do dia ou da semana.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Gasto por (spent_by):</strong> Indica de quem foi a compra ou responsabilidade. Usado para filtrar relatórios pessoais e orçamentos individuais.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Registrado por (entered_by):</strong> Atribuído automaticamente ao usuário ativo que criou o registro.</li></ul><h2 id="corrigindo-a-atribuicao" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Corrigindo a atribuição</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Você pode editar qualquer transação existente a qualquer momento para alterar o campo &quot;Gasto por&quot; se tiver sido atribuído incorretamente.</p></div>',
     },
     "getting-started-creating-household": {
       frontmatter: {
@@ -1546,12 +1600,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Configuração inicial",
-          id: "configurao-inicial",
+          id: "configuracao-inicial",
         },
         {
           level: 2,
           text: "Próximos passos recomendados",
-          id: "prximos-passos-recomendados",
+          id: "proximos-passos-recomendados",
         },
         {
           level: 2,
@@ -1561,6 +1615,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Primeiros passos: criando seu lar\n\nUm lar no duobalance é o espaço compartilhado onde você e seu parceiro gerenciam as finanças juntos.\n\n## Configuração inicial\n\n1. Crie sua conta com seu e-mail.\n2. Ao entrar pela primeira vez, dê um nome ao seu lar (ex: "Lar Silva & Souza").\n3. Selecione a **Moeda Base** do lar. Todos os relatórios consolidados exibirão os valores nesta moeda.\n\n## Próximos passos recomendados\n\n- Convide seu parceiro em **Configurações**, em **Membros do Lar**.\n- Adicione suas primeiras contas bancárias ou em dinheiro em **Saldos**.\n- Configure seus orçamentos principais em **Orçamento**.\n\n## Mais de um lar\n\nUse o nome do lar no topo do aplicativo para criar, entrar ou alternar entre lares depois. Cada lar mantém seus dados separados. Consulte [como alternar entre lares e gerenciar membros](/help/managing-households-and-members) para conhecer o fluxo completo.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="primeiros-passos-criando-seu-lar" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Primeiros passos: criando seu lar</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Um lar no duobalance é o espaço compartilhado onde você e seu parceiro gerenciam as finanças juntos.</p><h2 id="configuracao-inicial" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Configuração inicial</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Crie sua conta com seu e-mail.</li><li class="text-sm leading-relaxed text-foreground">Ao entrar pela primeira vez, dê um nome ao seu lar (ex: &quot;Lar Silva &amp; Souza&quot;).</li><li class="text-sm leading-relaxed text-foreground">Selecione a <strong class="font-bold">Moeda Base</strong> do lar. Todos os relatórios consolidados exibirão os valores nesta moeda.</li></ol><h2 id="proximos-passos-recomendados" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Próximos passos recomendados</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Convide seu parceiro em <strong class="font-bold">Configurações</strong>, em <strong class="font-bold">Membros do Lar</strong>.</li><li class="text-sm leading-relaxed text-foreground">Adicione suas primeiras contas bancárias ou em dinheiro em <strong class="font-bold">Saldos</strong>.</li><li class="text-sm leading-relaxed text-foreground">Configure seus orçamentos principais em <strong class="font-bold">Orçamento</strong>.</li></ul><h2 id="mais-de-um-lar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Mais de um lar</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Use o nome do lar no topo do aplicativo para criar, entrar ou alternar entre lares depois. Cada lar mantém seus dados separados. Consulte <a href="/help/managing-households-and-members" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">como alternar entre lares e gerenciar membros</a> para conhecer o fluxo completo.</p></div>',
     },
     "inviting-your-partner": {
       frontmatter: {
@@ -1604,6 +1659,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Como convidar seu parceiro para o duobalance\n\nO gerenciamento financeiro a dois funciona melhor quando ambos têm acesso ao mesmo espaço compartilhado.\n\n## Passos para enviar o convite\n\n1. Vá em **Configurações** e abra a seção **Membros do Lar**. Apenas um proprietário pode gerenciar convites.\n2. Digite o e-mail do seu parceiro.\n3. Clique em **Enviar Convite**.\n\n## Como seu parceiro entra\n\n- Seu parceiro receberá um link de convite por e-mail.\n- Ao clicar no link e entrar ou se cadastrar, ele será vinculado automaticamente ao seu lar, tendo acesso imediato às contas e orçamentos compartilhados.\n\n## Gerenciar um convite\n\nProprietários podem reenviar um convite ou revogá-lo antes de sua aceitação. Uma pessoa que já é membro ativo não pode aceitar outro convite para o mesmo lar.\n\n## Contas compartilhadas e privadas\n\nContas compartilhadas são visíveis para os dois — como Mercado ou Aluguel. Contas privadas só quem criou vê, assim gastos pessoais ficam privados. Os totais do lar ainda somam tudo. Façam uma revisão mensal juntos em vez de conferir cada compra.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-convidar-seu-parceiro-para-o-duobalance" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Como convidar seu parceiro para o duobalance</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">O gerenciamento financeiro a dois funciona melhor quando ambos têm acesso ao mesmo espaço compartilhado.</p><h2 id="passos-para-enviar-o-convite" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Passos para enviar o convite</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Vá em <strong class="font-bold">Configurações</strong> e abra a seção <strong class="font-bold">Membros do Lar</strong>. Apenas um proprietário pode gerenciar convites.</li><li class="text-sm leading-relaxed text-foreground">Digite o e-mail do seu parceiro.</li><li class="text-sm leading-relaxed text-foreground">Clique em <strong class="font-bold">Enviar Convite</strong>.</li></ol><h2 id="como-seu-parceiro-entra" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Como seu parceiro entra</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Seu parceiro receberá um link de convite por e-mail.</li><li class="text-sm leading-relaxed text-foreground">Ao clicar no link e entrar ou se cadastrar, ele será vinculado automaticamente ao seu lar, tendo acesso imediato às contas e orçamentos compartilhados.</li></ul><h2 id="gerenciar-um-convite" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Gerenciar um convite</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Proprietários podem reenviar um convite ou revogá-lo antes de sua aceitação. Uma pessoa que já é membro ativo não pode aceitar outro convite para o mesmo lar.</p><h2 id="contas-compartilhadas-e-privadas" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Contas compartilhadas e privadas</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Contas compartilhadas são visíveis para os dois — como Mercado ou Aluguel. Contas privadas só quem criou vê, assim gastos pessoais ficam privados. Os totais do lar ainda somam tudo. Façam uma revisão mensal juntos em vez de conferir cada compra.</p></div>',
     },
     "adding-accounts": {
       frontmatter: {
@@ -1628,6 +1684,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         '\n# Adicionando contas: tipos, moedas e privacidade\n\nVocê pode registrar contas bancárias, cartões de crédito, dinheiro físico e investimentos.\n\n## Passos para criar uma conta\n\n1. Vá em **Saldos** e clique em **+ Nova Conta**.\n2. Preencha os detalhes:\n   - **Nome:** Título descritivo (ex: "Conta Corrente Itaú" ou "Carteira").\n   - **Tipo:** Conta corrente, poupança, cartão de crédito, dinheiro ou investimento.\n   - **Moeda:** Escolha a moeda nativa da conta.\n   - **Visibilidade:** Escolha **Compartilhada** (visível para o parceiro) ou **Privada**.\n   - **Modo de saldo:** Selecione **Livro diário** ou **Manual**.\n3. Insira o **Saldo Inicial** e salve.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="adicionando-contas-tipos-moedas-e-privacidade" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Adicionando contas: tipos, moedas e privacidade</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Você pode registrar contas bancárias, cartões de crédito, dinheiro físico e investimentos.</p><h2 id="passos-para-criar-uma-conta" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Passos para criar uma conta</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Vá em <strong class="font-bold">Saldos</strong> e clique em <strong class="font-bold">+ Nova Conta</strong>.</li><li class="text-sm leading-relaxed text-foreground">Preencha os detalhes:</li></ol><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Nome:</strong> Título descritivo (ex: &quot;Conta Corrente Itaú&quot; ou &quot;Carteira&quot;).</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Tipo:</strong> Conta corrente, poupança, cartão de crédito, dinheiro ou investimento.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Moeda:</strong> Escolha a moeda nativa da conta.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Visibilidade:</strong> Escolha <strong class="font-bold">Compartilhada</strong> (visível para o parceiro) ou <strong class="font-bold">Privada</strong>.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Modo de saldo:</strong> Selecione <strong class="font-bold">Livro diário</strong> ou <strong class="font-bold">Manual</strong>.</li></ul><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Insira o <strong class="font-bold">Saldo Inicial</strong> e salve.</li></ol></div>',
     },
     "recording-transaction-fast": {
       frontmatter: {
@@ -1646,12 +1703,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Como registrar uma transação rapidamente",
-          id: "como-registrar-uma-transao-rapidamente",
+          id: "como-registrar-uma-transacao-rapidamente",
         },
         {
           level: 2,
           text: "Fluxo de registro rápido",
-          id: "fluxo-de-registro-rpido",
+          id: "fluxo-de-registro-rapido",
         },
         {
           level: 2,
@@ -1661,6 +1718,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Como registrar uma transação rapidamente\n\nO duobalance foi otimizado para que o lançamento de despesas leve apenas alguns segundos no celular ou computador.\n\n## Fluxo de registro rápido\n\n1. No computador, use **Novo movimento** na barra lateral. No celular, abra o botão redondo de menu e escolha **Novo movimento**.\n2. Digite o valor da transação.\n3. Escolha o tipo: **Despesa**, **Receita** ou **Transferência**.\n4. Selecione a categoria e a conta utilizada.\n5. Defina **Gastador por** (quem fez a compra).\n6. Toque em **Salvar**.\n\n## Dicas de agilidade\n\n- O duobalance lembra suas últimas escolhas de conta e categoria.\n- Comece a digitar uma descrição anterior para reutilizá-la nas sugestões. Elas aparecem após dois caracteres e exibem no máximo seis correspondências.\n- Adicione notas curtas quando precisar detalhar algo para o parceiro.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-registrar-uma-transacao-rapidamente" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Como registrar uma transação rapidamente</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">O duobalance foi otimizado para que o lançamento de despesas leve apenas alguns segundos no celular ou computador.</p><h2 id="fluxo-de-registro-rapido" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Fluxo de registro rápido</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">No computador, use <strong class="font-bold">Novo movimento</strong> na barra lateral. No celular, abra o botão redondo de menu e escolha <strong class="font-bold">Novo movimento</strong>.</li><li class="text-sm leading-relaxed text-foreground">Digite o valor da transação.</li><li class="text-sm leading-relaxed text-foreground">Escolha o tipo: <strong class="font-bold">Despesa</strong>, <strong class="font-bold">Receita</strong> ou <strong class="font-bold">Transferência</strong>.</li><li class="text-sm leading-relaxed text-foreground">Selecione a categoria e a conta utilizada.</li><li class="text-sm leading-relaxed text-foreground">Defina <strong class="font-bold">Gastador por</strong> (quem fez a compra).</li><li class="text-sm leading-relaxed text-foreground">Toque em <strong class="font-bold">Salvar</strong>.</li></ol><h2 id="dicas-de-agilidade" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Dicas de agilidade</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">O duobalance lembra suas últimas escolhas de conta e categoria.</li><li class="text-sm leading-relaxed text-foreground">Comece a digitar uma descrição anterior para reutilizá-la nas sugestões. Elas aparecem após dois caracteres e exibem no máximo seis correspondências.</li><li class="text-sm leading-relaxed text-foreground">Adicione notas curtas quando precisar detalhar algo para o parceiro.</li></ul></div>',
     },
     "categories-and-auto-rules": {
       frontmatter: {
@@ -1675,21 +1733,22 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Categorias e regras de autocategorização",
-          id: "categorias-e-regras-de-autocategorizao",
+          id: "categorias-e-regras-de-autocategorizacao",
         },
         {
           level: 2,
           text: "Categorias padrão e personalizadas",
-          id: "categorias-padro-e-personalizadas",
+          id: "categorias-padrao-e-personalizadas",
         },
         {
           level: 2,
           text: "Regras de autocategorização",
-          id: "regras-de-autocategorizao",
+          id: "regras-de-autocategorizacao",
         },
       ],
       content:
         '\n# Categorias e regras de autocategorização\n\nAs categorias organizam suas transações para que os orçamentos e relatórios reflitam seus hábitos reais.\n\n## Categorias padrão e personalizadas\n\nO duobalance inclui categorias padrão como Alimentação, Serviços, Transporte e Moradia. Você pode adicionar ou editar categorias em **Configurações > Categorias**.\n\n## Regras de autocategorização\n\nAs regras automáticas permitem atribuir categorias com base na descrição ou estabelecimento:\n\n- **Criando regras:** Ao registrar um estabelecimento recorrente (ex: "Supermercado X"), você pode salvar uma regra automática para que lançamentos futuros com essa palavra-chave recebam a categoria correta automaticamente.\n',
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="categorias-e-regras-de-autocategorizacao" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Categorias e regras de autocategorização</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">As categorias organizam suas transações para que os orçamentos e relatórios reflitam seus hábitos reais.</p><h2 id="categorias-padrao-e-personalizadas" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Categorias padrão e personalizadas</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">O duobalance inclui categorias padrão como Alimentação, Serviços, Transporte e Moradia. Você pode adicionar ou editar categorias em <strong class="font-bold">Configurações &gt; Categorias</strong>.</p><h2 id="regras-de-autocategorizacao" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Regras de autocategorização</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">As regras automáticas permitem atribuir categorias com base na descrição ou estabelecimento:</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Criando regras:</strong> Ao registrar um estabelecimento recorrente (ex: &quot;Supermercado X&quot;), você pode salvar uma regra automática para que lançamentos futuros com essa palavra-chave recebam a categoria correta automaticamente.</li></ul></div>',
     },
     "household-vs-personal-budgets": {
       frontmatter: {
@@ -1704,17 +1763,17 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Orçamentos do lar vs. orçamentos pessoais",
-          id: "oramentos-do-lar-vs-oramentos-pessoais",
+          id: "orcamentos-do-lar-vs-orcamentos-pessoais",
         },
         {
           level: 2,
           text: "Orçamentos do Lar",
-          id: "oramentos-do-lar",
+          id: "orcamentos-do-lar",
         },
         {
           level: 2,
           text: "Orçamentos Pessoais",
-          id: "oramentos-pessoais",
+          id: "orcamentos-pessoais",
         },
         {
           level: 2,
@@ -1724,6 +1783,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Orçamentos do lar vs. orçamentos pessoais\n\nO duobalance permite organizar orçamentos em dois escopos: **Do Lar** e **Meus Orçamentos**.\n\n## Orçamentos do Lar\n\nAcompanham gastos compartilhados (como aluguel, mercado e contas da casa). Ambos contribuem para o limite e veem o progresso conjunto.\n\n## Orçamentos Pessoais\n\nPrivados para cada membro (ex: hobbies ou cuidados pessoais). Permitem controlar gastos individuais sem afetar o orçamento global do casal.\n\n## Alternando abas\n\nUse o seletor no topo da tela de Orçamentos para alternar entre as visões **Lar** e **Minhas**.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="orcamentos-do-lar-vs-orcamentos-pessoais" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Orçamentos do lar vs. orçamentos pessoais</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">O duobalance permite organizar orçamentos em dois escopos: <strong class="font-bold">Do Lar</strong> e <strong class="font-bold">Meus Orçamentos</strong>.</p><h2 id="orcamentos-do-lar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Orçamentos do Lar</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Acompanham gastos compartilhados (como aluguel, mercado e contas da casa). Ambos contribuem para o limite e veem o progresso conjunto.</p><h2 id="orcamentos-pessoais" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Orçamentos Pessoais</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Privados para cada membro (ex: hobbies ou cuidados pessoais). Permitem controlar gastos individuais sem afetar o orçamento global do casal.</p><h2 id="alternando-abas" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Alternando abas</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Use o seletor no topo da tela de Orçamentos para alternar entre as visões <strong class="font-bold">Lar</strong> e <strong class="font-bold">Minhas</strong>.</p></div>',
     },
     "recurrence-and-marking-paid": {
       frontmatter: {
@@ -1743,7 +1803,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Configurando recorrência",
-          id: "configurando-recorrncia",
+          id: "configurando-recorrencia",
         },
         {
           level: 2,
@@ -1753,6 +1813,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Contas recorrentes e marcar como pago\n\nA seção Contas ajuda a acompanhar compromissos fixos e periódicos, como aluguel, assinaturas ou contas de luz.\n\n## Configurando recorrência\n\nAo criar uma conta, escolha o ciclo de repetição (mensal, quinzenal, anual, etc.). O duobalance gerará automaticamente a fatura correspondente para cada período.\n\n## Marcando como pago\n\nQuando você pagar uma conta:\n\n1. Toque na conta pendente.\n2. Selecione **Marcar como Pago**.\n3. Escolha se deseja gerar automaticamente uma transação de despesa vinculada a uma de suas contas bancárias.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="contas-recorrentes-e-marcar-como-pago" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Contas recorrentes e marcar como pago</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">A seção Contas ajuda a acompanhar compromissos fixos e periódicos, como aluguel, assinaturas ou contas de luz.</p><h2 id="configurando-recorrencia" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Configurando recorrência</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Ao criar uma conta, escolha o ciclo de repetição (mensal, quinzenal, anual, etc.). O duobalance gerará automaticamente a fatura correspondente para cada período.</p><h2 id="marcando-como-pago" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Marcando como pago</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Quando você pagar uma conta:</p><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Toque na conta pendente.</li><li class="text-sm leading-relaxed text-foreground">Selecione <strong class="font-bold">Marcar como Pago</strong>.</li><li class="text-sm leading-relaxed text-foreground">Escolha se deseja gerar automaticamente uma transação de despesa vinculada a uma de suas contas bancárias.</li></ol></div>',
     },
     "reading-the-charts": {
       frontmatter: {
@@ -1767,26 +1828,27 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Como interpretar os gráficos e relatórios",
-          id: "como-interpretar-os-grficos-e-relatrios",
+          id: "como-interpretar-os-graficos-e-relatorios",
         },
         {
           level: 2,
           text: "Gráfico por Categoria",
-          id: "grfico-por-categoria",
+          id: "grafico-por-categoria",
         },
         {
           level: 2,
           text: "Evolução Mensal e Receita vs. Despesa",
-          id: "evoluo-mensal-e-receita-vs-despesa",
+          id: "evolucao-mensal-e-receita-vs-despesa",
         },
         {
           level: 2,
           text: "Conversão de moeda em relatórios",
-          id: "converso-de-moeda-em-relatrios",
+          id: "conversao-de-moeda-em-relatorios",
         },
       ],
       content:
         "\n# Como interpretar os gráficos e relatórios\n\nA seção de Relatórios transforma suas transações em uma visão financeira clara para o lar.\n\n## Gráfico por Categoria\n\nMostra em quais categorias se concentra a maior parte das suas despesas no período selecionado.\n\n## Evolução Mensal e Receita vs. Despesa\n\nCompara o fluxo total de entradas e saídas mês a mês.\n\n- **Barras verdes:** Receita total.\n- **Barras vermelhas:** Despesas totais.\n\n## Conversão de moeda em relatórios\n\nTodos os valores em moedas estrangeiras são convertidos para a moeda base do seu lar usando a taxa de câmbio da data de cada transação.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-interpretar-os-graficos-e-relatorios" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Como interpretar os gráficos e relatórios</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">A seção de Relatórios transforma suas transações em uma visão financeira clara para o lar.</p><h2 id="grafico-por-categoria" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Gráfico por Categoria</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Mostra em quais categorias se concentra a maior parte das suas despesas no período selecionado.</p><h2 id="evolucao-mensal-e-receita-vs-despesa" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Evolução Mensal e Receita vs. Despesa</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Compara o fluxo total de entradas e saídas mês a mês.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Barras verdes:</strong> Receita total.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Barras vermelhas:</strong> Despesas totais.</li></ul><h2 id="conversao-de-moeda-em-relatorios" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Conversão de moeda em relatórios</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Todos os valores em moedas estrangeiras são convertidos para a moeda base do seu lar usando a taxa de câmbio da data de cada transação.</p></div>',
     },
     "multi-currency-and-exchange-rates": {
       frontmatter: {
@@ -1801,12 +1863,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Multimoedas e taxas de câmbio",
-          id: "multimoedas-e-taxas-de-cmbio",
+          id: "multimoedas-e-taxas-de-cambio",
         },
         {
           level: 2,
           text: "Taxas de câmbio automáticas",
-          id: "taxas-de-cmbio-automticas",
+          id: "taxas-de-cambio-automaticas",
         },
         {
           level: 2,
@@ -1816,6 +1878,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Multimoedas e taxas de câmbio\n\nO duobalance permite manter contas e lançamentos em diferentes moedas (USD, EUR, CLP, BRL, etc.) enquanto consolida os totais na moeda base do seu lar.\n\n## Taxas de câmbio automáticas\n\n- O duobalance atualiza diariamente as taxas de câmbio oficiais por meio de um serviço automatizado.\n- Cada transação armazena a taxa de câmbio vigente na data de sua realização.\n\n## Ajustes manuais de taxa\n\nSe você realizou um câmbio com uma taxa especial:\n\n1. Ao criar ou editar a transação em moeda estrangeira, ative a opção **Ajustar Taxa de Câmbio**.\n2. Digite manualmente a taxa negociada.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="multimoedas-e-taxas-de-cambio" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Multimoedas e taxas de câmbio</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">O duobalance permite manter contas e lançamentos em diferentes moedas (USD, EUR, CLP, BRL, etc.) enquanto consolida os totais na moeda base do seu lar.</p><h2 id="taxas-de-cambio-automaticas" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Taxas de câmbio automáticas</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">O duobalance atualiza diariamente as taxas de câmbio oficiais por meio de um serviço automatizado.</li><li class="text-sm leading-relaxed text-foreground">Cada transação armazena a taxa de câmbio vigente na data de sua realização.</li></ul><h2 id="ajustes-manuais-de-taxa" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Ajustes manuais de taxa</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Se você realizou um câmbio com uma taxa especial:</p><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Ao criar ou editar a transação em moeda estrangeira, ative a opção <strong class="font-bold">Ajustar Taxa de Câmbio</strong>.</li><li class="text-sm leading-relaxed text-foreground">Digite manualmente a taxa negociada.</li></ol></div>',
     },
     "number-format-currency-timezone": {
       frontmatter: {
@@ -1830,7 +1893,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Configurações de moeda, formato de números e fuso horário",
-          id: "configuraes-de-moeda-formato-de-nmeros-e-fuso-horrio",
+          id: "configuracoes-de-moeda-formato-de-numeros-e-fuso-horario",
         },
         {
           level: 2,
@@ -1840,16 +1903,17 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Formato de Números",
-          id: "formato-de-nmeros",
+          id: "formato-de-numeros",
         },
         {
           level: 2,
           text: "Fuso Horário",
-          id: "fuso-horrio",
+          id: "fuso-horario",
         },
       ],
       content:
         "\n# Configurações de moeda, formato de números e fuso horário\n\nVocê pode personalizar como o duobalance exibe valores e datas em **Configurações**.\n\n## Moeda Base do Lar\n\nÉ a moeda principal usada para calcular os totais e relatórios do lar.\n\n## Formato de Números\n\nEscolha entre separadores por ponto (`1.234,56`) ou por vírgula (`1,234.56`) conforme sua preferência regional.\n\nAs opções de idioma e formato de números pertencem ao seu perfil de usuário, não ao lar. Elas acompanham você ao alternar entre lares e não mudam o que seu parceiro vê.\n\n## Fuso Horário\n\nGarante que os fechamentos de mês e vencimentos de contas sejam calculados de acordo com o seu horário local.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="configuracoes-de-moeda-formato-de-numeros-e-fuso-horario" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Configurações de moeda, formato de números e fuso horário</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Você pode personalizar como o duobalance exibe valores e datas em <strong class="font-bold">Configurações</strong>.</p><h2 id="moeda-base-do-lar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Moeda Base do Lar</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">É a moeda principal usada para calcular os totais e relatórios do lar.</p><h2 id="formato-de-numeros" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Formato de Números</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Escolha entre separadores por ponto (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-foreground">1.234,56</code>) ou por vírgula (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-foreground">1,234.56</code>) conforme sua preferência regional.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">As opções de idioma e formato de números pertencem ao seu perfil de usuário, não ao lar. Elas acompanham você ao alternar entre lares e não mudam o que seu parceiro vê.</p><h2 id="fuso-horario" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Fuso Horário</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Garante que os fechamentos de mês e vencimentos de contas sejam calculados de acordo com o seu horário local.</p></div>',
     },
     "exporting-your-data": {
       frontmatter: {
@@ -1874,6 +1938,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Exportando seus dados financeiros\n\nSeus dados pertencem a você. Você pode baixar ou fazer backup do seu histórico completo de transações e contas a qualquer momento.\n\n## Passos para exportar\n\n1. Vá em **Configurações** e role até **Dados e Privacidade**.\n2. Selecione **Exportar Dados**.\n3. Escolha o formato desejado:\n   - **CSV:** Ideal para abrir em planilhas como Excel ou Google Sheets.\n   - **JSON:** Formato estruturado completo para backup.\n4. Clique em **Baixar Arquivo**.\n\nSe você pretende excluir um lar, baixe uma exportação na confirmação de exclusão primeiro. Ex-membros só podem exportar os dados históricos aos quais ainda têm permissão de acesso; isso não restaura o acesso ao lar.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="exportando-seus-dados-financeiros" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Exportando seus dados financeiros</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Seus dados pertencem a você. Você pode baixar ou fazer backup do seu histórico completo de transações e contas a qualquer momento.</p><h2 id="passos-para-exportar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Passos para exportar</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Vá em <strong class="font-bold">Configurações</strong> e role até <strong class="font-bold">Dados e Privacidade</strong>.</li><li class="text-sm leading-relaxed text-foreground">Selecione <strong class="font-bold">Exportar Dados</strong>.</li><li class="text-sm leading-relaxed text-foreground">Escolha o formato desejado:</li></ol><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">CSV:</strong> Ideal para abrir em planilhas como Excel ou Google Sheets.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">JSON:</strong> Formato estruturado completo para backup.</li></ul><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Clique em <strong class="font-bold">Baixar Arquivo</strong>.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">Se você pretende excluir um lar, baixe uma exportação na confirmação de exclusão primeiro. Ex-membros só podem exportar os dados históricos aos quais ainda têm permissão de acesso; isso não restaura o acesso ao lar.</p></div>',
     },
     "privacy-what-we-can-and-cant-see": {
       frontmatter: {
@@ -1888,21 +1953,22 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Privacidade: o que podemos e não podemos ver",
-          id: "privacidade-o-que-podemos-e-no-podemos-ver",
+          id: "privacidade-o-que-podemos-e-nao-podemos-ver",
         },
         {
           level: 2,
           text: "O que seu parceiro vê",
-          id: "o-que-seu-parceiro-v",
+          id: "o-que-seu-parceiro-ve",
         },
         {
           level: 2,
           text: "O que a plataforma vê",
-          id: "o-que-a-plataforma-v",
+          id: "o-que-a-plataforma-ve",
         },
       ],
       content:
         "\n# Privacidade: o que podemos e não podemos ver\n\nNo duobalance, a privacidade financeira e a segurança dos seus dados são prioridades fundamentais.\n\n## O que seu parceiro vê\n\n- Seu parceiro vê apenas informações das contas configuradas como **Compartilhadas** e as transações associadas a elas.\n- Suas contas **Privadas** e o histórico delas permanecem invisíveis para o seu parceiro.\n- Uma pessoa que sai ou é removida perde o acesso a esse lar. Seus lançamentos históricos permanecem nos registros do lar para manter a continuidade.\n\n## O que a plataforma vê\n\n- O duobalance utiliza criptografia e políticas de segurança em nível de banco de dados (RLS) para que apenas membros autorizados do seu lar acessem os dados.\n- Não vendemos nem compartilhamos seus dados financeiros com terceiros.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="privacidade-o-que-podemos-e-nao-podemos-ver" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Privacidade: o que podemos e não podemos ver</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">No duobalance, a privacidade financeira e a segurança dos seus dados são prioridades fundamentais.</p><h2 id="o-que-seu-parceiro-ve" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">O que seu parceiro vê</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">Seu parceiro vê apenas informações das contas configuradas como <strong class="font-bold">Compartilhadas</strong> e as transações associadas a elas.</li><li class="text-sm leading-relaxed text-foreground">Suas contas <strong class="font-bold">Privadas</strong> e o histórico delas permanecem invisíveis para o seu parceiro.</li><li class="text-sm leading-relaxed text-foreground">Uma pessoa que sai ou é removida perde o acesso a esse lar. Seus lançamentos históricos permanecem nos registros do lar para manter a continuidade.</li></ul><h2 id="o-que-a-plataforma-ve" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">O que a plataforma vê</h2><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground">O duobalance utiliza criptografia e políticas de segurança em nível de banco de dados (RLS) para que apenas membros autorizados do seu lar acessem os dados.</li><li class="text-sm leading-relaxed text-foreground">Não vendemos nem compartilhamos seus dados financeiros com terceiros.</li></ul></div>',
     },
     "installing-on-mobile": {
       frontmatter: {
@@ -1932,6 +1998,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Como instalar o duobalance no iPhone ou Android\n\nO duobalance funciona como um Aplicativo Web Progressivo (PWA), permitindo que você o instale na tela inicial sem precisar baixar de uma loja de aplicativos.\n\n## No iPhone (iOS)\n\n1. Abra o Safari e navegue até o duobalance.\n2. Toque no botão **Compartilhar** (ícone de quadrado com seta para cima).\n3. Role e selecione **Adicionar à Tela de Início**.\n\n## No Android\n\n1. Abra o Chrome ou outro navegador compatível.\n2. Toque no menu de três pontos no canto superior direito.\n3. Selecione **Instalar aplicativo** ou **Adicionar à tela inicial**.\n\nPara um guia completo, visite [/install](/install).\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-instalar-o-duobalance-no-iphone-ou-android" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Como instalar o duobalance no iPhone ou Android</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">O duobalance funciona como um Aplicativo Web Progressivo (PWA), permitindo que você o instale na tela inicial sem precisar baixar de uma loja de aplicativos.</p><h2 id="no-iphone-ios" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">No iPhone (iOS)</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Abra o Safari e navegue até o duobalance.</li><li class="text-sm leading-relaxed text-foreground">Toque no botão <strong class="font-bold">Compartilhar</strong> (ícone de quadrado com seta para cima).</li><li class="text-sm leading-relaxed text-foreground">Role e selecione <strong class="font-bold">Adicionar à Tela de Início</strong>.</li></ol><h2 id="no-android" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">No Android</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Abra o Chrome ou outro navegador compatível.</li><li class="text-sm leading-relaxed text-foreground">Toque no menu de três pontos no canto superior direito.</li><li class="text-sm leading-relaxed text-foreground">Selecione <strong class="font-bold">Instalar aplicativo</strong> ou <strong class="font-bold">Adicionar à tela inicial</strong>.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">Para um guia completo, visite <a href="/install" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">/install</a>.</p></div>',
     },
     "bill-reminders-not-arriving": {
       frontmatter: {
@@ -1946,12 +2013,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Por que os lembretes de contas não estão chegando?",
-          id: "por-que-os-lembretes-de-contas-no-esto-chegando",
+          id: "por-que-os-lembretes-de-contas-nao-estao-chegando",
         },
         {
           level: 2,
           text: "Requisitos para notificações no iOS",
-          id: "requisitos-para-notificaes-no-ios",
+          id: "requisitos-para-notificacoes-no-ios",
         },
         {
           level: 2,
@@ -1961,6 +2028,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Por que os lembretes de contas não estão chegando?\n\nSe você configurou um lembrete de conta e não recebeu a notificação no celular ou e-mail, verifique os seguintes motivos.\n\n## Requisitos para notificações no iOS\n\nNo iOS, as notificações push via web exigem que o aplicativo esteja instalado como PWA na tela inicial e que o sistema seja o iOS 16.4 ou superior.\n\n- **Solução:** Siga o guia em [/install](/install) para adicionar o duobalance à tela inicial.\n\n## Lembretes garantidos por e-mail\n\nPara garantir que você nunca perca um vencimento, o duobalance também envia notificações por e-mail. Verifique sua caixa de spam e adicione os e-mails do duobalance aos seus contatos confiáveis.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="por-que-os-lembretes-de-contas-nao-estao-chegando" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Por que os lembretes de contas não estão chegando?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Se você configurou um lembrete de conta e não recebeu a notificação no celular ou e-mail, verifique os seguintes motivos.</p><h2 id="requisitos-para-notificacoes-no-ios" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Requisitos para notificações no iOS</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">No iOS, as notificações push via web exigem que o aplicativo esteja instalado como PWA na tela inicial e que o sistema seja o iOS 16.4 ou superior.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Solução:</strong> Siga o guia em <a href="/install" class="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">/install</a> para adicionar o duobalance à tela inicial.</li></ul><h2 id="lembretes-garantidos-por-e-mail" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Lembretes garantidos por e-mail</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Para garantir que você nunca perca um vencimento, o duobalance também envia notificações por e-mail. Verifique sua caixa de spam e adicione os e-mails do duobalance aos seus contatos confiáveis.</p></div>',
     },
     "balance-looks-wrong": {
       frontmatter: {
@@ -1980,11 +2048,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 2,
           text: "Diagnóstico passo a passo",
-          id: "diagnstico-passo-a-passo",
+          id: "diagnostico-passo-a-passo",
         },
       ],
       content:
         "\n# O que fazer se um saldo estiver incorreto\n\nSe você notar uma divergência entre o saldo exibido no duobalance e o extrato do seu banco, siga estes passos de diagnóstico.\n\n## Diagnóstico passo a passo\n\n1. **Verifique o modo de saldo:** Confirme se a conta está no modo **Livro diário** ou **Manual**.\n2. **Confira o saldo inicial:** Vá em **Saldos**, edite a conta e verifique se o saldo inicial batia com a realidade na data de início.\n3. **Verifique transações ausentes:** Certifique-se de que nenhum lançamento recente foi omitido.\n4. **Verifique transferências:** Verifique se alguma transferência foi registrada por engano como despesa comum.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="o-que-fazer-se-um-saldo-estiver-incorreto" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">O que fazer se um saldo estiver incorreto</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Se você notar uma divergência entre o saldo exibido no duobalance e o extrato do seu banco, siga estes passos de diagnóstico.</p><h2 id="diagnostico-passo-a-passo" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Diagnóstico passo a passo</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Verifique o modo de saldo:</strong> Confirme se a conta está no modo <strong class="font-bold">Livro diário</strong> ou <strong class="font-bold">Manual</strong>.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Confira o saldo inicial:</strong> Vá em <strong class="font-bold">Saldos</strong>, edite a conta e verifique se o saldo inicial batia com a realidade na data de início.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Verifique transações ausentes:</strong> Certifique-se de que nenhum lançamento recente foi omitido.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Verifique transferências:</strong> Verifique se alguma transferência foi registrada por engano como despesa comum.</li></ol></div>',
     },
     "exchange-rates-stale": {
       frontmatter: {
@@ -1999,7 +2068,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Por que a taxa de câmbio mostra um aviso?",
-          id: "por-que-a-taxa-de-cmbio-mostra-um-aviso",
+          id: "por-que-a-taxa-de-cambio-mostra-um-aviso",
         },
         {
           level: 2,
@@ -2009,6 +2078,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Por que a taxa de câmbio mostra um aviso?\n\nAo registrar transações em moedas diferentes da moeda base do seu lar, o duobalance aplica taxas de câmbio oficiais.\n\n## O que o aviso significa\n\nSe as taxas de câmbio não forem atualizadas há mais de 24 horas (como em finais de semana ou feriados bancários), um aviso informativo é exibido.\n\n- **Impacto:** Você pode continuar registrando transações normalmente.\n- **Resolução:** As taxas são atualizadas automaticamente no próximo ciclo diário, ou você pode alterar manualmente a taxa na tela da transação.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="por-que-a-taxa-de-cambio-mostra-um-aviso" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Por que a taxa de câmbio mostra um aviso?</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Ao registrar transações em moedas diferentes da moeda base do seu lar, o duobalance aplica taxas de câmbio oficiais.</p><h2 id="o-que-o-aviso-significa" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">O que o aviso significa</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Se as taxas de câmbio não forem atualizadas há mais de 24 horas (como em finais de semana ou feriados bancários), um aviso informativo é exibido.</p><ul class="my-3 space-y-1.5 list-disc pl-5"><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Impacto:</strong> Você pode continuar registrando transações normalmente.</li><li class="text-sm leading-relaxed text-foreground"><strong class="font-bold">Resolução:</strong> As taxas são atualizadas automaticamente no próximo ciclo diário, ou você pode alterar manualmente a taxa na tela da transação.</li></ul></div>',
     },
     "managing-households-and-members": {
       frontmatter: {
@@ -2047,6 +2117,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Como alternar entre lares e gerenciar membros\n\nVocê pode participar de mais de um lar. Cada lar tem suas próprias contas, lançamentos, orçamentos, contas a pagar, membros e configurações.\n\n## Alternar ou criar um lar\n\n1. Toque no nome do lar atual na parte superior do aplicativo.\n2. Selecione outro lar para abrir seus dados.\n3. Na mesma janela, escolha **Criar lar** para iniciar outro espaço ou **Entrar com convite** para usar um código de convite.\n\nO aplicativo limpa as telas e seleções temporárias do lar anterior ao alternar, para que os dados nunca sejam misturados. Você pode criar até cinco lares.\n\n## Convidar e gerenciar membros\n\nProprietários podem abrir **Configurações** e usar **Membros do lar** para enviar, reenviar ou revogar convites. Também podem transferir a propriedade para o parceiro e escolher permanecer como proprietário ou se tornar parceiro depois da transferência.\n\nSomente um proprietário pode remover um parceiro. Antes de confirmar, escolha o destino de cada conta compartilhada da pessoa: transferi-la para você ou torná-la conjunta. A pessoa removida perde o acesso ao lar; seus lançamentos históricos permanecem disponíveis para o lar.\n\n## Sair ou excluir um lar\n\nAbra **Configurações** e role até a zona de perigo para sair de um lar. Um proprietário deve transferir a propriedade antes de sair enquanto houver outros membros. O último membro pode sair.\n\nProprietários também podem excluir um lar. Digite o nome exato para confirmar. A exclusão pode ser recuperada por 30 dias, mas exporte o lar antes se precisar de uma cópia pessoal.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-alternar-entre-lares-e-gerenciar-membros" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Como alternar entre lares e gerenciar membros</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">Você pode participar de mais de um lar. Cada lar tem suas próprias contas, lançamentos, orçamentos, contas a pagar, membros e configurações.</p><h2 id="alternar-ou-criar-um-lar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Alternar ou criar um lar</h2><ol class="my-3 space-y-1.5 list-decimal pl-5"><li class="text-sm leading-relaxed text-foreground">Toque no nome do lar atual na parte superior do aplicativo.</li><li class="text-sm leading-relaxed text-foreground">Selecione outro lar para abrir seus dados.</li><li class="text-sm leading-relaxed text-foreground">Na mesma janela, escolha <strong class="font-bold">Criar lar</strong> para iniciar outro espaço ou <strong class="font-bold">Entrar com convite</strong> para usar um código de convite.</li></ol><p class="my-2.5 text-sm leading-relaxed text-foreground">O aplicativo limpa as telas e seleções temporárias do lar anterior ao alternar, para que os dados nunca sejam misturados. Você pode criar até cinco lares.</p><h2 id="convidar-e-gerenciar-membros" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Convidar e gerenciar membros</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Proprietários podem abrir <strong class="font-bold">Configurações</strong> e usar <strong class="font-bold">Membros do lar</strong> para enviar, reenviar ou revogar convites. Também podem transferir a propriedade para o parceiro e escolher permanecer como proprietário ou se tornar parceiro depois da transferência.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">Somente um proprietário pode remover um parceiro. Antes de confirmar, escolha o destino de cada conta compartilhada da pessoa: transferi-la para você ou torná-la conjunta. A pessoa removida perde o acesso ao lar; seus lançamentos históricos permanecem disponíveis para o lar.</p><h2 id="sair-ou-excluir-um-lar" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Sair ou excluir um lar</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Abra <strong class="font-bold">Configurações</strong> e role até a zona de perigo para sair de um lar. Um proprietário deve transferir a propriedade antes de sair enquanto houver outros membros. O último membro pode sair.</p><p class="my-2.5 text-sm leading-relaxed text-foreground">Proprietários também podem excluir um lar. Digite o nome exato para confirmar. A exclusão pode ser recuperada por 30 dias, mas exporte o lar antes se precisar de uma cópia pessoal.</p></div>',
     },
     "mobile-navigation-and-quick-entry": {
       frontmatter: {
@@ -2061,12 +2132,12 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
         {
           level: 1,
           text: "Como usar o menu móvel e o lançamento rápido",
-          id: "como-usar-o-menu-mvel-e-o-lanamento-rpido",
+          id: "como-usar-o-menu-movel-e-o-lancamento-rapido",
         },
         {
           level: 2,
           text: "Sugestões de descrição",
-          id: "sugestes-de-descrio",
+          id: "sugestoes-de-descricao",
         },
         {
           level: 2,
@@ -2076,6 +2147,7 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
       ],
       content:
         "\n# Como usar o menu móvel e o lançamento rápido\n\nNo celular, toque no botão redondo de menu no canto inferior esquerdo para abrir o painel de navegação. Ele inclui Saldos, Movimentos, Orçamento, Relatórios, Contas, Configurações, Ajuda e sair. Use **Novo movimento** no fim do painel para abrir o lançamento rápido.\n\n## Sugestões de descrição\n\nAo inserir uma descrição de movimento, as sugestões aparecem depois de digitar pelo menos dois caracteres. Escolha uma descrição anterior correspondente para reutilizá-la ou continue digitando para criar uma nova. Até seis sugestões aparecem acima do campo para que o teclado virtual não as cubra.\n\n## Salvar um movimento\n\nInforme o valor, a descrição, a conta, a categoria e quem fez o gasto; depois salve. Você ainda pode adicionar notas ou outros detalhes quando precisar.\n",
+      html: '<div class="prose prose-sm dark:prose-invert max-w-none"><h1 id="como-usar-o-menu-movel-e-o-lancamento-rapido" class="mb-4 mt-6 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Como usar o menu móvel e o lançamento rápido</h1><p class="my-2.5 text-sm leading-relaxed text-foreground">No celular, toque no botão redondo de menu no canto inferior esquerdo para abrir o painel de navegação. Ele inclui Saldos, Movimentos, Orçamento, Relatórios, Contas, Configurações, Ajuda e sair. Use <strong class="font-bold">Novo movimento</strong> no fim do painel para abrir o lançamento rápido.</p><h2 id="sugestoes-de-descricao" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Sugestões de descrição</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Ao inserir uma descrição de movimento, as sugestões aparecem depois de digitar pelo menos dois caracteres. Escolha uma descrição anterior correspondente para reutilizá-la ou continue digitando para criar uma nova. Até seis sugestões aparecem acima do campo para que o teclado virtual não as cubra.</p><h2 id="salvar-um-movimento" class="mb-3 mt-6 border-b pb-2 text-lg font-bold tracking-tight text-foreground sm:text-xl">Salvar um movimento</h2><p class="my-2.5 text-sm leading-relaxed text-foreground">Informe o valor, a descrição, a conta, a categoria e quem fez o gasto; depois salve. Você ainda pode adicionar notas ou outros detalhes quando precisar.</p></div>',
     },
   },
 };

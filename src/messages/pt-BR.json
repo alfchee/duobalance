@@ -280,5 +280,27 @@
     "promptSubmit": "Enviar feedback",
     "dismiss": "Não mostrar novamente",
     "cancel": "Cancelar"
+  },
+  "landing": {
+    "hero": {
+      "guideEyebrow": "Guia de 5 minutos",
+      "guideTitle": "Não sabe por onde começar?",
+      "guideDescription": "Se abriu o app e não soube o que fazer, não é sua culpa. Esta é a ordem: registre primeiro, depois planeje.",
+      "guideCta": "Ler guia — 5 min →"
+    },
+    "footer": {
+      "disclaimer": "Aviso legal",
+      "description": "Finanças honestas para duas pessoas.",
+      "legal": "Legal",
+      "terms": "Termos",
+      "privacy": "Privacidade",
+      "product": "Produto",
+      "howItWorks": "Como funciona",
+      "pricing": "Preços",
+      "faq": "FAQ",
+      "company": "Empresa",
+      "story": "História",
+      "contact": "Contato"
+    }
   }
 }
