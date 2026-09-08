@@ -13,6 +13,7 @@ vi.mock("@/hooks/useInvites", () => ({
   usePendingInvites: vi.fn(),
   useInviteMutations: vi.fn(),
 }));
+vi.mock("@/hooks/useSession", () => ({ useSession: vi.fn(() => ({ user: { id: "u-self" } })) }));
 
 import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";

@@ -9,7 +9,9 @@ export type GuideSource =
   | "first-run"
   | "help-center"
   | "persistent-help"
-  | "help-button";
+  | "help-button"
+  | "members-invite"
+  | "accept-invite";
 
 export const GUIDE_SOURCES: readonly GuideSource[] = [
   "balances-empty",
@@ -19,6 +21,8 @@ export const GUIDE_SOURCES: readonly GuideSource[] = [
   "help-center",
   "persistent-help",
   "help-button",
+  "members-invite",
+  "accept-invite",
 ] as const;
 
 export type GuideEvent = {

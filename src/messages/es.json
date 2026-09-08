@@ -512,6 +512,13 @@
         "emailMismatch": "Esta invitación fue enviada a otro correo. Inicia sesión con la cuenta correcta.",
         "invalidToken": "Este código de invitación no es válido. Pídele a tu pareja uno nuevo."
       }
+    },
+    "sharedPrivateExplainer": {
+      "title": "Cuentas compartidas y privadas",
+      "body": "Las cuentas compartidas las ven ambos — por ejemplo, Supermercado o Alquiler. Las cuentas privadas solo las ve su titular, así tu gasto personal puede quedar privado. Los totales del hogar igual suman todo. Revisen juntos una vez al mes en lugar de controlar cada compra.",
+      "dismiss": "Descartar",
+      "learnMore": "Cómo funcionan las cuentas privadas →",
+      "helpHref": "/help/inviting-your-partner#cuentas-compartidas-y-privadas"
     }
   },
   "accounts": {

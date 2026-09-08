@@ -512,6 +512,13 @@
         "emailMismatch": "This invitation was sent to a different email. Sign in with the right account.",
         "invalidToken": "This invitation code isn't valid. Ask your partner for a new one."
       }
+    },
+    "sharedPrivateExplainer": {
+      "title": "Shared vs private accounts",
+      "body": "Shared accounts are visible to both of you — like Groceries or Rent. Private accounts stay visible only to their owner, so personal spending can stay personal. Household totals still include everything. Try a monthly review together instead of checking each purchase.",
+      "dismiss": "Dismiss",
+      "learnMore": "How private accounts work →",
+      "helpHref": "/help/inviting-your-partner#shared-vs-private-accounts"
     }
   },
   "accounts": {

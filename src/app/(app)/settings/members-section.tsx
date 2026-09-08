@@ -22,6 +22,8 @@ import { useHousehold } from "@/hooks/useHousehold";
 import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
 import { useHouseholdMembers, type HouseholdMember } from "@/hooks/useHouseholdMembers";
 import { useInviteMutations, usePendingInvites } from "@/hooks/useInvites";
+import { useSession } from "@/hooks/useSession";
+import { SharedPrivateExplainer } from "@/components/household/shared-private-explainer";
 
 function dateFormatter(locale: string) {
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
@@ -35,6 +37,7 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
   const locale = useLocale();
 
   const isOwner = role === "owner";
+  const { user } = useSession();
 
   const members = useHouseholdMembers(householdId);
   const accounts = useAccounts(householdId);
@@ -229,6 +232,9 @@ export function MembersSection({ embedded = false }: { embedded?: boolean }) {
       </section>
 
       <section aria-label={t("pendingInvites")}>
+        <div className="mb-4">
+          <SharedPrivateExplainer userId={user?.id} source="members-invite" />
+        </div>
         <div className="mb-2 flex items-baseline justify-between">
           <h2 className="text-sm font-medium">{t("pendingInvites")}</h2>
           {invites.isPending ? (

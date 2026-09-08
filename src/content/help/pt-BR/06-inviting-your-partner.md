@@ -30,3 +30,7 @@ O gerenciamento financeiro a dois funciona melhor quando ambos têm acesso ao me
 ## Gerenciar um convite
 
 Proprietários podem reenviar um convite ou revogá-lo antes de sua aceitação. Uma pessoa que já é membro ativo não pode aceitar outro convite para o mesmo lar.
+
+## Contas compartilhadas e privadas
+
+Contas compartilhadas são visíveis para os dois — como Mercado ou Aluguel. Contas privadas só quem criou vê, assim gastos pessoais ficam privados. Os totais do lar ainda somam tudo. Façam uma revisão mensal juntos em vez de conferir cada compra.
