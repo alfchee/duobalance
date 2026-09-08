@@ -456,7 +456,7 @@
     "firstWeek": {
       "badge": "Primera semana",
       "title": "Tu primera semana",
-      "subtitle": "Un inicio suave de 7 días. Cada día que anotas algo cuenta — saltarte un día no te hace retroceder.",
+      "subtitle": "Un inicio suave de 7 días. Cada día que anotas algo cuenta — los días sin registro no te hacen retroceder.",
       "progressLabel": "{count} de {total} días registrados",
       "hint": "Los días sin registro simplemente quedan vacíos — sin rachas, sin reinicios.",
       "dismiss": "Descartar",

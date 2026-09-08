@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useFirstWeekProgress } from "@/hooks/useFirstWeekProgress";
+import { addDays } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 
 const DISMISS_PREFIX = "duobalance:dismissedFirstWeek:";
@@ -98,12 +99,10 @@ export function FirstWeekProgress() {
         </div>
 
         <div className="mt-4" aria-live="polite">
-          {/* Count bar, not calendar-accurate: dots fill from the left by
-              daysRecorded count. Matches spec "of 7 days recorded" and avoids
-              streak-like day-to-day mapping. */}
           <div className="flex items-center gap-1.5" aria-hidden="true">
             {Array.from({ length: progress.totalDays }).map((_, index) => {
-              const filled = index < progress.daysRecorded;
+              const date = progress.startDate ? addDays(progress.startDate, index) : null;
+              const filled = !!date && progress.distinctDays.includes(date);
               return (
                 <span
                   key={index}

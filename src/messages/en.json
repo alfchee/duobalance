@@ -456,9 +456,9 @@
     "firstWeek": {
       "badge": "First week",
       "title": "Your first week",
-      "subtitle": "A gentle 7-day start. Every day you note something counts — missing a day doesn't set you back.",
+      "subtitle": "A gentle 7-day start. Every day you note something counts — days without a record don't set you back.",
       "progressLabel": "{count} of {total} days recorded",
-      "hint": "Missed days just stay empty — no streaks, no reset.",
+      "hint": "Days without a record just stay empty — no streaks, no reset.",
       "dismiss": "Dismiss",
       "daySevenTitle": "Week complete — have a look?",
       "daySevenBody": "Seven days in. If you're curious, take a look at your totals — just to observe, not to judge.",
