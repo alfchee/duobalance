@@ -24,7 +24,11 @@
       "title": "Your finances should work the way your life does.",
       "description": "DuoBalance brings clarity to the money you manage alone, share with a partner, or coordinate with your household.",
       "primaryCta": "Start free",
-      "secondaryCta": "See how it works"
+      "secondaryCta": "See how it works",
+      "guideEyebrow": "5-minute guide",
+      "guideTitle": "Not sure where to start?",
+      "guideDescription": "If you opened the app and didn't know what to do, it's not your fault. Here's the order: track first, budget later.",
+      "guideCta": "Read guide — 5 min →"
     },
     "showcase": {
       "eyebrow": "A closer look",
