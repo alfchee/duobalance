@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "node scripts/build-help-content.mjs && node scripts/generate-pwa-assets.mjs && node scripts/generate-ios-guide-screenshots.mjs && next build --turbopack && node scripts/generate-service-worker.mjs",
+    "build": "node scripts/build-help-content.mjs && node scripts/build-guide-content.mjs && node scripts/generate-pwa-assets.mjs && node scripts/generate-ios-guide-screenshots.mjs && next build --turbopack && node scripts/generate-service-worker.mjs",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
@@ -21,7 +21,7 @@
     "test:a11y": "playwright test --grep @a11y",
     "test:visual": "playwright test --grep @visual",
     "test:ui-validation": "npm run test:e2e",
-    "content:build": "node scripts/build-help-content.mjs",
+    "content:build": "node scripts/build-help-content.mjs && node scripts/build-guide-content.mjs",
     "locales:check": "node scripts/check-locales.mjs",
     "metrics:report": "node --env-file-if-exists=.env.local scripts/generate-metrics-report.mjs",
     "preview": "opennextjs-cloudflare build && node scripts/generate-service-worker.mjs --opennext && opennextjs-cloudflare preview",

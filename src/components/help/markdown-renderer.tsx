@@ -121,8 +121,12 @@ export function MarkdownRenderer({ content }: { content: string }) {
       const text = headingMatch[2].trim();
       const id = text
         .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-");
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
 
       if (level === 1) {
         elements.push(

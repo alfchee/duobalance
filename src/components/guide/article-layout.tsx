@@ -1,0 +1,107 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect } from "react";
+import { Clock, ArrowLeft, Calendar } from "lucide-react";
+import type { GuideArticle } from "@/lib/guide/generated-content";
+import { MarkdownRenderer } from "@/components/help/markdown-renderer";
+import { TableOfContents } from "./table-of-contents";
+import { EducationalDisclaimer } from "./educational-disclaimer";
+
+export function GuideArticleLayout({
+  article,
+  backHref = "/",
+  backLabel = "Volver al inicio",
+}: {
+  article: GuideArticle;
+  backHref?: string;
+  backLabel?: string;
+}) {
+  const { frontmatter, headings, content } = article;
+
+  // Deep-link / hash scroll support, mirrors help-article-client
+  useEffect(() => {
+    function scrollToHash() {
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior, block: "start" });
+          return;
+        }
+        attempts += 1;
+        if (attempts < 5) requestAnimationFrame(tryScroll);
+      };
+      requestAnimationFrame(() => requestAnimationFrame(tryScroll));
+    }
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, []);
+
+  return (
+    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6 pb-20">
+      <Link
+        href={backHref}
+        className="inline-flex items-center gap-2 rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary transition-colors"
+      >
+        <ArrowLeft className="size-3.5" />
+        {backLabel}
+      </Link>
+
+      <article className="space-y-6">
+        <header className="space-y-3 border-b pb-6">
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{frontmatter.title}</h1>
+          {frontmatter.description ? (
+            <p className="text-base leading-relaxed text-muted-foreground">
+              {frontmatter.description}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="size-3.5" />
+              {frontmatter.readingTime} min de lectura
+            </span>
+            <span>•</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar className="size-3.5" />
+              {frontmatter.updated}
+            </span>
+          </div>
+        </header>
+
+        <TableOfContents headings={headings} />
+
+        <div className="rounded-2xl border bg-card p-5 sm:p-8 shadow-sm">
+          <MarkdownRenderer content={content} />
+        </div>
+
+        {/* Disclaimer slot — cannot be omitted; layout always renders it */}
+        <EducationalDisclaimer />
+
+        {frontmatter.related.length > 0 ? (
+          <section className="rounded-2xl border bg-muted/20 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              Siguiente
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {frontmatter.related.map((slug) => (
+                <Link
+                  key={slug}
+                  href={`/guia/${slug}`}
+                  className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-accent"
+                >
+                  {slug}
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </article>
+    </main>
+  );
+}
