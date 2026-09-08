@@ -37,7 +37,10 @@ export function FirstWeekProgress() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!householdId) return;
+    if (!householdId) {
+      setHydrated(true);
+      return;
+    }
     setDismissed(readDismissed(householdId));
     setHydrated(true);
   }, [householdId]);
@@ -58,20 +61,7 @@ export function FirstWeekProgress() {
   // confusing to suddenly prompt a "first week" completion.
   // Before this feature veterans would never have seen it, so we expiry-gate
   // past households rather than forcing a manual dismiss.
-  if (progress.isPastWeek) {
-    const daysSinceStart =
-      progress.startDate && progress.today
-        ? Math.max(
-            0,
-            Math.round(
-              (new Date(`${progress.today}T00:00:00Z`).getTime() -
-                new Date(`${progress.startDate}T00:00:00Z`).getTime()) /
-                86_400_000,
-            ),
-          ) + 1
-        : 0;
-    if (daysSinceStart > 14) return null;
-  }
+  if (progress.isPastWeek && progress.daysSinceStart > 14) return null;
 
   const isWeekComplete = progress.isWeekComplete;
 
@@ -108,6 +98,9 @@ export function FirstWeekProgress() {
         </div>
 
         <div className="mt-4" aria-live="polite">
+          {/* Count bar, not calendar-accurate: dots fill from the left by
+              daysRecorded count. Matches spec "of 7 days recorded" and avoids
+              streak-like day-to-day mapping. */}
           <div className="flex items-center gap-1.5" aria-hidden="true">
             {Array.from({ length: progress.totalDays }).map((_, index) => {
               const filled = index < progress.daysRecorded;

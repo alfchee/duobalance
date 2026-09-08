@@ -26,6 +26,7 @@ export type FirstWeekProgress = {
   isBeforeWeek: boolean;
   isWeekComplete: boolean;
   daysElapsed: number;
+  daysSinceStart: number;
 };
 
 export function useFirstWeekProgress(
@@ -33,7 +34,7 @@ export function useFirstWeekProgress(
   timezone: string | null,
 ): FirstWeekProgress {
   const { data: household, isLoading: householdLoading } = useQuery({
-    queryKey: ["households", householdId, "created_at"],
+    queryKey: ["households", householdId, "first-week-created-at"],
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from("households")
@@ -51,11 +52,17 @@ export function useFirstWeekProgress(
   const endDate = startDate ? addDays(startDate, TOTAL_DAYS - 1) : null;
   const today = timezone ? todayInHousehold(timezone) : null;
 
+  const daysSinceStart = (() => {
+    if (!startDate || !today) return 0;
+    if (today < startDate) return 0;
+    return diffDaysInclusive(startDate, today);
+  })();
+
   const daysElapsed = (() => {
     if (!startDate || !today) return 0;
     if (today < startDate) return 0;
     if (today > (endDate as string)) return TOTAL_DAYS;
-    return diffDaysInclusive(startDate, today) + 1;
+    return diffDaysInclusive(startDate, today);
   })();
 
   const isWithinWeek =
@@ -75,6 +82,8 @@ export function useFirstWeekProgress(
         .eq("household_id", householdId)
         .gte("occurred_on", startDate)
         .lte("occurred_on", endDate)
+        // Only count real spending/income days — exclude both legs of a
+        // transfer (transfer_group_id invariant: null => non-transfer).
         .is("transfer_group_id", null);
       if (error) throw error;
       return (data ?? []).map((row) => row.occurred_on as string);
@@ -101,5 +110,6 @@ export function useFirstWeekProgress(
     isBeforeWeek,
     isWeekComplete,
     daysElapsed,
+    daysSinceStart,
   };
 }
