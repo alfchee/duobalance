@@ -10,6 +10,7 @@ import { FullPageSpinner } from "@/components/full-page-spinner";
 import { clearPendingInvite, savePendingInvite } from "@/lib/pending-invite";
 import { useSession } from "@/hooks/useSession";
 import { useHouseholdCommands } from "@/hooks/useHouseholdCommands";
+import { SharedPrivateExplainer } from "@/components/household/shared-private-explainer";
 
 export function AcceptInviteClient({ token }: { token: string }) {
   const router = useRouter();
@@ -69,44 +70,50 @@ export function AcceptInviteClient({ token }: { token: string }) {
 
   if (!session) {
     return (
-      <Card className="w-full rounded-[2rem] border-0 shadow-raised">
-        <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
-          <CardTitle className="text-3xl font-black leading-none tracking-tight">
-            {t("notAuthenticatedTitle")}
-          </CardTitle>
-          <CardDescription className="text-base leading-relaxed">
-            {t("notAuthenticatedBody")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 p-6 pt-0 sm:px-8 sm:pb-8">
-          <Button asChild size="lg" className="w-full">
-            <Link href="/signup">{t("signupLink")}</Link>
-          </Button>
-          <Button variant="outline" asChild size="lg" className="w-full">
-            <Link href="/login">{t("loginLink")}</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex w-full flex-col gap-4">
+        <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+          <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+            <CardTitle className="text-3xl font-black leading-none tracking-tight">
+              {t("notAuthenticatedTitle")}
+            </CardTitle>
+            <CardDescription className="text-base leading-relaxed">
+              {t("notAuthenticatedBody")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 p-6 pt-0 sm:px-8 sm:pb-8">
+            <Button asChild size="lg" className="w-full">
+              <Link href="/signup">{t("signupLink")}</Link>
+            </Button>
+            <Button variant="outline" asChild size="lg" className="w-full">
+              <Link href="/login">{t("loginLink")}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <SharedPrivateExplainer userId={null} source="accept-invite" />
+      </div>
     );
   }
 
   return (
-    <Card className="w-full rounded-[2rem] border-0 shadow-raised">
-      <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
-        <CardTitle className="text-3xl font-black leading-none tracking-tight">
-          {t("title")}
-        </CardTitle>
-        <CardDescription className="text-base leading-relaxed">{t("subtitle")}</CardDescription>
-      </CardHeader>
-      <CardContent className="p-6 pt-0 text-sm sm:px-8 sm:pb-8">
-        {state === "accepting" ? (
-          <p className="text-muted-foreground">{t("accepting")}</p>
-        ) : state === "error" && errorKey ? (
-          <p role="alert" className="text-destructive">
-            {t(`errors.${errorKey}`)}
-          </p>
-        ) : null}
-      </CardContent>
-    </Card>
+    <div className="flex w-full flex-col gap-4">
+      <Card className="w-full rounded-[2rem] border-0 shadow-raised">
+        <CardHeader className="gap-2 p-6 pb-5 sm:p-8 sm:pb-6">
+          <CardTitle className="text-3xl font-black leading-none tracking-tight">
+            {t("title")}
+          </CardTitle>
+          <CardDescription className="text-base leading-relaxed">{t("subtitle")}</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 pt-0 text-sm sm:px-8 sm:pb-8">
+          {state === "accepting" ? (
+            <p className="text-muted-foreground">{t("accepting")}</p>
+          ) : state === "error" && errorKey ? (
+            <p role="alert" className="text-destructive">
+              {t(`errors.${errorKey}`)}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
+      <SharedPrivateExplainer userId={session.user?.id ?? null} source="accept-invite" />
+    </div>
   );
 }

@@ -30,3 +30,7 @@ Administrar el presupuesto en pareja requiere que ambos tengan acceso al mismo h
 ## Administrar una invitación
 
 Los propietarios pueden reenviar una invitación o revocarla antes de que se acepte. Una persona que ya es miembro activo no puede aceptar otra invitación al mismo hogar.
+
+## Cuentas compartidas y privadas
+
+Las cuentas compartidas las ven ambos — por ejemplo, Supermercado o Alquiler. Las cuentas privadas solo las ve su titular, así tu gasto personal puede quedar privado. Los totales del hogar igual suman todo. Revisen juntos una vez al mes en lugar de controlar cada compra.

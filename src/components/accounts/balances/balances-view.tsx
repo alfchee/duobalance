@@ -1,13 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus } from "lucide-react";
+import { Plus, Wallet } from "lucide-react";
 import { useBalancesScreen } from "@/hooks/useBalancesScreen";
-import { EmptyAccounts } from "@/components/accounts/empty-state";
 import { GettingStartedChecklist } from "@/components/household/getting-started-checklist";
+import { useEnsureDefaultAccount } from "@/hooks/useEnsureDefaultAccount";
+import { useHousehold } from "@/hooks/useHousehold";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { TeachEmptyState } from "@/components/ui/teach-empty-state";
 import { useAccountsUiStore } from "@/store/accounts";
+import { useTransactionsUiStore } from "@/store/transactions";
 import { BalancesSection } from "./balances-section";
 import { BalancesTabs } from "./balances-tabs";
 import { BalancesHeader } from "./balances-header";
@@ -18,7 +21,11 @@ import { BalancesHeader } from "./balances-header";
 // survives back-navigation.
 export function BalancesView() {
   const t = useTranslations("balances");
+  const tTeach = useTranslations("balances.emptyTeach");
   const { openCreate } = useAccountsUiStore();
+  const openTransaction = useTransactionsUiStore((s) => s.openCreate);
+  const { householdId } = useHousehold();
+  useEnsureDefaultAccount(householdId);
   const {
     accounts,
     baseCurrency,
@@ -86,20 +93,31 @@ export function BalancesView() {
           )}
         </>
       ) : (
-        <EmptyAccounts />
+        <TeachEmptyState
+          icon={Wallet}
+          title={tTeach("title")}
+          description={tTeach("description")}
+          primaryLabel={tTeach("primary")}
+          onPrimary={() => openTransaction("transaction")}
+          guideLabel={tTeach("guide")}
+          guideHref={tTeach("guideHref")}
+          guideSource="balances-empty"
+        />
       )}
 
-      <div className="flex flex-col items-center gap-3 text-center">
-        {hasAccounts && today ? (
-          <p className="px-1 text-[11px] text-muted-foreground">
-            {t("computedOn", { date: today })}
-          </p>
-        ) : null}
-        <Button type="button" onClick={openCreate}>
-          <Plus />
-          {t("newAccount")}
-        </Button>
-      </div>
+      {hasAccounts ? (
+        <div className="flex flex-col items-center gap-3 text-center">
+          {today ? (
+            <p className="px-1 text-[11px] text-muted-foreground">
+              {t("computedOn", { date: today })}
+            </p>
+          ) : null}
+          <Button type="button" onClick={openCreate}>
+            <Plus />
+            {t("newAccount")}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

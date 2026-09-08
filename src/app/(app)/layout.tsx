@@ -13,6 +13,7 @@ import { TransactionEntrySheet } from "@/components/transactions/transaction-ent
 import { FullPageSpinner } from "@/components/full-page-spinner";
 import { RealtimeStatus } from "@/components/realtime-status";
 import { HouseholdSwitcher } from "@/components/household/household-switcher";
+import { FirstWeekProgress } from "@/components/household/first-week-progress";
 import { FeedbackPrompt } from "@/components/feedback/feedback-prompt";
 
 // AC (#14): auth guarding happens client-side here, never in middleware.ts —
@@ -61,6 +62,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="min-w-0 flex-1">
         <RealtimeStatus>
           <HouseholdSwitcher />
+          <FirstWeekProgress />
           <div className="min-w-0 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0">
             {children}
           </div>

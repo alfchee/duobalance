@@ -15,7 +15,10 @@
     "terms": "Terms of Service"
   },
   "landing": {
-    "nav": { "login": "Log in", "signup": "Start free" },
+    "nav": {
+      "login": "Log in",
+      "signup": "Start free"
+    },
     "hero": {
       "eyebrow": "Designed for shared and personal finances",
       "title": "Your finances should work the way your life does.",
@@ -245,7 +248,10 @@
       "fxRate": "Exchange rate",
       "rateLoading": "Looking up the rate for this date…",
       "rateSource": "{source} rate from {date}",
-      "rateSources": { "override": "Manual override", "feed": "ExchangeRate-API" },
+      "rateSources": {
+        "override": "Manual override",
+        "feed": "ExchangeRate-API"
+      },
       "more": "More options",
       "less": "Fewer options",
       "notes": "Notes",
@@ -265,8 +271,10 @@
         "date": "Choose today or a date no more than one day in the future.",
         "rate": "Enter a valid exchange rate.",
         "generic": "Couldn't save the transaction. Your changes were rolled back.",
-        "offlineTransfer": "Transfers require a connection and were not saved."
-      }
+        "offlineTransfer": "Transfers require a connection and were not saved.",
+        "offline": "You’re offline — we couldn’t create the Cash account. Reconnect and try again."
+      },
+      "implicitAccountHint": "We’ll create a Cash account automatically — you can rename it later."
     }
   },
   "connectivity": {
@@ -406,7 +414,14 @@
     "breakdownBaseRate": "Base rate: {date}",
     "breakdownEmpty": "All your accounts are in the household's base currency.",
     "breakdownClose": "Close",
-    "rateUsed": "1 USD = {rate} · {date}"
+    "rateUsed": "1 USD = {rate} · {date}",
+    "emptyTeach": {
+      "title": "Your balances live here",
+      "description": "Every expense and income updates a balance. Add your first transaction — we'll create a Cash account for you automatically.",
+      "primary": "Add first transaction",
+      "guide": "How balances work →",
+      "guideHref": "/help/recording-transaction-fast#quick-entry-workflow"
+    }
   },
   "onboarding": {
     "checklist": {
@@ -428,6 +443,26 @@
       "inviteCancel": "Cancel",
       "inviteSending": "Sending invitation…",
       "inviteSend": "Send invitation"
+    },
+    "firstRun": {
+      "title": "Record your first expense",
+      "subtitle": "One tap to start — you can add accounts, budgets and invite your partner afterwards.",
+      "action": "Record expense",
+      "hint": "We’ll create a Cash account for you automatically — you can rename it later in Settings.",
+      "dismiss": "Dismiss",
+      "guide": "How to get started →",
+      "guideHref": "/help/getting-started-creating-household#initial-setup"
+    },
+    "firstWeek": {
+      "badge": "First week",
+      "title": "Your first week",
+      "subtitle": "A gentle 7-day start. Every day you note something counts — days without a record don't set you back.",
+      "progressLabel": "{count} of {total} days recorded",
+      "hint": "Days without a record just stay empty — no streaks, no reset.",
+      "dismiss": "Dismiss",
+      "daySevenTitle": "Week complete — have a look?",
+      "daySevenBody": "Seven days in. If you're curious, take a look at your totals — just to observe, not to judge.",
+      "daySevenCta": "See your totals"
     }
   },
   "household": {
@@ -488,6 +523,13 @@
         "emailMismatch": "This invitation was sent to a different email. Sign in with the right account.",
         "invalidToken": "This invitation code isn't valid. Ask your partner for a new one."
       }
+    },
+    "sharedPrivateExplainer": {
+      "title": "Shared vs private accounts",
+      "body": "Shared accounts are visible to both of you — like Groceries or Rent. Private accounts stay visible only to their owner, so personal spending can stay personal. Household totals still include everything. Try a monthly review together instead of checking each purchase.",
+      "dismiss": "Dismiss",
+      "learnMore": "How private accounts work →",
+      "helpHref": "/help/inviting-your-partner#shared-vs-private-accounts"
     }
   },
   "accounts": {
@@ -715,8 +757,12 @@
     "overBy": "{amount} over",
     "noBudget": "No budget set",
     "empty": {
-      "title": "Start your monthly budget",
-      "description": "Set budgets by category to see how your spending is tracking."
+      "title": "Track first, budget later",
+      "description": "Good budgets come from real spending. Keep tracking for 2–4 weeks, then set limits that fit how you actually spend.",
+      "primary": "Add a transaction",
+      "secondary": "Or create a budget manually",
+      "guide": "How to build a good budget →",
+      "guideHref": "/help/household-vs-personal-budgets#household-budgets"
     },
     "copyDialog": {
       "title": "Copy last month's budgets",
@@ -726,6 +772,30 @@
       "confirm": "Copy budgets",
       "copying": "Copying…",
       "error": "Couldn't copy the budgets. Try again."
+    },
+    "suggestion": {
+      "title": "Ready to set a budget?",
+      "description": "You've recorded {count, plural, one {# transaction} other {# transactions}} — build budgets from your actual spending.",
+      "derivedLabel": "Suggested based on your last 30 days",
+      "derivedLabelFallback": "Suggested based on your recent spending",
+      "cta": "Create budgets from your spending",
+      "dismiss": "Not now",
+      "hint": "Amounts are pre-filled from your own transactions and can be edited before saving.",
+      "moreCategories": "+{count} more"
+    },
+    "suggestionDialog": {
+      "title": "Build budgets from your spending",
+      "description": "Review suggested amounts derived from your last 30 days. Edit any before creating.",
+      "descriptionFallback": "Review suggested amounts derived from your recent spending. Edit any before creating.",
+      "derivedLabel": "Suggested — from your own transactions",
+      "derivedLabelFallback": "Suggested — from your recent transactions",
+      "spentLabel": "You spent {amount} last 30 days",
+      "spentLabelFallback": "You spent {amount} recently",
+      "cancel": "Cancel",
+      "confirm": "Create budgets",
+      "creating": "Creating…",
+      "validationAmount": "Enter a valid amount of zero or more.",
+      "error": "Couldn't create the budgets. Try again."
     }
   },
   "bills": {
@@ -744,9 +814,11 @@
     "error": "Something went wrong. Try again.",
     "emptyMonth": "No bills are due this month.",
     "empty": {
-      "title": "Start tracking bills",
-      "description": "Add rent, utilities, internet, or any regular household payment.",
-      "action": "Add a bill"
+      "title": "Never miss what repeats",
+      "description": "Bills are for rent, utilities and subscriptions — anything that comes back every month. Add one to see it on your calendar.",
+      "action": "Add a bill",
+      "guide": "How bills work →",
+      "guideHref": "/help/recurrence-and-marking-paid#setting-up-recurrence"
     },
     "status": {
       "due": "Due",
@@ -1094,6 +1166,10 @@
     "backToHelp": "Back to Help",
     "relatedArticles": "Related articles",
     "updatedOn": "Updated on {date}",
+    "starterTitle": "New here? Start with the guide",
+    "starterDescription": "Learn how DuoBalance works in 2 minutes — one expense first, everything else later.",
+    "starterCta": "Open starter guide →",
+    "starterHref": "/help/getting-started-creating-household#initial-setup",
     "categories": {
       "accounts": "Accounts & Balances",
       "transactions": "Transactions",

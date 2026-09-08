@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Check, ChevronRight, UserPlus, X } from "lucide-react";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { useAccountsUiStore } from "@/store/accounts";
-import { useTransactionsUiStore } from "@/store/transactions";
 import { useInviteMutations } from "@/hooks/useInvites";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,46 +16,73 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FirstRunPrompt } from "./first-run-prompt";
 
-const DISMISS_PREFIX = "duobalance:dismissedChecklist:";
+export const DISMISS_PREFIX = "duobalance:dismissedChecklist:";
+export const FIRST_RUN_DISMISS_PREFIX = "duobalance:dismissedFirstRun:";
 
 export function GettingStartedChecklist() {
   const t = useTranslations("onboarding.checklist");
-  const router = useRouter();
+  const tFirstRun = useTranslations("onboarding.firstRun");
   const { householdId } = useHousehold();
   const progress = useOnboardingProgress(householdId);
   const { openCreate: openAccountCreate } = useAccountsUiStore();
-  const { openCreate: openTransactionCreate } = useTransactionsUiStore();
   const { create: createInvite } = useInviteMutations(householdId);
 
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissedChecklist, setDismissedChecklist] = useState(true);
+  const [dismissedFirstRun, setDismissedFirstRun] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteError, setInviteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!householdId) return;
-    const stored = localStorage.getItem(`${DISMISS_PREFIX}${householdId}`);
-    setDismissed(stored === "true");
+    setDismissedChecklist(localStorage.getItem(`${DISMISS_PREFIX}${householdId}`) === "true");
+    setDismissedFirstRun(
+      localStorage.getItem(`${FIRST_RUN_DISMISS_PREFIX}${householdId}`) === "true",
+    );
   }, [householdId]);
 
-  if (!householdId || progress.isLoading || progress.isComplete || dismissed) {
+  function handleDismissChecklist() {
+    if (!householdId) return;
+    localStorage.setItem(`${DISMISS_PREFIX}${householdId}`, "true");
+    setDismissedChecklist(true);
+  }
+
+  function handleDismissFirstRun() {
+    if (!householdId) return;
+    localStorage.setItem(`${FIRST_RUN_DISMISS_PREFIX}${householdId}`, "true");
+    setDismissedFirstRun(true);
+  }
+
+  if (!householdId || progress.isLoading) {
     return null;
   }
 
-  function handleDismiss() {
-    if (!householdId) return;
-    localStorage.setItem(`${DISMISS_PREFIX}${householdId}`, "true");
-    setDismissed(true);
+  // #192: brand-new users see only the first-run prompt — single CTA to record one expense.
+  // No account/budget/partner step blocks the transaction form.
+  // Dismissing the first-run prompt (`dismissedFirstRun`) does NOT suppress the
+  // post-transaction checklist; dismissing the checklist (`dismissedChecklist`)
+  // suppresses both stages to preserve existing users' choice.
+  if (!progress.hasTransactions) {
+    if (dismissedFirstRun || dismissedChecklist) return null;
+    return <FirstRunPrompt onDismiss={handleDismissFirstRun} dismissLabel={tFirstRun("dismiss")} />;
   }
 
+  if (dismissedChecklist || progress.isComplete) {
+    return null;
+  }
+
+  // After the first transaction, remaining setup is offered as dismissible
+  // prompts — account, partner — never as a blocker.
+  // Budget setup is intentionally not part of this checklist (#198): it is
+  // surfaced later as a data-driven suggestion derived from recorded spend.
   const completedCount =
     (progress.hasAccounts ? 1 : 0) +
     (progress.hasTransactions ? 1 : 0) +
-    (progress.hasBudgets ? 1 : 0) +
     (progress.hasPartner ? 1 : 0);
 
-  const percentage = Math.round((completedCount / 4) * 100);
+  const percentage = Math.round((completedCount / 3) * 100);
 
   async function handleSendInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -84,14 +109,14 @@ export function GettingStartedChecklist() {
             </span>
             <h3 className="mt-2 text-lg font-black tracking-tight">{t("title")}</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {t("progressCount", { completed: completedCount, total: 4 })}
+              {t("progressCount", { completed: completedCount, total: 3 })}
             </p>
           </div>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            onClick={handleDismiss}
+            onClick={handleDismissChecklist}
             className="-mr-2 -mt-2 size-8 text-muted-foreground hover:text-foreground"
             aria-label={t("dismiss")}
           >
@@ -146,85 +171,17 @@ export function GettingStartedChecklist() {
             ) : null}
           </div>
 
-          {/* Step 2: Record transaction */}
-          <div
-            className={`flex items-center justify-between rounded-xl border p-3 text-sm transition-colors ${
-              progress.hasTransactions
-                ? "bg-secondary/40 border-transparent"
-                : "bg-background border-border"
-            }`}
-          >
+          {/* Step 2: Record transaction — always complete once we reach this checklist */}
+          <div className="flex items-center justify-between rounded-xl border p-3 text-sm transition-colors bg-secondary/40 border-transparent">
             <div className="flex items-center gap-3">
-              <span
-                className={`grid size-6 place-items-center rounded-full text-xs font-bold ${
-                  progress.hasTransactions
-                    ? "bg-success text-success-foreground"
-                    : "border-2 border-muted-foreground/40 text-muted-foreground"
-                }`}
-              >
-                {progress.hasTransactions ? <Check className="size-3.5" /> : "2"}
+              <span className="grid size-6 place-items-center rounded-full bg-success text-xs font-bold text-success-foreground">
+                <Check className="size-3.5" />
               </span>
-              <span
-                className={
-                  progress.hasTransactions ? "line-through text-muted-foreground" : "font-medium"
-                }
-              >
-                {t("stepTransaction")}
-              </span>
+              <span className="line-through text-muted-foreground">{t("stepTransaction")}</span>
             </div>
-            {!progress.hasTransactions ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => openTransactionCreate("transaction")}
-                className="h-8 gap-1 text-xs font-bold"
-              >
-                {t("actionRecord")} <ChevronRight className="size-3" />
-              </Button>
-            ) : null}
           </div>
 
-          {/* Step 3: Set a budget */}
-          <div
-            className={`flex items-center justify-between rounded-xl border p-3 text-sm transition-colors ${
-              progress.hasBudgets
-                ? "bg-secondary/40 border-transparent"
-                : "bg-background border-border"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className={`grid size-6 place-items-center rounded-full text-xs font-bold ${
-                  progress.hasBudgets
-                    ? "bg-success text-success-foreground"
-                    : "border-2 border-muted-foreground/40 text-muted-foreground"
-                }`}
-              >
-                {progress.hasBudgets ? <Check className="size-3.5" /> : "3"}
-              </span>
-              <span
-                className={
-                  progress.hasBudgets ? "line-through text-muted-foreground" : "font-medium"
-                }
-              >
-                {t("stepBudget")}
-              </span>
-            </div>
-            {!progress.hasBudgets ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/budget")}
-                className="h-8 gap-1 text-xs font-bold"
-              >
-                {t("actionSet")} <ChevronRight className="size-3" />
-              </Button>
-            ) : null}
-          </div>
-
-          {/* Step 4: Invite partner */}
+          {/* Step 3: Invite partner */}
           <div
             className={`flex items-center justify-between rounded-xl border p-3 text-sm transition-colors ${
               progress.hasPartner
@@ -240,7 +197,7 @@ export function GettingStartedChecklist() {
                     : "border-2 border-muted-foreground/40 text-muted-foreground"
                 }`}
               >
-                {progress.hasPartner ? <Check className="size-3.5" /> : "4"}
+                {progress.hasPartner ? <Check className="size-3.5" /> : "3"}
               </span>
               <span
                 className={

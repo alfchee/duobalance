@@ -28,6 +28,7 @@ vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: () => ({
     data: [{ currency: "USD", id: "account-1", is_archived: false, name: "Checking" }],
   }),
+  useAccountMutations: () => ({ create: { isPending: false, mutateAsync: vi.fn() } }),
 }));
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: () => ({ data: [] }),
@@ -54,6 +55,18 @@ vi.mock("@/hooks/useTransactions", () => ({
 vi.mock("@/components/realtime-status", () => ({
   useOfflineQueue: () => ({ connectionState: "online", queueTransaction: vi.fn() }),
 }));
+vi.mock("@tanstack/react-query", async () => {
+  const actual =
+    await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
+  return {
+    ...actual,
+    useQueryClient: () => ({
+      getQueryData: vi.fn(() => []),
+      setQueryData: vi.fn(),
+      invalidateQueries: vi.fn(),
+    }),
+  };
+});
 vi.mock("@/store/transactions", () => ({
   useTransactionsUiStore: () => ({
     closeForm,
