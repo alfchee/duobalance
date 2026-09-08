@@ -11,7 +11,11 @@ export type GuideSource =
   | "persistent-help"
   | "help-button"
   | "members-invite"
-  | "accept-invite";
+  | "accept-invite"
+  | "landing-hero"
+  | "guide-view"
+  | "guide-scroll"
+  | "guide-anchor";
 
 export const GUIDE_SOURCES: readonly GuideSource[] = [
   "balances-empty",
@@ -23,6 +27,10 @@ export const GUIDE_SOURCES: readonly GuideSource[] = [
   "help-button",
   "members-invite",
   "accept-invite",
+  "landing-hero",
+  "guide-view",
+  "guide-scroll",
+  "guide-anchor",
 ] as const;
 
 export type GuideEvent = {
@@ -63,7 +71,7 @@ function sanitizeSlug(raw: string): string {
 }
 
 function parseSlugAndAnchor(href: string): { slug: string; anchor: string | null } {
-  // href expected like /help/recording-transaction-fast or /help/slug#anchor
+  // href expected like /help/slug, /guia/slug or /guide/slug with optional #anchor
   // Also handles full URLs and missing prefix defensively.
   try {
     // If href is absolute URL, extract pathname+hash
@@ -74,7 +82,10 @@ function parseSlugAndAnchor(href: string): { slug: string; anchor: string | null
   } catch {
     // ignore URL parse failure
   }
-  const withoutPrefix = href.startsWith("/help/") ? href.slice("/help/".length) : href;
+  let withoutPrefix = href;
+  if (href.startsWith("/help/")) withoutPrefix = href.slice("/help/".length);
+  else if (href.startsWith("/guia/")) withoutPrefix = href.slice("/guia/".length);
+  else if (href.startsWith("/guide/")) withoutPrefix = href.slice("/guide/".length);
   const hashIndex = withoutPrefix.indexOf("#");
   if (hashIndex === -1) {
     const raw = (withoutPrefix.split("?")[0] ?? withoutPrefix).trim();

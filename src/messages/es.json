@@ -24,7 +24,11 @@
       "title": "Tus finanzas deben funcionar como funciona tu vida.",
       "description": "DuoBalance da claridad al dinero que manejas a solas, compartes con tu pareja o coordinas con tu hogar.",
       "primaryCta": "Comenzar gratis",
-      "secondaryCta": "Ver cómo funciona"
+      "secondaryCta": "Ver cómo funciona",
+      "guideEyebrow": "Guía de 5 minutos",
+      "guideTitle": "¿No sabes por dónde empezar?",
+      "guideDescription": "Si abriste la app y no supiste qué hacer, no es tu culpa. Este es el orden: primero registrar, después presupuestar.",
+      "guideCta": "Leer guía — 5 min →"
     },
     "showcase": {
       "eyebrow": "Vista previa",

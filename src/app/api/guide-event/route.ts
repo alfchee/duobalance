@@ -11,6 +11,10 @@ const GUIDE_SOURCES = [
   "help-button",
   "members-invite",
   "accept-invite",
+  "landing-hero",
+  "guide-view",
+  "guide-scroll",
+  "guide-anchor",
 ] as const;
 
 const bodySchema = z.object({

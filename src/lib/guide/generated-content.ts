@@ -78,62 +78,66 @@ export const GUIDE_ARTICLES: Record<string, Record<string, GuideArticle>> = {
       frontmatter: {
         title: "Por dónde empezar: guía de 5 minutos para ordenar tus finanzas",
         slug: "por-donde-empezar",
-        description:
-          "Una guía breve y práctica para registrar tus primeros gastos, entender qué vale la pena llevar y dejar los presupuestos para después.",
+        description: "Si abriste la app y no supiste qué hacer, no es tu culpa. Este es el orden.",
         readingTime: 5,
         updated: "2026-09-08",
         order: 1,
-        related: [],
+        related: ["leer-tu-primer-mes"],
       },
       headings: [
         {
           level: 1,
-          text: "Por dónde empezar: guía de 5 minutos para ordenar tus finanzas",
-          id: "por-donde-empezar-guia-de-5-minutos-para-ordenar-tus-finanzas",
+          text: "Por dónde empezar",
+          id: "por-donde-empezar",
         },
         {
           level: 2,
-          text: "Por qué registrar primero",
-          id: "por-que-registrar-primero",
+          text: "Lo que las finanzas personales realmente responden",
+          id: "lo-que-las-finanzas-personales-realmente-responden",
         },
         {
           level: 2,
-          text: "El plan de siete días",
-          id: "el-plan-de-siete-dias",
-        },
-        {
-          level: 3,
-          text: "Día 1: Anota una compra reciente",
-          id: "dia-1-anota-una-compra-reciente",
-        },
-        {
-          level: 3,
-          text: "Día 2–3: Suma dos gastos más",
-          id: "dia-23-suma-dos-gastos-mas",
-        },
-        {
-          level: 3,
-          text: "Día 4–5: Invita a tu pareja",
-          id: "dia-45-invita-a-tu-pareja",
-        },
-        {
-          level: 3,
-          text: "Día 6–7: Observa, no juzgues",
-          id: "dia-67-observa-no-juzgues",
+          text: "Regla número uno: primero registrar, después presupuestar",
+          id: "regla-numero-uno-primero-registrar-despues-presupuestar",
         },
         {
           level: 2,
-          text: "Qué ignorar por ahora",
-          id: "que-ignorar-por-ahora",
+          text: "Qué registrar",
+          id: "que-registrar",
         },
         {
           level: 2,
-          text: "Siguiente paso",
-          id: "siguiente-paso",
+          text: "Usa pocas categorías",
+          id: "usa-pocas-categorias",
+        },
+        {
+          level: 2,
+          text: "Permiso para hacerlo imperfecto",
+          id: "permiso-para-hacerlo-imperfecto",
+        },
+        {
+          level: 2,
+          text: "Tu plan de 7 días",
+          id: "tu-plan-de-7-dias",
+        },
+        {
+          level: 2,
+          text: "Si lo van a hacer en pareja",
+          id: "si-lo-van-a-hacer-en-pareja",
+        },
+        {
+          level: 2,
+          text: "Después de 30 días",
+          id: "despues-de-30-dias",
+        },
+        {
+          level: 2,
+          text: "Una aclaración importante",
+          id: "una-aclaracion-importante",
         },
       ],
       content:
-        "\n# Por dónde empezar: guía de 5 minutos para ordenar tus finanzas\n\nRegistrar tus finanzas no tiene por qué ser complicado. Esta guía te lleva por los primeros pasos — en cinco minutos y sin presupuestos por ahora.\n\n## Por qué registrar primero\n\nUn presupuesto impuesto sin datos reales rara vez se cumple. Registrar al menos una o dos semanas de gastos te muestra dónde va el dinero antes de decidir cuánto asignar.\n\n- **Semana 1–2:** Solo registra. No limites, solo observa.\n- **Semana 3:** Mira totales por categoría y decide qué ajustar.\n\n## El plan de siete días\n\nUn inicio suave de siete días, sin rachas ni castigos por días sin registro.\n\n### Día 1: Anota una compra reciente\n\nAbre DuoBalance y registra una compra reciente — café, supermercado, transporte. Tarda segundos.\n\n### Día 2–3: Suma dos gastos más\n\nSuma uno o dos gastos por día. Verás tu saldo actualizarse y las categorías tomar forma.\n\n### Día 4–5: Invita a tu pareja\n\nDesde Configuración → Miembros del hogar puedes invitar a tu pareja. Revisen juntos una vez al mes, no cada compra.\n\n### Día 6–7: Observa, no juzgues\n\nAl cerrar la semana, abre Análisis y revisa tus totales. Solo observa — no es momento de corregir todo.\n\n## Qué ignorar por ahora\n\nDurante estas dos semanas puedes ignorar la pestaña Presupuesto. Crear límites sin datos es adivinar. Vuelve a ella cuando tengas números reales.\n\n## Siguiente paso\n\nCuando tengas una semana de datos, pasa a [cómo leer tu primer mes](/guia/leer-tu-primer-mes) — pero solo si terminaste esta guía. No hay prisa.\n",
+        '\n# Por dónde empezar\n\n**Si abriste DuoBalance, viste la pantalla en blanco y no supiste qué hacer — no eres el único, y no es tu culpa.**\n\nA ninguno de nosotros nos enseñaron esto. No en la escuela, no en la universidad, no en casa. Muchos tenemos títulos, maestrías, buenos trabajos, y aun así nadie nos explicó cómo se ordena el dinero de un mes. Entonces uno abre una app de finanzas y siente lo mismo que al entrar por primera vez a un gimnasio: sabes que deberías hacer algo, pero no sabes qué, y por no hacerlo mal, no haces nada.\n\nEsta guía es para salir de ahí. Son cinco minutos y al final vas a saber exactamente qué hacer hoy.\n\n---\n\n## Lo que las finanzas personales realmente responden\n\nTodo esto se reduce a tres preguntas:\n\n1. **¿A dónde se va mi dinero?**\n2. **¿Entra más de lo que sale?**\n3. **¿Qué quiero cambiar?**\n   Nada más. Todo lo demás — presupuestos, metas, ahorro, inversión — sale de contestar estas tres, **en ese orden**.\n\nY ahí está el error más común: casi todos empezamos por la tres.\n\n---\n\n## Regla número uno: primero registrar, después presupuestar\n\nLa mayoría de la gente cree que "ordenar las finanzas" significa hacer un presupuesto. Se sienta a decidir cuánto va a gastar en comida el próximo mes, se da cuenta de que no tiene idea, se frustra, y ahí termina el intento.\n\n**No puedes presupuestar lo que no has medido.** Un presupuesto hecho sin datos es un deseo, y los deseos se rompen a los diez días.\n\nEs lo mismo que en el gimnasio o en una dieta: nadie empieza decidiendo cuánta grasa va a perder en marzo. Primero te pesas, primero anotas qué comes. Medir no cambia nada por sí solo — pero es lo único que te dice la verdad, y sin la verdad no hay plan que funcione.\n\nAsí que por ahora:\n\n- **Balances** → esto sí lo vas a usar desde hoy\n- **Presupuesto** → ignóralo por dos o cuatro semanas\n- **Facturas** → agrega solo lo que ya sabes que pagas todos los meses\n  Volveremos al presupuesto cuando tengas números reales.\n\n---\n\n## Qué registrar\n\n**Todo lo que entra y todo lo que sale.** Sin excepciones y sin filtrar.\n\nSí, también los C$40 de la cuajada, el taxi, la recarga del teléfono. Especialmente esos. Los gastos grandes ya los tienes en la cabeza: sabes cuánto pagas de alquiler. Los que no ves son los que se llevan el dinero sin que te des cuenta, y son justo los que nunca anotamos porque parecen insignificantes.\n\nDe cada movimiento necesitas solo tres cosas:\n\n|                 |                                      |\n| --------------- | ------------------------------------ |\n| **Cuánto**      | El monto                             |\n| **Cuándo**      | La fecha                             |\n| **De qué tipo** | Una categoría, aunque sea aproximada |\n\nEso es todo. No necesitas el nombre del negocio, ni una nota, ni la foto del recibo. La app está hecha para que esto te tome menos de cinco segundos, y esa velocidad es la que hace que lo sigas haciendo mañana.\n\n---\n\n## Usa pocas categorías\n\nEste es el error que más gente hace: crean treinta categorías el primer día. Después compran algo en el supermercado y se quedan pensando si eso es "Comida", "Hogar" o "Supermercado" — y ese momento de duda, repetido, es exactamente lo que hace que la gente abandone.\n\n**Empieza con cinco a ocho. Nada más.** Algo así:\n\n- Comida\n- Transporte\n- Casa (alquiler, luz, agua, internet)\n- Salud\n- Personal (ropa, cortes de pelo, gustos)\n- Diversión\n- Otros\n  Cuando dudes, mete el gasto en la que se te ocurra primero y sigue. En un mes vas a ver cuáles categorías te sirven de verdad y ahí las ajustas. Es mucho más fácil dividir una categoría grande después que decidir entre treinta hoy.\n\n---\n\n## Permiso para hacerlo imperfecto\n\nLee esto dos veces, porque es lo que más gente necesita oír:\n\n- **No tienes que empezar el día 1 del mes.** Empieza hoy, aunque sea el 17.\n- **No tienes que saber tu saldo exacto.** Pon un número aproximado y corrígelo después.\n- **Si olvidas anotar dos días, no empezaste mal — solo te faltan dos días.** No borres nada, no empieces de nuevo.\n- **Nadie va a revisar tus categorías.** No hay una respuesta correcta.\n  Un registro incompleto pero real vale infinitamente más que un sistema perfecto que abandonaste en la semana dos.\n\n---\n\n## Tu plan de 7 días\n\nUn compromiso corto, con final claro.\n\n**Hoy (10 minutos)**\n\n1. Crea tus cuentas: efectivo, cuenta de banco, tarjeta. Ponle a cada una el saldo aproximado que tiene ahora.\n2. Registra **un** gasto. Cualquiera. El último que hiciste. Este es el paso que importa — el resto ya es costumbre.\n3. Si sabes que pagas algo todos los meses (alquiler, luz, internet), agrégalo en Facturas.\n   **Días 1 al 7 (30 segundos al día)**\n\nAnota todo lo que entra y todo lo que sale, el mismo día. Elige un momento fijo: al llegar a casa, o antes de dormir. Que sea siempre el mismo.\n\n**Día 7 (5 minutos)**\n\nMira tus totales. No juzgues nada todavía, solo mira. Casi todos tienen la misma reacción: _"no sabía que gastaba tanto en eso."_\n\nEsa frase es la meta de la primera semana. Nada más.\n\n---\n\n## Si lo van a hacer en pareja\n\nAquí es donde esta app se diferencia, y donde también se puede complicar. Tres acuerdos antes de empezar:\n\n**1. Definan qué es compartido y qué es personal.** El alquiler y la comida son compartidos. El regalo que uno le compra al otro, no. La app permite cuentas privadas justamente para eso: no todo tiene que estar a la vista para que las cuentas del hogar cuadren.\n\n**2. Esto no es para auditarse.** El momento en que uno empieza a revisar los gastos del otro para reclamarle, la herramienta dejó de servir y se convirtió en un problema nuevo. Los números son del hogar, no evidencia.\n\n**3. Una conversación al mes, no una discusión por compra.** Elijan un día — el primer domingo, por ejemplo — para ver los totales juntos en diez minutos. Ese es el punto de tener esto: dejar de discutir cada gasto porque ya hay un lugar donde se ven todos.\n\n---\n\n## Después de 30 días\n\nCuando tengas un mes completo, ya tienes lo que te faltaba: **números tuyos**.\n\nAhí sí abres Presupuesto, y en lugar de inventar cuánto deberías gastar en comida, miras cuánto gastaste de verdad y decides desde ahí. Un presupuesto construido así se sostiene, porque nace de tu vida real y no de un ideal.\n\nVas a poder contestar las tres preguntas del inicio. Y la tercera — _¿qué quiero cambiar?_ — por fin va a tener una respuesta concreta en lugar de una sensación.\n\n---\n\n## Una aclaración importante\n\nNo somos asesores financieros certificados y esto no es asesoría financiera. Lo que encuentras aquí son ideas generales y ampliamente aceptadas sobre cómo empezar a registrar y entender tus gastos.\n\nPara decisiones específicas de tu situación — deudas, préstamos, inversiones, decisiones de negocio, temas fiscales — busca a un profesional que pueda ver tus números y hacer los cálculos de tu caso. Esta guía te ayuda a llegar a esa conversación con información ordenada, que ya es bastante.\n\n---\n\n**Empieza con un movimiento. Hoy.** El resto se acomoda solo.\n\n> Nota sobre voseo: esta guía usa **tú** (tuteo) de forma deliberada para mantener neutralidad regional en todo el contenido educativo de la app. Los correos transaccionales de invitación usan **vos** por cercanía con lectores nicaragüenses. Ambos tratamientos son consistentes dentro de cada pieza.\n',
     },
   },
   en: {

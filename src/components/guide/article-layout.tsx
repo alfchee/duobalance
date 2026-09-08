@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Clock, ArrowLeft, Calendar } from "lucide-react";
 import { useLocale } from "next-intl";
 import type { GuideArticle } from "@/lib/guide/generated-content";
+import { trackGuideOpen } from "@/lib/guide-events";
 import { MarkdownRenderer } from "@/components/help/markdown-renderer";
 import { TableOfContents } from "./table-of-contents";
 import { EducationalDisclaimer } from "./educational-disclaimer";
@@ -31,11 +32,51 @@ export function GuideArticleLayout({
   const relatedBase = locale === "en" ? "/guide" : "/guia";
   const nextLabel = locale === "en" ? "Next" : locale === "pt-BR" ? "Próximo" : "Siguiente";
 
+  const guideHref = `${relatedBase}/${frontmatter.slug}`;
+  const trackedDepths = useRef<Set<number>>(new Set());
+
+  // Guide view + scroll-depth + anchor analytics (#197)
+  useEffect(() => {
+    void trackGuideOpen(guideHref, "guide-view");
+    // Track anchor if present on initial load
+    const initialAnchor = window.location.hash.slice(1);
+    if (initialAnchor) void trackGuideOpen(`${guideHref}#${initialAnchor}`, "guide-anchor");
+
+    function onScroll() {
+      const scrollTop = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      if (docHeight <= viewportHeight) return;
+      const depth = Math.round(((scrollTop + viewportHeight) / docHeight) * 100);
+      const thresholds = [25, 50, 75, 100];
+      for (const t of thresholds) {
+        if (depth >= t && !trackedDepths.current.has(t)) {
+          trackedDepths.current.add(t);
+          void trackGuideOpen(`${guideHref}#depth-${t}`, "guide-scroll");
+        }
+      }
+    }
+    let ticking = false;
+    function throttledOnScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        onScroll();
+        ticking = false;
+      });
+    }
+    window.addEventListener("scroll", throttledOnScroll, { passive: true });
+    // Fire once to catch short articles
+    onScroll();
+    return () => window.removeEventListener("scroll", throttledOnScroll);
+  }, [guideHref]);
+
   // Deep-link / hash scroll support, mirrors help-article-client
   useEffect(() => {
     function scrollToHash() {
       const hash = window.location.hash.slice(1);
       if (!hash) return;
+      void trackGuideOpen(`${guideHref}#${hash}`, "guide-anchor");
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
       let attempts = 0;
@@ -53,7 +94,7 @@ export function GuideArticleLayout({
     scrollToHash();
     window.addEventListener("hashchange", scrollToHash);
     return () => window.removeEventListener("hashchange", scrollToHash);
-  }, []);
+  }, [guideHref]);
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6 pb-20">

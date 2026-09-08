@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Banknote,
+  BookOpen,
   CalendarDays,
   Check,
   CircleDollarSign,
@@ -19,6 +20,7 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { captureReferral } from "@/lib/referral";
+import { trackGuideOpen } from "@/lib/guide-events";
 import { cn } from "@/lib/utils";
 
 type Showcase = "balances" | "entry" | "budget" | "bills";
@@ -29,6 +31,7 @@ export function LandingPage() {
   const t = useTranslations("landing");
   const locale = useLocale();
   const [showcase, setShowcase] = useState<Showcase>("balances");
+  const guideHref = locale === "en" ? "/guide/starter-guide" : "/guia/por-donde-empezar";
 
   useEffect(() => {
     captureReferral(window.location.search, localStorage);
@@ -80,6 +83,29 @@ export function LandingPage() {
             <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               {t("hero.description")}
             </p>
+            <Link
+              href={guideHref}
+              onClick={() => void trackGuideOpen(guideHref, "landing-hero")}
+              className="mt-6 inline-flex max-w-2xl items-center gap-3 rounded-2xl border bg-background/90 p-4 text-left shadow-sm backdrop-blur hover:bg-background transition-colors"
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+                <BookOpen className="size-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-bold uppercase tracking-[0.12em] text-primary">
+                  {t("hero.guideEyebrow")}
+                </span>
+                <span className="block text-sm font-black leading-tight">
+                  {t("hero.guideTitle")}
+                </span>
+                <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                  {t("hero.guideDescription")}
+                </span>
+                <span className="mt-1 block text-xs font-bold text-primary">
+                  {t("hero.guideCta")}
+                </span>
+              </span>
+            </Link>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="h-12 px-6">
                 <Link href="/signup" onClick={captureCurrentReferral}>
