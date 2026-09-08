@@ -35,15 +35,23 @@ export function HelpArticleClient({ slug }: { slug: string }) {
       requestAnimationFrame(() => requestAnimationFrame(tryScroll));
     }
 
-    scrollToHash();
-    window.addEventListener("hashchange", scrollToHash);
+    function onHashChange() {
+      scrollToHash();
+      // Track anchor navigation inside the same article (e.g. quick-entry → another anchor)
+      const newAnchor = window.location.hash.slice(1) || null;
+      void trackGuideOpen(`/help/${slug}${newAnchor ? `#${newAnchor}` : ""}`, "help-center");
+    }
 
-    // Record guide open — slug + optional anchor. Dedupe in trackGuideOpen prevents double-count
-    // with link onClick (empty-state → article).
+    scrollToHash();
+    window.addEventListener("hashchange", onHashChange);
+
+    // Record guide open on mount — slug + optional anchor. Dedupe in trackGuideOpen prevents double-count
+    // with link onClick (empty-state → article). Note: this also counts direct/bookmark loads; intentional
+    // for funnel coverage, but if #167 needs stricter "funnel-only" counting, gate this by referrer/source.
     const anchor = window.location.hash.slice(1) || null;
     void trackGuideOpen(`/help/${slug}${anchor ? `#${anchor}` : ""}`, "help-center");
 
-    return () => window.removeEventListener("hashchange", scrollToHash);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, [slug]);
 
   if (!article) {

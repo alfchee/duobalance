@@ -51,6 +51,17 @@ function shouldDedupe(slug: string, anchor: string | null, source: GuideSource):
   return false;
 }
 
+function sanitizeSlug(raw: string): string {
+  // Keep only safe chars for guide_opens.slug; invalid hrefs (e.g. "/some/other?x=1") would
+  // otherwise accumulate as garbage rows. Normalize to kebab-case and fallback to "unknown".
+  const cleaned = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return cleaned || "unknown";
+}
+
 function parseSlugAndAnchor(href: string): { slug: string; anchor: string | null } {
   // href expected like /help/recording-transaction-fast or /help/slug#anchor
   // Also handles full URLs and missing prefix defensively.
@@ -66,12 +77,18 @@ function parseSlugAndAnchor(href: string): { slug: string; anchor: string | null
   const withoutPrefix = href.startsWith("/help/") ? href.slice("/help/".length) : href;
   const hashIndex = withoutPrefix.indexOf("#");
   if (hashIndex === -1) {
-    const slug = withoutPrefix.split("?")[0] ?? withoutPrefix;
-    return { slug: slug || href, anchor: null };
+    const raw = (withoutPrefix.split("?")[0] ?? withoutPrefix).trim();
+    const slug = raw ? sanitizeSlug(raw) : sanitizeSlug(href);
+    // Validate final slug shape — must be kebab-case; otherwise fallback
+    if (!/^[a-z0-9-]+$/.test(slug)) return { slug: "unknown", anchor: null };
+    return { slug, anchor: null };
   }
   const slugPart = withoutPrefix.slice(0, hashIndex).split("?")[0] ?? "";
   const anchorPart = withoutPrefix.slice(hashIndex + 1) || null;
-  return { slug: slugPart || href, anchor: anchorPart };
+  const slug = slugPart ? sanitizeSlug(slugPart) : sanitizeSlug(href);
+  const safeSlug = /^[a-z0-9-]+$/.test(slug) ? slug : "unknown";
+  const safeAnchor = anchorPart ? anchorPart.slice(0, 200) : null;
+  return { slug: safeSlug, anchor: safeAnchor };
 }
 
 function isNetworkError(err: unknown): boolean {
@@ -86,11 +103,18 @@ function isNetworkError(err: unknown): boolean {
 export async function trackGuideOpen(href: string, source: GuideSource): Promise<void> {
   const { slug, anchor } = parseSlugAndAnchor(href);
   if (shouldDedupe(slug, anchor, source)) return;
+  // Best-effort active household for attribution — server prefers this over earliest-joined fallback
+  let householdId: string | null = null;
+  try {
+    householdId = localStorage.getItem("duobalance:activeHouseholdId");
+  } catch {
+    // ignore
+  }
   // Fire-and-forget: never block navigation on tracking failure.
   try {
     await apiFetch("/api/guide-event", {
       method: "POST",
-      body: { slug, anchor, source },
+      body: { slug, anchor, source, householdId: householdId ?? undefined },
     });
   } catch (err) {
     if (!isNetworkError(err) && !(typeof navigator !== "undefined" && !navigator.onLine)) {
@@ -131,4 +155,54 @@ export function getStoredGuideOpens(): GuideEvent[] {
   } catch {
     return [];
   }
+}
+
+export async function flushStoredGuideOpens(): Promise<void> {
+  const key = "duobalance:guideOpens";
+  let items: GuideEvent[] = [];
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) return;
+    items = parsed.filter(
+      (item): item is GuideEvent =>
+        typeof item === "object" && item !== null && typeof (item as GuideEvent).slug === "string",
+    );
+    if (items.length === 0) {
+      localStorage.removeItem(key);
+      return;
+    }
+  } catch {
+    return;
+  }
+
+  const remaining: GuideEvent[] = [];
+  for (const item of items) {
+    try {
+      await apiFetch("/api/guide-event", {
+        method: "POST",
+        body: { slug: item.slug, anchor: item.anchor ?? null, source: item.source },
+      });
+    } catch (err) {
+      if (isNetworkError(err) || (typeof navigator !== "undefined" && !navigator.onLine)) {
+        remaining.push(item);
+      }
+      // 4xx/validation errors are dropped — not retried
+    }
+  }
+
+  try {
+    if (remaining.length === 0) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(remaining.slice(-100)));
+  } catch {
+    // ignore
+  }
+}
+
+// Best-effort auto-flush when connectivity returns. No-op on server.
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => {
+    void flushStoredGuideOpens();
+  });
 }

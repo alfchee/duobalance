@@ -28,6 +28,8 @@ export function useEnsureDefaultAccount(householdId: string | null) {
   const { create } = useAccountMutations(householdId);
   const queryClient = useQueryClient();
   const attemptedRef = useRef<string | null>(null);
+  const createRef = useRef(create);
+  createRef.current = create;
 
   const hasUsableAccount = (accounts ?? []).some((a) => !a.is_archived);
   const createPending = create.isPending;
@@ -39,14 +41,16 @@ export function useEnsureDefaultAccount(householdId: string | null) {
     if (isCreatingDefaultCash(householdId)) return;
     if (attemptedRef.current === householdId) return;
 
-    // Final guard: re-read cache in case sheet just created it.
+    // Final guard: re-read cache in case sheet just created it. Invalidate
+    // first so a just-inserted row from another tab is visible.
+    void queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
     const cached = queryClient.getQueryData<AccountWithBalance[]>(["accounts", householdId]) ?? [];
     if (cached.some((a) => !a.is_archived)) return;
 
     attemptedRef.current = householdId;
     markCreatingDefaultCash(householdId);
 
-    void create
+    void createRef.current
       .mutateAsync({
         name: getDefaultCashName(locale),
         kind: "cash",
@@ -64,8 +68,5 @@ export function useEnsureDefaultAccount(householdId: string | null) {
       .finally(() => {
         clearCreatingDefaultCash(householdId);
       });
-    // `create` is intentionally not in deps — its reference changes per render
-    // and would retrigger the effect; `createPending` above is the stable gate.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [householdId, baseCurrency, locale, isLoading, hasUsableAccount, createPending, queryClient]);
 }

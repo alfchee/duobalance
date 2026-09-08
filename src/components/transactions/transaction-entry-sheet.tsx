@@ -596,70 +596,83 @@ function TransactionEntryContent({
       if (usableAccounts.length > 0) return setError("account");
       if (!householdId || !baseCurrency) return setError("generic");
       // If BalancesView's hook is already creating, wait for it instead of
-      // inserting a second row.
+      // inserting a second row — invalidate and re-read before falling back.
       if (isCreatingDefaultCash(householdId)) {
-        return setError("generic");
-      }
-      // Re-check cache after hook may have just inserted.
-      const cached = queryClient.getQueryData<AccountWithBalance[]>(["accounts", householdId]);
-      const existingUsable = cached?.find((a) => !a.is_archived);
-      if (existingUsable) {
-        effectiveAccountId = existingUsable.id;
-        effectiveCurrency = existingUsable.currency;
-        effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+        await queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
+        const maybe = queryClient.getQueryData<AccountWithBalance[]>(["accounts", householdId]);
+        const found = maybe?.find((a) => !a.is_archived);
+        if (found) {
+          effectiveAccountId = found.id;
+          effectiveCurrency = found.currency;
+          effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+        } else {
+          return setError("generic");
+        }
       } else {
-        // draft.currency should already be baseCurrency via the effect above,
-        // but fall back to baseCurrency if still empty.
-        effectiveCurrency = draft.currency || baseCurrency;
-        effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
-        if (effectiveMinorUnit == null) return setError("amount");
-        if (amount == null || amount === 0) return setError("amount");
-        markCreatingDefaultCash(householdId);
-        try {
-          const newAccount = await createAccount.mutateAsync({
-            name: getDefaultCashName(locale),
-            kind: "cash",
-            currency: baseCurrency,
-            balance_mode: "ledger",
-            opening_balance: 0,
-            manual_balance: null,
-            credit_limit: null,
-            is_shared: true,
-            owner_member_id: null,
-          });
-          const createdId = (newAccount as { id?: string })?.id;
-          if (createdId) effectiveAccountId = createdId;
-          else {
-            // Fallback: re-read from cache; if still missing, abort.
+        // Re-check cache after hook may have just inserted.
+        const cached = queryClient.getQueryData<AccountWithBalance[]>(["accounts", householdId]);
+        const existingUsable = cached?.find((a) => !a.is_archived);
+        if (existingUsable) {
+          effectiveAccountId = existingUsable.id;
+          effectiveCurrency = existingUsable.currency;
+          effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+        } else {
+          // draft.currency should already be baseCurrency via the effect above,
+          // but fall back to baseCurrency if still empty.
+          effectiveCurrency = draft.currency || baseCurrency;
+          effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+          if (effectiveMinorUnit == null) return setError("amount");
+          if (amount == null || amount === 0) return setError("amount");
+          markCreatingDefaultCash(householdId);
+          try {
+            const newAccount = await createAccount.mutateAsync({
+              name: getDefaultCashName(locale),
+              kind: "cash",
+              currency: baseCurrency,
+              balance_mode: "ledger",
+              opening_balance: 0,
+              manual_balance: null,
+              credit_limit: null,
+              is_shared: true,
+              owner_member_id: null,
+            });
+            const createdId = (newAccount as { id?: string })?.id;
+            if (createdId) effectiveAccountId = createdId;
+            else {
+              // Fallback: re-read from cache; if still missing, abort.
+              await queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
+              const refreshed = queryClient.getQueryData<AccountWithBalance[]>([
+                "accounts",
+                householdId,
+              ]);
+              const fallback = refreshed?.find((a) => !a.is_archived);
+              if (fallback) effectiveAccountId = fallback.id;
+              else return setError("generic");
+            }
+          } catch (err) {
+            if (isTransientWriteError(err)) {
+              clearCreatingDefaultCash(householdId);
+              return setError("offline");
+            }
+            // Race: another tab/process inserted first — reuse it. Invalidate
+            // before re-read so the winner's row is fetched.
+            await queryClient.invalidateQueries({ queryKey: ["accounts", householdId] });
             const refreshed = queryClient.getQueryData<AccountWithBalance[]>([
               "accounts",
               householdId,
             ]);
             const fallback = refreshed?.find((a) => !a.is_archived);
-            if (fallback) effectiveAccountId = fallback.id;
-            else return setError("generic");
-          }
-        } catch (err) {
-          if (isTransientWriteError(err)) {
+            if (fallback) {
+              effectiveAccountId = fallback.id;
+              effectiveCurrency = fallback.currency;
+              effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
+            } else {
+              clearCreatingDefaultCash(householdId);
+              return setError("generic");
+            }
+          } finally {
             clearCreatingDefaultCash(householdId);
-            return setError("offline");
           }
-          // Race: another tab/process inserted first — reuse it.
-          const refreshed = queryClient.getQueryData<AccountWithBalance[]>([
-            "accounts",
-            householdId,
-          ]);
-          const fallback = refreshed?.find((a) => !a.is_archived);
-          if (fallback) {
-            effectiveAccountId = fallback.id;
-            effectiveCurrency = fallback.currency;
-            effectiveMinorUnit = findMinorUnit(currencies, effectiveCurrency);
-          } else {
-            clearCreatingDefaultCash(householdId);
-            return setError("generic");
-          }
-        } finally {
-          clearCreatingDefaultCash(householdId);
         }
       }
     }

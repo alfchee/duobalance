@@ -25,20 +25,11 @@ export function useOnboardingProgress(householdId: string | null) {
     enabled: !!householdId,
   });
 
-  const { data: hasBudgets = false, isLoading: budgetsLoading } = useQuery({
-    queryKey: ["budgets", householdId, "onboarding-check"],
-    queryFn: async () => {
-      const supabase = createSupabaseBrowser();
-      if (!supabase || !householdId) return false;
-      const { count, error } = await supabase
-        .from("budgets")
-        .select("*", { count: "exact", head: true })
-        .eq("household_id", householdId);
-      if (error) throw error;
-      return (count ?? 0) > 0;
-    },
-    enabled: !!householdId,
-  });
+  // hasBudgets is no longer needed here — the budget suggestion flow owns its own
+  // hasBudgets check (useBudgetSuggestion). Keeping the field for API compatibility
+  // but disabling the query to avoid an extra head-count per render.
+  const hasBudgets = false;
+  const budgetsLoading = false;
 
   const { data: members, isLoading: membersLoading } = useHouseholdMembers(householdId);
   const { data: invites, isLoading: invitesLoading } = usePendingInvites(householdId);
@@ -46,10 +37,8 @@ export function useOnboardingProgress(householdId: string | null) {
 
   const isLoading = accountsLoading || txLoading || membersLoading || invitesLoading;
   // #198: budgets are no longer part of the required checklist, so isComplete
-  // and isLoading do not require hasBudgets. hasBudgets is still queried and
-  // exposed for the deferred budget suggestion prompt, but does not block the
-  // checklist rendering.
-  void budgetsLoading;
+  // and isLoading do not require hasBudgets.
+  void budgetsLoading; // keep for lint parity; value is false
   const isComplete = hasAccounts && hasTransactions && hasPartner;
 
   return {

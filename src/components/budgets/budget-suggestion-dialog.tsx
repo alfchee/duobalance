@@ -47,7 +47,7 @@ export function BudgetSuggestionDialog({
 }: Props) {
   const t = useTranslations("budget.suggestionDialog");
   const { householdId } = useHousehold();
-  const { copy } = useBudgetMutations(householdId);
+  const { createMany } = useBudgetMutations(householdId);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +92,7 @@ export function BudgetSuggestionDialog({
       });
     }
     try {
-      await copy.mutateAsync(insertPayload);
+      await createMany.mutateAsync(insertPayload);
       onCreated?.();
       onClose();
     } catch {
@@ -158,9 +158,9 @@ export function BudgetSuggestionDialog({
             type="button"
             className="rounded-full"
             onClick={() => void handleCreate()}
-            disabled={copy.isPending}
+            disabled={createMany.isPending}
           >
-            {copy.isPending ? t("creating") : t("confirm")}
+            {createMany.isPending ? t("creating") : t("confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

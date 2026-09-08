@@ -51,3 +51,5 @@ grant select, insert on public.guide_opens to anon;
 -- anon grant is required so authenticate_anon() can run SELECT and get empty via RLS
 -- rather than permission denied; RLS still blocks anon (no auth.uid()), matching
 -- feedback_submissions pattern. See supabase/tests/26_guide_opens.sql:134 is_empty check.
+-- This is not a data-exposure: anon INSERTs are denied by RLS (user_id = auth.uid()
+-- is null) and only produce a RLS-denied path (still counted in pg_stat, not leaked).

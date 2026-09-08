@@ -17,6 +17,7 @@ const bodySchema = z.object({
   slug: z.string().min(1).max(200),
   anchor: z.string().min(1).max(200).nullable().optional(),
   source: z.enum(GUIDE_SOURCES).nullable().optional(),
+  householdId: z.string().uuid().nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const { slug, anchor, source } = parsed.data;
+  const { slug, anchor, source, householdId: requestedHouseholdId } = parsed.data;
 
   let supabase: Awaited<ReturnType<typeof createSupabaseRouteHandler>>;
   let userId: string;
@@ -49,25 +50,59 @@ export async function POST(request: Request) {
     return Response.json({ error: "authentication required" }, { status: 401 });
   }
 
-  // Resolve household/member via active membership — optional, best-effort.
-  // Best-effort: picks earliest household for multi-household users. Prefer active household
-  // via header/cookie when available; otherwise earliest joined. See column comment.
+  // Resolve household/member — prefer client-provided active household (localStorage activeHouseholdId)
+  // when it belongs to the user, otherwise fallback to earliest-joined. This keeps per-household
+  // funnel (#167) accurate for multi-household users.
   let householdId: string | null = null;
   let memberId: string | null = null;
   try {
-    const { data: membership, error: membershipError } = await supabase
-      .from("household_members")
-      .select("id, household_id")
-      .eq("user_id", userId)
-      .is("removed_at", null)
-      .order("joined_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (membershipError) {
-      console.warn("guide_opens membership lookup failed", { userId, error: membershipError });
-    } else if (membership) {
-      householdId = membership.household_id;
-      memberId = membership.id;
+    // Prefer requested active household if it is a valid membership for this user
+    if (requestedHouseholdId) {
+      const { data: preferred, error: preferredError } = await supabase
+        .from("household_members")
+        .select("id, household_id")
+        .eq("user_id", userId)
+        .eq("household_id", requestedHouseholdId)
+        .is("removed_at", null)
+        .maybeSingle();
+      if (!preferredError && preferred) {
+        householdId = preferred.household_id;
+        memberId = preferred.id;
+      }
+    }
+    // Fallback: earliest-joined household (header variant also checked)
+    if (!householdId) {
+      // Also allow header-based active household (e.g. x-active-household) for non-browser clients
+      const headerHousehold = request.headers.get("x-active-household");
+      if (headerHousehold) {
+        const { data: headerMember } = await supabase
+          .from("household_members")
+          .select("id, household_id")
+          .eq("user_id", userId)
+          .eq("household_id", headerHousehold)
+          .is("removed_at", null)
+          .maybeSingle();
+        if (headerMember) {
+          householdId = headerMember.household_id;
+          memberId = headerMember.id;
+        }
+      }
+    }
+    if (!householdId) {
+      const { data: membership, error: membershipError } = await supabase
+        .from("household_members")
+        .select("id, household_id")
+        .eq("user_id", userId)
+        .is("removed_at", null)
+        .order("joined_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (membershipError) {
+        console.warn("guide_opens membership lookup failed", { userId, error: membershipError });
+      } else if (membership) {
+        householdId = membership.household_id;
+        memberId = membership.id;
+      }
     }
   } catch (err) {
     console.warn("guide_opens membership lookup threw", { userId, err });

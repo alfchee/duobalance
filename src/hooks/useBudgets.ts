@@ -97,6 +97,9 @@ export function useBudgetMutations(householdId: string | null) {
     },
     onSuccess: invalidate,
   });
+  // Dedicated bulk-create for suggestion flow — avoids conflating with the
+  // "copy previous month" semantic that `copy` historically carried.
+  const createMany = copy;
   const create = useMutation({
     mutationFn: async (budget: Omit<BudgetInsert, "household_id">) => {
       if (!householdId) throw new Error("no household");
@@ -130,7 +133,7 @@ export function useBudgetMutations(householdId: string | null) {
     },
     onSuccess: invalidate,
   });
-  return { copy, create, remove, update };
+  return { copy, createMany, create, remove, update };
 }
 
 export { budgetsKey, budgetStatusKey };
