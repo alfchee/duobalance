@@ -40,7 +40,7 @@ import {
   markCreatingDefaultCash,
 } from "@/lib/accounts/default-cash";
 import { matchCategory } from "@/lib/categories";
-import { todayInHousehold } from "@/lib/dates";
+import { addDays, todayInHousehold } from "@/lib/dates";
 import {
   appendMoneyPadInput,
   formatMoneyInput,
@@ -94,12 +94,6 @@ function isTransientWriteError(error: unknown): boolean {
   return (
     typeof message === "string" && /network|failed to fetch|load failed|timeout/i.test(message)
   );
-}
-
-function addDays(date: string, days: number): string {
-  const value = new Date(`${date}T00:00:00Z`);
-  value.setUTCDate(value.getUTCDate() + days);
-  return value.toISOString().slice(0, 10);
 }
 
 function makeDraft(
