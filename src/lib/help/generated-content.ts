@@ -253,11 +253,6 @@ export const HELP_ARTICLES: Record<string, Record<string, Article>> = {
           text: "Cuentas compartidas y privadas",
           id: "cuentas-compartidas-y-privadas",
         },
-        {
-          level: 2,
-          text: "Cuentas compartidas y privadas",
-          id: "cuentas-compartidas-y-privadas",
-        },
       ],
       content:
         "\n# ¿Cómo invitar a tu pareja a duobalance?\n\nAdministrar el presupuesto en pareja requiere que ambos tengan acceso al mismo hogar.\n\n## Pasos para enviar la invitación\n\n1. Ve a **Configuración** y selecciona la sección **Miembros del hogar**. Solo un propietario puede administrar invitaciones.\n2. Ingresa el correo electrónico de tu pareja.\n3. Haz clic en **Enviar invitación**.\n\n## Cómo acepta tu pareja\n\n- Tu pareja recibirá un enlace de invitación por correo electrónico.\n- Al abrir el enlace e iniciar sesión o registrarse, se vinculará automáticamente a tu hogar y ambos verán la misma información compartida inmediatamente.\n\n## Administrar una invitación\n\nLos propietarios pueden reenviar una invitación o revocarla antes de que se acepte. Una persona que ya es miembro activo no puede aceptar otra invitación al mismo hogar.\n\n## Cuentas compartidas y privadas\n\nLas cuentas compartidas las ven ambos — por ejemplo, Supermercado o Alquiler. Las cuentas privadas solo las ve su titular, así tu gasto personal puede quedar privado. Los totales del hogar igual suman todo. Revisen juntos una vez al mes en lugar de controlar cada compra.\n",
