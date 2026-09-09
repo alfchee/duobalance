@@ -1,0 +1,67 @@
+name: Bug report
+description: Report a bug in DuoBalance
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Do not include real household data, secrets, or production DB dumps.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One-line description of the bug
+      placeholder: "Transactions list flickers when switching household"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How to reproduce the bug (use demo data, not real transactions)
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened (include error messages, screenshots if demo data)
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - balances
+        - transactions
+        - budget
+        - bills
+        - auth / invites
+        - offline / PWA
+        - other
+    validations:
+      required: false
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Browser, OS, URL (staging vs prod), commit if local
+      placeholder: "Chrome 126, macOS, https://duobalanceapp.com, commit abc123"
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I have not included real emails, real transactions, household names, or secrets in this report
+          required: true

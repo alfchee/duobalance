@@ -98,6 +98,59 @@ jobs:
       - name: Verify no secret in wrangler vars or client bundle
         run: node scripts/verify-cloudflare-env.mjs --build
 
+      # ----------------------------------------------------------------------
+      # Service-role-key leak guard — #20. Two layers, ordered by where the
+      # leak would happen (CLAUDE.md hard rule #1/#2):
+      #
+      #   1. Source — grep src/ for the env var name. Catches hand-written
+      #      mistakes (e.g. someone adding the key to a client component).
+      #   2. Bundle — grep .next/static/ for the JWT prefix after the build.
+      #
+      #   verify-cloudflare-env covers the wrangler.toml + client-bundle
+      #   identifier check for ALL secrets; this guard is the additional
+      #   src/ allowlist + JWT-prefix check for the service role specifically.
+      #   Both checks pass on this codebase; proven to fail by injecting a
+      #   dummy reference and observing the workflow exit non-zero.
+      # ----------------------------------------------------------------------
+      - name: Service-role-key leak guard (source)
+        run: |
+          set -euo pipefail
+          if grep -rEn "SUPABASE_SERVICE_ROLE_KEY" src/ \
+              | grep -vE "(lib/env\.ts|lib/supabase/server\.ts|lib/supabase/cron\.ts|app/api/)"; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is referenced outside lib/supabase/server.ts, lib/supabase/cron.ts and app/api/**"
+            exit 1
+          fi
+          echo "src/ leak guard: OK"
+
+      - name: Service-role-key leak guard (bundle)
+        run: |
+          set -euo pipefail
+          # The JWT header eyJhbGci... is shared by anon and service_role keys,
+          # so a plain prefix grep would flag the legitimate public anon key
+          # (NEXT_PUBLIC_SUPABASE_ANON_KEY) which is expected in the client
+          # bundle. Match the service_role payload instead: base64url for
+          # "service_role" is c2VydmljZV9yb2xl, which only the service JWT
+          # contains (anon payload is "anon" -> YW5vbg). This keeps the guard
+          # from false-positiving on anon while still catching a leaked
+          # service_role JWT value. The identifier check in
+          # verify-cloudflare-env covers the env var name.
+          if grep -rF "c2VydmljZV9yb2xl" .next/static/ 2>/dev/null; then
+            echo "::error::A service_role JWT payload was found in .next/static/. The service-role key may have leaked into a client bundle."
+            exit 1
+          fi
+          # sb_secret_ appears literally in supabase-js source as
+          # `key.startsWith("sb_secret_")` for new-format key detection, so a
+          # plain prefix grep would always fire. Match the secret value shape:
+          # sb_secret_ + at least 10 alphanum/_/- chars (real key is 27+, e.g.
+          # sb_secret_xIN6wBbl...). The literal `sb_secret_"` or `sb_secret_…`
+          # in library code has no alphanum after the underscore before the
+          # closing quote/ellipsis and will not match.
+          if grep -rE "sb_secret_[A-Za-z0-9_-]{10,}" .next/static/ 2>/dev/null; then
+            echo "::error::sb_secret_ value pattern was found in .next/static/. The SUPABASE_SECRET_KEY may have leaked."
+            exit 1
+          fi
+          echo ".next/static leak guard: OK"
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
 

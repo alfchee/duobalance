@@ -115,6 +115,10 @@ provisions the Supabase CLI. Do not run them before then.
 PR previews are automatic. Set the env vars listed in `.env.example` in the Vercel
 dashboard. **Do not** set `BUILD_TARGET` — only the Tauri build script does.
 
+## Security
+
+See [SECURITY.md](SECURITY.md) for reporting vulnerabilities. Do not open a public issue for security findings — email hola@duobalanceapp.com.
+
 ## License
 
 All rights reserved. See [LICENSE](LICENSE).
