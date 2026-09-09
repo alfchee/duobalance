@@ -138,8 +138,15 @@ jobs:
             echo "::error::A service_role JWT payload was found in .next/static/. The service-role key may have leaked into a client bundle."
             exit 1
           fi
-          if grep -rF "sb_secret_" .next/static/ 2>/dev/null; then
-            echo "::error::sb_secret_ prefix was found in .next/static/. The SUPABASE_SECRET_KEY may have leaked."
+          # sb_secret_ appears literally in supabase-js source as
+          # `key.startsWith("sb_secret_")` for new-format key detection, so a
+          # plain prefix grep would always fire. Match the secret value shape:
+          # sb_secret_ + at least 10 alphanum/_/- chars (real key is 27+, e.g.
+          # sb_secret_xIN6wBbl...). The literal `sb_secret_"` or `sb_secret_…`
+          # in library code has no alphanum after the underscore before the
+          # closing quote/ellipsis and will not match.
+          if grep -rE "sb_secret_[A-Za-z0-9_-]{10,}" .next/static/ 2>/dev/null; then
+            echo "::error::sb_secret_ value pattern was found in .next/static/. The SUPABASE_SECRET_KEY may have leaked."
             exit 1
           fi
           echo ".next/static leak guard: OK"
