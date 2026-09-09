@@ -123,12 +123,23 @@ jobs:
           echo "src/ leak guard: OK"
 
       - name: Service-role-key leak guard (bundle)
-        env:
-          LEAK_PREFIX: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         run: |
           set -euo pipefail
-          if grep -rF "$LEAK_PREFIX" .next/static/ 2>/dev/null; then
-            echo "::error::A Supabase JWT prefix was found in .next/static/. The service-role key may have leaked into a client bundle."
+          # The JWT header eyJhbGci... is shared by anon and service_role keys,
+          # so a plain prefix grep would flag the legitimate public anon key
+          # (NEXT_PUBLIC_SUPABASE_ANON_KEY) which is expected in the client
+          # bundle. Match the service_role payload instead: base64url for
+          # "service_role" is c2VydmljZV9yb2xl, which only the service JWT
+          # contains (anon payload is "anon" -> YW5vbg). This keeps the guard
+          # from false-positiving on anon while still catching a leaked
+          # service_role JWT value. The identifier check in
+          # verify-cloudflare-env covers the env var name.
+          if grep -rF "c2VydmljZV9yb2xl" .next/static/ 2>/dev/null; then
+            echo "::error::A service_role JWT payload was found in .next/static/. The service-role key may have leaked into a client bundle."
+            exit 1
+          fi
+          if grep -rF "sb_secret_" .next/static/ 2>/dev/null; then
+            echo "::error::sb_secret_ prefix was found in .next/static/. The SUPABASE_SECRET_KEY may have leaked."
             exit 1
           fi
           echo ".next/static leak guard: OK"
