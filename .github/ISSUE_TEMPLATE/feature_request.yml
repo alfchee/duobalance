@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest a new feature for DuoBalance
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve for two-partner households?
+      placeholder: "As a partner I want to ..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Proposed solution, including any RLS / migration considerations if you have them
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - UI only
+        - Needs migration + RLS + pgTAP
+        - Needs new env var / third-party
+        - Docs only
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: privacy2
+    attributes:
+      label: Privacy check
+      options:
+        - label: I have not included real household data or secrets
+          required: true

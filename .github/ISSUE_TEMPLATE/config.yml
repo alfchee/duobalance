@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/alfchee/duobalance/blob/main/SECURITY.md
+    about: Do not open a public issue — email hola@duobalanceapp.com privately
+  - name: Question / Discussion
+    url: https://github.com/alfchee/duobalance/discussions
+    about: Ask a question or start a discussion

@@ -98,6 +98,41 @@ jobs:
       - name: Verify no secret in wrangler vars or client bundle
         run: node scripts/verify-cloudflare-env.mjs --build
 
+      # ----------------------------------------------------------------------
+      # Service-role-key leak guard — #20. Two layers, ordered by where the
+      # leak would happen (CLAUDE.md hard rule #1/#2):
+      #
+      #   1. Source — grep src/ for the env var name. Catches hand-written
+      #      mistakes (e.g. someone adding the key to a client component).
+      #   2. Bundle — grep .next/static/ for the JWT prefix after the build.
+      #
+      #   verify-cloudflare-env covers the wrangler.toml + client-bundle
+      #   identifier check for ALL secrets; this guard is the additional
+      #   src/ allowlist + JWT-prefix check for the service role specifically.
+      #   Both checks pass on this codebase; proven to fail by injecting a
+      #   dummy reference and observing the workflow exit non-zero.
+      # ----------------------------------------------------------------------
+      - name: Service-role-key leak guard (source)
+        run: |
+          set -euo pipefail
+          if grep -rEn "SUPABASE_SERVICE_ROLE_KEY" src/ \
+              | grep -vE "(lib/env\.ts|lib/supabase/server\.ts|lib/supabase/cron\.ts|app/api/)"; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is referenced outside lib/supabase/server.ts, lib/supabase/cron.ts and app/api/**"
+            exit 1
+          fi
+          echo "src/ leak guard: OK"
+
+      - name: Service-role-key leak guard (bundle)
+        env:
+          LEAK_PREFIX: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        run: |
+          set -euo pipefail
+          if grep -rF "$LEAK_PREFIX" .next/static/ 2>/dev/null; then
+            echo "::error::A Supabase JWT prefix was found in .next/static/. The service-role key may have leaked into a client bundle."
+            exit 1
+          fi
+          echo ".next/static leak guard: OK"
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
 

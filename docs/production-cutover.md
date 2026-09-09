@@ -18,7 +18,7 @@ npm run db:test              # pgTAP on 55322
 
 # Staging gate — must be green before touching prod:
 STAGING_URL=https://staging.duobalanceapp.com \
-  CRON_SECRET="G0^nKsXI4tP0ICTRv9Nd7O2!" \
+  CRON_SECRET="$CRON_SECRET" \
   node scripts/verify-staging.mjs --live --url https://staging.duobalanceapp.com --e2e
 # → 48 passed, 13 handlers 200/401, 4 crons 200 (send-bill-reminders may 502, still 200)
 
