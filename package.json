@@ -95,7 +95,7 @@
     "supabase": "^2.111.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.10",
+    "vitest": "^5.0.0",
     "wrangler": "^4.129.0"
   },
   "lint-staged": {
