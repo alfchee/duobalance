@@ -158,14 +158,13 @@ export async function generateAllInstances(
 
   for (const bill of bills) {
     try {
-      const { data: boundsRaw, error: boundsError } = await (
-        supabase.rpc as unknown as (
-          name: string,
-          args: Record<string, unknown>,
-        ) => {
-          maybeSingle: () => Promise<{ data: GenerationBounds | null; error: unknown }>;
-        }
-      )("bill_instance_generation_bounds", { p_bill_id: bill.id }).maybeSingle();
+      // NOTE (#244): call `supabase.rpc(...)` as a bound method — extracting
+      // it (e.g. `const rpc = supabase.rpc; rpc(...)`) loses `this` and the
+      // real client throws "Cannot read properties of undefined
+      // (reading 'rest')". Mocks with plain `vi.fn()` hide the bug.
+      const { data: boundsRaw, error: boundsError } = await supabase
+        .rpc("bill_instance_generation_bounds", { p_bill_id: bill.id })
+        .maybeSingle();
 
       if (boundsError) {
         throw new BillGenerationError(bill.id, `bounds fetch failed: ${String(boundsError)}`);

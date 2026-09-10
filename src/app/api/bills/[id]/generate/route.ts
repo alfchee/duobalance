@@ -4,11 +4,7 @@
 
 import { z } from "zod";
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
-import {
-  generateInstancesForBill,
-  BillGenerationError,
-  type GenerationBounds,
-} from "@/lib/bill-instances";
+import { generateInstancesForBill, BillGenerationError } from "@/lib/bill-instances";
 
 // Web-only API route. Under `output: "export"` (Tauri) it is not exported at
 // all — a placeholder param list satisfies the exporter without emitting
@@ -64,15 +60,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return Response.json({ error: "not a member of this household" }, { status: 403 });
   }
 
-  // Fetch generation bounds via the RPC
-  const { data: boundsRaw } = await (
-    supabase.rpc as unknown as (
-      name: string,
-      args: Record<string, unknown>,
-    ) => {
-      maybeSingle: () => Promise<{ data: GenerationBounds | null; error: unknown }>;
-    }
-  )("bill_instance_generation_bounds", { p_bill_id: id }).maybeSingle();
+  // Fetch generation bounds via the RPC.
+  // NOTE (#244): call `supabase.rpc(...)` as a bound method — extracting it
+  // loses `this` and the real client throws "Cannot read properties of
+  // undefined (reading 'rest')".
+  const { data: boundsRaw } = await supabase
+    .rpc("bill_instance_generation_bounds", { p_bill_id: id })
+    .maybeSingle();
 
   if (!boundsRaw) return Response.json({ error: "cannot generate instances" }, { status: 400 });
   const bounds = boundsRaw;
