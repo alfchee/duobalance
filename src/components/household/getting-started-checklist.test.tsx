@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
@@ -14,7 +14,7 @@ vi.mock("@/hooks/useHousehold", () => ({
   useHousehold: () => ({ householdId: "household-1" }),
 }));
 
-const { progressMock, pwaInstallMock } = vi.hoisted(() => ({
+const { progressMock, pwaInstallMock, pwaEnvMock } = vi.hoisted(() => ({
   progressMock: vi.fn(() => ({
     isLoading: false,
     hasAccounts: false,
@@ -28,6 +28,7 @@ const { progressMock, pwaInstallMock } = vi.hoisted(() => ({
     install: vi.fn(),
     installAvailable: false,
   })),
+  pwaEnvMock: { isIOS: false },
 }));
 
 vi.mock("@/hooks/useOnboardingProgress", () => ({
@@ -51,7 +52,7 @@ vi.mock("@/components/pwa/pwa-manager", () => ({
 }));
 
 vi.mock("@/lib/pwa", () => ({
-  isIOS: () => false,
+  isIOS: () => pwaEnvMock.isIOS,
 }));
 
 vi.mock("@/hooks/useInvites", () => ({
@@ -69,6 +70,10 @@ vi.mock("@/components/ui/dialog", () => ({
 import { GettingStartedChecklist } from "./getting-started-checklist";
 
 describe("GettingStartedChecklist", () => {
+  beforeEach(() => {
+    pwaEnvMock.isIOS = false;
+  });
+
   it("renders first-run prompt when no transactions yet", () => {
     progressMock.mockReturnValue({
       isLoading: false,
@@ -149,6 +154,29 @@ describe("GettingStartedChecklist", () => {
     render(<GettingStartedChecklist />);
 
     expect(screen.getByText("stepInstall")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /actionInstall/ })).toBeNull();
+  });
+
+  it("links to the iPhone guide on iOS instead of the native prompt", () => {
+    pwaEnvMock.isIOS = true;
+    progressMock.mockReturnValue({
+      isLoading: false,
+      hasAccounts: false,
+      hasTransactions: true,
+      hasBudgets: false,
+      hasPartner: false,
+      isComplete: false,
+    });
+    pwaInstallMock.mockReturnValue({
+      installed: false,
+      install: vi.fn(),
+      installAvailable: false,
+    });
+    render(<GettingStartedChecklist />);
+
+    expect(screen.getByText("stepInstall")).toBeTruthy();
+    const guideLink = screen.getByRole("link", { name: /actionInstall/ });
+    expect(guideLink.getAttribute("href")).toBe("/install");
     expect(screen.queryByRole("button", { name: /actionInstall/ })).toBeNull();
   });
 });
