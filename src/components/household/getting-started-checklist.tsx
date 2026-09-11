@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Check, ChevronRight, UserPlus, X } from "lucide-react";
+import { Check, ChevronRight, Download, UserPlus, X } from "lucide-react";
 import { useHousehold } from "@/hooks/useHousehold";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { useAccountsUiStore } from "@/store/accounts";
 import { useInviteMutations } from "@/hooks/useInvites";
+import { usePwaInstall } from "@/components/pwa/pwa-manager";
+import { isIOS } from "@/lib/pwa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,12 +31,19 @@ export function GettingStartedChecklist() {
   const progress = useOnboardingProgress(householdId);
   const { openCreate: openAccountCreate } = useAccountsUiStore();
   const { create: createInvite } = useInviteMutations(householdId);
+  const { install, installAvailable, installed } = usePwaInstall();
 
   const [dismissedChecklist, setDismissedChecklist] = useState(true);
   const [dismissedFirstRun, setDismissedFirstRun] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteError, setInviteError] = useState<string | null>(null);
+  // isIOS() reads navigator — resolve after mount to avoid SSR hydration mismatch.
+  const [isIOSDevice, setIsIOSDevice] = useState(false);
+
+  useEffect(() => {
+    setIsIOSDevice(isIOS());
+  }, []);
 
   useEffect(() => {
     if (!householdId) return;
@@ -74,15 +84,23 @@ export function GettingStartedChecklist() {
   }
 
   // After the first transaction, remaining setup is offered as dismissible
-  // prompts — account, partner — never as a blocker.
+  // prompts — account, install, partner — never as a blocker.
   // Budget setup is intentionally not part of this checklist (#198): it is
   // surfaced later as a data-driven suggestion derived from recorded spend.
+  // The install step is device-local (PWA) and non-blocking: `isComplete`
+  // stays core-only so browsers without an install prompt can still finish
+  // onboarding. When the step can act (native prompt, iOS guide) — or the
+  // app is already installed — it counts toward the displayed progress.
+  const showInstallStep = installed || installAvailable || isIOSDevice;
+  const totalSteps = showInstallStep ? 4 : 3;
+  const partnerStepNumber = showInstallStep ? "4" : "3";
   const completedCount =
     (progress.hasAccounts ? 1 : 0) +
     (progress.hasTransactions ? 1 : 0) +
-    (progress.hasPartner ? 1 : 0);
+    (progress.hasPartner ? 1 : 0) +
+    (showInstallStep && installed ? 1 : 0);
 
-  const percentage = Math.round((completedCount / 3) * 100);
+  const percentage = Math.round((completedCount / totalSteps) * 100);
 
   async function handleSendInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -109,7 +127,7 @@ export function GettingStartedChecklist() {
             </span>
             <h3 className="mt-2 text-lg font-black tracking-tight">{t("title")}</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {t("progressCount", { completed: completedCount, total: 3 })}
+              {t("progressCount", { completed: completedCount, total: totalSteps })}
             </p>
           </div>
           <Button
@@ -171,7 +189,67 @@ export function GettingStartedChecklist() {
             ) : null}
           </div>
 
-          {/* Step 2: Record transaction — always complete once we reach this checklist */}
+          {/* Step 2: Install app — one-tap PWA install, no store needed */}
+          {showInstallStep ? (
+            <div
+              className={`flex items-center justify-between gap-2 rounded-xl border p-3 text-sm transition-colors ${
+                installed ? "bg-secondary/40 border-transparent" : "bg-background border-border"
+              }`}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className={`grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                    installed
+                      ? "bg-success text-success-foreground"
+                      : "border-2 border-muted-foreground/40 text-muted-foreground"
+                  }`}
+                >
+                  {installed ? <Check className="size-3.5" /> : "2"}
+                </span>
+                <span className="min-w-0">
+                  <span
+                    className={`block ${
+                      installed ? "line-through text-muted-foreground" : "font-medium"
+                    }`}
+                  >
+                    {t("stepInstall")}
+                  </span>
+                  {!installed ? (
+                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                      {t("stepInstallDescription")}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+              {!installed ? (
+                isIOSDevice ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="h-8 shrink-0 gap-1 text-xs font-bold"
+                  >
+                    <Link href="/install">
+                      {t("actionInstall")} <ChevronRight className="size-3" />
+                    </Link>
+                  </Button>
+                ) : installAvailable ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void install()}
+                    className="h-8 shrink-0 gap-1 text-xs font-bold"
+                  >
+                    {t("actionInstall")} <Download className="size-3" />
+                  </Button>
+                ) : null
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Step 3: Record transaction — always complete once we reach this checklist */}
           <div className="flex items-center justify-between rounded-xl border p-3 text-sm transition-colors bg-secondary/40 border-transparent">
             <div className="flex items-center gap-3">
               <span className="grid size-6 place-items-center rounded-full bg-success text-xs font-bold text-success-foreground">
@@ -181,7 +259,7 @@ export function GettingStartedChecklist() {
             </div>
           </div>
 
-          {/* Step 3: Invite partner */}
+          {/* Step 4: Invite partner (step 3 when install is unavailable) */}
           <div
             className={`flex items-center justify-between rounded-xl border p-3 text-sm transition-colors ${
               progress.hasPartner
@@ -197,7 +275,7 @@ export function GettingStartedChecklist() {
                     : "border-2 border-muted-foreground/40 text-muted-foreground"
                 }`}
               >
-                {progress.hasPartner ? <Check className="size-3.5" /> : "3"}
+                {progress.hasPartner ? <Check className="size-3.5" /> : partnerStepNumber}
               </span>
               <span
                 className={

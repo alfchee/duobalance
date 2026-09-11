@@ -14,13 +14,20 @@ vi.mock("@/hooks/useHousehold", () => ({
   useHousehold: () => ({ householdId: "household-1" }),
 }));
 
-const progressMock = vi.fn(() => ({
-  isLoading: false,
-  hasAccounts: false,
-  hasTransactions: false,
-  hasBudgets: false,
-  hasPartner: false,
-  isComplete: false,
+const { progressMock, pwaInstallMock } = vi.hoisted(() => ({
+  progressMock: vi.fn(() => ({
+    isLoading: false,
+    hasAccounts: false,
+    hasTransactions: false,
+    hasBudgets: false,
+    hasPartner: false,
+    isComplete: false,
+  })),
+  pwaInstallMock: vi.fn(() => ({
+    installed: false,
+    install: vi.fn(),
+    installAvailable: false,
+  })),
 }));
 
 vi.mock("@/hooks/useOnboardingProgress", () => ({
@@ -37,6 +44,14 @@ vi.mock("@/store/transactions", () => ({
 
 vi.mock("./first-run-prompt", () => ({
   FirstRunPrompt: () => <div>firstRun</div>,
+}));
+
+vi.mock("@/components/pwa/pwa-manager", () => ({
+  usePwaInstall: () => pwaInstallMock(),
+}));
+
+vi.mock("@/lib/pwa", () => ({
+  isIOS: () => false,
 }));
 
 vi.mock("@/hooks/useInvites", () => ({
@@ -77,6 +92,11 @@ describe("GettingStartedChecklist", () => {
       hasPartner: false,
       isComplete: false,
     });
+    pwaInstallMock.mockReturnValue({
+      installed: false,
+      install: vi.fn(),
+      installAvailable: false,
+    });
     render(<GettingStartedChecklist />);
 
     expect(screen.getByText("badge")).toBeTruthy();
@@ -85,5 +105,50 @@ describe("GettingStartedChecklist", () => {
     // later as a data-driven suggestion. Only account (done) + partner remain.
     expect(screen.getByText("stepPartner")).toBeTruthy();
     expect(screen.queryByText("stepBudget")).toBeNull();
+    // No install method on this browser — the step stays hidden so
+    // onboarding can still complete.
+    expect(screen.queryByText("stepInstall")).toBeNull();
+  });
+
+  it("shows install as step 2 with a direct install button when prompt is available", () => {
+    progressMock.mockReturnValue({
+      isLoading: false,
+      hasAccounts: false,
+      hasTransactions: true,
+      hasBudgets: false,
+      hasPartner: false,
+      isComplete: false,
+    });
+    pwaInstallMock.mockReturnValue({
+      installed: false,
+      install: vi.fn(),
+      installAvailable: true,
+    });
+    render(<GettingStartedChecklist />);
+
+    expect(screen.getByText("stepInstall")).toBeTruthy();
+    expect(screen.getByText("stepInstallDescription")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /actionInstall/ })).toBeTruthy();
+    expect(screen.getByText("progressCount")).toBeTruthy();
+  });
+
+  it("marks install complete when the app is already installed", () => {
+    progressMock.mockReturnValue({
+      isLoading: false,
+      hasAccounts: false,
+      hasTransactions: true,
+      hasBudgets: false,
+      hasPartner: false,
+      isComplete: false,
+    });
+    pwaInstallMock.mockReturnValue({
+      installed: true,
+      install: vi.fn(),
+      installAvailable: false,
+    });
+    render(<GettingStartedChecklist />);
+
+    expect(screen.getByText("stepInstall")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /actionInstall/ })).toBeNull();
   });
 });
