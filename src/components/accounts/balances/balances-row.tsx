@@ -67,30 +67,41 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
         ) : null}
         <KindIcon kind={account.kind} className="size-5 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
+          {/* Line 1 — name fills the full line width (balance lives on line
+              2 now). On 375px screens the old single-line layout squeezed
+              this to "Vi…" or nothing; the badge is width-capped so it
+              can't crush the name, and `title` keeps the full name
+              available when it still overflows. */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => router.push(`/transactions?accountDetail=${account.id}`)}
-              className="min-w-0 truncate text-left text-sm font-medium hover:underline"
+              title={account.name}
+              className="min-w-0 flex-1 truncate text-left text-sm font-medium hover:underline"
             >
               {account.name}
             </button>
-            <OwnerBadge account={account} />
+            <OwnerBadge account={account} className="max-w-24 truncate sm:max-w-none" />
           </div>
-          <p className="truncate text-xs text-muted-foreground">
-            {account.institution?.trim() ? account.institution : account.kind}
-            {" · "}
-            {isManual ? tModes("manual") : tModes("ledger")}
-          </p>
+          {/* Line 2 — meta left, balance right-aligned. Moving the amount
+              here is what frees line 1 for the name without growing the
+              card vertically for long names. */}
+          <div className="mt-0.5 flex items-baseline gap-2">
+            <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              {account.institution?.trim() ? account.institution : account.kind}
+              {" · "}
+              {isManual ? tModes("manual") : tModes("ledger")}
+            </p>
+            <p
+              className={cn(
+                "shrink-0 text-right text-sm font-medium tabular-nums",
+                balance < 0 && "text-destructive",
+              )}
+            >
+              {formatMoney(balance, account.currency, locale, numberFormat)}
+            </p>
+          </div>
         </div>
-        <p
-          className={cn(
-            "shrink-0 text-right text-sm font-medium tabular-nums",
-            balance < 0 && "text-destructive",
-          )}
-        >
-          {formatMoney(balance, account.currency, locale, numberFormat)}
-        </p>
         {isManual && canManage ? (
           <button
             type="button"
