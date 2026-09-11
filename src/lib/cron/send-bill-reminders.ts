@@ -39,12 +39,14 @@ export async function runSendBillReminders(
     throw new Error("RESEND_API_KEY not configured");
   }
 
-  const rpc = supabase.rpc as unknown as (
-    name: string,
-    args?: Record<string, unknown>,
-  ) => Promise<{ data: unknown; error: unknown }>;
-
-  const { data: reminderRows, error: reminderError } = await rpc("bill_instances_due_for_reminder");
+  // NOTE (#244): always call `supabase.rpc(...)` as a bound method.
+  // `SupabaseClient.rpc` reads `this.rest` internally, so extracting it via
+  // `const rpc = supabase.rpc` and calling `rpc(...)` throws
+  // "Cannot read properties of undefined (reading 'rest')" on the real
+  // client (plain `vi.fn()` mocks hide this because they ignore `this`).
+  const { data: reminderRows, error: reminderError } = await supabase.rpc(
+    "bill_instances_due_for_reminder",
+  );
 
   if (reminderError) {
     console.error("send-bill-reminders: fetch reminders failed", reminderError);
@@ -134,7 +136,7 @@ export async function runSendBillReminders(
 
   const userIdToEmail = new Map<string, string>();
   if (userIds.length > 0) {
-    const { data: emailRows, error: emailRowsError } = await rpc("get_user_emails_batch", {
+    const { data: emailRows, error: emailRowsError } = await supabase.rpc("get_user_emails_batch", {
       p_user_ids: userIds,
     });
 
