@@ -71,11 +71,16 @@ export function BalancesRow({ account, now }: { account: AccountWithBalance; now
             <button
               type="button"
               onClick={() => router.push(`/transactions?accountDetail=${account.id}`)}
-              className="min-w-0 truncate text-left text-sm font-medium hover:underline"
+              // Wrap instead of truncating: on 375px screens the fixed
+              // chrome (grip, icon, balance, action buttons) plus the
+              // owner badge used to squeeze this to "Vi…" or nothing.
+              // `flex-1` gives the name first claim on the free space;
+              // the badge is width-capped below so it can't crush it.
+              className="min-w-0 flex-1 break-words text-left text-sm font-medium whitespace-normal hover:underline"
             >
               {account.name}
             </button>
-            <OwnerBadge account={account} />
+            <OwnerBadge account={account} className="max-w-24 truncate sm:max-w-none" />
           </div>
           <p className="truncate text-xs text-muted-foreground">
             {account.institution?.trim() ? account.institution : account.kind}
