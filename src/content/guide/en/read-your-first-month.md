@@ -5,7 +5,7 @@ description: "You have a month of entries. How to read your category totals, sep
 readingTime: 5
 updated: "2026-09-18"
 order: 2
-related: ["starter-guide"]
+related: ["starter-guide", "build-your-budget"]
 ---
 
 # Reading your first month of data
@@ -28,7 +28,7 @@ Three rules for this first read:
 - **A partial month still counts.** If you started on the 17th, you read two weeks. That is already more truth than you had.
 - **Rough categories are fine.** If something landed in "Other," it doesn't matter. The big bars don't change because of that.
 
-Any first month looks something like this: Housing C$11,800, Food C$9,500, Transport C$2,400, Personal and fun C$3,100, Health and other C$1,600. None of that is good or bad. It is the map of a real month. Yours will look different — and that's fine.
+Any first month looks something like this: Home C$11,800, Food C$9,500, Transport C$2,400, Personal and fun C$3,100, Health and other C$1,600. None of that is good or bad. It is the map of a real month. Yours will look different — and that's fine.
 
 ---
 
@@ -78,7 +78,7 @@ Two notes for reading this number right. Transfers between your own accounts (mo
 If any of this describes you, your month is normal:
 
 - **It's incomplete.** You started mid-month or forgot days. Normal.
-- **Housing + Food take 60–75%.** That's typical, not a sign of excess.
+- **Home + Food take 60–75%.** That's typical, not a sign of excess.
 - **There's one surprise.** Almost always eating out, corner stores, or transport. The surprise is the product, not the problem.
 - **One big one-off skews everything.** The car repair, a birthday, a doctor visit. Your "typical" month shows up after two or three months of data.
 - **As a couple, it doesn't add up at first.** One of you tracked more, something stayed in a private account. The ten-minute monthly review from the [starter guide](/guide/starter-guide) exists exactly for this.
@@ -91,7 +91,7 @@ There is no perfect first month to compare yourself against. There are real mont
 
 Don't create a dozen budgets at once. Pick **one or two categories** that surprised you and watch them for one more week with the number in mind. That's all for now.
 
-The next lesson in this series turns this month into a budget in the **Budget** tab: limits from your real numbers instead of invented ones. Until then, every guide lives in the [Guide](/guide), where the next one will appear.
+The [next lesson](/guide/build-your-budget) turns this month into a budget in the **Budget** tab: limits from your real numbers instead of invented ones. Every guide lives in the [Guide](/guide).
 
 ---
 

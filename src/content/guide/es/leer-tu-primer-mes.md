@@ -5,7 +5,7 @@ description: "Ya tienes un mes de registros. Cómo leer tus totales por categor�
 readingTime: 5
 updated: "2026-09-18"
 order: 2
-related: ["por-donde-empezar"]
+related: ["por-donde-empezar", "armar-tu-presupuesto"]
 ---
 
 # Cómo leer tu primer mes de datos
@@ -91,7 +91,7 @@ No hay un primer mes perfecto contra el cual compararte. Hay meses reales, y el 
 
 No crees una docena de presupuestos a la vez. Elige **una o dos categorías** que te sorprendieron y obsérvalas una semana más con el número en mente. Eso es todo por ahora.
 
-La próxima lección de esta serie toma este mes y lo convierte en presupuesto en la pestaña **Presupuesto**: límites desde tus números reales en vez de inventados. Mientras tanto, todas las guías viven en la [Guía](/guia), donde aparecerá.
+La [próxima lección](/guia/armar-tu-presupuesto) toma este mes y lo convierte en presupuesto en la pestaña **Presupuesto**: límites desde tus números reales en vez de inventados. Todas las guías viven en la [Guía](/guia).
 
 ---
 
