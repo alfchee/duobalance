@@ -16,12 +16,13 @@
    - No per-article views, scroll depth, or completion aggregates appear in any committed metrics report.
 
 3. **Event tracking vs. reporting gap (#208 — still OPEN).**
-   - Raw instrumentation exists: `guide_opens` table (migration `20260911000000_guide_opens.sql`) plus `guide-view` / `guide-scroll` (25/50/75/100) / `guide-anchor` events from `GuideArticleLayout` via `POST /api/guide-event`.
+   - Raw instrumentation exists: `guide_opens` table (migrations `20260911000000_guide_opens.sql` + `20260911000001_guide_opens_anon_grant_fix.sql`) plus `guide-view` / `guide-scroll` (25/50/75/100) / `guide-anchor` events from `GuideArticleLayout` via `POST /api/guide-event`.
    - What #208 still requires — and what #206 is gated on — is **not** the raw events but the aggregate join: per-article completion measurable per piece, opens attributable to source **in the report**, activation funnel segmentable by guide exposure, and the summary folded into the existing metrics report. None of that is in the reports as of 2026-09-18.
 
-4. **Launch-email experiment (#199 — measurement window still open).**
+4. **Launch-email experiment (#199 — closed 2026-09-09, measurement window still open).**
    - Broadcast sent 2026-09-09 to all 23 users; baseline captured 2026-09-07.
    - The +7d / +14d comparisons and the written conclusion on whether the content intervention moved activation are **pending** (14d lands ~2026-09-23). There is no activation read to correlate lessons against yet.
+   - Note: #199 is already closed, so its pending +14d conclusion needs an explicit home when it lands — reopen #199 for it, or record it in the metrics summary tracked by #208. The re-review trigger below accepts either location.
 
 ## Basis for the decision
 
@@ -46,7 +47,7 @@ Constraints carried forward from #206 and the epic: every lesson uses the layout
 ## Re-review trigger (do not re-open on a calendar alone)
 
 - #208 closed (completion per piece + source attribution + funnel segmentation in the metrics report), **and**
-- #199 14d conclusion recorded, **and**
+- #199's +14d conclusion recorded — on reopened #199 or in the #208 metrics summary (see §4; #199 alone cannot satisfy this leg while closed), **and**
 - at least one full engagement window on lessons 2–3 (≥14 days since 2026-09-19 with non-trivial views).
 
 Until all three hold, #206 stays backlog. This file is the documented engagement review required before any writing starts.
