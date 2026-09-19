@@ -11,12 +11,14 @@
    - Lesson 3 (`armar-tu-presupuesto` / `build-your-budget`) shipped 2026-09-19 (#251, today).
    - A completion / scroll-depth / activation-correlation read on lessons 2 and 3 cannot exist yet; the content is 1 day old or newer.
 
-2. **Metrics reports (`reports/metrics/2026-09-07.md` → `2026-09-18.md`).**
-   - The “Time to First Transaction — Guide Exposure” section is still the **pre-launch baseline placeholder** in every report, including the latest (2026-09-18): guide-viewed / email-received segmentation requires client event tracking “not yet in the database” and is listed as a placeholder that “will be added when the guide ships.”
-   - No per-article views, scroll depth, or completion aggregates appear in any committed metrics report.
+2. **Metrics reports, locally generated (`reports/metrics/2026-09-07.md` → `2026-09-18.md`; gitignored, reproducible via `npm run metrics:report`).**
+   - These reports are local generated artifacts — `/reports/metrics/` is gitignored (`.gitignore`), so they are not preserved in the repository. The evidence below was read from a local run on 2026-09-19.
+   - The “Time to First Transaction — Guide Exposure” section is still the **pre-launch baseline placeholder** in every local report, including the latest (2026-09-18): guide-viewed / email-received segmentation requires client event tracking “not yet in the database” and is listed as a placeholder that “will be added when the guide ships.”
+   - No per-article views, scroll depth, or completion aggregates appear in any generated metrics report.
 
 3. **Event tracking vs. reporting gap (#208 — still OPEN).**
    - Raw instrumentation exists: `guide_opens` table (migrations `20260911000000_guide_opens.sql` + `20260911000001_guide_opens_anon_grant_fix.sql`) plus `guide-view` / `guide-scroll` (25/50/75/100) / `guide-anchor` events from `GuideArticleLayout` via `POST /api/guide-event`.
+   - Coverage is authenticated-only: the route returns 401 without a session, so logged-out (anonymous landing-page) readers never reach `guide_opens` — their attribution comes from Resend opens/clicks and `utm_source`, not from scroll-depth events.
    - What #208 still requires — and what #206 is gated on — is **not** the raw events but the aggregate join: per-article completion measurable per piece, opens attributable to source **in the report**, activation funnel segmentable by guide exposure, and the summary folded into the existing metrics report. None of that is in the reports as of 2026-09-18.
 
 4. **Launch-email experiment (#199 — closed 2026-09-09, measurement window still open).**
@@ -48,6 +50,6 @@ Constraints carried forward from #206 and the epic: every lesson uses the layout
 
 - #208 closed (completion per piece + source attribution + funnel segmentation in the metrics report), **and**
 - #199's +14d conclusion recorded — on reopened #199 or in the #208 metrics summary (see §4; #199 alone cannot satisfy this leg while closed), **and**
-- at least one full engagement window on lessons 2–3 (≥14 days since 2026-09-19 with non-trivial views).
+- at least one full engagement window on lessons 2–3 (≥14 days since 2026-09-19). “Non-trivial views” is reproducible, not vibes: #208's per-article summary reports non-zero `guide-view` events with depth-100 (`guide-scroll`) coverage for lessons 2–3 over that window.
 
 Until all three hold, #206 stays backlog. This file is the documented engagement review required before any writing starts.
