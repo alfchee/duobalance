@@ -262,6 +262,91 @@ const report = [
     "No time-to-first-transaction data.",
   ),
   section(
+    "Content Engagement — Per-Article Views and Completion",
+    `with mounts as (
+       select slug, count(*) as views, count(distinct user_id) as readers
+       from public.guide_opens
+       where source in ('guide-view', 'help-center')
+       group by slug
+     ), depths as (
+       select slug,
+         count(*) filter (where anchor = 'depth-25') as d25,
+         count(*) filter (where anchor = 'depth-50') as d50,
+         count(*) filter (where anchor = 'depth-75') as d75,
+         count(*) filter (where anchor = 'depth-100') as d100
+       from public.guide_opens
+       where source = 'guide-scroll'
+       group by slug
+     ), slugs as (
+       select slug from mounts union select slug from depths
+     )
+     select '| Article | Views | Readers | 25% | 50% | 75% | Completed (100%) | Completion |' || E'\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |' || E'\n' ||
+           coalesce(string_agg(
+             '| ' || s.slug || ' | ' || coalesce(m.views, 0) || ' | ' || coalesce(m.readers, 0) || ' | ' ||
+             coalesce(d.d25, 0) || ' | ' || coalesce(d.d50, 0) || ' | ' || coalesce(d.d75, 0) || ' | ' ||
+             coalesce(d.d100, 0) || ' | ' || coalesce(to_char(100.0 * d.d100 / nullif(m.views, 0), 'FM990.0') || '%', 'n/a') || ' |',
+             E'\n' order by coalesce(m.views, 0) desc, s.slug
+           ), '| No guide opens recorded yet | 0 | 0 | 0 | 0 | 0 | 0 | n/a |')
+     from slugs s
+     left join mounts m on m.slug = s.slug
+     left join depths d on d.slug = s.slug;`,
+    "No content engagement data.",
+  ),
+  "Views = article-mount events (`guide-view` for /guia|/guide, `help-center` for /help); readers = distinct users (aggregate count only — no identities appear in this report). Depth reach = `guide-scroll` pings per threshold, emitted at most once per threshold per page view. Scroll-depth tracking exists only on /guia|/guide articles, so help-center rows show views without completion.",
+  "",
+  section(
+    "Content Engagement — Opens by Source",
+    `with opens as (
+       select coalesce(source, 'unknown') as src, count(*) as cnt
+       from public.guide_opens
+       where source is distinct from 'guide-scroll'
+       group by coalesce(source, 'unknown')
+     ), total as (
+       select coalesce(sum(cnt), 0) as n from opens
+     )
+     select '| Source | Opens | Share |' || E'\n| --- | ---: | ---: |' || E'\n' ||
+           coalesce(string_agg(
+             '| ' || o.src || ' | ' || o.cnt || ' | ' || coalesce(to_char(100.0 * o.cnt / nullif((select n from total), 0), 'FM990.0') || '%', 'n/a') || ' |',
+             E'\n' order by o.cnt desc, o.src
+           ), '| No guide opens recorded yet | 0 | — |')
+     from opens o;`,
+    "No guide opens recorded yet.",
+  ),
+  "Which placement earns the reads: landing page (`landing-hero`), in-app empty states (`balances-empty`, `budget-empty`, `bills-empty`), first-run prompt (`first-run`), help surfaces (`help-center`, `help-button`, `persistent-help`), and in-article navigation (`guide-anchor`). The launch email is attributed via Resend opens/clicks and `utm_source=launch_email`, not via this table. Events are authenticated-only (`POST /api/guide-event` returns 401 without a session), so logged-out landing-page reads are invisible here.",
+  "",
+  section(
+    "Time to First Transaction — by Guide Exposure",
+    `with user_first as (
+       select au.id as user_id, au.created_at as signed_up_at, min(t.created_at) as first_transaction_at
+       from auth.users au
+       left join public.household_members m on m.user_id = au.id
+       left join public.transactions t on t.entered_by = m.id
+       group by au.id, au.created_at
+     ), exposed as (
+       select distinct g.user_id
+       from public.guide_opens g
+       join user_first u on u.user_id = g.user_id
+       where g.source in ('guide-view', 'help-center')
+         and (u.first_transaction_at is null or g.created_at < u.first_transaction_at)
+     ), stats as (
+       select
+         (select count(*) from exposed) as viewed_users,
+         (select count(*) from exposed e join user_first u on u.user_id = e.user_id where u.first_transaction_at is not null) as viewed_with_tx,
+         (select to_char(percentile_cont(0.5) within group (order by extract(epoch from u.first_transaction_at - u.signed_up_at)) / 60.0, 'FM999999990.0') from exposed e join user_first u on u.user_id = e.user_id where u.first_transaction_at is not null) as viewed_median,
+         (select count(*) from user_first) as total_users,
+         (select count(*) from user_first where first_transaction_at is not null) as total_with_tx,
+         (select to_char(percentile_cont(0.5) within group (order by extract(epoch from first_transaction_at - signed_up_at)) / 60.0, 'FM999999990.0') from user_first u2 where u2.user_id not in (select user_id from exposed) and u2.first_transaction_at is not null) as unviewed_median
+       from (select 1) as one
+     )
+     select '| Exposure | Users | With transaction | Activation rate | Median minutes to first transaction |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
+           '| Viewed guide before first transaction | ' || viewed_users || ' | ' || viewed_with_tx || ' | ' || coalesce(to_char(100.0 * viewed_with_tx / nullif(viewed_users, 0), 'FM990.0') || '%', 'n/a') || ' | ' || coalesce(viewed_median, 'n/a') || ' |' || E'\n' ||
+           '| Did not view guide | ' || (total_users - viewed_users) || ' | ' || (total_with_tx - viewed_with_tx) || ' | ' || coalesce(to_char(100.0 * (total_with_tx - viewed_with_tx) / nullif(total_users - viewed_users, 0), 'FM990.0') || '%', 'n/a') || ' | ' || coalesce(unviewed_median, 'n/a') || ' |'
+     from stats;`,
+    "No guide exposure data.",
+  ),
+  "Exposure = at least one article mount (source `guide-view`/`help-center`) before the user's first transaction; users with no transaction yet count as viewed if they ever mounted an article. Mounts after the first transaction do not count. Medians use the same epoch-minute `percentile_cont(0.5)` as the distribution section and are noisy at small n.",
+  "",
+  section(
     "Onboarding history (recomputed under revised definitions)",
     `with snapshots(snapshot_date) as (
        values ('2026-08-20'::date), ('2026-08-22'::date), ('2026-08-24'::date), ('2026-09-03'::date)
@@ -636,6 +721,10 @@ const report = [
   "- Activation funnel: ordered steps 1 Signed up (households with an active owner from `owner` CTE, not `auth.users`; `Activation` counts `auth.users` for true top-of-funnel, funnel Step 1 is household-entity so steps 1–8 share denominator; if `household_created > signed_up` the SQL clamps `lost_at_step` via `greatest(...,0)`) → 2 Email confirmed (owner's `email_confirmed_at`) → 3 Household created → 4 First account created → 5 First transaction entered → 6 First budget created → 7 Partner invited → 8 Partner accepted. Furthest step per household is the highest step whose timestamp exists (exactly one step per household). Drop-off Lost at step = previous reached − current reached. Time in step, repeat sessions, guide-viewed, and entry point for first transaction require client-side event tracking not yet in the database (see funnel notes); adding guide-viewed between 5 and 6 later will not change historic furthest-step values because steps are named, not renumbered.",
   "- Time to first transaction: `first_transaction_at - signed_up_at` per user (signed_up from `auth.users.created_at`, first transaction from `public.transactions` via `household_members` join on `entered_by = household_members.id`). Transactions with `entered_by` null or belonging to a removed member have no join and are invisible to the bucket (counted as Never unless linked via an active membership); this is correct because the app always sets `entered_by`. Distribution buckets: Under 5 minutes, 5 minutes – 1 hour, 1 hour – 1 day, Over 1 day, Never (no transaction). The under-5-minute target has its own bucket line. Percentiles p25/p50 (median)/p75 are computed with `percentile_cont` over `extract(epoch from time_to_first)` for users with a transaction; raw counts `n with transaction` and `Never` are printed next to each percentile so p75 at n=8 is read as noisy; when `n_partner = 0` percentile renders as `n/a` next to bucket table. Owner vs partner segmentation uses the household role of the user's earliest membership (`household_members.role`). Users with no membership are counted as `unknown` and appear in All users but not in owner/partner columns.",
   "- Guide exposure (time-to-first-transaction): cohort relative to guide launch, guide viewed/not viewed before first transaction, and launch email received/not for existing users will segment the same distribution when the starter guide and email ship. All current users are the pre-launch baseline; post-launch guide-viewed and email-received require client-side event tracking not yet in the database and are placeholders that will not invalidate the baseline.",
+  "- Content engagement — per-article: views = article-mount events (source `guide-view` for /guia|/guide articles, `help-center` for /help articles); readers = distinct `user_id` count, aggregate only — no identities appear in this report; depth reach = `guide-scroll` events per threshold (`depth-25/50/75/100` anchors, emitted at most once per threshold per page view); completion = `depth-100` events / views. Scroll-depth tracking exists only on /guia|/guide articles (`GuideArticleLayout`); help-center rows report views only, so their completion shows n/a.",
+  "- Content engagement — by source: opens = all `guide_opens` rows except `guide-scroll` depth pings; share = opens / all opens. Events are authenticated-only (`POST /api/guide-event` returns 401 without a session); logged-out landing-page reads are attributed via Resend opens/clicks and `utm_source=launch_email`, not here — which placement earns the reads is answered jointly with the launch-email tracking in #199.",
+  "- Time to first transaction — by guide exposure: exposed = at least one article mount (source `guide-view`/`help-center`) before the user's first transaction (any mount counts for users with no transaction yet); mounts after the first transaction do not count. Medians use the same epoch-minute `percentile_cont(0.5)` as the distribution section and are noisy at small n.",
+  "- Content privacy: this report shows aggregate counts only. `guide_opens` retains row-level `user_id`/`member_id` solely to join exposure to first-transaction timing for the funnel; no per-user reading history appears in this report, and nothing more is retained than that join requires.",
   "- Qualitative feedback: persisted in `public.feedback_submissions` (household_id, user_id, member_id, category, message, diagnostics jsonb, created_at) alongside email delivery via Resend; RLS restricts reads to any member of the submitting household (`is_member(household_id)` — all household feedback visible to any household member, not just the author) for household-scoped rows, or to the submitting user (`user_id = auth.uid()`) for null-household rows, and service_role for admin tooling; cross-household reads denied; may contain personal detail, keep out of diagnostic exports. Backfill from the Resend inbox is not automated — export and insert manually if practical.",
   "",
 ].join("\n");
