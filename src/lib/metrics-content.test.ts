@@ -57,6 +57,20 @@ describe("content engagement against activation — #208", () => {
     expect(isExposed([], null)).toBe(false);
   });
 
+  it("excludes negative time-to-first anomalies from exposure medians like the distribution section", () => {
+    expect(reportMjs).toContain(
+      "where u.first_transaction_at is not null and u.first_transaction_at - u.signed_up_at >= interval '0'",
+    );
+    expect(reportMjs).toContain(
+      "and u2.first_transaction_at is not null and u2.first_transaction_at - u2.signed_up_at >= interval '0'",
+    );
+  });
+
+  it("escapes article slugs and sources so a rogue row cannot break the markdown tables", () => {
+    expect(reportMjs).toContain("replace(replace(s.slug, '|', '/')");
+    expect(reportMjs).toContain("replace(replace(o.src, '|', '/')");
+  });
+
   it("keeps the summary in the existing metrics report with aggregate-only reading data", () => {
     // New sections live in the same report script, not a separate tool
     expect(reportMjs).toContain("Content Engagement — Per-Article Views and Completion");

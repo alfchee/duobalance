@@ -282,7 +282,7 @@ const report = [
      )
      select '| Article | Views | Readers | 25% | 50% | 75% | Completed (100%) | Completion |' || E'\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |' || E'\n' ||
            coalesce(string_agg(
-             '| ' || s.slug || ' | ' || coalesce(m.views, 0) || ' | ' || coalesce(m.readers, 0) || ' | ' ||
+             '| ' || replace(replace(s.slug, '|', '/'), E'\n', ' ') || ' | ' || coalesce(m.views, 0) || ' | ' || coalesce(m.readers, 0) || ' | ' ||
              coalesce(d.d25, 0) || ' | ' || coalesce(d.d50, 0) || ' | ' || coalesce(d.d75, 0) || ' | ' ||
              coalesce(d.d100, 0) || ' | ' || coalesce(to_char(100.0 * d.d100 / nullif(m.views, 0), 'FM990.0') || '%', 'n/a') || ' |',
              E'\n' order by coalesce(m.views, 0) desc, s.slug
@@ -306,7 +306,7 @@ const report = [
      )
      select '| Source | Opens | Share |' || E'\n| --- | ---: | ---: |' || E'\n' ||
            coalesce(string_agg(
-             '| ' || o.src || ' | ' || o.cnt || ' | ' || coalesce(to_char(100.0 * o.cnt / nullif((select n from total), 0), 'FM990.0') || '%', 'n/a') || ' |',
+             '| ' || replace(replace(o.src, '|', '/'), E'\n', ' ') || ' | ' || o.cnt || ' | ' || coalesce(to_char(100.0 * o.cnt / nullif((select n from total), 0), 'FM990.0') || '%', 'n/a') || ' |',
              E'\n' order by o.cnt desc, o.src
            ), '| No guide opens recorded yet | 0 | — |')
      from opens o;`,
@@ -332,10 +332,10 @@ const report = [
        select
          (select count(*) from exposed) as viewed_users,
          (select count(*) from exposed e join user_first u on u.user_id = e.user_id where u.first_transaction_at is not null) as viewed_with_tx,
-         (select to_char(percentile_cont(0.5) within group (order by extract(epoch from u.first_transaction_at - u.signed_up_at)) / 60.0, 'FM999999990.0') from exposed e join user_first u on u.user_id = e.user_id where u.first_transaction_at is not null) as viewed_median,
+         (select to_char(percentile_cont(0.5) within group (order by extract(epoch from u.first_transaction_at - u.signed_up_at)) / 60.0, 'FM999999990.0') from exposed e join user_first u on u.user_id = e.user_id where u.first_transaction_at is not null and u.first_transaction_at - u.signed_up_at >= interval '0') as viewed_median,
          (select count(*) from user_first) as total_users,
          (select count(*) from user_first where first_transaction_at is not null) as total_with_tx,
-         (select to_char(percentile_cont(0.5) within group (order by extract(epoch from first_transaction_at - signed_up_at)) / 60.0, 'FM999999990.0') from user_first u2 where u2.user_id not in (select user_id from exposed) and u2.first_transaction_at is not null) as unviewed_median
+         (select to_char(percentile_cont(0.5) within group (order by extract(epoch from first_transaction_at - signed_up_at)) / 60.0, 'FM999999990.0') from user_first u2 where u2.user_id not in (select user_id from exposed) and u2.first_transaction_at is not null and u2.first_transaction_at - u2.signed_up_at >= interval '0') as unviewed_median
        from (select 1) as one
      )
      select '| Exposure | Users | With transaction | Activation rate | Median minutes to first transaction |' || E'\n| --- | ---: | ---: | ---: | ---: |' || E'\n' ||
