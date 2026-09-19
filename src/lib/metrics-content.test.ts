@@ -71,6 +71,14 @@ describe("content engagement against activation — #208", () => {
     expect(reportMjs).toContain("replace(replace(o.src, '|', '/')");
   });
 
+  it("documents known measurement limits instead of silently overcounting", () => {
+    // help-center click + mount can double-count views on slow navigation
+    expect(reportMjs).toContain("dedupe only within 5s client-side");
+    // offline reads flushed on reconnect carry flush time, not event time
+    expect(reportMjs).toContain("flushStoredGuideOpens");
+    expect(reportMjs).toContain("may undercount offline readers");
+  });
+
   it("keeps the summary in the existing metrics report with aggregate-only reading data", () => {
     // New sections live in the same report script, not a separate tool
     expect(reportMjs).toContain("Content Engagement — Per-Article Views and Completion");
