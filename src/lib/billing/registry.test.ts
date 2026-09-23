@@ -58,6 +58,19 @@ describe("provider registry (#258)", () => {
     expect(() => getProvider("stripe")).toThrow(/unknown billing provider "stripe"/);
   });
 
+  it("throws on duplicate registration instead of silently overwriting", () => {
+    expect(() => registerProvider(fakeProvider("stub"))).toThrow(/already registered/);
+  });
+
+  it("stub lifecycle methods reject (never throw synchronously)", async () => {
+    const provider = getActiveProvider();
+    await expect(
+      provider.createCheckout({ householdId: "h_1", planCode: "plus", idempotencyKey: "k_1" }),
+    ).rejects.toThrow(/#259/);
+    await expect(provider.cancelSubscription({ subscriptionRef: "sub_1" })).rejects.toThrow(/#259/);
+    await expect(provider.getSubscription({ subscriptionRef: "sub_1" })).rejects.toThrow(/#259/);
+  });
+
   it("parseWebhook throws on a bad signature instead of returning []", async () => {
     const provider = getActiveProvider();
     await expect(

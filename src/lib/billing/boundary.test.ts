@@ -26,7 +26,9 @@ describe("billing import boundary (#258)", () => {
   });
 
   it("only the registry (composition root) may import adapters/", () => {
-    expect(read("src/lib/billing/registry.ts")).toMatch(/from\s+["']\.\/adapters\/stub["']/);
+    // Any adapter import — new adapters land here with one registerProvider
+    // line each (ADR 0002) without touching this test.
+    expect(read("src/lib/billing/registry.ts")).toMatch(/from\s+["']\.\/adapters\//);
   });
 
   it("an eslint rule bans adapters/ imports everywhere else", () => {

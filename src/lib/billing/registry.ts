@@ -27,6 +27,9 @@ export class UnknownProviderError extends Error {
 const providers = new Map<string, PaymentProvider>();
 
 export function registerProvider(provider: PaymentProvider): void {
+  if (providers.has(provider.id)) {
+    throw new Error(`billing provider "${provider.id}" is already registered`);
+  }
   providers.set(provider.id, provider);
 }
 
@@ -53,7 +56,7 @@ export function getActiveProvider(id: string = resolveProviderId()): PaymentProv
 
 /**
  * Test support: drop all registrations and re-seed the default stub.
- * Also handy if provider configuration ever changes at runtime.
+ * Never call this outside tests — it wipes every registered provider.
  */
 export function resetBillingRegistry(): void {
   providers.clear();

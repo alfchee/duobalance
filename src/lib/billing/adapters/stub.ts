@@ -32,15 +32,22 @@ export class StubPaymentProvider implements PaymentProvider {
     this.config = config;
   }
 
-  createCheckout(): Promise<{ redirectUrl?: string; clientToken?: string; reference: string }> {
+  // Async with full input signatures: the port is promise-based, so these
+  // must return rejected promises (never throw synchronously), and the
+  // inputs stay visible to keep the idempotency-key contract explicit.
+  async createCheckout(_input: {
+    householdId: string;
+    planCode: string;
+    idempotencyKey: string;
+  }): Promise<{ redirectUrl?: string; clientToken?: string; reference: string }> {
     throw new Error(NOT_IMPLEMENTED);
   }
 
-  cancelSubscription(): Promise<void> {
+  async cancelSubscription(_input: { subscriptionRef: string }): Promise<void> {
     throw new Error(NOT_IMPLEMENTED);
   }
 
-  getSubscription(): Promise<ProviderSubscription> {
+  async getSubscription(_input: { subscriptionRef: string }): Promise<ProviderSubscription> {
     throw new Error(NOT_IMPLEMENTED);
   }
 

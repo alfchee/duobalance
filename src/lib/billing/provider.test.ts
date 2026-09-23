@@ -28,6 +28,11 @@ describe("billing Money (#258)", () => {
   it("converts minor units to major units for display", () => {
     expect(toMajorUnits(createMoney(129, "NIO"), 0)).toBe(129);
     expect(toMajorUnits(createMoney(350, "USD"), 2)).toBe(3.5);
+    // Negative amounts are credits/refunds reusing the same type.
+    expect(toMajorUnits(createMoney(-350, "USD"), 2)).toBe(-3.5);
+    expect(() => toMajorUnits(createMoney(350, "USD"), -1)).toThrow(RangeError);
+    expect(() => toMajorUnits(createMoney(350, "USD"), 1.5)).toThrow(RangeError);
+    expect(() => toMajorUnits(createMoney(350, "USD"), Number.NaN)).toThrow(RangeError);
   });
 });
 
