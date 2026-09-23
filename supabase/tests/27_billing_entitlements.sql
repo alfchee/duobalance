@@ -21,6 +21,7 @@ declare
   hh_expired  uuid := '10000000-0000-0000-0000-000000000007';
   hh_dup      uuid := '10000000-0000-0000-0000-000000000008';
   hh_check    uuid := '10000000-0000-0000-0000-000000000009';
+  hh_trialpast uuid := '10000000-0000-0000-0000-000000000010';
 begin
   insert into auth.users (id, email) values
     (usr_a, 'alice@test.local'),
@@ -35,7 +36,8 @@ begin
     (hh_cancel,  'Cancel',   'CL', 'CLP', 'America/Santiago'),
     (hh_expired, 'Expired',  'CL', 'CLP', 'America/Santiago'),
     (hh_dup,     'Dup',      'CL', 'CLP', 'America/Santiago'),
-    (hh_check,   'Check',    'CL', 'CLP', 'America/Santiago');
+    (hh_check,   'Check',    'CL', 'CLP', 'America/Santiago'),
+    (hh_trialpast, 'Trial Past', 'CL', 'CLP', 'America/Santiago');
 
   -- Alice owns the plus household, Bob the free trial household
   insert into public.household_members (household_id, user_id, role, display_name) values
@@ -46,6 +48,11 @@ begin
   -- one-live-subscription index never interferes with the plan assertions)
   insert into public.subscriptions (household_id, plan_code, provider, status, trial_ends_at) values
     (hh_trial, 'free', 'stub', 'trialing', now() + interval '30 days');
+  -- trialing with trial_ends_at already past and no period/grace ends:
+  -- status is the source of truth until the dunning writer exists, so this
+  -- stays entitled (falls through to 'infinity'). Locks in the contract.
+  insert into public.subscriptions (household_id, plan_code, provider, status, trial_ends_at) values
+    (hh_trialpast, 'free', 'stub', 'trialing', now() - interval '5 days');
   insert into public.subscriptions (household_id, plan_code, provider, status, current_period_end) values
     (hh_active, 'plus', 'stub', 'active', now() + interval '30 days');
   insert into public.subscriptions (household_id, plan_code, provider, status, current_period_end, grace_ends_at) values
@@ -63,7 +70,7 @@ begin
 end
 $$;
 
-select plan(22);
+select plan(23);
 
 -- AC: no subscription row -> false / 0 (fail closed)
 select is(
@@ -127,6 +134,12 @@ select is(
   public.household_plan('10000000-0000-0000-0000-000000000007'::uuid),
   null::text,
   'household_plan: expired household resolves to null'
+);
+
+select is(
+  public.household_plan('10000000-0000-0000-0000-000000000010'::uuid),
+  'free'::text,
+  'household_plan: trialing with past trial_ends_at stays entitled until status flips (dunning writer contract)'
 );
 
 -- AC: second live subscription for one household raises unique violation
