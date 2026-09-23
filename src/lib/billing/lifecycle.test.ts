@@ -214,6 +214,19 @@ describe("planEventApplication (#260)", () => {
     });
   });
 
+  it("clears the stale grace window on cancel (household_plan prefers grace)", () => {
+    const pastDue = {
+      ...row("active"),
+      status: "past_due" as LifecycleStatus,
+      grace_ends_at: "2026-12-31T00:00:00.000Z",
+    };
+    const plan = planEventApplication(pastDue, cancelled, null, clock());
+    expect(plan.outcome).toBe("applied");
+    if (plan.outcome !== "applied") throw new Error("unreachable");
+    expect(plan.update.grace_ends_at).toBeNull();
+    expect(plan.update.current_period_end).toBe(PERIOD_END.toISOString());
+  });
+
   it("recovers cleanly on payment (clears grace + cancel flag, refreshes period)", () => {
     const pastDue = {
       ...row("active"),

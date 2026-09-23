@@ -17,12 +17,27 @@ function makeClient(rows: Row[], updated: string[]) {
     select: vi.fn(() => ({
       in: vi.fn(() => Promise.resolve({ data: rows, error: null })),
     })),
-    update: vi.fn(() => ({
-      eq: vi.fn((col: string, value: unknown) => {
-        if (col === "id") updated.push(value as string);
-        return Promise.resolve({ error: null });
-      }),
-    })),
+    update: vi.fn(() => {
+      const chain: Record<string, unknown> = {};
+      const filters: { col: string; value: unknown }[] = [];
+      chain.eq = vi.fn((col: string, value: unknown) => {
+        filters.push({ col, value });
+        return chain;
+      });
+      // Sweeper writes are conditional on (id, status): only read-matching
+      // rows count as expired.
+      chain.select = vi.fn(() => {
+        const matched = rows.filter((r) =>
+          filters.every((f) => (r as unknown as Record<string, unknown>)[f.col] === f.value),
+        );
+        for (const m of matched) {
+          m.status = "expired";
+          updated.push(m.id);
+        }
+        return Promise.resolve({ data: matched.map((m) => ({ id: m.id })), error: null });
+      });
+      return chain;
+    }),
   }));
   return { from } as never;
 }

@@ -87,6 +87,10 @@ const REJECT_NO_ROW = (type: string): TransitionDef =>
 const cancelledEntry = (periodFrom: "periodEnd" | "effectiveAt"): TransitionDef => ({
   to: "cancelled",
   periodFrom,
+  // Clear the dunning window: household_plan() coalesces grace_ends_at
+  // before current_period_end, so a stale grace deadline would keep a
+  // cancelled row entitled past its cancellation period.
+  clearGrace: true,
   cancelAtPeriodEnd: true,
 });
 
@@ -313,35 +317,68 @@ export interface ApplyInput {
 type BillingClient = SupabaseClient<Database>;
 
 /**
+ * Thrown when concurrent deliveries keep moving a row under the applier.
+ * Callers (the #267 webhook route) should map this to a retryable status
+ * (409/503) so the provider redelivers into a quiet moment — never to a
+ * silent success, which would drop the delivery.
+ */
+export class ConcurrentModificationError extends Error {
+  constructor(ref: string) {
+    super(`concurrent deliveries for subscription "${ref}": retry the event`);
+    this.name = "ConcurrentModificationError";
+  }
+}
+
+/** Bounded optimistic-concurrency laps around read → plan → guarded write. */
+const APPLY_ATTEMPTS = 3;
+
+const SUBSCRIPTION_COLUMNS =
+  "id,household_id,plan_code,provider,provider_ref,status,trial_ends_at,current_period_end,grace_ends_at,cancel_at_period_end";
+
+async function selectSubscription(
+  db: BillingClient,
+  provider: string,
+  ref: string,
+): Promise<SubscriptionRow | null> {
+  const found = await db
+    .from("subscriptions")
+    .select(SUBSCRIPTION_COLUMNS)
+    .eq("provider", provider)
+    .eq("provider_ref", ref)
+    .maybeSingle();
+  if (found.error) {
+    throw found.error;
+  }
+  return (found.data ?? null) as SubscriptionRow | null;
+}
+
+/**
  * Apply one provider event idempotently, keyed on
- * billing_events(provider, provider_event_id): the insert is the dedupe
- * gate — a 23505 conflict means this exact delivery was already processed,
- * so the same event twice changes state once. Unknown types, invalid
- * transitions, and malformed dates are RECORDED (event row written, linked
- * to the row when known) and returned as rejected, never thrown, so a mixed
- * batch survives one bad delivery.
+ * billing_events(provider, provider_event_id). The ledger distinguishes
+ * RECEIVED (row present, processed_at null) from PROCESSED: a crash between
+ * receipt and state write leaves an unprocessed row that the retry ADOPTS
+ * and drives to completion, so a transient failure can never strand a
+ * subscription in a state no redelivery will fix. An already-processed id
+ * returns `duplicate` with zero state touch — the same event twice changes
+ * state once.
+ *
+ * Unknown types, invalid transitions, and malformed dates are RECORDED
+ * (event row written, linked to the row when known) and returned as
+ * rejected, never thrown, so a mixed batch survives one bad delivery.
+ * Concurrent writers are serialized per row with a conditional update on
+ * (id, status) plus a bounded re-plan; exhaustion throws
+ * ConcurrentModificationError for the caller to retry.
  *
  * Takes an injected client: route/cron handlers pass a service-role client
  * (cross-household writes); tests pass fakes. Never throws on domain
- * rejections — only on transport/DB failures.
+ * rejections — only on transport/DB failures and write-write races.
  */
 export async function applyBillingEvent(
   db: BillingClient,
   input: ApplyInput,
   clock: Clock = systemClock,
 ): Promise<ApplyOutcome> {
-  const found = await db
-    .from("subscriptions")
-    .select(
-      "id,household_id,plan_code,provider,provider_ref,status,trial_ends_at,current_period_end,grace_ends_at,cancel_at_period_end",
-    )
-    .eq("provider", input.provider)
-    .eq("provider_ref", input.event.ref)
-    .maybeSingle();
-  if (found.error) {
-    throw found.error;
-  }
-  const row = (found.data ?? null) as SubscriptionRow | null;
+  const row = await selectSubscription(db, input.provider, input.event.ref);
 
   const logged = await db.from("billing_events").insert({
     provider: input.provider,
@@ -349,54 +386,92 @@ export async function applyBillingEvent(
     subscription_id: row?.id ?? null,
     type: input.event.type,
     payload: JSON.parse(JSON.stringify(input.event)) as Json,
-    processed_at: clock.now().toISOString(),
+    processed_at: null,
   });
   if (logged.error) {
-    // Exact redelivery of an already-processed provider event: the first
-    // delivery's outcome (applied or recorded rejection) stands; touch
-    // nothing, so the same event twice changes state once.
-    if (logged.error.code === "23505") {
+    if (logged.error.code !== "23505") {
+      throw logged.error;
+    }
+    // Same provider event id seen before: adopt it when a previous attempt
+    // recorded receipt but never finished, otherwise it is an exact
+    // redelivery whose outcome (applied or recorded rejection) stands.
+    // (A null select here means the conflicting writer rolled back; the
+    // provider's next redelivery then records fresh — still no double-apply.)
+    const prior = await db
+      .from("billing_events")
+      .select("subscription_id,processed_at")
+      .eq("provider", input.provider)
+      .eq("provider_event_id", input.providerEventId)
+      .maybeSingle();
+    if (prior.error) {
+      throw prior.error;
+    }
+    if (!prior.data || prior.data.processed_at !== null) {
       return { outcome: "duplicate" };
     }
-    throw logged.error;
+  }
+
+  // Activation plan codes are validated on EVERY path, not just creation:
+  // a reactivation carrying a bogus code must be a recorded rejection, or a
+  // cancelled row could be revived onto a nonexistent plan.
+  if (input.event.type === "subscription.activated") {
+    const planRow = await db
+      .from("plans")
+      .select("code")
+      .eq("code", input.event.planCode)
+      .maybeSingle();
+    if (planRow.error) {
+      throw planRow.error;
+    }
+    if (!planRow.data) {
+      await markProcessed(db, input, clock);
+      return { outcome: "rejected", reason: `unknown plan code "${input.event.planCode}"` };
+    }
   }
 
   // Planning runs AFTER the event row is recorded, and its throws are
   // captured into rejections: a malformed delivery (e.g. a null periodEnd
   // in a JSON-shaped webhook) must surface as a recorded rejection, never
   // as a throw that turns the retry into a silent "duplicate".
+  const outcome = await applyPlanned(db, input, row, clock);
+  await markProcessed(db, input, clock, outcome.subscriptionId ?? undefined);
+  return outcome.result;
+}
+
+interface SettledOutcome {
+  result: ApplyOutcome;
+  /** Newly created row id, for the event link backfill. */
+  subscriptionId?: string | null;
+}
+
+async function applyPlanned(
+  db: BillingClient,
+  input: ApplyInput,
+  row: SubscriptionRow | null,
+  clock: Clock,
+): Promise<SettledOutcome> {
   let plan: PlanOutcome;
   try {
-    plan = row
-      ? planEventApplication(row, input.event, null, clock)
-      : planEventApplication(null, input.event, input.householdId ?? null, clock);
+    plan =
+      row !== null
+        ? planEventApplication(row, input.event, null, clock)
+        : planEventApplication(null, input.event, input.householdId ?? null, clock);
   } catch (error) {
     return {
-      outcome: "rejected",
-      reason: error instanceof Error ? error.message : "unplannable event",
+      result: {
+        outcome: "rejected",
+        reason: error instanceof Error ? error.message : "unplannable event",
+      },
     };
   }
 
   if (plan.outcome === "ignored") {
-    return { outcome: "ignored", reason: plan.reason };
+    return { result: { outcome: "ignored", reason: plan.reason } };
   }
   if (plan.outcome === "rejected") {
-    return { outcome: "rejected", reason: plan.reason };
+    return { result: { outcome: "rejected", reason: plan.reason } };
   }
   if (plan.outcome === "create") {
-    // The plan code must exist or the FK throws mid-batch: check first so
-    // a bogus code is a recorded rejection, not a 500 redelivery loop.
-    const planRow = await db
-      .from("plans")
-      .select("code")
-      .eq("code", plan.insert.plan_code)
-      .maybeSingle();
-    if (planRow.error) {
-      throw planRow.error;
-    }
-    if (!planRow.data) {
-      return { outcome: "rejected", reason: `unknown plan code "${plan.insert.plan_code}"` };
-    }
     const created = await db
       .from("subscriptions")
       .insert({ ...plan.insert, provider: input.provider })
@@ -409,35 +484,94 @@ export async function applyBillingEvent(
       // row → rejected.
       if (created.error.code === "23505") {
         if ((created.error.message ?? "").includes("subscriptions_one_live")) {
-          return { outcome: "rejected", reason: "household already holds a live subscription" };
+          return {
+            result: { outcome: "rejected", reason: "household already holds a live subscription" },
+          };
         }
-        return { outcome: "duplicate" };
+        return { result: { outcome: "duplicate" } };
       }
       throw created.error;
     }
-    await linkEvent(db, input, created.data.id);
-    return { outcome: "applied", status: plan.status };
+    return {
+      result: { outcome: "applied", status: plan.status },
+      subscriptionId: created.data.id,
+    };
   }
 
-  const updated = await db
-    .from("subscriptions")
-    .update(plan.update)
-    .eq("id", (row as SubscriptionRow).id);
-  if (updated.error) {
-    throw updated.error;
+  if (row === null) {
+    // Unreachable: the planner only returns applied updates for existing rows.
+    throw new Error("lifecycle planner returned an update for a missing row");
   }
-  return { outcome: "applied", status: plan.status };
+  // Optimistic concurrency: the write only lands when the row still holds
+  // the planned-from status. A concurrent delivery that moved it first
+  // (e.g. a payment landing over a cancellation) matches zero rows instead
+  // of resurrecting — then we re-read, re-plan, and retry against fresh
+  // state, bounded so a hot row fails loudly instead of spinning.
+  for (let attempt = 1; ; attempt += 1) {
+    const current =
+      attempt === 1 ? row : await selectSubscription(db, input.provider, input.event.ref);
+    if (!current) {
+      return { result: { outcome: "rejected", reason: "subscription row vanished mid-apply" } };
+    }
+    let lap: PlanOutcome;
+    try {
+      lap = planEventApplication(current, input.event, null, clock);
+    } catch (error) {
+      return {
+        result: {
+          outcome: "rejected",
+          reason: error instanceof Error ? error.message : "unplannable event",
+        },
+      };
+    }
+    if (lap.outcome === "ignored") {
+      return { result: { outcome: "ignored", reason: lap.reason } };
+    }
+    if (lap.outcome === "rejected") {
+      return { result: { outcome: "rejected", reason: lap.reason } };
+    }
+    if (lap.outcome !== "applied") {
+      // Unreachable: planning against an existing row never returns create.
+      throw new Error("lifecycle planner returned create for an existing row");
+    }
+    const updated = await db
+      .from("subscriptions")
+      .update(lap.update)
+      .eq("id", current.id)
+      .eq("status", current.status)
+      .select("id");
+    if (updated.error) {
+      throw updated.error;
+    }
+    if ((updated.data ?? []).length > 0) {
+      return { result: { outcome: "applied", status: lap.status } };
+    }
+    if (attempt >= APPLY_ATTEMPTS) {
+      throw new ConcurrentModificationError(input.event.ref);
+    }
+  }
 }
 
-/** Backfill the event row's subscription link once the row id is known. */
-async function linkEvent(db: BillingClient, input: ApplyInput, subscriptionId: string) {
-  const linked = await db
+/** Mark the ledger row processed (and link it when the row id is known). */
+async function markProcessed(
+  db: BillingClient,
+  input: ApplyInput,
+  clock: Clock,
+  subscriptionId?: string | null,
+) {
+  const patch: { processed_at: string; subscription_id?: string | null } = {
+    processed_at: clock.now().toISOString(),
+  };
+  if (subscriptionId !== undefined) {
+    patch.subscription_id = subscriptionId;
+  }
+  const marked = await db
     .from("billing_events")
-    .update({ subscription_id: subscriptionId })
+    .update(patch)
     .eq("provider", input.provider)
     .eq("provider_event_id", input.providerEventId);
-  if (linked.error) {
-    throw linked.error;
+  if (marked.error) {
+    throw marked.error;
   }
 }
 
@@ -485,6 +619,9 @@ export interface ExpireResult {
  * run in the same minute selects nothing expirable and updates zero rows.
  * Writes no billing_events rows — that table is provider deliveries only;
  * the status flip itself is the audit trail (updated_at).
+ * Each flip is conditional on the read status, so a concurrent event that
+ * moved the row first (payment landing mid-sweep) is skipped instead of
+ * clobbered — the next run converges.
  */
 export async function expireDueSubscriptions(
   db: BillingClient,
@@ -500,14 +637,20 @@ export async function expireDueSubscriptions(
   }
   const rows = (found.data ?? []) as ExpirableRow[];
   const due = rows.filter((row) => isExpirable(row, now));
+  const expired: string[] = [];
   for (const row of due) {
     const updated = await db
       .from("subscriptions")
       .update({ status: "expired", current_period_end: null })
-      .eq("id", row.id);
+      .eq("id", row.id)
+      .eq("status", row.status)
+      .select("id");
     if (updated.error) {
       throw updated.error;
     }
+    if ((updated.data ?? []).length > 0) {
+      expired.push(row.id);
+    }
   }
-  return { checked: rows.length, expired: due.map((row) => row.id) };
+  return { checked: rows.length, expired };
 }

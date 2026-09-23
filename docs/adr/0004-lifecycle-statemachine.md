@@ -25,22 +25,36 @@ rows between statuses without re-encoding that list.
 - **Pure planner + thin I/O.** `planEventApplication` (pure, needs
   `householdId` only on the creation path) is exhaustively tested without
   mocks; `applyBillingEvent` selects the row, then inserts the event linked
-  to it (`subscription_id`, backfilled after creation) as the dedupe gate —
-  a 23505 conflict returns `duplicate` and touches nothing, so redelivery
-  changes state once. Unknown types, invalid transitions, and malformed
+  to it (`subscription_id`, backfilled after creation). The ledger
+  distinguishes RECEIVED (`processed_at` null) from PROCESSED: a crash
+  between receipt and state write leaves an unprocessed row that the retry
+  adopts and drives to completion, while a processed id returns `duplicate`
+  with zero state touch. Unknown types, invalid transitions, and malformed
   dates are recorded and returned as rejected, never thrown (planning runs
   inside a capture for exactly this reason — otherwise the retry would
   mask the failure as a silent duplicate).
+- **Write-write races close explicitly.** Updates are conditional on
+  (id, status): a concurrent delivery that moved the row first matches zero
+  rows instead of resurrecting, then the applier re-reads, re-plans, and
+  retries (bounded — exhaustion throws `ConcurrentModificationError` for
+  the caller, i.e. #267, to map to a retryable status). The sweeper's flips
+  are conditional the same way and simply skip on mismatch; creation races
+  are distinguished by constraint (same provider entity → `duplicate`,
+  second live row → `rejected`). Single-row volume makes row-level
+  optimistic concurrency sufficient — no table locks.
 - **Creation needs a plan carrier.** Only `subscription.activated` opens a
   row (it carries the plan code and seeds `trial_ends_at`; `payment.succeeded`
   carries no plan, so first-contact success is rejected and logged). The
-  plan code is pre-checked so a bogus code is a recorded rejection, not a
-  FK 500 loop; lost creation races are distinguished by constraint — same
-  provider entity → `duplicate`, second live row (`subscriptions_one_live`)
-  → `rejected`. Checkout context supplies `householdId` (#264 wires it).
+  plan code is validated on EVERY activation path — creation and
+  reactivation alike — so a cancelled row can never revive onto a
+  nonexistent plan; bogus codes are recorded rejections, not FK 500 loops.
+  Checkout context supplies `householdId` (#264 wires it).
 - **Activation moves the plan.** Every `subscription.activated` transition
   upserts `plan_code` (`takePlanCode`), so upgrades, downgrades, and
-  reactivations never leave the row on a stale plan.
+  reactivations never leave the row on a stale plan. Cancelling clears the
+  dunning window: `household_plan()` coalesces `grace_ends_at` before
+  `current_period_end`, so a stale grace deadline would keep a cancelled row
+  entitled past its cancellation period.
 - **Sweeper expires what time ended** (`expireDueSubscriptions`, daily
   `/api/cron/billing-expire` on the service role behind the cron secret):
   past_due/grace past `grace_ends_at`, cancelled past (or without) its

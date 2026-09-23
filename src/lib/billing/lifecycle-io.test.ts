@@ -5,6 +5,7 @@ import { createMoney } from "./money";
 import type { BillingEvent } from "./provider";
 import {
   applyBillingEvent,
+  ConcurrentModificationError,
   expireDueSubscriptions,
   isExpirable,
   type ExpirableRow,
@@ -35,7 +36,10 @@ type FakeEvent = {
   provider: string;
   provider_event_id: string;
   subscription_id: string | null;
+  processed_at: string | null;
 };
+
+type Filter = { col: string; op: string; value: unknown };
 
 function makeDb(state: {
   subs: FakeSub[];
@@ -43,13 +47,66 @@ function makeDb(state: {
   updates?: unknown[];
   /** Force the next subscriptions insert to fail with this error. */
   failNextSubInsert?: { code: string; message: string };
+  /** Mutate live state just before an update executes (race simulation). */
+  sabotageOnUpdate?: () => void;
 }) {
-  const match = (row: FakeSub, filters: { col: string; op: string; value: unknown }[]) =>
+  const matchSub = (row: FakeSub, filters: Filter[]) =>
     filters.every((f) =>
       f.op === "eq"
         ? (row as unknown as Record<string, unknown>)[f.col] === f.value
         : (f.value as unknown[]).includes((row as unknown as Record<string, unknown>)[f.col]),
     );
+  // Chainable postgrest emulator: eq/in accumulate, then the chain is either
+  // awaited directly (thenable) or finished with maybeSingle()/single().
+  const chainable = <T>(apply: (filters: Filter[]) => T) => {
+    const filters: Filter[] = [];
+    const chain: Record<string, unknown> = {};
+    chain.eq = (col: string, value: unknown) => {
+      filters.push({ col, op: "eq", value });
+      return chain;
+    };
+    chain.in = (col: string, values: unknown) => {
+      filters.push({ col, op: "in", value: values });
+      return chain;
+    };
+    chain.then = (resolve: (v: unknown) => void) => resolve(apply(filters));
+    chain.maybeSingle = async () => apply(filters);
+    chain.single = async () => apply(filters);
+    return chain;
+  };
+  // Update emulator shared by both tables: sabotage hook runs first (race
+  // simulation), then values apply to matches; .select() also returns them.
+  const updateChain = (
+    rows: Record<string, unknown>[],
+    values: Record<string, unknown>,
+    onWrite?: (id: unknown) => void,
+  ) => {
+    const filters: Filter[] = [];
+    const chain: Record<string, unknown> = {};
+    chain.eq = (col: string, value: unknown) => {
+      filters.push({ col, op: "eq", value });
+      return chain;
+    };
+    const run = () => {
+      state.sabotageOnUpdate?.();
+      const matched = rows.filter((r) =>
+        filters.every((f) => (r as Record<string, unknown>)[f.col] === f.value),
+      );
+      for (const m of matched) {
+        Object.assign(m, values);
+        onWrite?.((m as Record<string, unknown>).id);
+      }
+      return matched;
+    };
+    chain.select = (_cols: string) => ({
+      then: (resolve: (v: unknown) => void) => resolve({ data: run(), error: null }),
+    });
+    chain.then = (resolve: (v: unknown) => void) => {
+      run();
+      resolve({ error: null });
+    };
+    return chain;
+  };
   const from = (table: string) => {
     if (table === "billing_events") {
       return {
@@ -58,28 +115,19 @@ function makeDb(state: {
           if (state.events.some((e) => `${e.provider}|${e.provider_event_id}` === key)) {
             return { error: { code: "23505", message: "duplicate key" } };
           }
-          state.events.push({ ...input, subscription_id: null });
+          state.events.push({ ...input, subscription_id: null, processed_at: null });
           return { error: null };
         },
-        update: (values: Record<string, unknown>) => {
-          const filters: { col: string; value: unknown }[] = [];
-          const chain: Record<string, unknown> = {};
-          chain.eq = (col: string, value: unknown) => {
-            filters.push({ col, value });
-            return chain;
-          };
-          chain.then = (resolve: (v: unknown) => void) => {
-            for (const e of state.events) {
-              if (
-                filters.every((f) => (e as unknown as Record<string, unknown>)[f.col] === f.value)
-              ) {
-                Object.assign(e, values);
-              }
-            }
-            resolve({ error: null });
-          };
-          return chain;
-        },
+        select: (_cols: string) =>
+          chainable((filters) => ({
+            data:
+              state.events.find((e) =>
+                filters.every((f) => (e as unknown as Record<string, unknown>)[f.col] === f.value),
+              ) ?? null,
+            error: null,
+          })),
+        update: (values: Record<string, unknown>) =>
+          updateChain(state.events as unknown as Record<string, unknown>[], values),
       };
     }
     if (table === "plans") {
@@ -108,11 +156,11 @@ function makeDb(state: {
             return chain;
           };
           chain.maybeSingle = async () => ({
-            data: state.subs.find((r) => match(r, filters)) ?? null,
+            data: state.subs.find((r) => matchSub(r, filters)) ?? null,
             error: null,
           });
           chain.then = (resolve: (v: unknown) => void) =>
-            resolve({ data: state.subs.filter((r) => match(r, filters)), error: null });
+            resolve({ data: state.subs.filter((r) => matchSub(r, filters)), error: null });
           return chain;
         },
         insert: (input: Record<string, unknown>) => ({
@@ -129,17 +177,10 @@ function makeDb(state: {
             },
           }),
         }),
-        update: (values: Record<string, unknown>) => ({
-          eq: async (col: string, value: unknown) => {
-            for (const r of state.subs) {
-              if ((r as unknown as Record<string, unknown>)[col] === value) {
-                Object.assign(r, values);
-                state.updates?.push({ id: r.id, values });
-              }
-            }
-            return { error: null };
-          },
-        }),
+        update: (values: Record<string, unknown>) =>
+          updateChain(state.subs as unknown as Record<string, unknown>[], values, (id) =>
+            state.updates?.push({ id, values }),
+          ),
       };
     }
     throw new Error(`unexpected table ${table}`);
@@ -322,6 +363,118 @@ describe("applyBillingEvent (#260)", () => {
       ),
     ).toEqual({ outcome: "duplicate" });
   });
+
+  it("validates activation plans on reactivation, not just creation", async () => {
+    const updates: unknown[] = [];
+    const db = makeDb({ subs: [sub({ status: "cancelled" })], events: [], updates });
+    const bogusReactivation: BillingEvent = {
+      type: "subscription.activated",
+      ref: "stub_sub_1",
+      planCode: "platinum",
+      periodEnd: new Date("2026-12-23T00:00:00.000Z"),
+    };
+    expect(
+      await applyBillingEvent(
+        db,
+        { provider: "stub", providerEventId: "evt_9", event: bogusReactivation },
+        clock(),
+      ),
+    ).toMatchObject({ outcome: "rejected", reason: expect.stringMatching(/unknown plan/) });
+    expect(updates).toHaveLength(0);
+  });
+
+  it("adopts crash-stranded receipts but honors finished ones as duplicates", async () => {
+    const events: FakeEvent[] = [
+      {
+        provider: "stub",
+        provider_event_id: "evt_x",
+        subscription_id: "sub_1",
+        processed_at: null,
+      },
+      {
+        provider: "stub",
+        provider_event_id: "evt_done",
+        subscription_id: "sub_1",
+        processed_at: "2026-11-01T00:00:00.000Z",
+      },
+    ];
+    const db = makeDb({ subs: [sub({ status: "active" })], events });
+    const failed = { type: "payment.failed", ref: "stub_sub_1", attempt: 1 } as BillingEvent;
+
+    // A previous attempt recorded receipt but never finished: adopt and
+    // drive to completion instead of masking it as a duplicate.
+    expect(
+      await applyBillingEvent(
+        db,
+        { provider: "stub", providerEventId: "evt_x", event: failed },
+        clock(),
+      ),
+    ).toEqual({ outcome: "applied", status: "past_due" });
+    expect(events.find((e) => e.provider_event_id === "evt_x")?.processed_at).not.toBeNull();
+
+    // A finished id stays a duplicate with zero state touch.
+    expect(
+      await applyBillingEvent(
+        db,
+        { provider: "stub", providerEventId: "evt_done", event: failed },
+        clock(),
+      ),
+    ).toEqual({ outcome: "duplicate" });
+  });
+
+  it("a concurrent writer loses the race without resurrecting state", async () => {
+    const updates: unknown[] = [];
+    const target = sub({ status: "past_due" });
+    const state = { subs: [target], events: [] as FakeEvent[], updates };
+    let armed = true;
+    const db = makeDb({
+      ...state,
+      sabotageOnUpdate: () => {
+        // A concurrent cancellation commits between our read and our write.
+        if (armed) {
+          armed = false;
+          target.status = "cancelled";
+        }
+      },
+    });
+    const succeeded = {
+      type: "payment.succeeded",
+      ref: "stub_sub_1",
+      amount: { amount: 12900, currency: "NIO" },
+      periodEnd: new Date("2026-12-23T00:00:00.000Z"),
+    } as BillingEvent;
+    // Re-planned against the fresh cancelled row, the stale success is
+    // ignored — the payment never resurrects the cancellation.
+    expect(
+      await applyBillingEvent(
+        db,
+        { provider: "stub", providerEventId: "evt_race", event: succeeded },
+        clock(),
+      ),
+    ).toMatchObject({ outcome: "ignored" });
+    expect(target.status).toBe("cancelled");
+    expect(updates).toHaveLength(0);
+  });
+
+  it("throws ConcurrentModificationError when the row never settles", async () => {
+    const target = sub({ status: "past_due" });
+    const db = makeDb({
+      subs: [target],
+      events: [] as FakeEvent[],
+      sabotageOnUpdate: () => {
+        // Every guarded write finds a different status than planned.
+        target.status = target.status === "active" ? "past_due" : "active";
+      },
+    });
+    const failed = { type: "payment.failed", ref: "stub_sub_1", attempt: 1 } as BillingEvent;
+    await expect(
+      applyBillingEvent(
+        db,
+        { provider: "stub", providerEventId: "evt_hot", event: failed },
+        clock(),
+      ),
+    ).rejects.toThrow(ConcurrentModificationError);
+  });
 });
 
 describe("isExpirable (#260)", () => {
@@ -415,5 +568,28 @@ describe("expireDueSubscriptions (#260)", () => {
     const second = await expireDueSubscriptions(db, clock());
     expect(second.expired).toEqual([]);
     expect(updates).toHaveLength(3);
+  });
+
+  it("skips rows a concurrent event moved first instead of clobbering them", async () => {
+    const target = sub({
+      id: "s_past",
+      status: "past_due",
+      grace_ends_at: "2026-10-30T00:00:00.000Z",
+    });
+    let armed = true;
+    const db = makeDb({
+      subs: [target],
+      events: [],
+      sabotageOnUpdate: () => {
+        // A payment lands between the sweep read and the expiry write.
+        if (armed) {
+          armed = false;
+          target.status = "active";
+        }
+      },
+    });
+    const result = await expireDueSubscriptions(db, clock());
+    expect(result).toEqual({ checked: 1, expired: [] });
+    expect(target.status).toBe("active");
   });
 });
