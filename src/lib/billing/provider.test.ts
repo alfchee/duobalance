@@ -8,15 +8,22 @@ import {
 
 describe("billing Money (#258)", () => {
   it("carries an explicit currency, never a bare number", () => {
-    const price = createMoney(129, "NIO");
-    expect(price).toEqual({ amount: 129, currency: "NIO" });
+    // C$129 with NIO minor_unit = 2 (only CLP and PYG are 0).
+    const price = createMoney(12900, "NIO");
+    expect(price).toEqual({ amount: 12900, currency: "NIO" });
     expect(isMoney(price)).toBe(true);
 
-    expect(isMoney(129)).toBe(false);
-    expect(isMoney({ amount: 129 })).toBe(false);
-    expect(isMoney({ amount: 129, currency: "NIO", vendor: "bac" })).toBe(false);
+    expect(isMoney(12900)).toBe(false);
+    expect(isMoney({ amount: 12900 })).toBe(false);
+    expect(isMoney({ amount: 12900, currency: "NIO", vendor: "bac" })).toBe(false);
     expect(moneySchema.safeParse({ amount: 12.5, currency: "USD" }).success).toBe(false);
     expect(moneySchema.safeParse({ amount: 350, currency: "usd" }).success).toBe(false);
+  });
+
+  it("rejects non-codes that match the currency syntax", () => {
+    expect(moneySchema.safeParse({ amount: 100, currency: "ABC" }).success).toBe(false);
+    expect(moneySchema.safeParse({ amount: 100, currency: "XXX" }).success).toBe(false);
+    expect(isMoney({ amount: 100, currency: "ABC" })).toBe(false);
   });
 
   it("is not a number alias", () => {
@@ -26,7 +33,7 @@ describe("billing Money (#258)", () => {
   });
 
   it("converts minor units to major units for display", () => {
-    expect(toMajorUnits(createMoney(129, "NIO"), 0)).toBe(129);
+    expect(toMajorUnits(createMoney(12900, "NIO"), 2)).toBe(129);
     expect(toMajorUnits(createMoney(350, "USD"), 2)).toBe(3.5);
     // Negative amounts are credits/refunds reusing the same type.
     expect(toMajorUnits(createMoney(-350, "USD"), 2)).toBe(-3.5);

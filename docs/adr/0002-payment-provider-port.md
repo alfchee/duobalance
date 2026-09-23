@@ -23,7 +23,8 @@ rewrite instead of one file.
 - **Money with explicit currency.** `src/lib/billing/money.ts` defines
   `Money` as `{ amount: number; currency: string }` (Zod-validated: integer
   amount, ISO 4217 uppercase code), where `amount` is in the currency's
-  minor unit (`currencies.minor_unit`: NIO = 0, USD = 2). It is deliberately
+  minor unit (`currencies.minor_unit`: NIO = 2, USD = 2; only CLP and PYG
+  are 0 per the pgTAP contract in `01_reference_tables.sql`). It is deliberately
   not a number alias — a bare number cannot cross the port. Display
   formatting stays in `src/lib/money.ts` (major units) via `toMajorUnits()`.
 - **Registry resolves the stub by default.**
