@@ -69,6 +69,12 @@ interface TransitionDef {
   cancelAtPeriodEnd?: boolean;
   /** Creation-only: seed trial_ends_at from the activation period end. */
   seedTrial?: boolean;
+  /**
+   * Copy the activation's planCode into plan_code. Only subscription.activated
+   * carries a plan — reactivation with a different plan (upgrade/downgrade)
+   * must move the row, or household_plan() keeps resolving the stale plan.
+   */
+  takePlanCode?: boolean;
 }
 
 type TransitionTable = Record<LifecycleFrom, Record<string, TransitionDef>>;
@@ -91,6 +97,9 @@ const recoverEntry = (periodFrom: "periodEnd"): TransitionDef => ({
   cancelAtPeriodEnd: false,
 });
 
+/** Activation recovers AND moves the plan (upgrades/downgrades/reactivations). */
+const activatedEntry = (): TransitionDef => ({ ...recoverEntry("periodEnd"), takePlanCode: true });
+
 export const TRANSITIONS: TransitionTable = {
   none: {
     "subscription.activated": {
@@ -105,28 +114,28 @@ export const TRANSITIONS: TransitionTable = {
     "subscription.expired": REJECT_NO_ROW("subscription.expired"),
   },
   trialing: {
-    "subscription.activated": recoverEntry("periodEnd"),
+    "subscription.activated": activatedEntry(),
     "payment.succeeded": recoverEntry("periodEnd"),
     "payment.failed": { to: "past_due", refreshGrace: true },
     "subscription.cancelled": cancelledEntry("effectiveAt"),
     "subscription.expired": { to: "expired", clearPeriod: true },
   },
   active: {
-    "subscription.activated": recoverEntry("periodEnd"),
+    "subscription.activated": activatedEntry(),
     "payment.succeeded": recoverEntry("periodEnd"),
     "payment.failed": { to: "past_due", refreshGrace: true },
     "subscription.cancelled": cancelledEntry("effectiveAt"),
     "subscription.expired": { to: "expired", clearPeriod: true },
   },
   past_due: {
-    "subscription.activated": recoverEntry("periodEnd"),
+    "subscription.activated": activatedEntry(),
     "payment.succeeded": recoverEntry("periodEnd"),
     "payment.failed": { to: "grace", refreshGrace: true },
     "subscription.cancelled": cancelledEntry("effectiveAt"),
     "subscription.expired": { to: "expired", clearPeriod: true },
   },
   grace: {
-    "subscription.activated": recoverEntry("periodEnd"),
+    "subscription.activated": activatedEntry(),
     "payment.succeeded": recoverEntry("periodEnd"),
     "payment.failed": { to: "expired", clearPeriod: true },
     "subscription.cancelled": cancelledEntry("effectiveAt"),
@@ -134,7 +143,7 @@ export const TRANSITIONS: TransitionTable = {
   },
   cancelled: {
     // Reactivation: the only way out of cancelled besides expiry.
-    "subscription.activated": recoverEntry("periodEnd"),
+    "subscription.activated": activatedEntry(),
     // Terminal precedence (mirrors the stub #259): stale money and stale
     // retries are ignored, never resurrecting.
     "payment.succeeded": { to: "ignore", reason: "stale payment for a cancelled subscription" },
@@ -143,7 +152,7 @@ export const TRANSITIONS: TransitionTable = {
     "subscription.expired": { to: "expired", clearPeriod: true },
   },
   expired: {
-    "subscription.activated": recoverEntry("periodEnd"),
+    "subscription.activated": activatedEntry(),
     "payment.succeeded": { to: "ignore", reason: "stale payment for an expired subscription" },
     "payment.failed": { to: "ignore", reason: "stale retry for an expired subscription" },
     "subscription.cancelled": { to: "same" },
@@ -151,10 +160,16 @@ export const TRANSITIONS: TransitionTable = {
   },
 };
 
-/** Table lookup with a reject fallback for unknown event types. */
+/** Table lookup with reject fallbacks for unknown types AND unknown statuses. */
 export function resolveTransition(from: LifecycleFrom, eventType: string): TransitionDef {
+  const byStatus = (TRANSITIONS as Record<string, Record<string, TransitionDef> | undefined>)[from];
+  // Unknown status (e.g. a future status the check constraint doesn't know
+  // yet reaching this worker): reject, never throw on the lookup.
+  if (!byStatus) {
+    return { to: "reject", reason: `unknown subscription status "${from}"` };
+  }
   return (
-    TRANSITIONS[from][eventType] ?? {
+    byStatus[eventType] ?? {
       to: "reject",
       reason: `unknown event type "${eventType}"`,
     }
@@ -273,6 +288,9 @@ export function planEventApplication(
   if (def.cancelAtPeriodEnd !== undefined) {
     update.cancel_at_period_end = def.cancelAtPeriodEnd;
   }
+  if (def.takePlanCode && event.type === "subscription.activated") {
+    update.plan_code = event.planCode;
+  }
   return { outcome: "applied", status: to, update };
 }
 
@@ -298,9 +316,10 @@ type BillingClient = SupabaseClient<Database>;
  * Apply one provider event idempotently, keyed on
  * billing_events(provider, provider_event_id): the insert is the dedupe
  * gate — a 23505 conflict means this exact delivery was already processed,
- * so the same event twice changes state once. Unknown types and invalid
- * transitions are RECORDED (event row written) and returned as rejected,
- * never thrown, so a mixed batch survives one bad delivery.
+ * so the same event twice changes state once. Unknown types, invalid
+ * transitions, and malformed dates are RECORDED (event row written, linked
+ * to the row when known) and returned as rejected, never thrown, so a mixed
+ * batch survives one bad delivery.
  *
  * Takes an injected client: route/cron handlers pass a service-role client
  * (cross-household writes); tests pass fakes. Never throws on domain
@@ -311,23 +330,6 @@ export async function applyBillingEvent(
   input: ApplyInput,
   clock: Clock = systemClock,
 ): Promise<ApplyOutcome> {
-  const logged = await db.from("billing_events").insert({
-    provider: input.provider,
-    provider_event_id: input.providerEventId,
-    subscription_id: null,
-    type: input.event.type,
-    payload: JSON.parse(JSON.stringify(input.event)) as Json,
-    processed_at: clock.now().toISOString(),
-  });
-  if (logged.error) {
-    // Exact redelivery of an already-processed provider event: state was
-    // changed once by the first delivery; touch nothing.
-    if (logged.error.code === "23505") {
-      return { outcome: "duplicate" };
-    }
-    throw logged.error;
-  }
-
   const found = await db
     .from("subscriptions")
     .select(
@@ -341,58 +343,102 @@ export async function applyBillingEvent(
   }
   const row = (found.data ?? null) as SubscriptionRow | null;
 
-  if (!row) {
-    const plan = planEventApplication(null, input.event, input.householdId ?? null, clock);
-    if (plan.outcome === "create") {
-      // The plan code must exist or the FK throws mid-batch: check first so
-      // a bogus code is a recorded rejection, not a 500 redelivery loop.
-      const planRow = await db
-        .from("plans")
-        .select("code")
-        .eq("code", plan.insert.plan_code)
-        .maybeSingle();
-      if (planRow.error) {
-        throw planRow.error;
-      }
-      if (!planRow.data) {
-        return { outcome: "rejected", reason: `unknown plan code "${plan.insert.plan_code}"` };
-      }
-      const created = await db
-        .from("subscriptions")
-        .insert({ ...plan.insert, provider: input.provider })
-        .select("id")
-        .single();
-      if (created.error) {
-        throw created.error;
-      }
-      return { outcome: "applied", status: plan.status };
+  const logged = await db.from("billing_events").insert({
+    provider: input.provider,
+    provider_event_id: input.providerEventId,
+    subscription_id: row?.id ?? null,
+    type: input.event.type,
+    payload: JSON.parse(JSON.stringify(input.event)) as Json,
+    processed_at: clock.now().toISOString(),
+  });
+  if (logged.error) {
+    // Exact redelivery of an already-processed provider event: the first
+    // delivery's outcome (applied or recorded rejection) stands; touch
+    // nothing, so the same event twice changes state once.
+    if (logged.error.code === "23505") {
+      return { outcome: "duplicate" };
     }
-    if (plan.outcome === "ignored") {
-      return { outcome: "ignored", reason: plan.reason };
-    }
-    if (plan.outcome === "rejected") {
-      return { outcome: "rejected", reason: plan.reason };
-    }
-    // Unreachable: a missing row only ever plans create/ignored/rejected.
-    throw new Error("lifecycle planner returned applied for a missing row");
+    throw logged.error;
   }
 
-  const plan = planEventApplication(row, input.event, null, clock);
-  if (plan.outcome === "applied") {
-    const updated = await db.from("subscriptions").update(plan.update).eq("id", row.id);
-    if (updated.error) {
-      throw updated.error;
-    }
-    return { outcome: "applied", status: plan.status };
+  // Planning runs AFTER the event row is recorded, and its throws are
+  // captured into rejections: a malformed delivery (e.g. a null periodEnd
+  // in a JSON-shaped webhook) must surface as a recorded rejection, never
+  // as a throw that turns the retry into a silent "duplicate".
+  let plan: PlanOutcome;
+  try {
+    plan = row
+      ? planEventApplication(row, input.event, null, clock)
+      : planEventApplication(null, input.event, input.householdId ?? null, clock);
+  } catch (error) {
+    return {
+      outcome: "rejected",
+      reason: error instanceof Error ? error.message : "unplannable event",
+    };
   }
+
   if (plan.outcome === "ignored") {
     return { outcome: "ignored", reason: plan.reason };
   }
   if (plan.outcome === "rejected") {
     return { outcome: "rejected", reason: plan.reason };
   }
-  // Unreachable: the planner only returns "create" for a missing row.
-  throw new Error("lifecycle planner returned create for an existing row");
+  if (plan.outcome === "create") {
+    // The plan code must exist or the FK throws mid-batch: check first so
+    // a bogus code is a recorded rejection, not a 500 redelivery loop.
+    const planRow = await db
+      .from("plans")
+      .select("code")
+      .eq("code", plan.insert.plan_code)
+      .maybeSingle();
+    if (planRow.error) {
+      throw planRow.error;
+    }
+    if (!planRow.data) {
+      return { outcome: "rejected", reason: `unknown plan code "${plan.insert.plan_code}"` };
+    }
+    const created = await db
+      .from("subscriptions")
+      .insert({ ...plan.insert, provider: input.provider })
+      .select("id")
+      .single();
+    if (created.error) {
+      // Lost a race (concurrent double-activate) or the household already
+      // holds a live row (subscriptions_one_live): both are recorded states,
+      // never a 500 loop. Same provider entity → duplicate; a second live
+      // row → rejected.
+      if (created.error.code === "23505") {
+        if ((created.error.message ?? "").includes("subscriptions_one_live")) {
+          return { outcome: "rejected", reason: "household already holds a live subscription" };
+        }
+        return { outcome: "duplicate" };
+      }
+      throw created.error;
+    }
+    await linkEvent(db, input, created.data.id);
+    return { outcome: "applied", status: plan.status };
+  }
+
+  const updated = await db
+    .from("subscriptions")
+    .update(plan.update)
+    .eq("id", (row as SubscriptionRow).id);
+  if (updated.error) {
+    throw updated.error;
+  }
+  return { outcome: "applied", status: plan.status };
+}
+
+/** Backfill the event row's subscription link once the row id is known. */
+async function linkEvent(db: BillingClient, input: ApplyInput, subscriptionId: string) {
+  const linked = await db
+    .from("billing_events")
+    .update({ subscription_id: subscriptionId })
+    .eq("provider", input.provider)
+    .eq("provider_event_id", input.providerEventId);
+  if (linked.error) {
+    throw linked.error;
+  }
 }
 
 // -- Sweeper: expire what time has ended ---------------------------------------

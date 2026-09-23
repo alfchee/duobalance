@@ -24,16 +24,23 @@ rows between statuses without re-encoding that list.
   fails loudly.
 - **Pure planner + thin I/O.** `planEventApplication` (pure, needs
   `householdId` only on the creation path) is exhaustively tested without
-  mocks; `applyBillingEvent` adds the `billing_events(provider,
-provider_event_id)` dedupe gate — a 23505 conflict returns `duplicate`
-  and touches nothing, so redelivery changes state once. Unknown types and
-  invalid transitions are recorded (event row written, `processed_at` set)
-  and returned as rejected, never thrown.
+  mocks; `applyBillingEvent` selects the row, then inserts the event linked
+  to it (`subscription_id`, backfilled after creation) as the dedupe gate —
+  a 23505 conflict returns `duplicate` and touches nothing, so redelivery
+  changes state once. Unknown types, invalid transitions, and malformed
+  dates are recorded and returned as rejected, never thrown (planning runs
+  inside a capture for exactly this reason — otherwise the retry would
+  mask the failure as a silent duplicate).
 - **Creation needs a plan carrier.** Only `subscription.activated` opens a
-  row (it carries `planCode` and seeds `trial_ends_at`; `payment.succeeded`
+  row (it carries the plan code and seeds `trial_ends_at`; `payment.succeeded`
   carries no plan, so first-contact success is rejected and logged). The
   plan code is pre-checked so a bogus code is a recorded rejection, not a
-  FK 500 loop. Checkout context supplies `householdId` (#264 wires it).
+  FK 500 loop; lost creation races are distinguished by constraint — same
+  provider entity → `duplicate`, second live row (`subscriptions_one_live`)
+  → `rejected`. Checkout context supplies `householdId` (#264 wires it).
+- **Activation moves the plan.** Every `subscription.activated` transition
+  upserts `plan_code` (`takePlanCode`), so upgrades, downgrades, and
+  reactivations never leave the row on a stale plan.
 - **Sweeper expires what time ended** (`expireDueSubscriptions`, daily
   `/api/cron/billing-expire` on the service role behind the cron secret):
   past_due/grace past `grace_ends_at`, cancelled past (or without) its

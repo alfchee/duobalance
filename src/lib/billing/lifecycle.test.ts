@@ -135,6 +135,22 @@ describe("lifecycle transition table (#260)", () => {
     expect(def.reason).toMatch(/unknown event type/);
   });
 
+  it("rejects unknown statuses instead of throwing on the lookup", () => {
+    const def = resolveTransition("mystery" as LifecycleFrom, "payment.succeeded");
+    expect(def.to).toBe("reject");
+    expect(def.reason).toMatch(/unknown subscription status/);
+  });
+
+  it("every activation entry carries the plan-code upsert", () => {
+    for (const from of Object.keys(DIAGRAM) as LifecycleFrom[]) {
+      if (from === "none") continue;
+      expect(
+        TRANSITIONS[from]["subscription.activated"]?.takePlanCode,
+        `${from} × activated must upsert plan_code`,
+      ).toBe(true);
+    }
+  });
+
   it("rejects at least three invalid transitions", () => {
     expect(resolveTransition("none", "payment.failed").to).toBe("reject");
     expect(resolveTransition("none", "subscription.cancelled").to).toBe("reject");
@@ -221,6 +237,24 @@ describe("planEventApplication (#260)", () => {
     if (plan.outcome !== "applied") throw new Error("unreachable");
     expect(plan.status).toBe("expired");
     expect(plan.update.current_period_end).toBeNull();
+  });
+
+  it("moves plan_code on reactivation; payment alone never does", () => {
+    const cancelledRow = { ...row("active"), status: "cancelled" as LifecycleStatus };
+    const downgrade: BillingEvent = {
+      type: "subscription.activated",
+      ref: "stub_sub_1",
+      planCode: "free",
+      periodEnd: PERIOD_END,
+    };
+    const revived = planEventApplication(cancelledRow, downgrade, null, clock());
+    expect(revived.outcome).toBe("applied");
+    if (revived.outcome !== "applied") throw new Error("unreachable");
+    expect(revived.update.plan_code).toBe("free");
+
+    const paid = planEventApplication(row("active"), succeeded, null, clock());
+    if (paid.outcome !== "applied") throw new Error("unreachable");
+    expect(paid.update.plan_code).toBeUndefined();
   });
 
   it("ignores stale money on terminal statuses and reactivates on activated", () => {

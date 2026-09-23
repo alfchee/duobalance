@@ -27,10 +27,23 @@ type FakeSub = {
   cancel_at_period_end: boolean;
 };
 
-// Minimal postgrest-chain emulator: billing_events insert with 23505 on
-// conflict, subscriptions select/insert/update with eq/in filtering. Mirrors
-// the makeClient fake style in app/api/cron/fx-refresh/route.test.ts.
-function makeDb(state: { subs: FakeSub[]; events: Set<string>; updates?: unknown[] }) {
+// Minimal postgrest-chain emulator: billing_events rows with 23505 on
+// conflict plus chainable update, subscriptions select/insert/update with
+// eq/in filtering. Mirrors the makeClient fake style in
+// app/api/cron/fx-refresh/route.test.ts.
+type FakeEvent = {
+  provider: string;
+  provider_event_id: string;
+  subscription_id: string | null;
+};
+
+function makeDb(state: {
+  subs: FakeSub[];
+  events: FakeEvent[];
+  updates?: unknown[];
+  /** Force the next subscriptions insert to fail with this error. */
+  failNextSubInsert?: { code: string; message: string };
+}) {
   const match = (row: FakeSub, filters: { col: string; op: string; value: unknown }[]) =>
     filters.every((f) =>
       f.op === "eq"
@@ -42,11 +55,30 @@ function makeDb(state: { subs: FakeSub[]; events: Set<string>; updates?: unknown
       return {
         insert: async (input: { provider: string; provider_event_id: string }) => {
           const key = `${input.provider}|${input.provider_event_id}`;
-          if (state.events.has(key)) {
+          if (state.events.some((e) => `${e.provider}|${e.provider_event_id}` === key)) {
             return { error: { code: "23505", message: "duplicate key" } };
           }
-          state.events.add(key);
+          state.events.push({ ...input, subscription_id: null });
           return { error: null };
+        },
+        update: (values: Record<string, unknown>) => {
+          const filters: { col: string; value: unknown }[] = [];
+          const chain: Record<string, unknown> = {};
+          chain.eq = (col: string, value: unknown) => {
+            filters.push({ col, value });
+            return chain;
+          };
+          chain.then = (resolve: (v: unknown) => void) => {
+            for (const e of state.events) {
+              if (
+                filters.every((f) => (e as unknown as Record<string, unknown>)[f.col] === f.value)
+              ) {
+                Object.assign(e, values);
+              }
+            }
+            resolve({ error: null });
+          };
+          return chain;
         },
       };
     }
@@ -86,6 +118,11 @@ function makeDb(state: { subs: FakeSub[]; events: Set<string>; updates?: unknown
         insert: (input: Record<string, unknown>) => ({
           select: (_cols: string) => ({
             single: async () => {
+              if (state.failNextSubInsert) {
+                const error = state.failNextSubInsert;
+                state.failNextSubInsert = undefined;
+                return { data: null, error };
+              }
               const created = { id: `sub_${state.subs.length + 1}`, ...input } as FakeSub;
               state.subs.push(created);
               return { data: { id: created.id }, error: null };
@@ -135,7 +172,7 @@ const activated: BillingEvent = {
 
 describe("applyBillingEvent (#260)", () => {
   it("creates on first activation, then moves trialing → active on payment", async () => {
-    const db = makeDb({ subs: [], events: new Set() });
+    const db = makeDb({ subs: [], events: [] });
     const created = await applyBillingEvent(
       db,
       { provider: "stub", providerEventId: "evt_1", event: activated, householdId: "hh_1" },
@@ -162,7 +199,7 @@ describe("applyBillingEvent (#260)", () => {
 
   it("applying the same event twice changes state once", async () => {
     const updates: unknown[] = [];
-    const db = makeDb({ subs: [sub({ status: "active" })], events: new Set(), updates });
+    const db = makeDb({ subs: [sub({ status: "active" })], events: [], updates });
     const input = {
       provider: "stub",
       providerEventId: "evt_9",
@@ -184,7 +221,7 @@ describe("applyBillingEvent (#260)", () => {
   });
 
   it("records unknown event types without throwing the worker", async () => {
-    const events = new Set<string>();
+    const events: FakeEvent[] = [];
     const db = makeDb({ subs: [sub({ status: "active" })], events });
     const alien = { type: "refund.issued", ref: "stub_sub_1" } as unknown as BillingEvent;
     const result = await applyBillingEvent(
@@ -193,11 +230,11 @@ describe("applyBillingEvent (#260)", () => {
       clock(),
     );
     expect(result.outcome).toBe("rejected");
-    expect(events.has("stub|evt_x")).toBe(true);
+    expect(events.some((e) => e.provider_event_id === "evt_x")).toBe(true);
   });
 
   it("rejects invalid transitions (and unknown plans) without throwing", async () => {
-    const db = makeDb({ subs: [], events: new Set() });
+    const db = makeDb({ subs: [], events: [] });
     const failed = { type: "payment.failed", ref: "stub_sub_1", attempt: 1 } as BillingEvent;
     expect(
       await applyBillingEvent(
@@ -220,6 +257,70 @@ describe("applyBillingEvent (#260)", () => {
         clock(),
       ),
     ).toMatchObject({ outcome: "rejected", reason: expect.stringMatching(/unknown plan/) });
+  });
+
+  it("rejects malformed dates as recorded rejections (retry is then duplicate)", async () => {
+    const db = makeDb({ subs: [sub({ status: "active" })], events: [] });
+    const broken = {
+      type: "payment.succeeded",
+      ref: "stub_sub_1",
+      amount: { amount: 12900, currency: "NIO" },
+      periodEnd: null,
+    } as unknown as BillingEvent;
+    const input = { provider: "stub", providerEventId: "evt_bad", event: broken };
+    const first = await applyBillingEvent(db, input, clock());
+    expect(first.outcome).toBe("rejected");
+    expect(first).toMatchObject({ reason: expect.stringMatching(/periodEnd/) });
+    // The rejection was recorded, so the retry is an honest duplicate —
+    // never a silent success and never a second throw.
+    expect(await applyBillingEvent(db, input, clock())).toEqual({ outcome: "duplicate" });
+  });
+
+  it("links event rows to subscription rows (backfilled on create)", async () => {
+    const events: FakeEvent[] = [];
+    const db = makeDb({ subs: [], events });
+    await applyBillingEvent(
+      db,
+      { provider: "stub", providerEventId: "evt_1", event: activated, householdId: "hh_1" },
+      clock(),
+    );
+    expect(events).toHaveLength(1);
+    expect(events[0]?.subscription_id).toBe("sub_1");
+  });
+
+  it("turns creation races into duplicate/rejected instead of 500 loops", async () => {
+    const liveConflict = makeDb({
+      subs: [],
+      events: [],
+      failNextSubInsert: {
+        code: "23505",
+        message: 'duplicate key value violates unique constraint "subscriptions_one_live"',
+      },
+    });
+    expect(
+      await applyBillingEvent(
+        liveConflict,
+        { provider: "stub", providerEventId: "evt_1", event: activated, householdId: "hh_1" },
+        clock(),
+      ),
+    ).toMatchObject({ outcome: "rejected", reason: expect.stringMatching(/live subscription/) });
+
+    const refConflict = makeDb({
+      subs: [],
+      events: [],
+      failNextSubInsert: {
+        code: "23505",
+        message:
+          'duplicate key value violates unique constraint "subscriptions_provider_provider_ref_key"',
+      },
+    });
+    expect(
+      await applyBillingEvent(
+        refConflict,
+        { provider: "stub", providerEventId: "evt_2", event: activated, householdId: "hh_1" },
+        clock(),
+      ),
+    ).toEqual({ outcome: "duplicate" });
   });
 });
 
@@ -303,7 +404,7 @@ describe("expireDueSubscriptions (#260)", () => {
         }),
         sub({ id: "s_trial", status: "trialing", trial_ends_at: "2026-10-23T00:00:00.000Z" }),
       ],
-      events: new Set(),
+      events: [],
       updates,
     });
     const first = await expireDueSubscriptions(db, clock());
