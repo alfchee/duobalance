@@ -1,4 +1,5 @@
 import { StubPaymentProvider } from "./adapters/stub";
+import { ManualClock } from "./clock";
 import type { PaymentProvider } from "./provider";
 
 // Provider registry (issue #258, ADR 0002).
@@ -61,4 +62,25 @@ export function getActiveProvider(id: string = resolveProviderId()): PaymentProv
 export function resetBillingRegistry(): void {
   providers.clear();
   registerProvider(new StubPaymentProvider());
+  debugStub = null;
+}
+
+let debugStub: StubPaymentProvider | null = null;
+
+/**
+ * Manual-driving sandbox for the dev debug surface
+ * (`app/api/billing/debug`). Lives here — rather than the route importing
+ * the adapter directly — so the `billing/adapters` boundary keeps exactly
+ * one exemption (this composition root). Manual clock pinned to a fixed
+ * start so the sandbox is deterministic; the route 404s in production, so
+ * this instance is unreachable outside development.
+ */
+export function getStubForDebug(): StubPaymentProvider {
+  if (!debugStub) {
+    debugStub = new StubPaymentProvider(
+      undefined,
+      new ManualClock(new Date("2026-09-23T00:00:00.000Z")),
+    );
+  }
+  return debugStub;
 }

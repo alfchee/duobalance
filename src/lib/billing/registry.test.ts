@@ -62,13 +62,20 @@ describe("provider registry (#258)", () => {
     expect(() => registerProvider(fakeProvider("stub"))).toThrow(/already registered/);
   });
 
-  it("stub lifecycle methods reject (never throw synchronously)", async () => {
+  it("the registry stub runs the port (checkout resolves, unknown refs reject)", async () => {
     const provider = getActiveProvider();
-    await expect(
-      provider.createCheckout({ householdId: "h_1", planCode: "plus", idempotencyKey: "k_1" }),
-    ).rejects.toThrow(/#259/);
-    await expect(provider.cancelSubscription({ subscriptionRef: "sub_1" })).rejects.toThrow(/#259/);
-    await expect(provider.getSubscription({ subscriptionRef: "sub_1" })).rejects.toThrow(/#259/);
+    const { reference } = await provider.createCheckout({
+      householdId: "h_1",
+      planCode: "plus",
+      idempotencyKey: "k_1",
+    });
+    expect(reference).toMatch(/^stub_sub_/);
+    await expect(provider.cancelSubscription({ subscriptionRef: "sub_1" })).rejects.toThrow(
+      /no subscription/,
+    );
+    await expect(provider.getSubscription({ subscriptionRef: "sub_1" })).rejects.toThrow(
+      /no subscription/,
+    );
   });
 
   it("parseWebhook throws on a bad signature instead of returning []", async () => {

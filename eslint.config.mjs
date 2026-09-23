@@ -132,6 +132,75 @@ const eslintConfig = [
       ],
     },
   },
+  {
+    // Billing clock boundary (issue #259). No shippable billing code reads
+    // the system clock directly: every timestamp under src/lib/billing/
+    // comes from an injected Clock (see clock.ts). `new Date()` with
+    // arguments (fixed dates, defensive copies) is fine — only the
+    // zero-argument read is banned, alongside Date.now().
+    //
+    // Flat-config entries sharing a rule key overwrite, so this entry
+    // repeats the use-server AND adapter selectors from above: without them,
+    // the overlapping files (provider.ts, money.ts) would lose those bans
+    // wherever this entry wins. Test files, clock.ts (the one module allowed
+    // to touch the clock), and the adapter-entry exemptions are ignored
+    // here; boundary.test.ts text-scans those for clock reads instead, and
+    // the adapter entry above still guards tests. Locked by boundary.test.ts.
+    files: ["src/lib/billing/**/*.{ts,tsx}"],
+    ignores: [
+      "**/lib/billing/adapters/**",
+      "**/lib/billing/registry.ts",
+      "**/lib/billing/clock.ts",
+      "**/*.test.ts",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value='use server']",
+          message:
+            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+        },
+        {
+          selector: 'Literal[value="use server"]',
+          message:
+            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+        },
+        {
+          selector: "ImportDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+          message:
+            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Import the port from @/lib/billing/provider and resolve implementations via @/lib/billing/registry — never import an adapter directly.",
+        },
+        {
+          selector:
+            "ExportNamedDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+          message:
+            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
+        },
+        {
+          selector:
+            "ExportAllDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+          message:
+            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
+        },
+        {
+          selector: "ImportExpression[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+          message:
+            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Resolve implementations via @/lib/billing/registry — never dynamically import an adapter.",
+        },
+        {
+          selector: 'CallExpression[callee.object.name="Date"][callee.property.name="now"]',
+          message:
+            "Billing code must not read the system clock directly (issue #259). Inject a Clock (clock.ts) and call clock.now() instead.",
+        },
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message:
+            "Billing code must not read the system clock directly (issue #259). Inject a Clock (clock.ts) and call clock.now() instead — new Date() with arguments is fine.",
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

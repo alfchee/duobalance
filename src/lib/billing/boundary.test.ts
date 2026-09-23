@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -9,6 +9,26 @@ import { describe, expect, it } from "vitest";
 
 function read(rel: string): string {
   return readFileSync(path.join(process.cwd(), rel), "utf8");
+}
+
+/** Every .ts source under src/lib/billing, recursively. */
+function billingSources(): string[] {
+  const root = path.join(process.cwd(), "src", "lib", "billing");
+  const out: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir)) {
+      const full = path.join(dir, entry);
+      if (statSync(full).isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (entry.endsWith(".ts")) {
+        out.push(path.relative(process.cwd(), full));
+      }
+    }
+  };
+  walk(root);
+  return out.sort();
 }
 
 describe("billing import boundary (#258)", () => {
@@ -50,5 +70,37 @@ describe("billing import boundary (#258)", () => {
     const source = read("src/lib/billing/money.ts");
     expect(source).toMatch(/currency/);
     expect(source).not.toMatch(/type Money = number/);
+  });
+});
+
+describe("billing clock boundary (#259)", () => {
+  it("an eslint rule bans direct system-clock reads in billing code", () => {
+    const config = read("eslint.config.mjs");
+    expect(config).toContain('CallExpression[callee.object.name="Date"]');
+    expect(config).toContain("NewExpression[callee.name='Date']");
+    expect(config).toContain("259");
+    expect(config).toContain("lib/billing/clock.ts");
+  });
+
+  it("no shippable billing source reads the clock except clock.ts", () => {
+    // Text scan backs the eslint rule where entry exemptions apply
+    // (clock.ts itself, test files): real clock reads, not fixed dates or
+    // defensive copies (those carry arguments and are fine).
+    const exempt = new Set(["src/lib/billing/clock.ts"]);
+    for (const file of billingSources()) {
+      if (file.endsWith(".test.ts") || exempt.has(file)) continue;
+      const source = read(file);
+      expect(source, `${file} must not call Date.now()`).not.toContain("Date.now(");
+      expect(source, `${file} must not call argument-less new Date()`).not.toMatch(
+        /new Date\(\s*\)/,
+      );
+    }
+  });
+
+  it("the adapter goes through the injected clock", () => {
+    // registry.ts never reads time at all (covered by the scan above); the
+    // stub is the file that must demonstrably use clock.now().
+    const source = read("src/lib/billing/adapters/stub.ts");
+    expect(source).toMatch(/clock\.now\(\)/);
   });
 });
