@@ -240,6 +240,47 @@ export type Database = {
           },
         ]
       }
+      billing_events: {
+        Row: {
+          id: string
+          payload: Json
+          processed_at: string | null
+          provider: string
+          provider_event_id: string
+          received_at: string
+          subscription_id: string | null
+          type: string
+        }
+        Insert: {
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          provider: string
+          provider_event_id: string
+          received_at?: string
+          subscription_id?: string | null
+          type: string
+        }
+        Update: {
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          provider_event_id?: string
+          received_at?: string
+          subscription_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bills: {
         Row: {
           account_id: string | null
@@ -1152,6 +1193,59 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_features: {
+        Row: {
+          enabled: boolean
+          feature_key: string
+          limit_value: number | null
+          plan_code: string
+        }
+        Insert: {
+          enabled?: boolean
+          feature_key: string
+          limit_value?: number | null
+          plan_code: string
+        }
+        Update: {
+          enabled?: boolean
+          feature_key?: string
+          limit_value?: number | null
+          plan_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_features_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          code: string
+          created_at: string
+          is_public: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          is_public?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          is_public?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1204,6 +1298,66 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          grace_ends_at: string | null
+          household_id: string
+          id: string
+          plan_code: string
+          provider: string
+          provider_ref: string | null
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          grace_ends_at?: string | null
+          household_id: string
+          id?: string
+          plan_code: string
+          provider?: string
+          provider_ref?: string | null
+          status: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          grace_ends_at?: string | null
+          household_id?: string
+          id?: string
+          plan_code?: string
+          provider?: string
+          provider_ref?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -1788,6 +1942,10 @@ export type Database = {
       fail:
         | { Args: never; Returns: string }
         | { Args: { "": string }; Returns: string }
+      feature_limit: {
+        Args: { p_feature: string; p_household: string }
+        Returns: number
+      }
       findfuncs: { Args: { "": string }; Returns: string[] }
       finish: { Args: { exception_on_failure?: boolean }; Returns: string[] }
       format_type_string: { Args: { "": string }; Returns: string }
@@ -1811,7 +1969,12 @@ export type Database = {
           id: string
         }[]
       }
+      has_feature: {
+        Args: { p_feature: string; p_household: string }
+        Returns: boolean
+      }
       has_unique: { Args: { "": string }; Returns: string }
+      household_plan: { Args: { p_household: string }; Returns: string }
       in_todo: { Args: never; Returns: boolean }
       is_empty: { Args: { "": string }; Returns: string }
       is_member: { Args: { household: string }; Returns: boolean }
