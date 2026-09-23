@@ -77,6 +77,61 @@ const eslintConfig = [
       ],
     },
   },
+  {
+    // Billing provider boundary (issue #258, ADR 0002). The PaymentProvider
+    // port is the only interface the app knows; vendor types must never leak
+    // past src/lib/billing/adapters/. The registry is the composition root
+    // and the sole exemption.
+    //
+    // Uses no-restricted-syntax rather than no-restricted-imports, which
+    // would clobber the next/headers ban above for overlapping files (flat
+    // config entries sharing a rule key overwrite). The use-server selectors
+    // are repeated here for the same reason — omitting them would unban
+    // server actions for every file this entry matches.
+    // The path pattern matches both aliased/absolute imports
+    // (`@/lib/billing/adapters/stub`) and relative ones (`./adapters/stub`,
+    // `../adapters/stub`) — a domain file next to the adapters dir could
+    // otherwise evade the boundary with a `./adapters/…` import.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["**/lib/billing/adapters/**", "**/lib/billing/registry.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value='use server']",
+          message:
+            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+        },
+        {
+          selector: 'Literal[value="use server"]',
+          message:
+            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+        },
+        {
+          selector: "ImportDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+          message:
+            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Import the port from @/lib/billing/provider and resolve implementations via @/lib/billing/registry — never import an adapter directly.",
+        },
+        {
+          selector:
+            "ExportNamedDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+          message:
+            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
+        },
+        {
+          selector:
+            "ExportAllDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+          message:
+            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
+        },
+        {
+          selector: "ImportExpression[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+          message:
+            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Resolve implementations via @/lib/billing/registry — never dynamically import an adapter.",
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;
