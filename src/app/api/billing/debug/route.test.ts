@@ -97,4 +97,22 @@ describe("/api/billing/debug (#259)", () => {
     const res = await POST(post({ action: "advance", ref: "stub_sub_999", status: "active" }));
     expect(res.status).toBe(422);
   });
+
+  it("rejects non-ISO currencies at the domain Money boundary with 422", async () => {
+    authed.mockResolvedValue({ id: "user_1" } as never);
+    const res = await POST(
+      post({
+        action: "inject",
+        events: [
+          {
+            type: "payment.succeeded",
+            ref: "stub_sub_1",
+            amount: { amount: 1, currency: "ABC" },
+            periodEnd: "2026-10-23T00:00:00.000Z",
+          },
+        ],
+      }),
+    );
+    expect(res.status).toBe(422);
+  });
 });

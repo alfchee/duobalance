@@ -31,10 +31,12 @@ describe("ManualClock (#259)", () => {
     expect(clock.now()).toEqual(START);
   });
 
-  it("rejects non-finite advances", () => {
+  it("rejects non-finite and negative advances", () => {
     const clock = new ManualClock(START);
     expect(() => clock.advance(Number.NaN)).toThrow(RangeError);
     expect(() => clock.advance(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+    expect(() => clock.advance(-1)).toThrow(/no clock rewind/);
+    expect(clock.now()).toEqual(START);
   });
 
   it("addDays does whole-day UTC arithmetic", () => {

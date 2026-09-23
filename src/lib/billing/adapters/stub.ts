@@ -100,6 +100,7 @@ export class StubPaymentProvider implements PaymentProvider {
   private readonly config: StubVendorConfig;
   private readonly clock: Clock;
   private subscriptions = new Map<string, StubSubscription>();
+  private checkoutKeys = new Map<string, string>();
   private eventLog: StubLoggedEvent[] = [];
   private outbox: StubLoggedEvent[] = [];
   private counters = { subscription: 0, event: 0 };
@@ -116,6 +117,13 @@ export class StubPaymentProvider implements PaymentProvider {
     planCode: string;
     idempotencyKey: string;
   }): Promise<{ redirectUrl?: string; clientToken?: string; reference: string }> {
+    // Idempotent checkout: retrying the same key returns the original
+    // reference without minting a duplicate subscription or event — the
+    // semantic #266 exercises through the port.
+    const existing = this.checkoutKeys.get(input.idempotencyKey);
+    if (existing) {
+      return { reference: existing };
+    }
     const now = this.clock.now();
     this.counters.subscription += 1;
     const ref = `stub_sub_${this.counters.subscription}`;
@@ -137,11 +145,19 @@ export class StubPaymentProvider implements PaymentProvider {
       planCode: input.planCode,
       periodEnd: trialEndsAt,
     });
+    this.checkoutKeys.set(input.idempotencyKey, ref);
     return { reference: ref };
   }
 
   async cancelSubscription(input: { subscriptionRef: string }): Promise<void> {
     const sub = this.require(input.subscriptionRef);
+    // Idempotent cancel: repeating it emits nothing further.
+    if (sub.status === "cancelled") {
+      return;
+    }
+    if (sub.status === "expired") {
+      throw new Error(`stub ${sub.ref} is expired: cancelling it would resurrect the period end`);
+    }
     const now = this.clock.now();
     // Immediate cancellation keeps access until the paid period ends
     // (epic #255: `cancelled` stays entitled until period end).
@@ -183,7 +199,9 @@ export class StubPaymentProvider implements PaymentProvider {
 
   /** Full provider-side event history with stub event ids, oldest first. */
   getEventLog(): readonly StubLoggedEvent[] {
-    return this.eventLog;
+    // Copy: readonly is compile-time only, and the redelivery tests assert
+    // on log length — callers must not be able to corrupt history.
+    return [...this.eventLog];
   }
 
   /** Number of entries waiting for the next parseWebhook delivery. */
@@ -196,31 +214,47 @@ export class StubPaymentProvider implements PaymentProvider {
     return this.clock.now();
   }
 
-  /** Jump a subscription to any status. Pure state jump — emits no events. */
+  /**
+   * Jump a subscription to any status. Pure state jump — emits no events —
+   * but keeps the date/counter fields consistent with the target so later
+   * reads (and #260-style consumers of stub internals) see a coherent row.
+   */
   advanceTo(subscriptionRef: string, status: StubStatus): ProviderSubscription {
     const sub = this.require(subscriptionRef);
+    const now = this.clock.now();
     sub.status = status;
     if (status === "expired") {
       sub.currentPeriodEnd = null;
+      sub.graceEndsAt = null;
     }
     if (status === "cancelled") {
       sub.cancelAtPeriodEnd = true;
     }
+    if (status === "grace" && !sub.graceEndsAt) {
+      sub.graceEndsAt = addDays(now, STUB_GRACE_DAYS);
+    }
     if (status === "active" || status === "trialing") {
       sub.cancelAtPeriodEnd = false;
       sub.failures = 0;
+      sub.graceEndsAt = null;
     }
     return toProviderView(sub);
   }
 
-  /** Successful renewal: any non-cancelled status becomes active +30 days. */
+  /**
+   * Successful renewal: any live (non-cancelled, non-expired) status becomes
+   * active +30 days. Terminal statuses reject — reactivation goes through
+   * reactivate(), matching the injected-event precedence below.
+   */
   async simulateSuccessfulRenewal(
     subscriptionRef: string,
     options: StubRenewalOptions = {},
   ): Promise<ProviderSubscription> {
     const sub = this.require(subscriptionRef);
-    if (sub.status === "cancelled") {
-      throw new Error(`stub ${sub.ref} is cancelled: renewals are rejected, reactivate() first`);
+    if (sub.status === "cancelled" || sub.status === "expired") {
+      throw new Error(
+        `stub ${sub.ref} is ${sub.status}: renewals are rejected, reactivate() first`,
+      );
     }
     const now = this.clock.now();
     const periodEnd = addDays(now, STUB_RENEWAL_DAYS);
@@ -253,18 +287,9 @@ export class StubPaymentProvider implements PaymentProvider {
         `stub ${sub.ref} is ${sub.status}: failed renewals only apply to live retries`,
       );
     }
-    const now = this.clock.now();
-    sub.failures += 1;
-    sub.graceEndsAt = addDays(now, STUB_GRACE_DAYS);
-    if (sub.status === "grace" || sub.failures >= 3) {
-      sub.status = "expired";
-      sub.currentPeriodEnd = null;
+    if (this.registerFailure(sub)) {
       this.record({ type: "subscription.expired", ref: sub.ref });
-    } else if (sub.status === "past_due") {
-      sub.status = "grace";
-      this.record({ type: "payment.failed", ref: sub.ref, attempt: sub.failures });
     } else {
-      sub.status = "past_due";
       this.record({ type: "payment.failed", ref: sub.ref, attempt: sub.failures });
     }
     return toProviderView(sub);
@@ -343,6 +368,7 @@ export class StubPaymentProvider implements PaymentProvider {
   /** Clear subscriptions, history, and outbox (keeps the clock value). */
   reset(): void {
     this.subscriptions = new Map();
+    this.checkoutKeys = new Map();
     this.eventLog = [];
     this.outbox = [];
     this.counters = { subscription: 0, event: 0 };
@@ -356,6 +382,26 @@ export class StubPaymentProvider implements PaymentProvider {
       throw new Error(`stub has no subscription "${ref}"`);
     }
     return sub;
+  }
+
+  /**
+   * Shared dunning step used by BOTH the simulate path and injected
+   * provider retries: bump the failure count, refresh the 7-day grace
+   * window, and walk past_due → grace → expired. Returns true when the
+   * step expired the subscription (caller records subscription.expired).
+   * The provider-sent attempt number is informational — the stub's own
+   * counter is the ledger, so mixed simulate/inject sequences stay in sync.
+   */
+  private registerFailure(sub: StubSubscription): boolean {
+    sub.failures += 1;
+    sub.graceEndsAt = addDays(this.clock.now(), STUB_GRACE_DAYS);
+    if (sub.status === "grace" || sub.failures >= 3) {
+      sub.status = "expired";
+      sub.currentPeriodEnd = null;
+      return true;
+    }
+    sub.status = sub.status === "past_due" ? "grace" : "past_due";
+    return false;
   }
 
   /** Log + queue one provider-side transition event. */
@@ -402,8 +448,9 @@ export class StubPaymentProvider implements PaymentProvider {
         if (sub.status === "cancelled" || sub.status === "expired") {
           return false;
         }
-        sub.status = "past_due";
-        sub.graceEndsAt = addDays(this.clock.now(), STUB_GRACE_DAYS);
+        if (this.registerFailure(sub)) {
+          this.record({ type: "subscription.expired", ref: sub.ref });
+        }
         return true;
       case "subscription.cancelled":
         sub.status = "cancelled";

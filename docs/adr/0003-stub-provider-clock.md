@@ -28,14 +28,21 @@ will simply not be written.
   RLS/tenant coupling — a real table would buy nothing and cost a migration
   plus async I/O in every lifecycle test.
 - **Explicit transitions, no lazy time travel.** Tests drive state via
-  `advanceTo` (pure jump, no events), `simulateSuccessfulRenewal`,
-  `simulateFailedRenewal` (attempt 1 → `past_due`, 2 → `grace`,
-  3 → `expired`), `reactivate`, and `cancelSubscription`; the injected
-  clock proves the 30-day trial and 7-day grace windows compute correctly.
+  `advanceTo` (pure jump, no events, but keeps date/counter fields coherent),
+  `simulateSuccessfulRenewal` (rejects cancelled AND expired — reactivation
+  goes through `reactivate()` only), `simulateFailedRenewal` (attempt 1 →
+  `past_due`, 2 → `grace`, 3 → `expired`), `reactivate`, and
+  `cancelSubscription` (idempotent; cancelling expired throws rather than
+  resurrecting the period end). `createCheckout` honors the port's
+  `idempotencyKey` (same key returns the original ref, no duplicate). The
+  injected clock proves the 30-day trial and 7-day grace windows compute
+  correctly, and time only moves forward (`ManualClock` rejects rewinds).
   Reads never mutate state.
 - **Cancelled/expired are terminal for payment events.** A stale
   `payment.succeeded` arriving after `subscription.cancelled` is ignored;
-  only `subscription.activated` reactivates. `redeliverEvent` re-queues
+  only `subscription.activated` reactivates. Injected `payment.failed`
+  retries share the simulate dunning table (own failure counter, so mixed
+  sequences stay in sync). `redeliverEvent` re-queues
   without touching state (N redeliveries = the one original state change);
   `injectEvents` applies out-of-order arrivals with an applied/ignored
   summary. The production state machine (#260) mirrors this precedence

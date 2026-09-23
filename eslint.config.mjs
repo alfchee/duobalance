@@ -146,7 +146,7 @@ const eslintConfig = [
     // to touch the clock), and the adapter-entry exemptions are ignored
     // here; boundary.test.ts text-scans those for clock reads instead, and
     // the adapter entry above still guards tests. Locked by boundary.test.ts.
-    files: ["src/lib/billing/**/*.ts"],
+    files: ["src/lib/billing/**/*.{ts,tsx}"],
     ignores: [
       "**/lib/billing/adapters/**",
       "**/lib/billing/registry.ts",

@@ -1,4 +1,5 @@
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createMoney } from "@/lib/billing/money";
 import { getStubForDebug } from "@/lib/billing/registry";
 import { z } from "zod";
 
@@ -117,10 +118,12 @@ function toEvent(input: z.infer<typeof billingEventSchema>) {
         periodEnd: new Date(input.periodEnd),
       } as const;
     case "payment.succeeded":
+      // Canonical Money validation lives in the domain (moneySchema rejects
+      // non-ISO codes like ABC); failures surface as the route's 422 below.
       return {
         type: input.type,
         ref: input.ref,
-        amount: input.amount,
+        amount: createMoney(input.amount.amount, input.amount.currency),
         periodEnd: new Date(input.periodEnd),
       } as const;
     case "payment.failed":

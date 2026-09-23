@@ -164,7 +164,7 @@ describe("StubPaymentProvider out-of-order delivery (#259)", () => {
 });
 
 describe("StubPaymentProvider guards (#259)", () => {
-  it("rejects renewals on cancelled subscriptions and reactivation elsewhere", async () => {
+  it("rejects renewals on terminal subscriptions; only reactivate exits them", async () => {
     const { stub } = manualStub();
     const { reference } = await stub.createCheckout({
       householdId: "hh_1",
@@ -175,6 +175,76 @@ describe("StubPaymentProvider guards (#259)", () => {
     await stub.cancelSubscription({ subscriptionRef: reference });
     await expect(stub.simulateSuccessfulRenewal(reference)).rejects.toThrow(/reactivate/);
     await expect(stub.simulateFailedRenewal(reference)).rejects.toThrow(/live retries/);
+    stub.advanceTo(reference, "expired");
+    await expect(stub.simulateSuccessfulRenewal(reference)).rejects.toThrow(/reactivate/);
+    await expect(stub.simulateFailedRenewal(reference)).rejects.toThrow(/live retries/);
+  });
+
+  it("retries the same idempotency key without duplicating state", async () => {
+    const { stub } = manualStub();
+    const first = await stub.createCheckout({
+      householdId: "hh_1",
+      planCode: "plus",
+      idempotencyKey: "key_1",
+    });
+    const retry = await stub.createCheckout({
+      householdId: "hh_1",
+      planCode: "plus",
+      idempotencyKey: "key_1",
+    });
+    expect(retry).toEqual(first);
+    expect(stub.listSubscriptions()).toHaveLength(1);
+    expect(stub.getEventLog()).toHaveLength(1);
+    const other = await stub.createCheckout({
+      householdId: "hh_1",
+      planCode: "plus",
+      idempotencyKey: "key_2",
+    });
+    expect(other.reference).not.toBe(first.reference);
+  });
+
+  it("cancel is idempotent; cancelling expired throws", async () => {
+    const { stub } = manualStub();
+    const { reference } = await stub.createCheckout({
+      householdId: "hh_1",
+      planCode: "plus",
+      idempotencyKey: "key_1",
+    });
+    await stub.cancelSubscription({ subscriptionRef: reference });
+    const logLength = stub.getEventLog().length;
+    await stub.cancelSubscription({ subscriptionRef: reference });
+    expect(stub.getEventLog()).toHaveLength(logLength);
+    stub.advanceTo(reference, "expired");
+    await expect(stub.cancelSubscription({ subscriptionRef: reference })).rejects.toThrow(
+      /expired/,
+    );
+  });
+
+  it("injected payment.failed retries share the simulate dunning table", async () => {
+    const { stub } = manualStub();
+    const { reference } = await stub.createCheckout({
+      householdId: "hh_1",
+      planCode: "plus",
+      idempotencyKey: "key_1",
+    });
+    const failed = (attempt: number): BillingEvent => ({
+      type: "payment.failed",
+      ref: reference,
+      attempt,
+    });
+    expect(stub.injectEvents([failed(1)])).toEqual({ applied: 1, ignored: 0 });
+    expect((await stub.getSubscription({ subscriptionRef: reference })).status).toBe("past_due");
+    expect(stub.injectEvents([failed(9)])).toEqual({ applied: 1, ignored: 0 });
+    expect((await stub.getSubscription({ subscriptionRef: reference })).status).toBe("grace");
+    expect(stub.injectEvents([failed(3)])).toEqual({ applied: 1, ignored: 0 });
+    expect((await stub.getSubscription({ subscriptionRef: reference })).status).toBe("expired");
+  });
+
+  it("getEventLog returns a copy callers cannot corrupt", async () => {
+    const { stub } = manualStub();
+    await stub.createCheckout({ householdId: "hh_1", planCode: "plus", idempotencyKey: "k" });
+    (stub.getEventLog() as unknown as unknown[]).push({ id: "forged", event: null });
+    expect(stub.getEventLog()).toHaveLength(1);
   });
 
   it("throws on unknown subscription refs", async () => {

@@ -32,9 +32,17 @@ export class ManualClock implements Clock {
     return new Date(this.current.getTime());
   }
 
+  /**
+   * Move forward by ms. Negative travel is rejected: rewinding silently
+   * invalidates trial/grace window assertions, so tests needing an earlier
+   * time construct a fresh clock instead.
+   */
   advance(ms: number): void {
     if (!Number.isFinite(ms)) {
       throw new RangeError(`advance requires a finite millisecond count (got ${ms})`);
+    }
+    if (ms < 0) {
+      throw new RangeError(`advance requires a non-negative count (got ${ms}): no clock rewind`);
     }
     this.current = new Date(this.current.getTime() + ms);
   }
