@@ -33,6 +33,9 @@ begin
     (partner_member, hh_id, partner_id, 'partner', 'Partner'),
     (partner2_member, hh_id, partner2_user, 'partner', 'Partner2');
 
+  -- #261: live subscription (fail-closed enforcement reads it).
+  perform tests.entitle_household(hh_id);
+
   -- Partner2 owns an account (joint-style account in the same household), so
   -- removing them must be blocked by the accounts FK restrict.
   insert into public.accounts

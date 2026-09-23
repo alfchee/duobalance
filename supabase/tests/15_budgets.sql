@@ -46,6 +46,11 @@ begin
     (mem_owner,  hh_es, usr_owner,   'owner',   'Owner'),
     (mem_partner, hh_es, usr_partner, 'partner', 'Partner');
 
+  -- #261: live subscriptions (fail-closed enforcement reads them).
+  perform tests.entitle_household(hh_es);
+  perform tests.entitle_household(hh_en);
+  perform tests.entitle_household('eeeeeeee-0000-0000-0000-000000000001');
+
   insert into public.accounts (household_id, name, kind, currency, is_shared) values
     (hh_es, 'ES Checking', 'checking', 'CLP', true);
 
