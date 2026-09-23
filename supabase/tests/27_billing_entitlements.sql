@@ -70,7 +70,7 @@ begin
 end
 $$;
 
-select plan(23);
+select plan(26);
 
 -- AC: no subscription row -> false / 0 (fail closed)
 select is(
@@ -138,8 +138,8 @@ select is(
 
 select is(
   public.household_plan('10000000-0000-0000-0000-000000000010'::uuid),
-  'free'::text,
-  'household_plan: trialing with past trial_ends_at stays entitled until status flips (dunning writer contract)'
+  null::text,
+  'household_plan: trialing with past trial_ends_at stops resolving (ADR auto-downgrade)'
 );
 
 -- AC: second live subscription for one household raises unique violation
@@ -207,6 +207,27 @@ select is_empty(
   'Alice cannot see Bob household subscription'
 );
 
+-- Helpers are SECURITY INVOKER: probing another household through the RPC
+-- path fail-closes exactly like a direct table read (regression test for
+-- the DEFINER probing leak)
+select is(
+  public.household_plan('10000000-0000-0000-0000-000000000002'::uuid),
+  null::text,
+  'Alice probing Bob household via household_plan gets null'
+);
+
+select is(
+  public.has_feature('10000000-0000-0000-0000-000000000002'::uuid, 'export'),
+  false,
+  'Alice probing Bob household via has_feature gets false'
+);
+
+select is(
+  public.feature_limit('10000000-0000-0000-0000-000000000002'::uuid, 'accounts'),
+  0,
+  'Alice probing Bob household via feature_limit gets 0'
+);
+
 select tests.authenticate_as('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bob@test.local');
 
 select results_eq(
@@ -227,6 +248,9 @@ select is(
   4,
   'seed: free accounts limit is 4'
 );
+
+-- Plus seed check must run as a member of the plus household (INVOKER)
+select tests.authenticate_as('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@test.local');
 
 select is(
   public.has_feature('10000000-0000-0000-0000-000000000003'::uuid, 'export'),
