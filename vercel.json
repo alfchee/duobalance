@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/purge-households",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/billing-expire",
+      "schedule": "0 4 * * *"
     }
   ]
 }
