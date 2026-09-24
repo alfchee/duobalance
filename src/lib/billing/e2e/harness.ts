@@ -45,6 +45,8 @@ export interface FakeEvent {
   provider: string;
   provider_event_id: string;
   subscription_id: string | null;
+  type: string | null;
+  payload: unknown;
   processed_at: string | null;
 }
 
@@ -56,7 +58,6 @@ export interface E2EWorld {
   readonly householdId: string;
   readonly planCode: string;
   reference: string | null;
-  eventSeq: number;
 }
 
 interface Filter {
@@ -125,12 +126,26 @@ function createFakeDb(state: E2EWorld["state"]) {
   const from = (table: string) => {
     if (table === "billing_events") {
       return {
-        insert: async (input: { provider: string; provider_event_id: string }) => {
+        insert: async (input: {
+          provider: string;
+          provider_event_id: string;
+          subscription_id?: string | null;
+          type?: string | null;
+          payload?: unknown;
+          processed_at?: string | null;
+        }) => {
           const key = `${input.provider}|${input.provider_event_id}`;
           if (state.events.some((e) => `${e.provider}|${e.provider_event_id}` === key)) {
             return { error: { code: "23505", message: "duplicate key" } };
           }
-          state.events.push({ ...input, subscription_id: null, processed_at: null });
+          state.events.push({
+            provider: input.provider,
+            provider_event_id: input.provider_event_id,
+            subscription_id: input.subscription_id ?? null,
+            type: input.type ?? null,
+            payload: input.payload ?? null,
+            processed_at: input.processed_at ?? null,
+          });
           return { error: null };
         },
         select: (_cols: string) =>
@@ -228,7 +243,6 @@ export function createWorld(
     householdId: opts.householdId ?? `e2e_hh_${tag}`,
     planCode: opts.planCode ?? "plus",
     reference: null,
-    eventSeq: 0,
   };
 }
 
@@ -246,16 +260,18 @@ export function signedWebhookRequest(): Request {
 
 /**
  * Drain the stub outbox through the real port path: verify signature via
- * parseWebhook, then apply each event to the ledger with a fresh provider
- * event id. Returns one outcome per delivered event, in arrival order.
+ * parseWebhookEntries, then apply each event to the ledger under its real
+ * provider event id (`stub_evt_N`). Redeliveries therefore carry the SAME id
+ * as the original, so ledger dedupe on (provider, event id) is exercised on
+ * every delivery — exactly like the webhook route in production.
+ * Returns one outcome per delivered event, in arrival order.
  */
 export async function deliverAll(world: E2EWorld): Promise<ApplyOutcome[]> {
   const outcomes: ApplyOutcome[] = [];
   while (world.stub.getOutboxSize() > 0) {
-    const events = await world.stub.parseWebhook(signedWebhookRequest());
-    for (const event of events) {
-      world.eventSeq += 1;
-      outcomes.push(await deliverOne(world, event, `e2e_${world.tag}_${world.eventSeq}`));
+    const entries = await world.stub.parseWebhookEntries(signedWebhookRequest());
+    for (const entry of entries) {
+      outcomes.push(await deliverOne(world, entry.event, entry.id));
     }
   }
   return outcomes;

@@ -12,19 +12,19 @@ describe("billing e2e webhook delivery (#266)", () => {
     const world = createWorld({ tag: "dup" });
     await checkout(world);
     const updatesAfterFirst = world.state.updates.length;
-    const logAfterFirst = world.stub.getEventLog().length;
 
-    // Provider redelivers the activation; the wire receipt carries the SAME
-    // provider event id, so the ledger dedupes on (provider, event id).
+    // Provider redelivers the activation through the real path: the
+    // redelivered entry carries the SAME stub_evt_N id, so the ledger
+    // dedupes on (provider, event id) and the outbox drains fully.
     const entry = world.stub.getEventLog()[0];
     if (!entry) throw new Error("e2e expected a logged activation");
     world.stub.redeliverEvent(entry.id);
-    const outcome = await deliverOne(world, entry.event, `e2e_${world.tag}_1`);
+    const outcomes = await deliverAll(world);
 
-    expect(outcome).toEqual({ outcome: "duplicate" });
+    expect(outcomes).toEqual([{ outcome: "duplicate" }]);
     expect(dbStatus(world)).toBe("trialing");
     expect(world.state.updates.length).toBe(updatesAfterFirst);
-    expect(world.stub.getEventLog().length).toBe(logAfterFirst);
+    expect(world.stub.getOutboxSize()).toBe(0);
   });
 
   it("ignores a stale payment arriving after cancellation", async () => {

@@ -33,13 +33,19 @@ describe("billing e2e simulated go-live (#266)", () => {
       }),
     );
 
-    // A full year passes with billing live: the sweeper must not touch the
-    // dateless comped row.
+    // A full year passes with billing live: the sweeper only selects
+    // trialing/past_due/grace/cancelled (lifecycle.isExpirable), so the
+    // `active` comped row is untouched by construction — this asserts the
+    // sweeper no-op, while the comped RLS half lives in the DB test.
     world.stub.advanceTime(365 * DAY_MS);
     const swept = await expireDueSubscriptions(world.db, stubClock(world.stub));
     expect(swept.expired).toEqual([]);
     expect(world.state.subs[0]?.status).toBe("active");
-    expect(effectiveEntitlement(true)).toBe(true);
+    // Entitlement derived from the ledger row, not a literal: comped + active
+    // means entitled, and with billing live the flag passes it through.
+    const entitled = world.state.subs[0]?.status === "active";
+    expect(entitled).toBe(true);
+    expect(effectiveEntitlement(entitled)).toBe(true);
   });
 
   it("a downgraded household loses entitlement at the ledger once live", async () => {

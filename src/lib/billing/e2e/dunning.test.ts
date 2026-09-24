@@ -23,15 +23,18 @@ describe("billing e2e dunning (#266)", () => {
     expect(dbStatus(world)).toBe("past_due");
     expect(world.state.subs[0]?.grace_ends_at).toBe("2026-09-30T00:00:00.000Z");
 
-    // Second failure inside the window: grace.
+    // Second failure inside the window: grace, with the 7-day window
+    // refreshed off the clock (3 days in → grace ends 10 days after start).
     world.stub.advanceTime(3 * DAY_MS);
     await world.stub.simulateFailedRenewal(world.reference ?? "");
     expect(await stubStatus(world)).toBe("grace");
     const second = await deliverAll(world);
     expect(second).toEqual([{ outcome: "applied", status: "grace" }]);
     expect(dbStatus(world)).toBe("grace");
+    expect(world.state.subs[0]?.grace_ends_at).toBe("2026-10-03T00:00:00.000Z");
 
-    // Third failure past the window: expired, period cleared.
+    // Third failure: expired by failure count (stub expires on the 3rd
+    // failure, not on the grace timestamp), period cleared.
     world.stub.advanceTime(8 * DAY_MS);
     await world.stub.simulateFailedRenewal(world.reference ?? "");
     expect(await stubStatus(world)).toBe("expired");
