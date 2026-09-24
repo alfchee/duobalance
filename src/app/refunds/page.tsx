@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MarkdownRenderer } from "@/components/help/markdown-renderer";
 import { PublicFooter } from "@/components/site/public-footer";
-import { TERMS_OF_SERVICE } from "@/lib/legal/terms";
+import { REFUND_POLICY } from "@/lib/legal/refunds";
 
-export default function TermsPage() {
+export default function RefundsPage() {
   const currentLocale = useLocale();
   const [selectedLang, setSelectedLang] = useState<"es" | "en">(
     currentLocale === "en" ? "en" : "es",
   );
 
-  const doc = TERMS_OF_SERVICE[selectedLang] ?? TERMS_OF_SERVICE.es;
+  const doc = REFUND_POLICY[selectedLang] ?? REFUND_POLICY.es;
 
   return (
     <main className="mx-auto min-h-dvh max-w-4xl p-4 sm:p-8">

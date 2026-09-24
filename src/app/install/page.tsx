@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PublicFooter } from "@/components/site/public-footer";
 
 const IOS_GUIDE_SCREENSHOTS = {
   share: "/install/ios-share.png",
@@ -76,6 +77,7 @@ export default function InstallPage() {
           />
         </CardContent>
       </Card>
+      <PublicFooter />
     </main>
   );
 }

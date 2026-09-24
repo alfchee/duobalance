@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { PublicFooter } from "@/components/site/public-footer";
 
 export const dynamic = "force-static";
 
@@ -54,6 +55,7 @@ export default function AvisoLegalPage() {
           </p>
         </div>
       </article>
+      <PublicFooter />
     </main>
   );
 }
