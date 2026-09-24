@@ -484,8 +484,9 @@ select is_empty(
 );
 
 -- ============================================================================
--- J. Signup stays entitled: create_household() grants a live free
--- subscription before the default-account insert trips the trigger.
+-- J. Signup stays entitled: create_household() grants a live comped
+-- subscription (#263 pre-billing default) before the default-account
+-- insert trips the trigger.
 -- ============================================================================
 
 select tests.authenticate_as('28555555-5555-5555-5555-555555555555', 'free28@test.local');
@@ -501,8 +502,8 @@ select results_eq(
   $$ select s.plan_code || '/' || s.status from public.subscriptions s
      join public.households h on h.id = s.household_id
      where h.name = 'T28 Signup' $$,
-  $$ values ('free/active'::text) $$,
-  'signup: new household holds a live free subscription'
+  $$ values ('comped/active'::text) $$,
+  'signup: new household holds a live comped subscription (#263 pre-billing default)'
 );
 
 select tests.authenticate_as('28555555-5555-5555-5555-555555555555', 'free28@test.local');

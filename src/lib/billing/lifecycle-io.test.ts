@@ -532,6 +532,11 @@ describe("isExpirable (#260)", () => {
       { ...base, status: "active", current_period_end: "2026-10-01T00:00:00.000Z" },
       false,
     ],
+    [
+      "comped-style active with no dates (sweeper-immune, #263)",
+      { ...base, status: "active", current_period_end: null },
+      false,
+    ],
     ["expired rows are done", { ...base, status: "expired" }, false],
   ])("%s → %s", (_label, row, expected) => {
     expect(isExpirable(row, NOW)).toBe(expected);
@@ -591,5 +596,25 @@ describe("expireDueSubscriptions (#260)", () => {
     const result = await expireDueSubscriptions(db, clock());
     expect(result).toEqual({ checked: 1, expired: [] });
     expect(target.status).toBe("active");
+  });
+
+  it("never expires comped-style active rows with no dates, even a year later (#263)", async () => {
+    const db = makeDb({
+      subs: [
+        sub({
+          id: "s_comped",
+          plan_code: "comped",
+          status: "active",
+          trial_ends_at: null,
+          current_period_end: null,
+          grace_ends_at: null,
+        }),
+      ],
+      events: [],
+    });
+    const yearLater = new ManualClock(new Date("2027-11-01T00:00:00.000Z"));
+    const result = await expireDueSubscriptions(db, yearLater);
+    // Active rows are never even selected by the sweeper.
+    expect(result).toEqual({ checked: 0, expired: [] });
   });
 });
