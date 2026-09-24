@@ -21,6 +21,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { captureReferral } from "@/lib/referral";
 import { trackGuideOpen } from "@/lib/guide-events";
+import { PublicFooter } from "@/components/site/public-footer";
 import { cn } from "@/lib/utils";
 
 type Showcase = "balances" | "entry" | "budget" | "bills";
@@ -268,49 +269,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="bg-foreground px-5 py-12 text-background sm:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <div className="flex items-center gap-2 text-lg font-black">
-              <span className="grid size-8 place-items-center rounded-lg bg-primary text-xs text-primary-foreground">
-                db
-              </span>
-              DuoBalance
-            </div>
-            <p className="mt-4 text-sm leading-6 text-background/65">{t("footer.description")}</p>
-          </div>
-          <FooterLinks
-            title={t("footer.product")}
-            links={[
-              { href: "#how-it-works", label: t("footer.howItWorks") },
-              { href: "#pricing", label: t("footer.pricing") },
-              { href: "#faq", label: t("footer.faq") },
-            ]}
-          />
-          <FooterLinks
-            title={t("footer.company")}
-            links={[
-              { href: "#story", label: t("footer.story") },
-              { href: "mailto:soporte@duobalanceapp.com", label: t("footer.contact") },
-            ]}
-          />
-          <FooterLinks
-            title={t("footer.legal")}
-            links={[
-              { href: "/terms", label: t("footer.terms") },
-              { href: "/privacy", label: t("footer.privacy") },
-              {
-                // pt-BR reuses Spanish legal page until dedicated pt-BR version ships (see #191).
-                href: locale === "en" ? "/disclaimer" : "/aviso-legal",
-                label: t("footer.disclaimer"),
-              },
-            ]}
-          />
-        </div>
-        <div className="mx-auto mt-10 max-w-7xl border-t border-background/15 pt-6 text-xs text-background/50">
-          © 2026 DuoBalance
-        </div>
-      </footer>
+      <PublicFooter />
     </main>
   );
 }
@@ -378,31 +337,6 @@ function Checklist({
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function FooterLinks({
-  title,
-  links,
-}: {
-  title: string;
-  links: readonly { href: string; label: string }[];
-}) {
-  return (
-    <div>
-      <h3 className="text-sm font-bold uppercase tracking-[0.12em]">{title}</h3>
-      <div className="mt-4 grid gap-3">
-        {links.map(({ href, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className="text-sm text-background/65 transition-colors hover:text-primary"
-          >
-            {label}
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }
