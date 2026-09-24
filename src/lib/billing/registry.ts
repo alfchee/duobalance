@@ -84,3 +84,18 @@ export function getStubForDebug(): StubPaymentProvider {
   }
   return debugStub;
 }
+
+/**
+ * Test support for the #266 end-to-end suite: a fresh stub on its own
+ * manual clock, isolated per test. This is the ONLY sanctioned way for
+ * code outside `adapters/` to instantiate an adapter — the
+ * `billing/adapters` boundary keeps exactly one exemption (this
+ * composition root), so the e2e harness resolves through here rather than
+ * importing the adapter directly. Never call this outside tests —
+ * production code resolves through `getActiveProvider()`.
+ */
+export function createStubForTests(
+  start: Date = new Date("2026-09-23T00:00:00.000Z"),
+): StubPaymentProvider {
+  return new StubPaymentProvider(undefined, new ManualClock(start));
+}

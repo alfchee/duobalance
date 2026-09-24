@@ -172,6 +172,16 @@ export class StubPaymentProvider implements PaymentProvider {
   }
 
   async parseWebhook(req: Request): Promise<BillingEvent[]> {
+    const entries = await this.parseWebhookEntries(req);
+    return entries.map((entry) => entry.event);
+  }
+
+  /**
+   * Same signature check + outbox drain as parseWebhook, but retaining the
+   * provider event ids. The e2e harness delivers through this so ledger
+   * dedupe runs on the real `stub_evt_N` ids instead of synthetic keys.
+   */
+  async parseWebhookEntries(req: Request): Promise<StubLoggedEvent[]> {
     // Signature first, exactly like every real adapter must: an unverifiable
     // request throws rather than returning "no events".
     if (req.headers.get(this.config.signatureHeader) !== this.config.validSignature) {
@@ -181,7 +191,7 @@ export class StubPaymentProvider implements PaymentProvider {
     // re-queues it via redeliverEvent (provider redelivery simulation).
     const deliveries = this.outbox;
     this.outbox = [];
-    return deliveries.map((entry) => entry.event);
+    return [...deliveries];
   }
 
   // -- Test-only controls (also used by the dev debug surface) --------------
