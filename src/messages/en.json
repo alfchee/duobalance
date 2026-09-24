@@ -1109,7 +1109,27 @@
         "generic": "Something went wrong. Try again."
       }
     },
-    "logout": "Log out"
+    "logout": "Log out",
+    "plan": {
+      "title": "Plan",
+      "subtitle": "What your plan includes and what Plus adds. Changing plans never deletes your data.",
+      "currentPlanBadge": "Your plan",
+      "unlimited": "Unlimited",
+      "unlimitedHistory": "Unlimited history",
+      "days": "{count} days",
+      "notIncluded": "Not included",
+      "error": "Could not load the plan comparison. Try again.",
+      "features": {
+        "accounts": "Accounts",
+        "bill_reminders": "Bill reminders",
+        "budgets": "Budgets",
+        "export": "Export your data",
+        "history_days": "Visible history",
+        "long_range_reports": "Reports over one year",
+        "member_seats": "Members",
+        "partner_sharing": "Share with your partner"
+      }
+    }
   },
   "reports": {
     "title": "Reports",
@@ -1206,5 +1226,17 @@
     "promptSubmit": "Send feedback",
     "dismiss": "Dismiss",
     "cancel": "Cancel"
+  },
+  "billing": {
+    "upgrade": {
+      "title": "Available with Plus",
+      "description": "This feature is part of the Plus plan. Upgrading adds what's missing; it doesn't take away what you already use.",
+      "dataSafe": "Your saved data stays intact: downgrading never deletes anything.",
+      "cta": "View plans"
+    },
+    "limits": {
+      "approaching": "{label}: you're using {used} of {limit}. With Plus, this limit goes away.",
+      "atLimit": "{label}: you've reached your plan's limit of {limit}. You can archive what you don't use, or move to Plus to keep going."
+    }
   }
 }

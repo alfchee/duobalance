@@ -1109,7 +1109,27 @@
         "generic": "Algo salió mal. Intenta de nuevo."
       }
     },
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "plan": {
+      "title": "Plan",
+      "subtitle": "Lo que incluye tu plan y lo que se agrega con Plus. Cambiar de plan nunca borra tus datos.",
+      "currentPlanBadge": "Tu plan",
+      "unlimited": "Ilimitado",
+      "unlimitedHistory": "Historial ilimitado",
+      "days": "{count} días",
+      "notIncluded": "No incluido",
+      "error": "No se pudo cargar la comparación de planes. Intenta de nuevo.",
+      "features": {
+        "accounts": "Cuentas",
+        "bill_reminders": "Recordatorios de cuentas por pagar",
+        "budgets": "Presupuestos",
+        "export": "Exportar tus datos",
+        "history_days": "Historial visible",
+        "long_range_reports": "Reportes de más de un año",
+        "member_seats": "Miembros",
+        "partner_sharing": "Compartir con tu pareja"
+      }
+    }
   },
   "reports": {
     "title": "Análisis",
@@ -1206,5 +1226,17 @@
     "promptSubmit": "Enviar comentarios",
     "dismiss": "No volver a mostrar",
     "cancel": "Cancelar"
+  },
+  "billing": {
+    "upgrade": {
+      "title": "Disponible en Plus",
+      "description": "Esta función es parte del plan Plus. Mejorar de plan agrega lo que falta; no castiga lo que ya usas.",
+      "dataSafe": "Tus datos guardados quedan intactos: bajar de plan nunca borra nada.",
+      "cta": "Ver planes"
+    },
+    "limits": {
+      "approaching": "{label}: usas {used} de {limit}. Con Plus, este límite desaparece.",
+      "atLimit": "{label}: llegaste al límite de {limit} de tu plan. Puedes archivar lo que no uses, o pasar a Plus para continuar."
+    }
   }
 }

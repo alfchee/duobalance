@@ -31,6 +31,7 @@ function makeClient(
   } | null,
   tablePages: Record<string, unknown[][]> = {},
   errorTables: ReadonlySet<string> = new Set(),
+  rpcResult: { data: unknown; error: { message: string } | null } = { data: true, error: null },
 ) {
   const orderCalls: Array<{ table: string; column: string }> = [];
   const rangeCalls: Array<{ table: string; from: number; to: number }> = [];
@@ -102,7 +103,16 @@ function makeClient(
     return { select: vi.fn(() => ({ eq: vi.fn(() => tableChain(table)) })) };
   });
 
-  return { from, orderCalls, rangeCalls, fromCalls, lteCalls, orCalls, inCalls };
+  return {
+    from,
+    rpc: vi.fn().mockResolvedValue(rpcResult),
+    orderCalls,
+    rangeCalls,
+    fromCalls,
+    lteCalls,
+    orCalls,
+    inCalls,
+  };
 }
 
 function request(format = "json") {
@@ -119,10 +129,59 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.BUILD_TARGET;
+  vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
 
 describe("GET /api/export", () => {
+  it("skips the plan check while billing is disabled (#264)", async () => {
+    const client = makeClient({ households: { id: householdId, name: "Alex Home" } });
+    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
+  it("returns 402 when the household's plan lacks export (#264)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "1");
+    const client = makeClient(
+      { households: { id: householdId, name: "Alex Home" } },
+      {},
+      new Set(),
+      { data: false, error: null },
+    );
+    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(402);
+    expect(client.rpc).toHaveBeenCalledWith("has_feature", {
+      p_household: householdId,
+      p_feature: "export",
+    });
+    expect(client.fromCalls).not.toContain("transactions");
+  });
+
+  it("exports when the plan has the export feature (#264)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "1");
+    const client = makeClient(
+      { households: { id: householdId, name: "Alex Home" } },
+      {},
+      new Set(),
+      { data: true, error: null },
+    );
+    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+  });
+
   it("returns an unavailable response during Tauri static export", async () => {
     process.env.BUILD_TARGET = "tauri";
 

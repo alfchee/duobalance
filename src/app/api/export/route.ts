@@ -1,4 +1,5 @@
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { shouldBypassPlanGating } from "@/lib/billing/enabled";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
@@ -246,6 +247,23 @@ export async function GET(request: Request) {
 
   if (!household) {
     return Response.json({ error: "household not found" }, { status: 404 });
+  }
+
+  // #264: export is a Plus feature (ADR 0001). The UI gate in ExportSection
+  // is a hint; this is the boundary — the same has_feature() helper the RLS
+  // policies call, evaluated server-side. No-op while the billing exposure
+  // flag is off (the #262 fail-open rule), and the removed-member fallback
+  // path is equally subject to the plan: a household without the feature
+  // cannot export regardless of who asks.
+  if (!shouldBypassPlanGating()) {
+    const { data: exportEntitled, error: exportError } = await supabase.rpc("has_feature", {
+      p_household: household.id,
+      p_feature: "export",
+    });
+    if (exportError) throw exportError;
+    if (!exportEntitled) {
+      return Response.json({ error: "plan upgrade required" }, { status: 402 });
+    }
   }
 
   const date = new Date().toISOString().slice(0, 10);

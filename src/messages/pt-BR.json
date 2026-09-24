@@ -183,6 +183,26 @@
         "exportFailed": "Falha ao gerar o arquivo de exportação.",
         "generic": "Algo deu errado. Tente novamente."
       }
+    },
+    "plan": {
+      "title": "Plano",
+      "subtitle": "O que seu plano inclui e o que o Plus adiciona. Mudar de plano nunca apaga seus dados.",
+      "currentPlanBadge": "Seu plano",
+      "unlimited": "Ilimitado",
+      "unlimitedHistory": "Histórico ilimitado",
+      "days": "{count} dias",
+      "notIncluded": "Não incluído",
+      "error": "Não foi possível carregar a comparação de planos. Tente novamente.",
+      "features": {
+        "accounts": "Contas",
+        "bill_reminders": "Lembretes de contas a pagar",
+        "budgets": "Orçamentos",
+        "export": "Exportar seus dados",
+        "history_days": "Histórico visível",
+        "long_range_reports": "Relatórios de mais de um ano",
+        "member_seats": "Membros",
+        "partner_sharing": "Compartilhar com seu par"
+      }
     }
   },
   "reports": {
@@ -302,6 +322,18 @@
       "company": "Empresa",
       "story": "História",
       "contact": "Contato"
+    }
+  },
+  "billing": {
+    "upgrade": {
+      "title": "Disponível no Plus",
+      "description": "Este recurso faz parte do plano Plus. Fazer upgrade adiciona o que falta; não tira o que você já usa.",
+      "dataSafe": "Seus dados salvos permanecem intactos: fazer downgrade nunca apaga nada.",
+      "cta": "Ver planos"
+    },
+    "limits": {
+      "approaching": "{label}: você usa {used} de {limit}. Com o Plus, esse limite desaparece.",
+      "atLimit": "{label}: você chegou ao limite de {limit} do seu plano. Você pode arquivar o que não usa, ou migrar para o Plus para continuar."
     }
   }
 }
