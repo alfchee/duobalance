@@ -14,6 +14,9 @@ begin
     (hh, 'Debt Sign', 'CL', 'CLP', 'America/Santiago');
   insert into public.household_members (id, household_id, user_id, role, display_name) values
     (owner_member, hh, owner_user, 'owner', 'Owner');
+
+  -- #261: live subscription (fail-closed enforcement reads it).
+  perform tests.entitle_household(hh);
 end
 $$;
 

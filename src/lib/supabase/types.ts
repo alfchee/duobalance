@@ -1823,6 +1823,7 @@ export type Database = {
           responsible_member_id: string
         }[]
       }
+      can_write: { Args: { p_household: string }; Returns: boolean }
       check_member_in_household: {
         Args: { p_household_id: string; p_member_id: string }
         Returns: undefined

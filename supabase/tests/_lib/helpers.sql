@@ -66,6 +66,22 @@ begin
 end;
 $$;
 
+-- Entitle a fixture household with a live subscription (#261). Enforcement
+-- is fail-closed (no subscription -> can_write() false, accounts limit 0),
+-- so any fixture that inserts accounts or writes a gated table as an
+-- authenticated member needs this during the superuser setup phase.
+-- 'plus' keeps counts unlimited so existing fixtures behave exactly as
+-- before; pass 'free' only when the test wants the free limits.
+create or replace function tests.entitle_household(p_household uuid, p_plan text default 'plus')
+returns void
+language plpgsql
+as $$
+begin
+  insert into public.subscriptions (household_id, plan_code, provider, status, current_period_end)
+  values (p_household, p_plan, 'stub', 'active', now() + interval '30 days');
+end;
+$$;
+
 -- Fixed UUIDs for cross-file fixtures. Tests use these so each test is
 -- self-contained and runs against a known shape.
 do $$

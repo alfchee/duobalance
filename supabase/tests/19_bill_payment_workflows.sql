@@ -24,6 +24,9 @@ begin
   insert into public.household_members (id, household_id, user_id, role, display_name) values
     (owner_member_id, household_id, owner_user_id, 'owner', 'Owner'),
     (partner_member_id, household_id, partner_user_id, 'partner', 'Partner');
+
+  -- #261: live subscription (fail-closed enforcement reads it).
+  perform tests.entitle_household(household_id);
   insert into public.accounts (id, household_id, name, kind, currency) values
     (account_id, household_id, 'USD account', 'checking', 'USD');
   insert into public.categories (id, household_id, name, kind) values
@@ -188,6 +191,9 @@ begin
     (other_household_id, 'Other household', 'US', 'USD', 'America/New_York');
   insert into public.household_members (id, household_id, user_id, role, display_name) values
     (other_member_id, other_household_id, other_user_id, 'owner', 'Other Owner');
+
+  -- #261: live subscription (fail-closed enforcement reads it).
+  perform tests.entitle_household(other_household_id);
 end
 $$;
 

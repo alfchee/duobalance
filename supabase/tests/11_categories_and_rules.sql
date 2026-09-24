@@ -44,6 +44,10 @@ begin
     ('33333333-3333-3333-3333-333333333333', usr_owner,   'owner',   'Owner PT');
 
   -- One account per household so containment test for categorization_rules.account_id.
+  -- #261: live subscriptions first (fail-closed enforcement reads them).
+  perform tests.entitle_household('11111111-1111-1111-1111-111111111111');
+  perform tests.entitle_household('22222222-2222-2222-2222-222222222222');
+  perform tests.entitle_household('33333333-3333-3333-3333-333333333333');
   insert into public.accounts (household_id, name, kind, currency) values
     ('11111111-1111-1111-1111-111111111111', 'ES Account', 'checking', 'NIO'),
     ('22222222-2222-2222-2222-222222222222', 'EN Account', 'checking', 'USD');
@@ -481,6 +485,9 @@ begin
 
   insert into public.household_members (household_id, user_id, role, display_name)
     values (hh, usr, 'owner', 'NoFB Owner') returning id into memb;
+
+  -- #261: live subscription (fail-closed enforcement reads it).
+  perform tests.entitle_household(hh);
 
   -- Insert an account and a transaction referencing Comida so the
   -- delete trigger has something to protect.

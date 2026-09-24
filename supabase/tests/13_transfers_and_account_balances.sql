@@ -25,6 +25,10 @@ begin
     (alice_member, hh_a, alice_user, 'owner', 'Alice'),
     (bob_member, hh_a, bob_user, 'partner', 'Bob'),
     (carol_member, hh_b, carol_user, 'owner', 'Carol');
+  -- #261: live subscriptions (fail-closed enforcement reads them).
+  perform tests.entitle_household(hh_a);
+  perform tests.entitle_household(hh_b);
+
   insert into public.accounts
     (id, household_id, name, kind, currency, opening_balance, balance_mode, manual_balance, is_shared, owner_member_id)
   values
