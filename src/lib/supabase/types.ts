@@ -1976,6 +1976,10 @@ export type Database = {
         Returns: boolean
       }
       has_unique: { Args: { "": string }; Returns: string }
+      household_account_usage: {
+        Args: { p_household: string }
+        Returns: number
+      }
       household_plan: { Args: { p_household: string }; Returns: string }
       in_todo: { Args: never; Returns: boolean }
       is_empty: { Args: { "": string }; Returns: string }

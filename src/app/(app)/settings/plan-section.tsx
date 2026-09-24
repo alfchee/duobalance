@@ -35,9 +35,13 @@ function PlanComparison() {
   const householdPlan = useHouseholdPlan(householdId);
 
   const plans = catalogue.data ?? [];
+  // Columns are the sellable plans plus the household's current one — a
+  // non-public plan (e.g. comped, 20260924012145) must appear so the "your
+  // plan" badge resolves, while non-public plans nobody is on stay hidden.
+  const shownPlans = plans.filter((plan) => plan.isPublic || plan.code === householdPlan.data);
   // Rows are the union of feature keys across shown plans, in stable
   // alphabetical order, minus the internal enforcement vocabulary.
-  const featureKeys = [...new Set(plans.flatMap((plan) => Object.keys(plan.features)))]
+  const featureKeys = [...new Set(shownPlans.flatMap((plan) => Object.keys(plan.features)))]
     .filter((key) => !HIDDEN_FEATURES.has(key))
     .sort();
 
@@ -54,7 +58,7 @@ function PlanComparison() {
     );
   }
 
-  if (catalogue.isError || plans.length === 0) {
+  if (catalogue.isError || shownPlans.length === 0) {
     return (
       <section id="plan" className="overflow-hidden rounded-2xl border bg-card shadow-ring">
         <h2 className="border-b bg-secondary px-4 py-3 text-sm font-semibold">{t("title")}</h2>
@@ -75,7 +79,7 @@ function PlanComparison() {
           <thead>
             <tr>
               <th scope="col" className="w-1/3 text-left font-medium" />
-              {plans.map((plan) => (
+              {shownPlans.map((plan) => (
                 <th
                   key={plan.code}
                   scope="col"
@@ -97,7 +101,7 @@ function PlanComparison() {
                 <th scope="row" className="py-2 text-left align-top font-normal">
                   {t(`features.${key}`)}
                 </th>
-                {plans.map((plan) => {
+                {shownPlans.map((plan) => {
                   const value = plan.features[key];
                   return (
                     <td key={plan.code} className="px-2 py-2 align-top">

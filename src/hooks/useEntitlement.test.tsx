@@ -123,21 +123,23 @@ describe("useEntitlement", () => {
 });
 
 describe("usePlanCatalogue", () => {
-  it("groups plan_features under each public plan in sort order", async () => {
+  it("groups plan_features under every plan, public or not, in sort order", async () => {
     vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "1");
     const from = vi.fn((table: string) => {
       if (table === "plans") {
         const order = vi.fn().mockReturnValue({
           order: vi.fn().mockResolvedValue({
             data: [
-              { code: "free", name: "Duo", sort_order: 0 },
-              { code: "plus", name: "Plus", sort_order: 1 },
+              { code: "free", name: "Duo", is_public: true, sort_order: 0 },
+              { code: "plus", name: "Plus", is_public: true, sort_order: 1 },
+              { code: "comped", name: "Founder", is_public: false, sort_order: 2 },
             ],
             error: null,
           }),
         });
-        const eq = vi.fn().mockReturnValue({ order });
-        const select = vi.fn().mockReturnValue({ eq });
+        // The catalogue fetches ALL plans: the caller filters to the
+        // sellable ones plus the household's current plan (#264 review).
+        const select = vi.fn().mockReturnValue({ order });
         return { select };
       }
       const select = vi.fn().mockResolvedValue({
@@ -155,16 +157,18 @@ describe("usePlanCatalogue", () => {
 
     const { result } = renderHook(() => usePlanCatalogue(), { wrapper });
 
-    await waitFor(() => expect(result.current.data).toHaveLength(2));
+    await waitFor(() => expect(result.current.data).toHaveLength(3));
     expect(result.current.data?.[0]).toEqual({
       code: "free",
       name: "Duo",
+      isPublic: true,
       features: { accounts: { enabled: true, limit: 4 } },
     });
     expect(result.current.data?.[1]?.features.accounts).toEqual({
       enabled: true,
       limit: null,
     });
+    expect(result.current.data?.[2]).toMatchObject({ code: "comped", isPublic: false });
     expect(from).toHaveBeenCalledWith("plans");
     expect(from).toHaveBeenCalledWith("plan_features");
   });

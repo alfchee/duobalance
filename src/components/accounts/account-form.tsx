@@ -22,7 +22,11 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useHousehold } from "@/hooks/useHousehold";
-import { useAccountMutations, useAccounts, type AccountInput } from "@/hooks/useAccounts";
+import {
+  useAccountMutations,
+  useHouseholdAccountUsage,
+  type AccountInput,
+} from "@/hooks/useAccounts";
 import { useCurrencies } from "@/hooks/useCurrencies";
 import { LimitApproaching } from "@/components/billing/limit-approaching";
 import {
@@ -87,15 +91,9 @@ function AccountFormContent({
   // #264: the accounts limit is a real plan limit — the database rejects the
   // 5th non-archived account on free (tg_enforce_account_limit, #261), and
   // this indicator warns from 75% of the way there. A no-op while billing
-  // is off or the plan is unlimited.
-  //
-  // Known limitation: this count is caller-visible accounts (RLS shows
-  // shared + own private), while the trigger counts every non-archived
-  // account in the household — with private accounts on both sides the
-  // warning can undercount. The database stays authoritative; if the
-  // warning is wrong, the insert is still rejected with the form's error.
-  const { data: accounts } = useAccounts(householdId);
-  const nonArchivedAccounts = accounts?.filter((a) => !a.is_archived).length ?? 0;
+  // is off or the plan is unlimited. The count is household-wide via the
+  // is_member-guarded RPC, the same number the trigger enforces.
+  const { data: accountUsage } = useHouseholdAccountUsage(householdId);
 
   const [draft, setDraft] = useState<Draft>(() => ({
     name: account?.name ?? "",
@@ -234,11 +232,7 @@ function AccountFormContent({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {!account && householdId ? (
-          <LimitApproaching
-            householdId={householdId}
-            feature="accounts"
-            used={nonArchivedAccounts}
-          />
+          <LimitApproaching householdId={householdId} feature="accounts" used={accountUsage ?? 0} />
         ) : null}
         <div className="flex flex-col gap-2">
           <Label htmlFor="account-name">{t("name")}</Label>

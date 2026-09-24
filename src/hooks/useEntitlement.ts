@@ -84,6 +84,7 @@ export type PlanFeatureValue = { enabled: boolean; limit: number | null };
 export type PlanCatalogueEntry = {
   code: string;
   name: string;
+  isPublic: boolean;
   /** feature_key → { enabled, limit }. NULL limit = explicitly unlimited. */
   features: Record<string, PlanFeatureValue>;
 };
@@ -92,6 +93,11 @@ export type PlanCatalogueEntry = {
 // includes is a data change (plans/plan_features rows) with no deploy —
 // plan names come from the plans table, limits from plan_features. Only
 // the locale labels for feature keys live in src/messages.
+//
+// Non-public plans (e.g. `comped`, 20260924012145) are fetched too but the
+// caller decides visibility: a household's current plan must appear so the
+// "your plan" badge resolves, while a non-public plan nobody is on stays
+// hidden from the sellable comparison.
 export function usePlanCatalogue() {
   return useQuery({
     queryKey: ["plan-catalogue"],
@@ -101,8 +107,7 @@ export function usePlanCatalogue() {
       const [plans, planFeatures] = await Promise.all([
         supabase
           .from("plans")
-          .select("code, name, sort_order")
-          .eq("is_public", true)
+          .select("code, name, is_public, sort_order")
           .order("sort_order")
           .order("code"),
         supabase.from("plan_features").select("plan_code, feature_key, enabled, limit_value"),
@@ -112,6 +117,7 @@ export function usePlanCatalogue() {
       return (plans.data ?? []).map((plan) => ({
         code: plan.code,
         name: plan.name,
+        isPublic: plan.is_public,
         features: Object.fromEntries(
           (planFeatures.data ?? [])
             .filter((row) => row.plan_code === plan.code)

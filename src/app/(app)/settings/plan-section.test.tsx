@@ -70,6 +70,7 @@ const CATALOGUE: PlanCatalogueEntry[] = [
   {
     code: "free",
     name: "Duo",
+    isPublic: true,
     features: {
       accounts: { enabled: true, limit: 4 },
       budgets: { enabled: true, limit: null },
@@ -81,6 +82,20 @@ const CATALOGUE: PlanCatalogueEntry[] = [
   {
     code: "plus",
     name: "Plus",
+    isPublic: true,
+    features: {
+      accounts: { enabled: true, limit: null },
+      budgets: { enabled: true, limit: null },
+      export: { enabled: true, limit: null },
+      partner_sharing: { enabled: true, limit: null },
+    },
+  },
+  // Non-public plan (20260924012145): shown only when it is the
+  // household's current plan, so the current-plan badge always resolves.
+  {
+    code: "comped",
+    name: "Founder",
+    isPublic: false,
     features: {
       accounts: { enabled: true, limit: null },
       budgets: { enabled: true, limit: null },
@@ -120,6 +135,8 @@ describe("PlanSection (#264)", () => {
     // concatenated by accessible-name normalization).
     expect(screen.getByRole("columnheader", { name: /Duo/ })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: /Plus/ })).toBeTruthy();
+    // The non-public plan is not the household's plan: hidden from the table.
+    expect(screen.queryByRole("columnheader", { name: /Founder/ })).toBeNull();
     // Feature keys become rows; the internal write_access vocabulary is hidden.
     expect(screen.getByRole("rowheader", { name: "settings.plan.features.accounts" })).toBeTruthy();
     expect(
@@ -143,6 +160,22 @@ describe("PlanSection (#264)", () => {
     } as unknown as ReturnType<typeof useHousehold>);
 
     render(<PlanSection />);
+    expect(screen.getByText("Tu plan")).toBeTruthy();
+  });
+
+  it("shows the current non-public plan (comped) with the badge", () => {
+    process.env.NEXT_PUBLIC_BILLING_ENABLED = "1";
+    vi.mocked(useBillingEnabled).mockReturnValue(true);
+    vi.mocked(usePlanCatalogue).mockReturnValue(resolvedQuery(CATALOGUE));
+    vi.mocked(useHouseholdPlan).mockReturnValue(
+      resolvedQuery("comped") as unknown as ReturnType<typeof useHouseholdPlan>,
+    );
+    vi.mocked(useHousehold).mockReturnValue({
+      householdId: "household-1",
+    } as unknown as ReturnType<typeof useHousehold>);
+
+    render(<PlanSection />);
+    expect(screen.getByRole("columnheader", { name: /Founder/ })).toBeTruthy();
     expect(screen.getByText("Tu plan")).toBeTruthy();
   });
 
