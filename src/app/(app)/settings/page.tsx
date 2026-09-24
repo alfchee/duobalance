@@ -18,6 +18,7 @@ import { FxOverridesSection } from "./fx-overrides-section";
 import { InstallSection } from "@/components/pwa/install-section";
 import { PushNotificationsSection } from "@/components/pwa/push-notifications-section";
 import { ExportSection } from "@/components/household/export-section";
+import { PlanSection } from "./plan-section";
 import { HouseholdDangerSection } from "@/components/household/household-danger-section";
 import { ReportProblemModal } from "@/components/feedback/report-problem-modal";
 
@@ -74,6 +75,8 @@ export default function SettingsPage() {
       <SettingsGroup title={t("members.title")}>
         <MembersSection embedded />
       </SettingsGroup>
+
+      <PlanSection />
 
       <SettingsGroup title={t("groups.preferences")}>
         <div className="border-b px-4 py-4">

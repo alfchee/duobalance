@@ -4,8 +4,9 @@ import { Download } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { FeatureGate, UpgradePrompt } from "@/components/billing/feature-gate";
 import { useHousehold } from "@/hooks/useHousehold";
-import { apiFetch } from "@/lib/api-fetch";
+import { apiFetch, ApiError } from "@/lib/api-fetch";
 
 type ExportFormat = "json" | "csv";
 
@@ -29,11 +30,17 @@ export function ExportSection() {
   const t = useTranslations("settings.export");
   const { householdId, householdName } = useHousehold();
   const [pending, setPending] = useState<ExportFormat | null>(null);
+  // Defense-in-depth: the FeatureGate below hides the buttons while the
+  // plan lacks `export`, and /api/export re-checks has_feature() server-side
+  // (#264). A 402 from that check (gate open, plan changed mid-session)
+  // still lands on the upgrade prompt instead of a dead error.
+  const [planBlocked, setPlanBlocked] = useState(false);
   const [error, setError] = useState(false);
 
   async function download(format: ExportFormat) {
     setPending(format);
     setError(false);
+    setPlanBlocked(false);
     try {
       const blob = await apiFetch<Blob>(`/api/export?format=${format}&householdId=${householdId}`, {
         responseType: "blob",
@@ -45,8 +52,9 @@ export function ExportSection() {
       anchor.click();
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(href), 0);
-    } catch {
-      setError(true);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 402) setPlanBlocked(true);
+      else setError(true);
     } finally {
       setPending(null);
     }
@@ -63,26 +71,32 @@ export function ExportSection() {
           {t("error")}
         </p>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!householdId || pending !== null}
-          onClick={() => void download("json")}
-        >
-          <Download aria-hidden />
-          {pending === "json" ? t("exporting") : t("json")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!householdId || pending !== null}
-          onClick={() => void download("csv")}
-        >
-          <Download aria-hidden />
-          {pending === "csv" ? t("exporting") : t("csv")}
-        </Button>
-      </div>
+      <FeatureGate householdId={householdId} feature="export">
+        {planBlocked ? (
+          <UpgradePrompt />
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!householdId || pending !== null}
+              onClick={() => void download("json")}
+            >
+              <Download aria-hidden />
+              {pending === "json" ? t("exporting") : t("json")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!householdId || pending !== null}
+              onClick={() => void download("csv")}
+            >
+              <Download aria-hidden />
+              {pending === "csv" ? t("exporting") : t("csv")}
+            </Button>
+          </div>
+        )}
+      </FeatureGate>
     </section>
   );
 }

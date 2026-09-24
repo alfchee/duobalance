@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useHousehold } from "@/hooks/useHousehold";
-import { useAccountMutations, type AccountInput } from "@/hooks/useAccounts";
+import { useAccountMutations, useAccounts, type AccountInput } from "@/hooks/useAccounts";
 import { useCurrencies } from "@/hooks/useCurrencies";
+import { LimitApproaching } from "@/components/billing/limit-approaching";
 import {
   ACCOUNT_KINDS,
   isDebtKind,
@@ -83,6 +84,12 @@ function AccountFormContent({
   const { memberId, baseCurrency, householdId, numberFormat } = useHousehold();
   const { create, update, archive } = useAccountMutations(householdId);
   const { data: currencies } = useCurrencies();
+  // #264: the accounts limit is a real plan limit — the database rejects the
+  // 5th non-archived account on free (tg_enforce_account_limit, #261), and
+  // this indicator warns from 75% of the way there. A no-op while billing
+  // is off or the plan is unlimited.
+  const { data: accounts } = useAccounts(householdId);
+  const nonArchivedAccounts = accounts?.filter((a) => !a.is_archived).length ?? 0;
 
   const [draft, setDraft] = useState<Draft>(() => ({
     name: account?.name ?? "",
@@ -220,6 +227,13 @@ function AccountFormContent({
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {!account && householdId ? (
+          <LimitApproaching
+            householdId={householdId}
+            feature="accounts"
+            used={nonArchivedAccounts}
+          />
+        ) : null}
         <div className="flex flex-col gap-2">
           <Label htmlFor="account-name">{t("name")}</Label>
           <Input
