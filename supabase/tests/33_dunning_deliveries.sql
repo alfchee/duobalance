@@ -41,7 +41,7 @@ begin
 end
 $$;
 
-select plan(9);
+select plan(12);
 
 -- ============================================================================
 -- A. Send ledger: one row per stage, duplicates rejected by the unique guard.
@@ -84,7 +84,40 @@ select throws_ok(
 );
 
 -- ============================================================================
--- B. RLS: own-household reads for members, nothing for anyone else.
+-- B. Claim-first delivery (PR #287 review): a runner claims with sent_at
+-- NULL before delivering; only non-NULL sent_at suppresses a stage, and a
+-- stale claim is adoptable. Duplicate claims collide on the unique guard.
+-- ============================================================================
+
+select lives_ok(
+  $$ insert into public.dunning_deliveries
+       (subscription_id, household_id, stage, claimed_at, sent_at)
+     values ('33000000-0000-0000-0000-000000000011'::uuid,
+             '33000000-0000-0000-0000-000000000001'::uuid,
+             'final_notice', now(), null) $$,
+  'ledger: a delivery claim records with sent_at NULL (in flight)'
+);
+
+select throws_ok(
+  $$ insert into public.dunning_deliveries
+       (subscription_id, household_id, stage, claimed_at, sent_at)
+     values ('33000000-0000-0000-0000-000000000011'::uuid,
+             '33000000-0000-0000-0000-000000000001'::uuid,
+             'final_notice', now(), null) $$,
+  '23505',
+  null,
+  'ledger: a concurrent runner claiming the same stage collides instead of sending twice'
+);
+
+select results_eq(
+  $$ select stage from public.dunning_deliveries
+     where sent_at is null $$,
+  $$ values ('final_notice'::text) $$,
+  'ledger: the in-flight claim is adoptable (visible with sent_at NULL)'
+);
+
+-- ============================================================================
+-- C. RLS: own-household reads for members, nothing for anyone else.
 -- ============================================================================
 
 select tests.authenticate_as('33111111-1111-1111-1111-111111111111', 'dun33@test.local');
@@ -92,7 +125,7 @@ select tests.authenticate_as('33111111-1111-1111-1111-111111111111', 'dun33@test
 select results_eq(
   $$ select stage from public.dunning_deliveries
      order by stage $$,
-  $$ values ('first_reminder'::text), ('second_reminder'::text) $$,
+  $$ values ('final_notice'::text), ('first_reminder'::text), ('second_reminder'::text) $$,
   'member reads their own household delivery rows'
 );
 

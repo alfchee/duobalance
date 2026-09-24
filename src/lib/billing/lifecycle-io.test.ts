@@ -45,6 +45,8 @@ function makeDb(state: {
   subs: FakeSub[];
   events: FakeEvent[];
   updates?: unknown[];
+  /** Dunning delivery rows cleared on recovery to active (#265). */
+  deliveries?: Array<{ subscription_id: string; stage: string }>;
   /** Force the next subscriptions insert to fail with this error. */
   failNextSubInsert?: { code: string; message: string };
   /** Mutate live state just before an update executes (race simulation). */
@@ -183,6 +185,22 @@ function makeDb(state: {
           ),
       };
     }
+    if (table === "dunning_deliveries") {
+      // Recovery cleanup (#265): applyBillingEvent deletes the cycle's rows
+      // when a payment reactivates the subscription. No-op when absent.
+      // Spliced in place so tests holding the array see the clear.
+      return {
+        delete: () => ({
+          eq: async (col: string, value: unknown) => {
+            if (col === "subscription_id" && state.deliveries) {
+              const kept = state.deliveries.filter((d) => d.subscription_id !== value);
+              state.deliveries.splice(0, state.deliveries.length, ...kept);
+            }
+            return { error: null };
+          },
+        }),
+      };
+    }
     throw new Error(`unexpected table ${table}`);
   };
   return { from } as unknown as SupabaseClient<Database>;
@@ -236,6 +254,30 @@ describe("applyBillingEvent (#260)", () => {
       clock(),
     );
     expect(paid).toEqual({ outcome: "applied", status: "active" });
+  });
+
+  it("recovery to active clears the dunning cycle's delivery rows (#265)", async () => {
+    const deliveries = [
+      { subscription_id: "sub_1", stage: "first_reminder" },
+      { subscription_id: "sub_1", stage: "second_reminder" },
+    ];
+    const db = makeDb({ subs: [sub({ status: "grace" })], events: [], deliveries });
+    const recovered = await applyBillingEvent(
+      db,
+      {
+        provider: "stub",
+        providerEventId: "evt_rec",
+        event: {
+          type: "payment.succeeded",
+          ref: "stub_sub_1",
+          amount: createMoney(12900, "NIO"),
+          periodEnd: new Date("2026-12-23T00:00:00.000Z"),
+        },
+      },
+      clock(),
+    );
+    expect(recovered).toEqual({ outcome: "applied", status: "active" });
+    expect(deliveries).toEqual([]);
   });
 
   it("applying the same event twice changes state once", async () => {

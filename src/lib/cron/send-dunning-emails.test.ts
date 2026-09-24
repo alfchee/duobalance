@@ -7,10 +7,16 @@ import type { Database } from "@/lib/supabase/types";
 vi.mock("@/lib/dunning-email", () => ({ sendDunningEmail: vi.fn() }));
 import { sendDunningEmail } from "@/lib/dunning-email";
 
-type Delivery = { subscription_id: string; household_id: string; stage: string; sent_at: string };
+type Delivery = {
+  subscription_id: string;
+  household_id: string;
+  stage: string;
+  claimed_at: string;
+  sent_at: string | null;
+};
 
 // Full-stack fake for the cron wiring: subscriptions, households, members,
-// the get_user_emails_batch RPC, and the dunning_deliveries ledger.
+// the get_user_emails_batch RPC, and the claim-first dunning ledger.
 function makeClient(state: {
   subs: Array<{
     id: string;
@@ -21,6 +27,8 @@ function makeClient(state: {
   }>;
   deliveries: Delivery[];
 }) {
+  const matchDelivery = (row: Delivery, filters: Array<{ col: string; value: unknown }>) =>
+    filters.every((f) => (row as unknown as Record<string, unknown>)[f.col] === f.value);
   const from = (table: string) => {
     if (table === "subscriptions") {
       return {
@@ -47,7 +55,10 @@ function makeClient(state: {
           eq: (_col: string, _value: unknown) => ({
             is: (_col2: string, _value2: unknown) =>
               Promise.resolve({
-                data: [{ id: "m1", user_id: "u1", display_name: "Ana" }],
+                data: [
+                  { id: "m1", user_id: "u1", display_name: "Ana" },
+                  { id: "m2", user_id: "u2", display_name: "Bruno" },
+                ],
                 error: null,
               }),
           }),
@@ -56,19 +67,54 @@ function makeClient(state: {
     }
     if (table === "dunning_deliveries") {
       return {
-        select: (_cols: string) => ({
-          in: async (_col: string, values: unknown[]) => ({
-            data: state.deliveries.filter((d) => (values as string[]).includes(d.subscription_id)),
+        select: (_cols: string) => {
+          const filters: Array<{ col: string; value: unknown }> = [];
+          const chain: Record<string, unknown> = {};
+          chain.in = (col: string, values: unknown) =>
+            Promise.resolve({
+              data: state.deliveries.filter((d) =>
+                (values as string[]).includes(
+                  (d as unknown as Record<string, unknown>)[col] as string,
+                ),
+              ),
+              error: null,
+            });
+          chain.eq = (col: string, value: unknown) => {
+            filters.push({ col, value });
+            return chain;
+          };
+          chain.maybeSingle = async () => ({
+            data: state.deliveries.find((d) => matchDelivery(d, filters)) ?? null,
             error: null,
-          }),
-        }),
+          });
+          return chain;
+        },
         insert: async (input: Delivery) => {
-          const key = `${input.subscription_id}|${input.stage}`;
-          if (state.deliveries.some((d) => `${d.subscription_id}|${d.stage}` === key)) {
+          const k = (d: Delivery) => `${d.subscription_id}|${d.stage}`;
+          if (state.deliveries.some((d) => k(d) === `${input.subscription_id}|${input.stage}`)) {
             return { error: { code: "23505", message: "duplicate key" } };
           }
           state.deliveries.push({ ...input });
           return { error: null };
+        },
+        update: (values: Record<string, unknown>) => {
+          const filters: Array<{ col: string; value: unknown }> = [];
+          const chain: Record<string, unknown> = {};
+          chain.eq = (col: string, value: unknown) => {
+            filters.push({ col, value });
+            return chain;
+          };
+          chain.select = (_cols: string) => {
+            const matched = state.deliveries.filter((d) => matchDelivery(d, filters));
+            for (const m of matched) Object.assign(m, values);
+            return Promise.resolve({ data: matched, error: null });
+          };
+          chain.then = (resolve: (v: unknown) => void) => {
+            const matched = state.deliveries.filter((d) => matchDelivery(d, filters));
+            for (const m of matched) Object.assign(m, values);
+            resolve({ data: matched, error: null });
+          };
+          return chain;
         },
       };
     }
@@ -76,7 +122,13 @@ function makeClient(state: {
   };
   const rpc = async (name: string) => {
     if (name === "get_user_emails_batch") {
-      return { data: [{ id: "u1", email: "ana@test.local" }], error: null };
+      return {
+        data: [
+          { id: "u1", email: "ana@test.local" },
+          { id: "u2", email: "bruno@test.local" },
+        ],
+        error: null,
+      };
     }
     throw new Error(`unexpected rpc ${name}`);
   };
@@ -95,7 +147,7 @@ afterEach(() => {
 });
 
 describe("runSendDunningEmails (#265)", () => {
-  it("emails every household member and records the stage", async () => {
+  it("emails each member individually and records the stage once", async () => {
     vi.mocked(sendDunningEmail).mockResolvedValue(undefined);
     const state = {
       subs: [
@@ -119,6 +171,8 @@ describe("runSendDunningEmails (#265)", () => {
       sent: [{ subscriptionId: "sub_1", householdId: "hh_1", stage: "first_reminder" }],
       skipped: [],
     });
+    // One personalized message per member — never Ana's greeting to Bruno.
+    expect(sendDunningEmail).toHaveBeenCalledTimes(2);
     expect(sendDunningEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: ["ana@test.local"],
@@ -128,7 +182,15 @@ describe("runSendDunningEmails (#265)", () => {
         manageUrl: "https://app.test/settings",
       }),
     );
+    expect(sendDunningEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: ["bruno@test.local"],
+        stage: "first_reminder",
+        memberName: "Bruno",
+      }),
+    );
     expect(state.deliveries).toHaveLength(1);
+    expect(state.deliveries[0]?.sent_at).not.toBeNull();
 
     // A retried run sends nothing new.
     const retry = await runSendDunningEmails(
@@ -136,7 +198,7 @@ describe("runSendDunningEmails (#265)", () => {
       new ManualClock(new Date("2026-09-23T00:00:00.000Z")),
     );
     expect(retry.sent).toEqual([]);
-    expect(vi.mocked(sendDunningEmail)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(sendDunningEmail)).toHaveBeenCalledTimes(2);
   });
 
   it("never emails comped households", async () => {

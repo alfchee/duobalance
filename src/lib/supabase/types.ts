@@ -630,23 +630,26 @@ export type Database = {
       }
       dunning_deliveries: {
         Row: {
+          claimed_at: string
           household_id: string
           id: string
-          sent_at: string
+          sent_at: string | null
           stage: string
           subscription_id: string
         }
         Insert: {
+          claimed_at?: string
           household_id: string
           id?: string
-          sent_at?: string
+          sent_at?: string | null
           stage: string
           subscription_id: string
         }
         Update: {
+          claimed_at?: string
           household_id?: string
           id?: string
-          sent_at?: string
+          sent_at?: string | null
           stage?: string
           subscription_id?: string
         }

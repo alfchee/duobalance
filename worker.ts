@@ -52,6 +52,15 @@ function populateProcessEnv(env: Record<string, unknown>) {
 }
 
 // `event.cron` is the exact string from wrangler.toml `[triggers] crons`.
+//
+// Billing crons are intentionally ABSENT here in Phase A (review on PR
+// #287): neither billing-expire (#260) nor billing-dunning (#265) has a
+// Cloudflare trigger — both stay Vercel-scheduled (vercel.json) while the
+// billing exposure flag is off, and wiring them needs two trigger slots the
+// free plan does not have (5/account, 4 already taken — see wrangler.toml). They
+// move to scheduled() together at go-live (docs/billing-go-live-checklist.md
+// §4), never one without the other: dunning emails reference an expiry the
+// sweeper performs.
 const CRON_MAP: Record<string, string> = {
   "0 6 * * *": "fx-refresh",
   "0 7 * * *": "generate-bill-instances",

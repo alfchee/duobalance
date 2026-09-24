@@ -1,33 +1,47 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ManualClock } from "./clock";
 import {
   clearDunningForSubscription,
-  COMPED_PLAN_CODE,
-  DUNNING_SCHEDULE,
-  DUNNING_STAGES,
   planDunningStages,
   runDunningJob,
   type DunningCandidate,
   type DunningJobDeps,
+  type DunningJobResult,
   type DunningStage,
 } from "./dunning";
+import { COMPED_PLAN_CODE, DUNNING_SCHEDULE, DUNNING_STAGES } from "./dunning-schedule";
 import type { Database } from "@/lib/supabase/types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const START = new Date("2026-09-23T00:00:00.000Z");
 
 // Fake persistence layer: subscriptions filtered by status, dunning_deliveries
-// rows with 23505 on (subscription_id, stage) conflict plus eq-delete.
-// Mirrors the chainable style in lifecycle-io.test.ts.
-type Delivery = { subscription_id: string; household_id: string; stage: string; sent_at: string };
+// rows with claim-first semantics (insert 23505 on (subscription_id, stage)
+// conflict, chained-eq select/update/delete). Mirrors the chainable style in
+// lifecycle-io.test.ts.
+type Delivery = {
+  subscription_id: string;
+  household_id: string;
+  stage: string;
+  claimed_at: string;
+  sent_at: string | null;
+};
 
-function makeDb(state: {
-  subs: DunningCandidate[];
-  deliveries: Delivery[];
-  /** Force every delivery insert to 23505 (concurrent-runner race). */
-  alwaysConflict?: boolean;
-}) {
+function makeDb(
+  state: {
+    subs: DunningCandidate[];
+    deliveries: Delivery[];
+  },
+  opts: {
+    /** Next adopt-CAS update matches 0 rows (a concurrent adopter won). */
+    failNextAdopt?: boolean;
+    /** Complete updates fail (crash between send and sent_at write). */
+    failComplete?: boolean;
+  } = {},
+) {
+  const matchDelivery = (row: Delivery, filters: Array<{ col: string; value: unknown }>) =>
+    filters.every((f) => (row as unknown as Record<string, unknown>)[f.col] === f.value);
   const from = (table: string) => {
     if (table === "subscriptions") {
       return {
@@ -41,27 +55,67 @@ function makeDb(state: {
     }
     if (table === "dunning_deliveries") {
       return {
-        select: (_cols: string) => ({
-          in: async (_col: string, values: unknown[]) => ({
-            data: state.deliveries.filter((d) => (values as string[]).includes(d.subscription_id)),
+        select: (_cols: string) => {
+          const filters: Array<{ col: string; value: unknown }> = [];
+          const chain: Record<string, unknown> = {};
+          chain.in = (col: string, values: unknown) => {
+            const rows = state.deliveries.filter((d) =>
+              (values as string[]).includes(
+                (d as unknown as Record<string, unknown>)[col] as string,
+              ),
+            );
+            return Promise.resolve({ data: rows, error: null });
+          };
+          chain.eq = (col: string, value: unknown) => {
+            filters.push({ col, value });
+            return chain;
+          };
+          chain.maybeSingle = async () => ({
+            data: state.deliveries.find((d) => matchDelivery(d, filters)) ?? null,
             error: null,
-          }),
-        }),
+          });
+          return chain;
+        },
         insert: async (input: {
           subscription_id: string;
           household_id: string;
           stage: string;
-          sent_at: string;
+          claimed_at: string;
+          sent_at: string | null;
         }) => {
-          const key = `${input.subscription_id}|${input.stage}`;
-          if (
-            state.alwaysConflict ||
-            state.deliveries.some((d) => `${d.subscription_id}|${d.stage}` === key)
-          ) {
+          const k = (d: Delivery) => `${d.subscription_id}|${d.stage}`;
+          if (state.deliveries.some((d) => k(d) === `${input.subscription_id}|${input.stage}`)) {
             return { error: { code: "23505", message: "duplicate key" } };
           }
           state.deliveries.push({ ...input });
           return { error: null };
+        },
+        update: (values: Record<string, unknown>) => {
+          const filters: Array<{ col: string; value: unknown }> = [];
+          const chain: Record<string, unknown> = {};
+          chain.eq = (col: string, value: unknown) => {
+            filters.push({ col, value });
+            return chain;
+          };
+          chain.select = (_cols: string) => {
+            if (opts.failNextAdopt) {
+              opts.failNextAdopt = false;
+              return Promise.resolve({ data: [], error: null });
+            }
+            const matched = state.deliveries.filter((d) => matchDelivery(d, filters));
+            for (const m of matched) Object.assign(m, values);
+            return Promise.resolve({ data: matched, error: null });
+          };
+          chain.then = (resolve: (v: unknown) => void) => {
+            if (opts.failComplete) {
+              resolve({ error: { code: "XX000", message: "simulated complete failure" } });
+              return;
+            }
+            const matched = state.deliveries.filter((d) => matchDelivery(d, filters));
+            for (const m of matched) Object.assign(m, values);
+            resolve({ data: matched, error: null });
+          };
+          return chain;
         },
         delete: () => ({
           eq: async (col: string, value: unknown) => {
@@ -89,29 +143,31 @@ function sub(overrides: Partial<DunningCandidate> = {}): DunningCandidate {
   };
 }
 
-function deps(overrides: Partial<DunningJobDeps> = {}): DunningJobDeps & {
-  sent: Array<{ to: string[]; stage: DunningStage }>;
-} {
-  const sent: Array<{ to: string[]; stage: DunningStage }> = [];
+type SentMail = { to: string[]; stage: DunningStage; memberName: string };
+
+function deps(
+  overrides: Partial<DunningJobDeps> = {},
+  sent: SentMail[] = [],
+): DunningJobDeps & { sent: SentMail[] } {
   return {
     sent,
-    resolveRecipients: async (householdId: string) => ({
-      to: ["ana@test.local"],
-      memberName: "Ana",
+    resolveHousehold: async (householdId: string) => ({
       householdName: `Hogar ${householdId}`,
       manageUrl: "https://app.test/settings",
+      recipients: [{ to: "ana@test.local", memberName: "Ana" }],
     }),
     sendStageEmail: async (input) => {
-      sent.push({ to: input.to, stage: input.stage });
+      sent.push({ to: input.to, stage: input.stage, memberName: input.memberName });
     },
     ...overrides,
   };
 }
 
 describe("dunning schedule (#265)", () => {
-  it("lives in one place: stages, grace window and final-notice lead", () => {
+  it("lives in one place: stages, grace window, final-notice lead, claim lease", () => {
     expect(DUNNING_SCHEDULE.graceDays).toBe(7);
     expect(DUNNING_SCHEDULE.finalNoticeLeadDays).toBe(2);
+    expect(DUNNING_SCHEDULE.claimLeaseMinutes).toBe(15);
     expect(DUNNING_SCHEDULE.stages.map((s) => s.stage)).toEqual([...DUNNING_STAGES]);
   });
 
@@ -165,6 +221,7 @@ describe("runDunningJob (#265)", () => {
       { subscriptionId: "sub_1", householdId: "hh_1", stage: "first_reminder" },
     ]);
     expect(d.sent.map((s) => s.stage)).toEqual(["first_reminder"]);
+    expect(state.deliveries[0]?.sent_at).toBe("2026-09-23T00:00:00.000Z");
 
     // Second failure 3 days in → grace with a refreshed window (mirrors the
     // lifecycle: grace_ends_at = now + 7d): second reminder, no final yet.
@@ -212,22 +269,122 @@ describe("runDunningJob (#265)", () => {
     expect(state.deliveries).toHaveLength(1);
   });
 
-  it("a concurrent run racing the insert still delivers exactly one email", async () => {
+  it("a concurrent runner mid-send finds the in-flight claim and sends nothing", async () => {
+    // Regression test for the PR #287 review: with send-then-insert, two
+    // runners both observed no row and both sent. With claim-first, the
+    // runner that claims owns the delivery — a second runner arriving
+    // mid-send sees the fresh (unsent) claim and yields.
     const clock = new ManualClock(START);
-    // Empty ledger on read, 23505 on write: the other run won the race.
-    const state = { subs: [sub()], deliveries: [] as Delivery[], alwaysConflict: true };
+    const state = { subs: [sub()], deliveries: [] as Delivery[] };
     const db = makeDb(state);
-    const sendStageEmail = vi.fn(async () => {});
-    const d = deps({ sendStageEmail });
+    const sent: SentMail[] = [];
+    const inner: { result: DunningJobResult | null } = { result: null };
+    const d = deps(
+      {
+        sendStageEmail: async (input) => {
+          if (!inner.result) {
+            // Runner 2 fires while runner 1's email is in flight.
+            inner.result = await runDunningJob(db, clock, deps());
+          }
+          sent.push({ to: input.to, stage: input.stage, memberName: input.memberName });
+        },
+      },
+      sent,
+    );
 
-    const result = await runDunningJob(db, clock, d);
-    expect(sendStageEmail).toHaveBeenCalledTimes(1);
-    expect(result.sent).toEqual([
-      { subscriptionId: "sub_1", householdId: "hh_1", stage: "first_reminder" },
-    ]);
+    const first = await runDunningJob(db, clock, d);
+    expect(first.sent).toHaveLength(1);
+    expect(inner.result?.sent).toEqual([]);
+    expect(sent).toHaveLength(1);
+    expect(state.deliveries).toHaveLength(1);
+    expect(state.deliveries[0]?.sent_at).not.toBeNull();
   });
 
-  it("a successful payment mid-sequence cancels the rest and restores active", async () => {
+  it("a stale claim is adopted and sent exactly once after the lease", async () => {
+    // A crash between claim and send leaves sent_at NULL; past the lease
+    // the next run adopts the stage instead of suppressing it forever.
+    const clock = new ManualClock(START);
+    const state = {
+      subs: [sub()],
+      deliveries: [
+        {
+          subscription_id: "sub_1",
+          household_id: "hh_1",
+          stage: "first_reminder",
+          claimed_at: "2026-09-23T00:00:00.000Z",
+          sent_at: null,
+        },
+      ] as Delivery[],
+    };
+    const db = makeDb(state);
+    const d = deps();
+
+    // Inside the 15-minute lease: the claim looks live, nothing sends.
+    clock.advance(5 * 60 * 1000);
+    const early = await runDunningJob(db, clock, d);
+    expect(early.sent).toEqual([]);
+    expect(d.sent).toEqual([]);
+
+    // Past the lease: adopted, sent once, completed.
+    clock.advance(15 * 60 * 1000);
+    const adopted = await runDunningJob(db, clock, d);
+    expect(adopted.sent).toEqual([
+      { subscriptionId: "sub_1", householdId: "hh_1", stage: "first_reminder" },
+    ]);
+    expect(d.sent).toHaveLength(1);
+    expect(state.deliveries[0]?.sent_at).not.toBeNull();
+
+    // And a third run sends nothing more.
+    expect((await runDunningJob(db, clock, d)).sent).toEqual([]);
+    expect(d.sent).toHaveLength(1);
+  });
+
+  it("a lost adoption race yields without sending", async () => {
+    // Two runners adopt the same stale claim simultaneously: the
+    // compare-and-swap on claimed_at elects one owner. The loser (0 rows
+    // matched) must NOT send.
+    const clock = new ManualClock(new Date("2026-09-24T00:00:00.000Z"));
+    const state = {
+      subs: [sub()],
+      deliveries: [
+        {
+          subscription_id: "sub_1",
+          household_id: "hh_1",
+          stage: "first_reminder",
+          claimed_at: "2026-09-23T00:00:00.000Z",
+          sent_at: null,
+        },
+      ] as Delivery[],
+    };
+    const db = makeDb(state, { failNextAdopt: true });
+    const d = deps();
+
+    const result = await runDunningJob(db, clock, d);
+    expect(result.sent).toEqual([]);
+    expect(d.sent).toEqual([]);
+    expect(state.deliveries[0]?.sent_at).toBeNull();
+  });
+
+  it("a crash between send and completion retries the stage on adoption", async () => {
+    // Honest tradeoff, stated in dunning.ts: only a crash AFTER delivery
+    // but BEFORE the sent_at write can double-send, on lease adoption.
+    const clock = new ManualClock(START);
+    const state = { subs: [sub()], deliveries: [] as Delivery[] };
+    const failDb = makeDb(state, { failComplete: true });
+    const d = deps();
+
+    await expect(runDunningJob(failDb, clock, d)).rejects.toThrow(/simulated complete failure/);
+    expect(d.sent).toHaveLength(1);
+    expect(state.deliveries[0]?.sent_at).toBeNull();
+
+    clock.advance(16 * 60 * 1000);
+    const retry = await runDunningJob(makeDb(state), clock, d);
+    expect(retry.sent).toHaveLength(1);
+    expect(d.sent).toHaveLength(2);
+    expect(state.deliveries[0]?.sent_at).not.toBeNull();
+  });
+
+  it("a successful payment mid-sequence cancels the rest via lifecycle cleanup", async () => {
     const clock = new ManualClock(START);
     const state = { subs: [sub()], deliveries: [] as Delivery[] };
     const db = makeDb(state);
@@ -236,7 +393,8 @@ describe("runDunningJob (#265)", () => {
     await runDunningJob(db, clock, d);
     expect(d.sent.map((s) => s.stage)).toEqual(["first_reminder"]);
 
-    // payment.succeeded → active (lifecycle) + reactivation cleanup.
+    // payment.succeeded → active (lifecycle) invokes the reactivation
+    // cleanup: the cycle's rows are deleted, cancelling the rest.
     state.subs[0] = sub({ status: "active", grace_ends_at: null });
     await clearDunningForSubscription(db, "sub_1");
 
@@ -269,11 +427,11 @@ describe("runDunningJob (#265)", () => {
     expect(state.deliveries).toEqual([]);
   });
 
-  it("skips without recording when nobody can be notified, retries later", async () => {
+  it("skips without claiming when nobody can be notified, retries later", async () => {
     const clock = new ManualClock(START);
     const state = { subs: [sub()], deliveries: [] as Delivery[] };
     const db = makeDb(state);
-    const d = deps({ resolveRecipients: async () => null });
+    const d = deps({ resolveHousehold: async () => null });
 
     const skipped = await runDunningJob(db, clock, d);
     expect(skipped.sent).toEqual([]);
@@ -285,5 +443,29 @@ describe("runDunningJob (#265)", () => {
     const retried = await runDunningJob(db, clock, d2);
     expect(retried.sent).toHaveLength(1);
     expect(d2.sent.map((s) => s.stage)).toEqual(["first_reminder"]);
+  });
+
+  it("sends one personalized email per member and records one stage row", async () => {
+    const clock = new ManualClock(START);
+    const state = { subs: [sub()], deliveries: [] as Delivery[] };
+    const db = makeDb(state);
+    const d = deps({
+      resolveHousehold: async () => ({
+        householdName: "Casa Luna",
+        manageUrl: "https://app.test/settings",
+        recipients: [
+          { to: "ana@test.local", memberName: "Ana" },
+          { to: "bruno@test.local", memberName: "Bruno" },
+        ],
+      }),
+    });
+
+    const result = await runDunningJob(db, clock, d);
+    expect(result.sent).toHaveLength(1);
+    expect(d.sent).toEqual([
+      { to: ["ana@test.local"], stage: "first_reminder", memberName: "Ana" },
+      { to: ["bruno@test.local"], stage: "first_reminder", memberName: "Bruno" },
+    ]);
+    expect(state.deliveries).toHaveLength(1);
   });
 });

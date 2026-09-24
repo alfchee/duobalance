@@ -1,7 +1,9 @@
-// Server-only: dunning dispatch extracted for #265 so both the HTTP route
-// handler and the Cloudflare scheduled() dispatcher can call the same
-// business logic without an HTTP round-trip to self. Pattern matches
-// send-bill-reminders.ts.
+// Server-only: dunning dispatch extracted for #265 so the HTTP route
+// handler can call the same business logic without an HTTP round-trip to
+// self. Pattern matches send-bill-reminders.ts. (Cloudflare scheduled()
+// dispatch for billing crons lands at go-live with the trigger budget —
+// see docs/billing-go-live-checklist.md §4. Until then billing jobs are
+// Vercel-scheduled like billing-expire.)
 //
 // The function takes a service-role Supabase client (cross-household reads)
 // and returns the same shape the HTTP handler returns directly. All env
@@ -10,7 +12,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { systemClock, type Clock } from "@/lib/billing/clock";
-import { runDunningJob, type DunningJobResult, type DunningRecipient } from "@/lib/billing/dunning";
+import { runDunningJob, type DunningHousehold, type DunningJobResult } from "@/lib/billing/dunning";
 import { sendDunningEmail } from "@/lib/dunning-email";
 import type { Database } from "@/lib/supabase/types";
 
@@ -22,10 +24,10 @@ function manageUrl(): string {
   return `${base.replace(/\/$/, "")}/settings`;
 }
 
-async function resolveRecipients(
+async function resolveHousehold(
   supabase: SupabaseClient<Database>,
   householdId: string,
-): Promise<DunningRecipient | null> {
+): Promise<DunningHousehold | null> {
   const { data: household, error: householdError } = await supabase
     .from("households")
     .select("name")
@@ -55,19 +57,22 @@ async function resolveRecipients(
   if (emailError) {
     throw new Error(`email lookup failed: ${String(emailError)}`);
   }
-  const to = ((emailRows ?? []) as Array<{ email: string }>)
-    .map((row) => row.email)
-    .filter((email) => !!email);
-  if (to.length === 0) {
+  const emailByUserId = new Map<string, string>();
+  for (const row of (emailRows ?? []) as Array<{ id: string; email: string }>) {
+    if (row.email) emailByUserId.set(row.id, row.email);
+  }
+  // One message per member (review on PR #287): a shared greeting addressed
+  // to the first member reads as a bug to everyone else. Members without a
+  // reachable email are skipped individually — the rest still get theirs.
+  const recipients = list.flatMap((member) => {
+    const email = emailByUserId.get(member.user_id);
+    return email ? [{ to: email, memberName: member.display_name }] : [];
+  });
+  if (recipients.length === 0) {
     return null;
   }
 
-  return {
-    to,
-    memberName: list[0]?.display_name ?? householdName,
-    householdName,
-    manageUrl: manageUrl(),
-  };
+  return { householdName, manageUrl: manageUrl(), recipients };
 }
 
 export async function runSendDunningEmails(
@@ -79,7 +84,7 @@ export async function runSendDunningEmails(
     throw new Error("RESEND_API_KEY not configured");
   }
   return runDunningJob(supabase, clock, {
-    resolveRecipients: (householdId) => resolveRecipients(supabase, householdId),
+    resolveHousehold: (householdId) => resolveHousehold(supabase, householdId),
     sendStageEmail: (input) => sendDunningEmail(input),
   });
 }

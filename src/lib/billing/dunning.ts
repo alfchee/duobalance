@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Clock } from "./clock";
 import { DAY_MS } from "./clock";
-import { DUNNING_GRACE_DAYS } from "./lifecycle";
+import {
+  COMPED_PLAN_CODE,
+  DUNNING_SCHEDULE,
+  type DunningStage,
+  type DunningStatus,
+} from "./dunning-schedule";
 import type { Database } from "@/lib/supabase/types";
 
 // Dunning and grace-period logic with emails (issue #265, parent epic #255).
@@ -10,68 +15,36 @@ import type { Database } from "@/lib/supabase/types";
 // attempts, the grace window, and the emails at each stage. The lifecycle
 // state machine (#260) moves rows past_due → grace → expired; this module
 // decides WHICH email each row is owed and records every send in
-// dunning_deliveries so a retried job never double-sends.
+// dunning_deliveries. The schedule itself (stages, grace length, claim
+// lease) lives in dunning-schedule.ts — the one tuning surface.
 //
-// LAYERS: DUNNING_SCHEDULE + planDunningStages are pure (exhaustively tested
-// with a ManualClock, no I/O). runDunningJob adds the delivery ledger and
-// the injected mailer around the planner. clearDunningForSubscription is
-// the reactivation path's cleanup: a successful payment mid-sequence must
-// cancel the remaining steps, so the recovery caller deletes the cycle's
-// rows and a LATER failure starts again at stage 1.
+// LAYERS: planDunningStages is pure (exhaustively tested with a ManualClock,
+// no I/O). runDunningJob adds the delivery ledger and the injected mailer
+// around the planner. clearDunningForSubscription is the reactivation
+// path's cleanup, invoked by applyBillingEvent (#260) whenever a payment
+// restores `active`: a successful payment mid-sequence cancels the
+// remaining steps, and a LATER failure starts again at stage 1.
+//
+// DELIVERY PROTOCOL (claim-first): the UNIQUE (subscription_id, stage) row
+// is INSERTed (sent_at NULL) BEFORE the email goes out, so concurrent
+// runners elect exactly one owner — the loser re-reads instead of sending.
+// (Review on PR #287: send-then-insert let two runners both observe no row
+// and both send; the later 23505 only prevented double-recording.) The
+// owner delivers to every recipient, then UPDATEs sent_at. A crash between
+// claim and send leaves a stale claim the next run adopts (lease in
+// DUNNING_SCHEDULE.claimLeaseMinutes), so a stage is retried, never
+// suppressed. Residual tradeoff, stated plainly: a crash AFTER delivery but
+// BEFORE the sent_at update retries the send on adoption — concurrent
+// runners cannot double-send, but a crash mid-flight can, because the
+// mailer offers no transactional idempotency.
 //
 // TIME: every timestamp comes from the injected Clock — never the wall
 // clock (boundary locked by eslint + boundary.test.ts). The full
 // first-failure → expiry sequence runs in a test in under a second on a
 // ManualClock.
 
-export type DunningStage = "first_reminder" | "second_reminder" | "final_notice";
-
-export const DUNNING_STAGES: readonly DunningStage[] = [
-  "first_reminder",
-  "second_reminder",
-  "final_notice",
-];
-
-/** Comped founder households (#263) never enter dunning, full stop. */
-export const COMPED_PLAN_CODE = "comped";
-
-export type DunningStatus = "past_due" | "grace";
-
-interface DunningStageRule {
-  stage: DunningStage;
-  /** Row statuses that make this stage due. */
-  onStatuses: readonly DunningStatus[];
-  /**
-   * When set, the stage is additionally gated on urgency: only due once
-   * now >= grace_ends_at - leadDays * DAY_MS (the final notice goes out
-   * shortly before expiry, not on grace entry).
-   */
-  leadDaysBeforeGraceEnd?: number;
-}
-
-/**
- * THE schedule (issue notes: "Put the schedule in one place"). Dunning
- * timings get tuned against real failure data later — that tuning edits
- * this object, not constants scattered across files. graceDays mirrors
- * DUNNING_GRACE_DAYS from the lifecycle (#260), the window the sweeper
- * expires against; the stages say who is owed what and when:
- * - first_reminder: on entering past_due (immediate, catch-up in grace).
- * - second_reminder: on entering grace.
- * - final_notice: in grace, once the window is nearly over.
- */
-export const DUNNING_SCHEDULE: {
-  graceDays: number;
-  finalNoticeLeadDays: number;
-  stages: readonly DunningStageRule[];
-} = {
-  graceDays: DUNNING_GRACE_DAYS,
-  finalNoticeLeadDays: 2,
-  stages: [
-    { stage: "first_reminder", onStatuses: ["past_due", "grace"] },
-    { stage: "second_reminder", onStatuses: ["grace"] },
-    { stage: "final_notice", onStatuses: ["grace"], leadDaysBeforeGraceEnd: 2 },
-  ],
-};
+export type { DunningStage, DunningStatus };
+export { COMPED_PLAN_CODE, DUNNING_SCHEDULE };
 
 export interface DunningCandidate {
   id: string;
@@ -135,21 +108,26 @@ export interface DunningJobResult {
   skipped: DunningSkipped[];
 }
 
-export interface DunningRecipient {
-  to: string[];
+export interface DunningMemberRecipient {
+  to: string;
   memberName: string;
+}
+
+export interface DunningHousehold {
   householdName: string;
   manageUrl: string;
+  /** One entry per member with a reachable email (personalized sends). */
+  recipients: DunningMemberRecipient[];
 }
 
 export interface DunningJobDeps {
   /**
    * Resolve who to email for a household. Return null when there is nobody
-   * to notify (no members, no emails): the job skips WITHOUT recording, so
+   * to notify (no members, no emails): the job skips WITHOUT claiming, so
    * a later run retries instead of suppressing the stage forever.
    */
-  resolveRecipients: (householdId: string) => Promise<DunningRecipient | null>;
-  /** Stage email sender (Resend in production, a recorder in tests). */
+  resolveHousehold: (householdId: string) => Promise<DunningHousehold | null>;
+  /** Single stage email to one member (Resend in production, a recorder in tests). */
   sendStageEmail: (input: {
     to: string[];
     stage: DunningStage;
@@ -164,12 +142,34 @@ type BillingClient = SupabaseClient<Database>;
 
 const SUBSCRIPTION_COLUMNS = "id,household_id,plan_code,status,grace_ends_at";
 
+interface DeliveryRow {
+  subscription_id: string;
+  stage: string;
+  claimed_at: string;
+  sent_at: string | null;
+}
+
+/** A delivered stage suppresses resends; a fresh claim belongs to a live runner. */
+function claimState(
+  row: DeliveryRow | null | undefined,
+  now: Date,
+): "absent" | "delivered" | "in_flight" | "stale" {
+  if (!row) return "absent";
+  if (row.sent_at !== null) return "delivered";
+  const claimed = new Date(row.claimed_at).getTime();
+  if (Number.isNaN(claimed)) return "stale";
+  return now.getTime() - claimed < DUNNING_SCHEDULE.claimLeaseMinutes * 60 * 1000
+    ? "in_flight"
+    : "stale";
+}
+
 /**
- * Run one dunning pass. Idempotent: each (subscription, stage) sends at
- * most once, guarded by the dunning_deliveries UNIQUE (subscription_id,
- * stage) row — a second run in the same minute finds every row and sends
- * nothing. A send failure throws (the cron route maps it to a retryable
- * 502) WITHOUT recording, so the next run retries the stage.
+ * Run one dunning pass. Idempotent across sequential AND concurrent runs:
+ * each (subscription, stage) is claimed before delivery, so a second run in
+ * the same minute finds every claim delivered or in flight and sends
+ * nothing new. A send failure throws (the cron route maps it to a retryable
+ * 502) with the claim left for lease adoption, so the next run retries the
+ * stage.
  *
  * Takes an injected client: the cron route passes a service-role client
  * (cross-household reads + writes); tests pass fakes.
@@ -179,7 +179,6 @@ export async function runDunningJob(
   clock: Clock,
   deps: DunningJobDeps,
 ): Promise<DunningJobResult> {
-  const now = clock.now();
   const found = await db
     .from("subscriptions")
     .select(SUBSCRIPTION_COLUMNS)
@@ -192,96 +191,185 @@ export async function runDunningJob(
   const skipped: DunningSkipped[] = [];
 
   const ids = rows.map((row) => row.id);
-  const already = await listSentStages(db, ids);
-  const sentSet = new Set(already.map((entry) => `${entry.subscription_id}|${entry.stage}`));
+  const ledger = await listDeliveryRows(db, ids);
 
   for (const row of rows) {
-    const due = planDunningStages(row, now).filter((stage) => !sentSet.has(`${row.id}|${stage}`));
-    if (due.length === 0) {
+    const now = clock.now();
+    const due = planDunningStages(row, now).filter(
+      (stage) => claimState(ledger.get(key(row.id, stage)), now) === "absent",
+    );
+    // Stale claims are adopted below (retry), delivered/in-flight are done.
+    const retries = planDunningStages(row, now).filter(
+      (stage) => claimState(ledger.get(key(row.id, stage)), now) === "stale",
+    );
+    const pending = [...due, ...retries];
+    if (pending.length === 0) {
       continue;
     }
-    const recipient = await deps.resolveRecipients(row.household_id);
-    if (!recipient || recipient.to.length === 0) {
+    const household = await deps.resolveHousehold(row.household_id);
+    if (!household || household.recipients.length === 0) {
       skipped.push({
         subscriptionId: row.id,
         householdId: row.household_id,
-        reason: "no recipients: stage left unsent for a later run",
+        reason: "no recipients: stage left unclaimed for a later run",
       });
       continue;
     }
-    for (const stage of due) {
-      if (sentSet.has(`${row.id}|${stage}`)) {
+    for (const stage of pending) {
+      const owned = await acquireClaim(db, row, stage, ledger, clock);
+      if (!owned) {
         continue;
       }
-      await deps.sendStageEmail({
-        to: recipient.to,
-        stage,
-        memberName: recipient.memberName,
-        householdName: recipient.householdName,
-        manageUrl: recipient.manageUrl,
-        graceEndsOn: row.grace_ends_at ?? undefined,
-      });
-      const recorded = await recordSent(db, {
+      for (const recipient of household.recipients) {
+        await deps.sendStageEmail({
+          to: [recipient.to],
+          stage,
+          memberName: recipient.memberName,
+          householdName: household.householdName,
+          manageUrl: household.manageUrl,
+          graceEndsOn: row.grace_ends_at ?? undefined,
+        });
+      }
+      await completeClaim(db, row.id, stage, clock);
+      ledger.set(key(row.id, stage), {
         subscription_id: row.id,
-        household_id: row.household_id,
         stage,
+        claimed_at: clock.now().toISOString(),
         sent_at: clock.now().toISOString(),
       });
-      // "duplicate" means a concurrent run recorded the same (subscription,
-      // stage) first: the email still went out exactly once, so report it
-      // as sent either way — never retry the send.
-      if (recorded === "duplicate") {
-        sentSet.add(`${row.id}|${stage}`);
-      }
       sent.push({ subscriptionId: row.id, householdId: row.household_id, stage });
-      sentSet.add(`${row.id}|${stage}`);
     }
   }
   return { checked: rows.length, sent, skipped };
 }
 
-async function listSentStages(
+function key(subscriptionId: string, stage: string): string {
+  return `${subscriptionId}|${stage}`;
+}
+
+async function listDeliveryRows(
   db: BillingClient,
   subscriptionIds: string[],
-): Promise<Array<{ subscription_id: string; stage: string }>> {
+): Promise<Map<string, DeliveryRow>> {
+  const ledger = new Map<string, DeliveryRow>();
   if (subscriptionIds.length === 0) {
-    return [];
+    return ledger;
   }
   const found = await db
     .from("dunning_deliveries")
-    .select("subscription_id,stage")
+    .select("subscription_id,stage,claimed_at,sent_at")
     .in("subscription_id", subscriptionIds);
   if (found.error) {
     throw found.error;
   }
-  return (found.data ?? []) as Array<{ subscription_id: string; stage: string }>;
+  for (const row of (found.data ?? []) as DeliveryRow[]) {
+    ledger.set(key(row.subscription_id, row.stage), row);
+  }
+  return ledger;
 }
 
 /**
- * Record one send. Returns "duplicate" when a concurrent run recorded the
- * same (subscription, stage) first (23505 on the unique guard) — the email
- * already went out exactly once, so the caller must NOT retry the send.
+ * Claim-first acquire: INSERT the claim; on 23505 re-read the winner's row
+ * (delivered → done, in-flight → yield, stale → adopt via compare-and-swap
+ * on claimed_at so simultaneous adopters elect exactly one owner).
+ * Returns true only when this runner owns the delivery.
  */
-async function recordSent(
+async function acquireClaim(
   db: BillingClient,
-  input: { subscription_id: string; household_id: string; stage: DunningStage; sent_at: string },
-): Promise<"recorded" | "duplicate"> {
-  const inserted = await db.from("dunning_deliveries").insert(input);
-  if (inserted.error) {
-    if (inserted.error.code === "23505") {
-      return "duplicate";
-    }
+  row: DunningCandidate,
+  stage: DunningStage,
+  ledger: Map<string, DeliveryRow>,
+  clock: Clock,
+): Promise<boolean> {
+  const now = clock.now();
+  const claimedAt = now.toISOString();
+  const inserted = await db.from("dunning_deliveries").insert({
+    subscription_id: row.id,
+    household_id: row.household_id,
+    stage,
+    claimed_at: claimedAt,
+    sent_at: null,
+  });
+  if (!inserted.error) {
+    ledger.set(key(row.id, stage), {
+      subscription_id: row.id,
+      stage,
+      claimed_at: claimedAt,
+      sent_at: null,
+    });
+    return true;
+  }
+  if (inserted.error.code !== "23505") {
     throw inserted.error;
   }
-  return "recorded";
+  const current = await readDeliveryRow(db, row.id, stage);
+  const state = claimState(current, clock.now());
+  if (state !== "stale" || !current) {
+    // Delivered, in-flight, or (vanishingly rare) rolled back: the next
+    // redelivery records fresh. Never send on a lost claim.
+    if (current) {
+      ledger.set(key(row.id, stage), current);
+    }
+    return false;
+  }
+  // Adopt: conditional write on the exact stale claimed_at — simultaneous
+  // adopters collide on 0 matched rows instead of both sending.
+  const adopted = await db
+    .from("dunning_deliveries")
+    .update({ claimed_at: claimedAt })
+    .eq("subscription_id", row.id)
+    .eq("stage", stage)
+    .eq("claimed_at", current.claimed_at)
+    .select("subscription_id");
+  if (adopted.error) {
+    throw adopted.error;
+  }
+  const won = (adopted.data ?? []).length > 0;
+  if (won) {
+    ledger.set(key(row.id, stage), { ...current, claimed_at: claimedAt });
+  }
+  return won;
+}
+
+async function readDeliveryRow(
+  db: BillingClient,
+  subscriptionId: string,
+  stage: string,
+): Promise<DeliveryRow | null> {
+  const found = await db
+    .from("dunning_deliveries")
+    .select("subscription_id,stage,claimed_at,sent_at")
+    .eq("subscription_id", subscriptionId)
+    .eq("stage", stage)
+    .maybeSingle();
+  if (found.error) {
+    throw found.error;
+  }
+  return (found.data ?? null) as DeliveryRow | null;
+}
+
+/** Mark the owned claim delivered. Only the owner reaches here. */
+async function completeClaim(
+  db: BillingClient,
+  subscriptionId: string,
+  stage: DunningStage,
+  clock: Clock,
+): Promise<void> {
+  const completed = await db
+    .from("dunning_deliveries")
+    .update({ sent_at: clock.now().toISOString() })
+    .eq("subscription_id", subscriptionId)
+    .eq("stage", stage);
+  if (completed.error) {
+    throw completed.error;
+  }
 }
 
 /**
  * Reactivation cleanup: a successful payment mid-sequence restores `active`
- * (via the lifecycle) AND deletes this cycle's delivery rows, cancelling
- * the remaining steps. A LATER failure then starts again at first_reminder
- * instead of finding stale rows and staying silent. Call this wherever a
- * payment.succeeded / subscription.activated recovery is applied.
+ * (via the lifecycle, which invokes this) AND deletes this cycle's delivery
+ * rows, cancelling the remaining steps. A LATER failure then starts again
+ * at first_reminder instead of finding stale rows and staying silent.
  */
 export async function clearDunningForSubscription(
   db: BillingClient,
