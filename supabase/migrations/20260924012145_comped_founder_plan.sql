@@ -15,6 +15,15 @@
 --   the one-live partial index forbids a second live row. The predicate
 --   below mirrors the entitled-status list in household_plan() and the
 --   partial index so the three cannot drift (same discipline as #257).
+-- - A status-only predicate is not enough: household_plan() also requires
+--   time-liveness, so a time-ended-but-unflipped row (cancelled past its
+--   period end, lapsed trial/grace window) would block the backfill via the
+--   one-live index while resolving to NULL — stuck write-blocked after the
+--   backfill ran. Step 2a therefore flips time-ended live rows to expired
+--   first (mirroring isExpirable / the #260 sweeper: active rows are never
+--   touched), so the backfill sees true entitlement state. Narrow in
+--   Phase A (billing off, no such rows in prod) but AC1 reads "every
+--   existing household", so the migration closes it rather than the sweeper.
 -- - create_household() now grants comped/active unconditionally. Billing is
 --   off in Phase A (no BILLING_ENABLED flag yet; ADR 0001 keeps billing
 --   behind the exposure flag), so comped is the correct pre-billing
@@ -48,7 +57,23 @@ insert into public.plan_features (plan_code, feature_key, enabled, limit_value) 
   ('comped', 'write_access',       true,  null);
 
 -- ============================================================================
--- 2. Backfill: one perpetual active/comped row per household without a live
+-- 2a. Flip time-ended live rows to expired BEFORE the backfill, mirroring
+--     isExpirable() (past_due/grace past grace_ends_at, cancelled past or
+--     without its period end, trialing past trial_ends_at; active never).
+--     Without this a stale row squats the one-live slot while resolving to
+--     NULL, and the backfill below would skip the household entirely.
+-- ============================================================================
+
+update public.subscriptions
+   set status = 'expired'
+ where (status in ('past_due', 'grace') and grace_ends_at <= now())
+    or (status = 'cancelled'
+        and (current_period_end is null or current_period_end <= now()))
+    or (status = 'trialing'
+        and trial_ends_at is not null and trial_ends_at <= now());
+
+-- ============================================================================
+-- 2b. Backfill: one perpetual active/comped row per household without a live
 --    subscription. No dates -> resolves through infinity, sweeper-immune.
 -- ============================================================================
 
