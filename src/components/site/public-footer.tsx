@@ -49,7 +49,7 @@ export function PublicFooter() {
         />
       </div>
       <div className="mx-auto mt-10 max-w-7xl border-t border-background/15 pt-6 text-xs text-background/50">
-        © 2026 DuoBalance
+        © {new Date().getFullYear()} DuoBalance
       </div>
     </footer>
   );
