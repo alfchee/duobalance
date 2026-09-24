@@ -39,6 +39,9 @@ export async function POST(request: Request) {
       console.error("billing webhook misconfigured:", error);
       return Response.json({ error: "billing webhook failed" }, { status: 500 });
     }
+    // NOTE (#267): when a real adapter lands, map malformed payloads to 4xx
+    // here — the catch-all 502 below reads as transient and the provider
+    // will retry a poison delivery.
     console.error("billing webhook failed:", error);
     return Response.json({ error: "billing webhook failed" }, { status: 502 });
   }

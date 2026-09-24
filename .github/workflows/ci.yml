@@ -172,7 +172,9 @@ jobs:
             exit 1
           fi
           echo "billing single-accessor guard: OK"
-          if grep -rEn '^\s*(NEXT_PUBLIC_)?BILLING_ENABLED\s*=\s*["'"'"']?(1|true|yes|on)\b' wrangler.toml .env.example 2>/dev/null; then
+          # Case-insensitive: the accessor lowercases before comparing, so
+          # "TRUE"/"True"/"ON" in committed config would also turn billing on.
+          if grep -riEn '^\s*(NEXT_PUBLIC_)?BILLING_ENABLED\s*=\s*["'"'"']?(1|true|yes|on)\b' wrangler.toml .env.example 2>/dev/null; then
             echo "::error::BILLING_ENABLED defaults on in committed config — the flag must default off (#262)."
             exit 1
           fi

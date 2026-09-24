@@ -31,6 +31,6 @@ describe("BillingGate (#262)", () => {
         <button type="button">Upgrade to Plus</button>
       </BillingGate>,
     );
-    expect(screen.getByRole("button", { name: "Upgrade to Plus" })).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Upgrade to Plus" })).not.toBeNull();
   });
 });

@@ -76,9 +76,19 @@ describe("BILLING_ENABLED flag (#262)", () => {
     expect(isBillingEnabled()).toBe(true);
   });
 
-  it("stays on when either side is on", () => {
+  it("gives the server var precedence over a stale mirror", () => {
     clearFlagEnv();
     vi.stubEnv("BILLING_ENABLED", "0");
+    vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "yes");
+    expect(isBillingEnabled()).toBe(false);
+    vi.stubEnv("BILLING_ENABLED", "1");
+    vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "0");
+    expect(isBillingEnabled()).toBe(true);
+  });
+
+  it("treats an empty server var as unset and falls back to the mirror", () => {
+    clearFlagEnv();
+    vi.stubEnv("BILLING_ENABLED", "");
     vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "yes");
     expect(isBillingEnabled()).toBe(true);
   });
