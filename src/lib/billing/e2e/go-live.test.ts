@@ -40,10 +40,12 @@ describe("billing e2e simulated go-live (#266)", () => {
     world.stub.advanceTime(365 * DAY_MS);
     const swept = await expireDueSubscriptions(world.db, stubClock(world.stub));
     expect(swept.expired).toEqual([]);
+    // Tied to the seeded fixture: if plan_code drifts from comped (or the
+    // row leaves active), entitlement must fail — a literal `true` would not.
+    expect(world.state.subs[0]?.plan_code).toBe("comped");
     expect(world.state.subs[0]?.status).toBe("active");
-    // Entitlement derived from the ledger row, not a literal: comped + active
-    // means entitled, and with billing live the flag passes it through.
-    const entitled = world.state.subs[0]?.status === "active";
+    const entitled =
+      world.state.subs[0]?.plan_code === "comped" && world.state.subs[0]?.status === "active";
     expect(entitled).toBe(true);
     expect(effectiveEntitlement(entitled)).toBe(true);
   });

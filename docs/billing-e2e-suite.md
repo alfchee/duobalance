@@ -29,7 +29,7 @@ Database-level (pgTAP, `supabase/tests/30_billing_lifecycle_e2e.sql`):
 ## Run
 
 ```bash
-npx vitest run src/lib/billing/e2e      # port half (seconds, no real time)
+npx vitest run src/lib/billing/e2e src/lib/billing/state-machine-lock.test.ts  # port half (seconds, no real time)
 npm run db:test                          # DB half (needs the local stack)
 npm run test                             # everything, as CI runs it
 ```

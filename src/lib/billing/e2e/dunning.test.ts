@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { checkout, createWorld, dbStatus, deliverAll, stubStatus } from "./harness";
+import { expireDueSubscriptions } from "../lifecycle";
+import { checkout, createWorld, dbStatus, deliverAll, stubClock, stubStatus } from "./harness";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Failure path (#266): failed payment → dunning (past_due) → grace →
-// expiry. The 30-day trial and 7-day grace windows run on the injected
-// clock — 38 simulated days, zero real elapsed time.
+// sweeper expiry past the grace deadline. The 7-day grace window runs on the
+// injected clock — ~11 simulated days, zero real elapsed time. (The stub's
+// 3rd-failure count expiry is covered by the coverage/reactivation walks;
+// here the ledger must expire through `expireDueSubscriptions`, the stated
+// contract.)
 
 describe("billing e2e dunning (#266)", () => {
   it("walks active → past_due → grace → expired with attempt counting", async () => {
@@ -33,15 +37,23 @@ describe("billing e2e dunning (#266)", () => {
     expect(dbStatus(world)).toBe("grace");
     expect(world.state.subs[0]?.grace_ends_at).toBe("2026-10-03T00:00:00.000Z");
 
-    // Third failure: expired by failure count (stub expires on the 3rd
-    // failure, not on the grace timestamp), period cleared.
-    world.stub.advanceTime(8 * DAY_MS);
-    await world.stub.simulateFailedRenewal(world.reference ?? "");
-    expect(await stubStatus(world)).toBe("expired");
-    const third = await deliverAll(world);
-    expect(third).toEqual([{ outcome: "applied", status: "expired" }]);
+    // Still inside the refreshed window (2026-09-26 + 6d = 2026-10-02, grace
+    // ends 2026-10-03): the sweeper must not touch the grace row.
+    world.stub.advanceTime(6 * DAY_MS);
+    const early = await expireDueSubscriptions(world.db, stubClock(world.stub));
+    expect(early.expired).toEqual([]);
+    expect(dbStatus(world)).toBe("grace");
+
+    // Past the deadline the sweeper expires the ledger row and clears the
+    // period. The stub holds no time-based transition (it stays grace until
+    // a 3rd failure), so provider/ledger diverge here by design — same shape
+    // as the cancelled-then-swept happy path.
+    world.stub.advanceTime(2 * DAY_MS);
+    const swept = await expireDueSubscriptions(world.db, stubClock(world.stub));
+    expect(swept.expired).toHaveLength(1);
     expect(dbStatus(world)).toBe("expired");
     expect(world.state.subs[0]?.current_period_end).toBeNull();
+    expect(await stubStatus(world)).toBe("grace");
 
     // The ledger saw attempt 1 then 2 — dunning pressure is observable.
     const attempts = world.stub
