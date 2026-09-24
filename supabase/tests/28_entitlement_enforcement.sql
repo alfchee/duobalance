@@ -144,7 +144,7 @@ begin
 end
 $$;
 
-select plan(33);
+select plan(35);
 
 -- ============================================================================
 -- A. can_write() direct assertions (fail-closed helper contract)
@@ -440,6 +440,31 @@ select throws_ok(
   'P0001',
   null,
   'missing accounts row: even the first account insert is rejected (limit 0)'
+);
+
+-- ============================================================================
+-- H2. No cross-household plan oracle: the count trigger fires BEFORE the RLS
+-- WITH CHECK, so without an is_member() early return a non-member INSERT
+-- would raise P0001 (limit 0 / at-capacity) vs 42501 (unlimited) and
+-- fingerprint the victim household's tier. Both must deny with 42501.
+-- ============================================================================
+
+select tests.authenticate_as('28111111-1111-1111-1111-111111111111', 'full28@test.local');
+
+select throws_ok(
+  $$ insert into public.accounts (household_id, name, kind, currency)
+     values ('28000000-0000-0000-0000-000000000004', 'Probe', 'checking', 'CLP') $$,
+  '42501',
+  null,
+  'no oracle: non-member INSERT into limit-0 household denied with 42501, not P0001'
+);
+
+select throws_ok(
+  $$ insert into public.accounts (household_id, name, kind, currency)
+     values ('28000000-0000-0000-0000-000000000002', 'Probe', 'checking', 'CLP') $$,
+  '42501',
+  null,
+  'no oracle: non-member INSERT into unlimited household denied with 42501'
 );
 
 -- ============================================================================

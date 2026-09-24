@@ -226,14 +226,21 @@ create policy bills_delete on public.bills
 --
 --    SECURITY DEFINER (like tg_skip_deleted_bill_instance) so the count is
 --    exact: an INVOKER trigger would miss accounts hidden from the caller by
---    the private-account SELECT policy and undercount. The check is confined
---    to NEW.household_id, which the RLS policy already authorized, so no
+--    the private-account SELECT policy and undercount. BEFORE INSERT triggers
+--    fire before the RLS WITH CHECK, so the trigger must not probe another
+--    household's subscription: it returns early for non-members and lets RLS
+--    produce the 42501 denial (otherwise P0001 vs 42501 fingerprints the
+--    victim's plan tier). The check is otherwise confined to
+--    NEW.household_id, which the RLS policy authorizes for members, so no
 --    cross-household read is opened. Fail-closed: feature_limit() returns 0
 --    for a plan with no accounts row, so the first insert already raises.
 --
---    Archiving (or touching an archived row) always passes: ADR 0001
---    remediation is "archive an account", which must work while over limits.
---    No concurrency guard beyond the row lock: two racing inserts can both
+--    Archiving (or touching an archived row) always passes the *trigger*:
+--    ADR 0001 remediation is "archive an account", which must work for an
+--    entitled-but-over-limit household. An unentitled household
+--    (expired/no subscription) still cannot archive: accounts_update
+--    requires can_write() in USING and WITH CHECK, so downgrade stays fully
+--    read-only until resubscribe. No concurrency guard beyond the row lock: two racing inserts can both
 --    pass, same as every other non-unique limit in this schema; the RLS
 --    gate plus UI gating (#264) make this a Phase A non-issue.
 -- ============================================================================
@@ -248,6 +255,12 @@ declare
   v_limit int;
   v_count int;
 begin
+  -- Non-members return early: let the RLS WITH CHECK deny with 42501 so the
+  -- trigger never leaks the target household's plan tier (P0001 vs 42501).
+  if not public.is_member(new.household_id) then
+    return new;
+  end if;
+
   if new.is_archived then
     return new;
   end if;
