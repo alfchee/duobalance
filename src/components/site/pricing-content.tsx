@@ -85,9 +85,8 @@ const COPY: Record<"es" | "en", Copy> = {
 
 export function PricingContent() {
   const currentLocale = useLocale();
-  const [selectedLang, setSelectedLang] = useState<"es" | "en">(
-    currentLocale === "en" ? "en" : "es",
-  );
+  const [langOverride, setLangOverride] = useState<"es" | "en" | null>(null);
+  const selectedLang = langOverride ?? (currentLocale === "en" ? "en" : "es");
   const copy = COPY[selectedLang] ?? COPY.es;
 
   return (
@@ -104,7 +103,7 @@ export function PricingContent() {
           <div className="inline-flex rounded-lg border bg-muted p-1 text-xs">
             <button
               type="button"
-              onClick={() => setSelectedLang("es")}
+              onClick={() => setLangOverride("es")}
               className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
                 selectedLang === "es"
                   ? "bg-background text-foreground shadow-xs"
@@ -115,7 +114,7 @@ export function PricingContent() {
             </button>
             <button
               type="button"
-              onClick={() => setSelectedLang("en")}
+              onClick={() => setLangOverride("en")}
               className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
                 selectedLang === "en"
                   ? "bg-background text-foreground shadow-xs"
