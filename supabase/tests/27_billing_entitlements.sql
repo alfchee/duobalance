@@ -236,11 +236,11 @@ select results_eq(
   'Bob sees exactly one subscription (his own household)'
 );
 
--- Seed from ADR 0001 made it into the database
+-- Seed from ADR 0001 made it into the database (#263 adds comped after plus)
 select results_eq(
   $$ select code from public.plans order by sort_order $$,
-  $$ values ('free'::text), ('plus'::text) $$,
-  'plans seed: free and plus in sort order'
+  $$ values ('free'::text), ('plus'::text), ('comped'::text) $$,
+  'plans seed: free, plus and comped in sort order'
 );
 
 select is(
