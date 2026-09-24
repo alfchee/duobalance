@@ -1796,6 +1796,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      backfill_comped_subscriptions: { Args: never; Returns: number }
       bill_instance_generation_bounds: {
         Args: { p_bill_id: string }
         Returns: {

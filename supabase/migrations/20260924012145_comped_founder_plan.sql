@@ -35,13 +35,23 @@
 --    where household_id = '<uuid>' and status <> 'expired';
 -- Expired frees the one-live slot, so the household fail-closes through
 -- has_feature()'s missing-plan arm until a real plan is granted.
+--
+-- Re-running the backfill (service role only — the function below is
+-- revoked from anon/authenticated so no member can self-grant comped):
+--   select public.backfill_comped_subscriptions();
+-- Idempotent: seed inserts carry ON CONFLICT DO NOTHING and the fill
+-- insert targets the one-live partial index, so a concurrent live row
+-- (signup racing the deploy) wins instead of aborting with 23505.
 
 -- ============================================================================
 -- 1. comped catalogue row: full entitlements, hidden from listings.
+--    ON CONFLICT keeps re-runs safe (migrations run once; ops re-runs
+--    must not duplicate the seed).
 -- ============================================================================
 
 insert into public.plans (code, name, is_public, sort_order) values
-  ('comped', 'Founder', false, 2);
+  ('comped', 'Founder', false, 2)
+on conflict (code) do nothing;
 
 -- Full vocabulary: mirrors plus (all enabled, unlimited where plus is
 -- unlimited) plus the #261 write_access gate so #261 policies pass.
@@ -54,38 +64,69 @@ insert into public.plan_features (plan_code, feature_key, enabled, limit_value) 
   ('comped', 'bill_reminders',     true,  null),
   ('comped', 'export',             true,  null),
   ('comped', 'long_range_reports', true,  null),
-  ('comped', 'write_access',       true,  null);
+  ('comped', 'write_access',       true,  null)
+on conflict (plan_code, feature_key) do nothing;
 
 -- ============================================================================
--- 2a. Flip time-ended live rows to expired BEFORE the backfill, mirroring
---     isExpirable() (past_due/grace past grace_ends_at, cancelled past or
---     without its period end, trialing past trial_ends_at; active never).
---     Without this a stale row squats the one-live slot while resolving to
---     NULL, and the backfill below would skip the household entirely.
--- ============================================================================
-
-update public.subscriptions
-   set status = 'expired'
- where (status in ('past_due', 'grace') and grace_ends_at <= now())
-    or (status = 'cancelled'
-        and (current_period_end is null or current_period_end <= now()))
-    or (status = 'trialing'
-        and trial_ends_at is not null and trial_ends_at <= now());
-
--- ============================================================================
--- 2b. Backfill: one perpetual active/comped row per household without a live
+-- 2. Repair + backfill as one shared, idempotent operation.
+--    2a flips time-ended live rows to expired (mirroring isExpirable():
+--    past_due/grace past grace_ends_at, cancelled past or without its
+--    period end, trialing past trial_ends_at; active never). Without this
+--    a stale row squats the one-live slot while resolving to NULL, and
+--    the fill below would skip the household entirely.
+--    2b fills one perpetual active/comped row per household without a live
 --    subscription. No dates -> resolves through infinity, sweeper-immune.
+--    The fill targets the one-live partial index explicitly, so a live row
+--    committed by a concurrent signup between the check and the insert is
+--    skipped instead of aborting the deploy with 23505.
+--    Defined as a function (not inline) so pgTAP invokes the shipped path
+--    instead of a copy of its text.
 -- ============================================================================
 
-insert into public.subscriptions (household_id, plan_code, provider, status)
-select h.id, 'comped', 'stub', 'active'
-  from public.households h
- where not exists (
-   select 1
-     from public.subscriptions s
-    where s.household_id = h.id
-      and s.status in ('trialing', 'active', 'past_due', 'grace', 'cancelled')
- );
+create or replace function public.backfill_comped_subscriptions()
+returns int
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_filled int;
+begin
+  update public.subscriptions
+     set status = 'expired'
+   where (status in ('past_due', 'grace') and grace_ends_at <= now())
+      or (status = 'cancelled'
+          and (current_period_end is null or current_period_end <= now()))
+      or (status = 'trialing'
+          and trial_ends_at is not null and trial_ends_at <= now());
+
+  insert into public.subscriptions (household_id, plan_code, provider, status)
+  select h.id, 'comped', 'stub', 'active'
+    from public.households h
+   where not exists (
+     select 1
+       from public.subscriptions s
+      where s.household_id = h.id
+        and s.status in ('trialing', 'active', 'past_due', 'grace', 'cancelled')
+   )
+  on conflict (household_id)
+    where status in ('trialing', 'active', 'past_due', 'grace', 'cancelled')
+    do nothing;
+
+  get diagnostics v_filled = row_count;
+  return v_filled;
+end;
+$$;
+
+-- Service-role / ops only: subscriptions have no authenticated write
+-- policies, and this stays that way — no member may self-grant comped.
+-- (Service role and superuser bypass grants; pgTAP calls it as superuser.)
+revoke all on function public.backfill_comped_subscriptions() from public;
+
+comment on function public.backfill_comped_subscriptions() is
+  'Issue #263: idempotent comped repair + backfill. Returns households filled. Safe to re-run; concurrent live rows win via the one-live index.';
+
+select public.backfill_comped_subscriptions();
 
 -- ============================================================================
 -- 3. Signup default becomes comped while billing is disabled (#263 replaces
@@ -106,7 +147,7 @@ create or replace function public.create_household(
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   h_id uuid;

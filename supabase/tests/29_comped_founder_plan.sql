@@ -75,28 +75,12 @@ begin
 
   -- hh_nosub deliberately has no subscription row (pre-#261 population).
 
-  -- Exercise the migration's repair (2a) then backfill (2b) verbatim:
-  -- time-ended rows flip to expired first so they cannot squat the
-  -- one-live slot while resolving to NULL; then households with no live
-  -- subscription gain comped and live rows are untouched.
-  update public.subscriptions
-     set status = 'expired'
-   where household_id in (hh_nosub, hh_expired, hh_stale, hh_free, hh_comped)
-     and ((status in ('past_due', 'grace') and grace_ends_at <= now())
-      or (status = 'cancelled'
-          and (current_period_end is null or current_period_end <= now()))
-      or (status = 'trialing'
-          and trial_ends_at is not null and trial_ends_at <= now()));
-
-  insert into public.subscriptions (household_id, plan_code, provider, status)
-  select h.id, 'comped', 'stub', 'active'
-    from public.households h
-   where h.id in (hh_nosub, hh_expired, hh_stale, hh_free, hh_comped)
-     and not exists (
-       select 1 from public.subscriptions s
-        where s.household_id = h.id
-          and s.status in ('trialing', 'active', 'past_due', 'grace', 'cancelled')
-     );
+  -- Invoke the SHIPPED backfill operation (not a copy of its text), so
+  -- this test fails if the migration's repair/fill diverges or is
+  -- removed: time-ended rows flip to expired first so they cannot squat
+  -- the one-live slot while resolving to NULL, then households with no
+  -- live subscription gain comped and live rows are untouched.
+  perform public.backfill_comped_subscriptions();
 end
 $$;
 
