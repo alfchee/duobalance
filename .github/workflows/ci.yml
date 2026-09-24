@@ -151,6 +151,35 @@ jobs:
           fi
           echo ".next/static leak guard: OK"
 
+      # ----------------------------------------------------------------------
+      # Billing-flag guard — #262. Two properties, ordered cheap-first:
+      #
+      #   1. Single accessor — grep src/ for the flag name. Every read must
+      #      go through isBillingEnabled() in src/lib/billing/enabled.ts;
+      #      test files stub the env and are excluded.
+      #   2. Default off — no committed config (wrangler vars, .env.example)
+      #      may carry a truthy flag value; production deploys with it off.
+      #
+      #   The vitest suite (src/lib/billing/enabled.test.ts) locks the same
+      #   properties; this guard fails the workflow even if tests are skipped.
+      # ----------------------------------------------------------------------
+      - name: Billing-flag guard — single accessor, default off
+        run: |
+          set -euo pipefail
+          if grep -rEn "BILLING_ENABLED" src/ \
+              | grep -vE "(\.test\.(ts|tsx)|lib/billing/enabled\.ts)"; then
+            echo "::error::BILLING_ENABLED is referenced outside src/lib/billing/enabled.ts (and tests). All reads must go through isBillingEnabled()."
+            exit 1
+          fi
+          echo "billing single-accessor guard: OK"
+          # Case-insensitive: the accessor lowercases before comparing, so
+          # "TRUE"/"True"/"ON" in committed config would also turn billing on.
+          if grep -riEn '^\s*(NEXT_PUBLIC_)?BILLING_ENABLED\s*=\s*["'"'"']?(1|true|yes|on)\b' wrangler.toml .env.example 2>/dev/null; then
+            echo "::error::BILLING_ENABLED defaults on in committed config — the flag must default off (#262)."
+            exit 1
+          fi
+          echo "billing default-off guard: OK"
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
 
@@ -223,6 +252,13 @@ jobs:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
           VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
           APP_URL: https://duobalanceapp.com
+          # Billing exposure flag, client mirror (#262) — explicitly OFF.
+          # NEXT_PUBLIC_* values are inlined at build time, so wrangler
+          # [vars] (runtime bindings) cannot flip the client gate: going
+          # live requires setting this to "1" here AND BILLING_ENABLED=1 in
+          # the Worker vars, then redeploying. See
+          # docs/billing-go-live-checklist.md.
+          NEXT_PUBLIC_BILLING_ENABLED: ""
         run: |
           npx opennextjs-cloudflare build
           test -f .open-next/worker.js
@@ -272,6 +308,10 @@ jobs:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
           VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
           APP_URL: https://staging.duobalanceapp.com
+          # Billing exposure flag, client mirror (#262) — explicitly OFF.
+          # Build-time inlined (see production deploy job): flip here AND in
+          # the staging Worker vars together, never one side alone.
+          NEXT_PUBLIC_BILLING_ENABLED: ""
         run: |
           npx opennextjs-cloudflare build
           test -f .open-next/worker.js

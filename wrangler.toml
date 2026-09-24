@@ -40,6 +40,13 @@ APP_URL = "https://duobalanceapp.com"
 FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
 RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
 RESEND_REPLY_TO = "hola@duobalanceapp.com"
+# Billing exposure flag (Phase A, #262) — explicitly OFF. Single accessor:
+# src/lib/billing/enabled.ts (server BILLING_ENABLED, NEXT_PUBLIC_ mirror for
+# UI gating). Empty means not live: checkout, webhook, plan gating and admin
+# billing screens stay hidden while entitlements evaluate as entitled. Do NOT
+# set a truthy value until docs/billing-go-live-checklist.md is signed off.
+BILLING_ENABLED = ""
+NEXT_PUBLIC_BILLING_ENABLED = ""
 
 # Secrets — NEVER put these in [vars]. They bypass RLS or enable external
 # services and must not reach a client bundle.
@@ -134,6 +141,10 @@ APP_URL = "https://staging.duobalanceapp.com"
 FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
 RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
 RESEND_REPLY_TO = "hola@duobalanceapp.com"
+# Staging mirrors production: billing stays OFF here too (#262). Flip it on
+# only in a staging Worker when rehearsing go-live, never in production vars.
+BILLING_ENABLED = ""
+NEXT_PUBLIC_BILLING_ENABLED = ""
 
 # Free plan allows 5 cron triggers per account. With 4 for production and 4
 # for staging we would exceed it (8). Keep staging at 0 for now so production
