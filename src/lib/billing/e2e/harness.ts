@@ -54,7 +54,12 @@ export interface E2EWorld {
   readonly tag: string;
   readonly stub: E2EStub;
   readonly db: SupabaseClient<Database>;
-  readonly state: { subs: FakeSub[]; events: FakeEvent[]; updates: unknown[] };
+  readonly state: {
+    subs: FakeSub[];
+    events: FakeEvent[];
+    updates: unknown[];
+    deliveries: Array<{ subscription_id: string; stage: string }>;
+  };
   readonly householdId: string;
   readonly planCode: string;
   reference: string | null;
@@ -208,6 +213,20 @@ function createFakeDb(state: E2EWorld["state"]) {
           ),
       };
     }
+    if (table === "dunning_deliveries") {
+      // Recovery cleanup (#265): applyBillingEvent deletes the cycle's rows
+      // when a payment reactivates the subscription. No-op when absent.
+      return {
+        delete: () => ({
+          eq: async (col: string, value: unknown) => {
+            if (col === "subscription_id") {
+              state.deliveries = state.deliveries.filter((d) => d.subscription_id !== value);
+            }
+            return { error: null };
+          },
+        }),
+      };
+    }
     throw new Error(`unexpected table ${table}`);
   };
   return { from } as unknown as SupabaseClient<Database>;
@@ -234,7 +253,7 @@ export function createWorld(
   opts: { tag?: string; householdId?: string; planCode?: string } = {},
 ): E2EWorld {
   const tag = opts.tag ?? "w1";
-  const state: E2EWorld["state"] = { subs: [], events: [], updates: [] };
+  const state: E2EWorld["state"] = { subs: [], events: [], updates: [], deliveries: [] };
   return {
     tag,
     stub: createStubForTests(new Date(E2E_START)),

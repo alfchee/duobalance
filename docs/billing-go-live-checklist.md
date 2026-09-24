@@ -43,6 +43,14 @@ go-lives. Check each box with a link to the verifying issue, PR or run.
 
 - [ ] Dunning and grace-period emails send correctly (#265) — a failed
       payment produces the expected sequence, not silence and not spam.
+- [ ] Billing crons run in production Cloudflare, not just Vercel (#260,
+      #265): `billing-expire` and `billing-dunning` are wired into
+      `worker.ts` `scheduled()` (with the billing-flag guard) plus two
+      `[triggers]` cron expressions — together, never one without the
+      other, since dunning emails reference an expiry the sweeper
+      performs. Needs trigger budget beyond the free-plan 5/account
+      (4 already taken — see `wrangler.toml`), i.e. a plan upgrade or a
+      reallocated slot, before the flip.
 - [ ] The admin app is deployed and restricted (#271–#275): no
       impersonation, no transaction-content reads; plan overrides and comp
       grants are audited.

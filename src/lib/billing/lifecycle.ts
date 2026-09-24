@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, systemClock, type Clock } from "./clock";
+import { clearDunningForSubscription } from "./dunning";
+import { DUNNING_GRACE_DAYS } from "./dunning-schedule";
 import { isMoney } from "./money";
 import type { BillingEvent } from "./provider";
 import type { Database, Json } from "@/lib/supabase/types";
@@ -29,7 +31,9 @@ import type { Database, Json } from "@/lib/supabase/types";
 //
 // LAYERS: resolveTransition + planEventApplication are pure (exhaustively
 // tested without I/O). applyBillingEvent adds the billing_events dedupe gate
-// and row CRUD around the planner. expireDueSubscriptions is the sweeper the
+// and row CRUD around the planner, plus the #265 recovery cleanup (a
+// recovery to `active` clears the dunning cycle's delivery rows so the next
+// failure restarts at stage 1). expireDueSubscriptions is the sweeper the
 // cron route drives. Unknown transitions and unknown event types are
 // RECORDED (billing_events row) and returned as rejected — never thrown —
 // so a worker processing a mixed batch survives one bad delivery.
@@ -51,7 +55,7 @@ export const KNOWN_EVENT_TYPES = [
 export type KnownEventType = (typeof KNOWN_EVENT_TYPES)[number];
 
 /** Dunning window granted whenever a subscription enters past_due/grace. */
-export const DUNNING_GRACE_DAYS = 7;
+export { DUNNING_GRACE_DAYS };
 
 interface TransitionDef {
   /** "same" keeps the status (harmless rewrite); "ignore" skips the update. */
@@ -434,6 +438,25 @@ export async function applyBillingEvent(
   // in a JSON-shaped webhook) must surface as a recorded rejection, never
   // as a throw that turns the retry into a silent "duplicate".
   const outcome = await applyPlanned(db, input, row, clock);
+  // Recovery cleanup (#265): a payment.succeeded / subscription.activated
+  // that restores `active` also deletes the dunning cycle's delivery rows,
+  // cancelling the remaining steps. Without this a real payment would leave
+  // stale rows behind and a LATER failure would find its first reminder
+  // "already sent" and stay silent. Runs before markProcessed so a failed
+  // clear leaves the event unprocessed — the provider's redelivery then
+  // replays into a quiet moment (the clear itself is an idempotent delete).
+  if (
+    outcome.result.outcome === "applied" &&
+    outcome.result.status === "active" &&
+    (input.event.type === "payment.succeeded" || input.event.type === "subscription.activated")
+  ) {
+    // Update path always has the row; the create path yields trialing (never
+    // active), so the fallback is unreachable — guarded anyway, never "".
+    const recoveredId = outcome.subscriptionId ?? row?.id;
+    if (recoveredId) {
+      await clearDunningForSubscription(db, recoveredId);
+    }
+  }
   await markProcessed(db, input, clock, outcome.subscriptionId ?? undefined);
   return outcome.result;
 }
