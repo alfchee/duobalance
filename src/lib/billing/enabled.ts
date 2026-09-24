@@ -9,12 +9,14 @@
 //
 // TWO NAMES, ONE FLAG: the server reads `BILLING_ENABLED`; the browser
 // bundle cannot see it, so the client mirrors it as
-// `NEXT_PUBLIC_BILLING_ENABLED`. The accessor gives the server var
-// precedence when it is set and falls back to the public mirror otherwise,
-// so one call site works on both sides: in the browser the server var is
-// always unset and the mirror decides; on the server an explicit value
-// (including an explicit off) wins over a stale mirror. Both default to
-// OFF — unset, empty, or any unrecognised value means "billing is not live".
+// `NEXT_PUBLIC_BILLING_ENABLED`. The server var is authoritative whenever
+// it is defined — including an explicit empty/off value, which is what
+// `wrangler.toml` ships — and the public mirror is only a fallback for when
+// the server var is absent entirely. That absence happens exactly in the
+// browser (Next never inlines non-`NEXT_PUBLIC_` vars there), so one call
+// site works on both sides without a stale or dashboard-drifted mirror ever
+// re-enabling server routes. Both default to OFF — unset, empty, or any
+// unrecognised value means "billing is not live".
 //
 // FAIL-OPEN WHILE OFF: while the flag is off, entitlements evaluate as if
 // everyone is entitled (`shouldBypassPlanGating()` / `effectiveEntitlement()`
@@ -32,15 +34,14 @@ export function parseBillingEnabledFlag(value: string | undefined): boolean {
 
 /**
  * The single typed accessor for the billing exposure flag (issue #262).
- * Server `BILLING_ENABLED` takes precedence when set (an explicit off beats
- * a stale mirror); otherwise the `NEXT_PUBLIC_BILLING_ENABLED` mirror
- * decides (this is the browser path — the server var is never inlined
- * there). Defaults to `false`.
+ * Server `BILLING_ENABLED` is authoritative whenever defined — even as an
+ * explicit empty/off value, which is the shipped default. The
+ * `NEXT_PUBLIC_BILLING_ENABLED` mirror is consulted only when the server
+ * var is absent, i.e. in the browser. Defaults to `false`.
  */
 export function isBillingEnabled(): boolean {
-  const server = process.env.BILLING_ENABLED;
-  if (server !== undefined && server !== "") {
-    return parseBillingEnabledFlag(server);
+  if (process.env.BILLING_ENABLED !== undefined) {
+    return parseBillingEnabledFlag(process.env.BILLING_ENABLED);
   }
   return parseBillingEnabledFlag(process.env.NEXT_PUBLIC_BILLING_ENABLED);
 }

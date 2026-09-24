@@ -86,11 +86,13 @@ describe("BILLING_ENABLED flag (#262)", () => {
     expect(isBillingEnabled()).toBe(true);
   });
 
-  it("treats an empty server var as unset and falls back to the mirror", () => {
+  it("treats the server var as authoritative even when empty", () => {
+    // wrangler.toml ships BILLING_ENABLED="" — a mirror set alone (e.g. via
+    // dashboard drift) must never re-enable server routes.
     clearFlagEnv();
     vi.stubEnv("BILLING_ENABLED", "");
     vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "yes");
-    expect(isBillingEnabled()).toBe(true);
+    expect(isBillingEnabled()).toBe(false);
   });
 
   it("bypasses plan gating while the flag is off (deliberate fail-open)", () => {

@@ -62,17 +62,29 @@ go-lives. Check each box with a link to the verifying issue, PR or run.
 
 ## Flip procedure
 
-1. Set `BILLING_ENABLED=1` and `NEXT_PUBLIC_BILLING_ENABLED=1` in the
-   production Worker vars (dashboard or `wrangler deploy` with updated
-   `wrangler.toml`), then redeploy — the client mirror is inlined at build
-   time, so a redeploy is required, not just a var change.
-2. Smoke-test production: webhook 401 on forged delivery, checkout opens
+The two names flip through different mechanisms — both are required, and
+flipping only one side leaves the app split (server routes on with the UI
+hidden, or vice versa):
+
+1. **Server flag (runtime):** set `BILLING_ENABLED=1` in the production
+   Worker vars (dashboard → Variables, or `wrangler deploy` with an updated
+   `wrangler.toml`). This takes effect on the next request — no rebuild
+   needed for the webhook and debug routes.
+2. **Client mirror (build-time):** set `NEXT_PUBLIC_BILLING_ENABLED: "1"`
+   in the production deploy job's build env (`.github/workflows/ci.yml`)
+   and redeploy. `NEXT_PUBLIC_*` values are inlined during the OpenNext
+   build, so the runtime `[vars]` entry alone cannot flip `BillingGate` —
+   a rebuild is mandatory, not just a var change.
+3. Smoke-test production: webhook 401 on forged delivery, checkout opens
    for a test household, plan gate renders for an expired trial.
-3. Announce in the release notes; watch reconciliation alerts for 48h.
+4. Announce in the release notes; watch reconciliation alerts for 48h.
 
 ## Rollback procedure
 
-1. Set both vars back to `""` and redeploy.
+1. Set `BILLING_ENABLED` back to `""` in the production Worker vars
+   (immediate for server routes), set `NEXT_PUBLIC_BILLING_ENABLED` back
+   to `""` in the deploy job build env, and redeploy (required for the
+   client bundle to pick the mirror back up).
 2. With the flag off, entitlements evaluate as entitled — no paying user
    loses access during the incident.
 3. Investigate against provider dashboard + `billing_events` table before

@@ -252,6 +252,13 @@ jobs:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
           VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
           APP_URL: https://duobalanceapp.com
+          # Billing exposure flag, client mirror (#262) — explicitly OFF.
+          # NEXT_PUBLIC_* values are inlined at build time, so wrangler
+          # [vars] (runtime bindings) cannot flip the client gate: going
+          # live requires setting this to "1" here AND BILLING_ENABLED=1 in
+          # the Worker vars, then redeploying. See
+          # docs/billing-go-live-checklist.md.
+          NEXT_PUBLIC_BILLING_ENABLED: ""
         run: |
           npx opennextjs-cloudflare build
           test -f .open-next/worker.js
@@ -301,6 +308,10 @@ jobs:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
           VAPID_PUBLIC_KEY: BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ
           APP_URL: https://staging.duobalanceapp.com
+          # Billing exposure flag, client mirror (#262) — explicitly OFF.
+          # Build-time inlined (see production deploy job): flip here AND in
+          # the staging Worker vars together, never one side alone.
+          NEXT_PUBLIC_BILLING_ENABLED: ""
         run: |
           npx opennextjs-cloudflare build
           test -f .open-next/worker.js
