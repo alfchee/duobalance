@@ -240,9 +240,10 @@ create policy bills_delete on public.bills
 --    entitled-but-over-limit household. An unentitled household
 --    (expired/no subscription) still cannot archive: accounts_update
 --    requires can_write() in USING and WITH CHECK, so downgrade stays fully
---    read-only until resubscribe. No concurrency guard beyond the row lock: two racing inserts can both
---    pass, same as every other non-unique limit in this schema; the RLS
---    gate plus UI gating (#264) make this a Phase A non-issue.
+--    read-only until resubscribe. Concurrent inserts are serialized per
+--    household: the trigger locks the households row FOR UPDATE before
+--    counting (same pattern as create_household / accept_invite), so two
+--    racing inserts cannot both observe the same count and overshoot.
 -- ============================================================================
 
 create or replace function public.tg_enforce_account_limit()
@@ -264,6 +265,16 @@ begin
   if new.is_archived then
     return new;
   end if;
+
+  -- Serialize per household before counting: without this, two concurrent
+  -- inserts at 3/4 could both observe v_count = 3 and pass, ending at 5.
+  -- Locking NEW.household_id makes the second waiter recount after the
+  -- first commits. Placed after the is_member / is_archived early returns
+  -- so non-members never wait on (or probe via timing) another household.
+  perform 1
+    from public.households
+   where id = new.household_id
+     for update;
 
   v_limit := public.feature_limit(new.household_id, 'accounts');
 
