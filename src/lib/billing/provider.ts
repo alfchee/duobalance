@@ -43,6 +43,19 @@ export class InvalidWebhookSignatureError extends Error {
   }
 }
 
+/**
+ * One verified provider delivery: the translated domain event plus the
+ * provider's own event id. The id is the dedupe key for
+ * `billing_events(provider, provider_event_id)` (#267) — two deliveries
+ * carrying the same id collapse to one state change, and redelivery after
+ * a crash adopts the stranded RECEIVED row instead of double-applying.
+ */
+export interface WebhookDelivery {
+  /** Provider-native event id (e.g. the stub's `stub_evt_N`). */
+  readonly id: string;
+  readonly event: BillingEvent;
+}
+
 export interface PaymentProvider {
   readonly id: string;
   createCheckout(input: {
@@ -61,4 +74,15 @@ export interface PaymentProvider {
    * invalid. Never return `[]` for an unverifiable request.
    */
   parseWebhook(req: Request): Promise<BillingEvent[]>;
+  /**
+   * Same verification as `parseWebhook`, but retaining each delivery's
+   * provider-native event id. The webhook route (#267) prefers this when
+   * the active provider offers it and falls back to `parseWebhook` with a
+   * deterministic synthetic id otherwise, so dedupe never depends on which
+   * port method an adapter implemented.
+   *
+   * @throws {InvalidWebhookSignatureError} When the signature is missing or
+   * invalid. Never return `[]` for an unverifiable request.
+   */
+  parseWebhookDeliveries?(req: Request): Promise<WebhookDelivery[]>;
 }
