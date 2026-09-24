@@ -309,9 +309,10 @@ describe("/api/billing/webhook dedupe and idempotency (#267)", () => {
       received: 1,
       provider: "stub",
       applied: 1,
-      duplicates: 0,
+      duplicate: 0,
       ignored: 0,
       rejected: 0,
+      failed: 0,
     });
     expect(state.events).toHaveLength(1);
     expect(state.events[0]?.processed_at).not.toBeNull();
@@ -326,9 +327,10 @@ describe("/api/billing/webhook dedupe and idempotency (#267)", () => {
       received: 1,
       provider: "stub",
       applied: 0,
-      duplicates: 1,
+      duplicate: 1,
       ignored: 0,
       rejected: 0,
+      failed: 0,
     });
     expect(state.events).toHaveLength(1);
     expect(state.updates).toHaveLength(1);
@@ -358,7 +360,20 @@ describe("/api/billing/webhook dedupe and idempotency (#267)", () => {
 
     const res = await POST(signed());
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ error: "billing webhook failed" });
+    // The 500 carries the batch summary. The throw happens before the route
+    // learns the outcome, so the delivery counts as failed even though the
+    // state write underneath already landed — the retry adopts the stranded
+    // RECEIVED row (processed_at null) and converges.
+    expect(await res.json()).toEqual({
+      error: "billing webhook failed",
+      received: 1,
+      provider: "stub",
+      applied: 0,
+      duplicate: 0,
+      ignored: 0,
+      rejected: 0,
+      failed: 1,
+    });
     expect(state.events).toHaveLength(1);
     expect(state.events[0]?.processed_at).toBeNull();
   });
@@ -396,9 +411,58 @@ describe("/api/billing/webhook dedupe and idempotency (#267)", () => {
     // second delivery dedupes instead of double-applying.
     const second = await POST(post());
     expect(second.status).toBe(200);
-    expect(await second.json()).toMatchObject({ received: 1, duplicates: 1 });
+    expect(await second.json()).toMatchObject({ received: 1, duplicate: 1 });
     expect(state.events).toHaveLength(1);
     expect(state.updates).toHaveLength(1);
+  });
+
+  it("dedupes a reshaped redelivery: synthetic ids ignore batch position", async () => {
+    vi.stubEnv("BILLING_ENABLED", "1");
+    process.env.BILLING_PROVIDER = "synth";
+    const firstFailure: BillingEvent = {
+      type: "payment.failed",
+      ref: "synth_sub_1",
+      attempt: 1,
+    };
+    const secondFailure: BillingEvent = {
+      type: "payment.failed",
+      ref: "synth_sub_1",
+      attempt: 2,
+    };
+    // First delivery is the pair; the provider then retries ONLY the second
+    // event (per-event retry reshapes the batch: index 1 → index 0).
+    let batch: BillingEvent[] = [firstFailure, secondFailure];
+    registerProvider({
+      id: "synth",
+      createCheckout: () => Promise.resolve({ reference: "synth-ref" }),
+      cancelSubscription: () => Promise.resolve(),
+      getSubscription: () =>
+        Promise.resolve({
+          ref: "synth-ref",
+          planCode: "plus",
+          status: "active" as const,
+          currentPeriodEnd: null,
+          cancelAtPeriodEnd: false,
+        }),
+      parseWebhook: () => Promise.resolve(batch),
+    });
+    const state: FakeState = {
+      subs: [trialingSub({ provider: "synth", provider_ref: "synth_sub_1" })],
+      events: [],
+      updates: [],
+    };
+    mockDb(state);
+
+    const first = await POST(post());
+    expect(first.status).toBe(200);
+    expect(await first.json()).toMatchObject({ received: 2, applied: 2 });
+
+    batch = [secondFailure];
+    const retry = await POST(post());
+    expect(retry.status).toBe(200);
+    expect(await retry.json()).toMatchObject({ received: 1, duplicate: 1 });
+    expect(state.events).toHaveLength(2);
+    expect(state.updates).toHaveLength(2);
   });
 
   it("logs structured delivery lines with no payload secrets", async () => {

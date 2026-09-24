@@ -7,7 +7,7 @@ import {
   type PaymentProvider,
   type WebhookDelivery,
 } from "@/lib/billing/provider";
-import { getActiveProvider, UnknownProviderError } from "@/lib/billing/registry";
+import { getActiveProvider } from "@/lib/billing/registry";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
 // POST /api/billing/webhook — provider delivery endpoint (issues #262, #267).
@@ -38,9 +38,17 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 //     a payment crossing a cancellation; rejected is an unknown transition
 //     or plan, recorded in the ledger for inspection)
 //   InvalidWebhookSignatureError → 401 (no state touched)
-//   throw from applyBillingEvent (DB failure, write-write race) → 500 so
-//     the provider retries; processed_at stays null so the retry succeeds
+//   throw from applyBillingEvent (DB failure, write-write race,
+//     ConcurrentModificationError) → 500 so the provider retries;
+//     processed_at stays null so the retry succeeds. Deliberately 500 rather
+//     than the 409/503 suggested in lifecycle.ts: for provider webhooks 500
+//     is the universal "retry me" signal.
 //   UnknownProviderError / client construction → 500 (misconfigured server)
+//
+// A failed delivery does NOT abort the batch: the remaining deliveries are
+// still applied, and the response is 500 with the counts. Providers retry
+// the whole HTTP body, and idempotency turns the already-applied prefix
+// into duplicates on the replay while the failed delivery is re-attempted.
 //
 // Creation path: subscription.activated for an unknown ref needs a
 // householdId the webhook payload does not carry (BillingEvent is
@@ -67,6 +75,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "not found" }, { status: 404 });
   }
 
+  // getActiveProvider is the only UnknownProviderError thrower, so it gets
+  // its own try: the verification try below then needs no dead branch for it.
   let provider: PaymentProvider;
   try {
     provider = getActiveProvider();
@@ -86,15 +96,6 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof InvalidWebhookSignatureError) {
       return Response.json({ error: "invalid webhook signature" }, { status: 401 });
-    }
-    if (error instanceof UnknownProviderError) {
-      console.error(
-        JSON.stringify({
-          msg: "billing webhook misconfigured",
-          error: error.name,
-        }),
-      );
-      return Response.json({ error: "billing webhook failed" }, { status: 500 });
     }
     console.error(
       JSON.stringify({
@@ -121,6 +122,7 @@ export async function POST(request: Request) {
   }
 
   const counts: Record<Outcome, number> = { applied: 0, duplicate: 0, ignored: 0, rejected: 0 };
+  let failed = 0;
   for (const delivery of deliveries) {
     try {
       const result = await applyBillingEvent(
@@ -145,7 +147,10 @@ export async function POST(request: Request) {
     } catch (error) {
       // Genuine processing failure: the ledger row (if written) keeps
       // processed_at null, so the provider's redelivery adopts it and
-      // succeeds. 500 tells the provider to retry.
+      // succeeds. Count and continue — the 500 below tells the provider to
+      // retry the whole body, and idempotency turns the applied prefix into
+      // duplicates on the replay.
+      failed += 1;
       console.error(
         JSON.stringify({
           msg: "billing webhook delivery failed",
@@ -155,29 +160,37 @@ export async function POST(request: Request) {
           error: error instanceof Error ? error.name : "unknown",
         }),
       );
-      return Response.json({ error: "billing webhook failed" }, { status: 500 });
     }
   }
 
-  return Response.json(
-    {
-      received: deliveries.length,
-      provider: provider.id,
-      applied: counts.applied,
-      duplicates: counts.duplicate,
-      ignored: counts.ignored,
-      rejected: counts.rejected,
-    },
-    { status: 200, headers: NO_STORE },
-  );
+  const summary = {
+    received: deliveries.length,
+    provider: provider.id,
+    applied: counts.applied,
+    duplicate: counts.duplicate,
+    ignored: counts.ignored,
+    rejected: counts.rejected,
+    failed,
+  };
+  if (failed > 0) {
+    return Response.json(
+      { error: "billing webhook failed", ...summary },
+      { status: 500, headers: NO_STORE },
+    );
+  }
+  return Response.json(summary, { status: 200, headers: NO_STORE });
 }
 
 /**
  * Verify the signature (throws InvalidWebhookSignatureError on failure —
  * before any state change) and translate into deliveries carrying the
  * provider-native event ids. Providers that only implement parseWebhook get
- * deterministic synthetic ids derived from the event content, so an exact
- * redelivery still dedupes to the same key.
+ * deterministic synthetic ids derived from the event CONTENT alone — no
+ * batch index — so a redelivery dedupes however the provider reshapes the
+ * batch (full-body retry, per-event retry, or a different arrival order).
+ * The trade-off is explicit: byte-identical twins inside one batch collapse
+ * to a single application, which is the safe idempotent choice for
+ * indistinguishable deliveries.
  */
 async function verifyAndTranslate(
   provider: PaymentProvider,
@@ -187,12 +200,12 @@ async function verifyAndTranslate(
     return provider.parseWebhookDeliveries(request);
   }
   const events = await provider.parseWebhook(request);
-  return events.map((event, index) => ({ id: syntheticEventId(event, index), event }));
+  return events.map((event) => ({ id: syntheticEventId(event), event }));
 }
 
 /** Stable content key for adapters without native delivery ids (see above). */
-function syntheticEventId(event: BillingEvent, index: number): string {
-  return `synth_${fnv1a(JSON.stringify(event))}_${index}`;
+function syntheticEventId(event: BillingEvent): string {
+  return `synth_${fnv1a(JSON.stringify(event))}`;
 }
 
 /** FNV-1a 32-bit hex — sync and Workers-safe (no Node crypto, no subtle). */
