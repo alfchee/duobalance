@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 vi.mock("@/app/api/_shared", () => {
@@ -30,10 +30,18 @@ function post(body: unknown): Request {
 afterEach(() => {
   vi.unstubAllEnvs();
   delete process.env.BUILD_TARGET;
+  delete process.env.BILLING_ENABLED;
+  delete process.env.NEXT_PUBLIC_BILLING_ENABLED;
   vi.clearAllMocks();
 });
 
 describe("/api/billing/debug (#259)", () => {
+  // The sandbox checkout is a checkout entry point, so it is gated behind
+  // the billing exposure flag (#262): every test below runs flag-on except
+  // the production, tauri and flag-off cases, which 404 before auth.
+  beforeEach(() => {
+    vi.stubEnv("BILLING_ENABLED", "1");
+  });
   it("returns 404 in production without leaking existence", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const res = await POST(post({ action: "status" }));
@@ -45,6 +53,14 @@ describe("/api/billing/debug (#259)", () => {
     vi.stubEnv("BUILD_TARGET", "tauri");
     const res = await POST(post({ action: "status" }));
     expect(res.status).toBe(404);
+  });
+
+  it("returns 404 — not 401 or 500 — when the billing flag is off (#262)", async () => {
+    vi.stubEnv("BILLING_ENABLED", "0");
+    delete process.env.NEXT_PUBLIC_BILLING_ENABLED;
+    const res = await POST(post({ action: "status" }));
+    expect(res.status).toBe(404);
+    expect(authed).not.toHaveBeenCalled();
   });
 
   it("requires authentication outside production", async () => {

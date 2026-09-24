@@ -1,4 +1,5 @@
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { isBillingEnabled } from "@/lib/billing/enabled";
 import { createMoney } from "@/lib/billing/money";
 import { getStubForDebug } from "@/lib/billing/registry";
 import { z } from "zod";
@@ -12,7 +13,10 @@ import { z } from "zod";
 //   1. Production → 404 (the route does not exist there; the acceptance
 //      criterion). Checked before auth so existence never leaks.
 //   2. Tauri webview builds → 404 (no server at runtime).
-//   3. Everywhere else → the caller must be authenticated. There is no admin
+//   3. Billing flag off → 404 (issue #262: every checkout entry point,
+//      including this sandbox checkout, is gated behind the single exposure
+//      flag via `isBillingEnabled()` — checked before auth, same as above).
+//   4. Everywhere else → the caller must be authenticated. There is no admin
 //      role in the app yet (#271 builds the admin app); until then any signed-in
 //      user in a non-production build may drive the sandbox. The sandbox
 //      instance is separate from the registry's system-clocked stub, so
@@ -189,6 +193,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "not found" }, { status: 404 });
   }
   if (process.env.BUILD_TARGET === "tauri") {
+    return Response.json({ error: "not found" }, { status: 404 });
+  }
+  if (!isBillingEnabled()) {
     return Response.json({ error: "not found" }, { status: 404 });
   }
   const supabase = await createRouteContext();

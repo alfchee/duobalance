@@ -15,6 +15,12 @@ FEEDBACK_RECIPIENT_EMAIL=hola@duobalanceapp.com
 RESEND_FROM="DuoBalance <hola@duobalanceapp.com>"
 RESEND_REPLY_TO=hola@duobalanceapp.com
 
+# Billing (Phase A, #262) — exposure flag, OFF by default. Single accessor:
+# src/lib/billing/enabled.ts. Keep empty until the go-live checklist
+# (docs/billing-go-live-checklist.md) is signed off.
+# BILLING_ENABLED=
+# NEXT_PUBLIC_BILLING_ENABLED=
+
 # Secrets — required for local `wrangler dev` to exercise handlers/crons
 SUPABASE_SERVICE_ROLE_KEY=
 SUPABASE_SECRET_KEY=
