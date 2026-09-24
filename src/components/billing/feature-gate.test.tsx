@@ -88,6 +88,14 @@ describe("LimitApproaching (#264)", () => {
     expect(screen.getByRole("status").textContent).toBe("billing.limits.approaching");
   });
 
+  it("switches to the at-limit guidance at or over the limit", () => {
+    vi.mocked(useEntitlement).mockReturnValue(
+      entitled({ entitled: true, limit: 4, unlimited: false }),
+    );
+    render(<LimitApproaching householdId={HOUSEHOLD} feature="accounts" used={4} />);
+    expect(screen.getByRole("status").textContent).toBe("billing.limits.atLimit");
+  });
+
   it("stays silent for unlimited plans", () => {
     vi.mocked(useEntitlement).mockReturnValue(entitled());
     render(<LimitApproaching householdId={HOUSEHOLD} feature="accounts" used={9} />);

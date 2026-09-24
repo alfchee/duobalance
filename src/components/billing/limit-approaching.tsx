@@ -5,12 +5,14 @@ import { useEntitlement } from "@/hooks/useEntitlement";
 
 // Approaching-limit indicator for counted features (issue #264).
 //
-// Appears BEFORE the limit is hit: from 75% of the plan limit onward, and
-// stays silent once the limit is actually reached — at that point the
-// database rejects the write and the surrounding surface owns the message.
-// A no-op while billing is off (`useEntitlement` bypasses to unlimited) and
-// for explicitly unlimited plans, so the free tier's countdown never shows
-// where no limit exists.
+// The approach warning appears BEFORE the limit is hit: from 75% of the
+// plan limit onward. At or over the limit it switches to the `atLimit`
+// guidance instead of going silent — the surrounding surface (e.g. the
+// account form) only owns a generic error for the DB rejection, and "you
+// can archive what you don't use, or move to Plus" is the actionable
+// message. A no-op while billing is off (`useEntitlement` bypasses to
+// unlimited) and for explicitly unlimited plans, so the free tier's
+// countdown never shows where no limit exists.
 const APPROACH_THRESHOLD = 0.75;
 
 export function LimitApproaching({

@@ -88,6 +88,12 @@ function AccountFormContent({
   // 5th non-archived account on free (tg_enforce_account_limit, #261), and
   // this indicator warns from 75% of the way there. A no-op while billing
   // is off or the plan is unlimited.
+  //
+  // Known limitation: this count is caller-visible accounts (RLS shows
+  // shared + own private), while the trigger counts every non-archived
+  // account in the household — with private accounts on both sides the
+  // warning can undercount. The database stays authoritative; if the
+  // warning is wrong, the insert is still rejected with the form's error.
   const { data: accounts } = useAccounts(householdId);
   const nonArchivedAccounts = accounts?.filter((a) => !a.is_archived).length ?? 0;
 
