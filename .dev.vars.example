@@ -21,6 +21,10 @@ RESEND_REPLY_TO=hola@duobalanceapp.com
 # BILLING_ENABLED=
 # NEXT_PUBLIC_BILLING_ENABLED=
 
+# Admin deployment canonical origin (Phase A, #271) — separate deployment
+# with its own domain-scoped session (docs/admin-boundary.md). Public.
+# ADMIN_APP_URL=http://localhost:3000
+
 # Secrets — required for local `wrangler dev` to exercise handlers/crons
 SUPABASE_SERVICE_ROLE_KEY=
 SUPABASE_SECRET_KEY=

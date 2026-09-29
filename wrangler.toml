@@ -47,6 +47,11 @@ RESEND_REPLY_TO = "hola@duobalanceapp.com"
 # set a truthy value until docs/billing-go-live-checklist.md is signed off.
 BILLING_ENABLED = ""
 NEXT_PUBLIC_BILLING_ENABLED = ""
+# Admin deployment canonical origin (Phase A, #271) — separate deployment
+# with its own domain-scoped session (docs/admin-boundary.md). Public origin,
+# no secret. The admin Worker / second Vercel project sets this to
+# https://admin.duobalanceapp.com (staging: admin-staging.duobalanceapp.com).
+ADMIN_APP_URL = ""
 
 # Secrets — NEVER put these in [vars]. They bypass RLS or enable external
 # services and must not reach a client bundle.
