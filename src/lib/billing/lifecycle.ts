@@ -322,9 +322,10 @@ type BillingClient = SupabaseClient<Database>;
 
 /**
  * Thrown when concurrent deliveries keep moving a row under the applier.
- * Callers (the #267 webhook route) should map this to a retryable status
- * (409/503) so the provider redelivers into a quiet moment — never to a
- * silent success, which would drop the delivery.
+ * Callers must map this to a retryable status so the provider redelivers
+ * into a quiet moment — never to a silent success, which would drop the
+ * delivery. The #267 webhook route maps every apply throw, including this
+ * one, to 500: for provider webhooks 500 is the universal "retry me" signal.
  */
 export class ConcurrentModificationError extends Error {
   constructor(ref: string) {

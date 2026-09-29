@@ -172,14 +172,24 @@ export class StubPaymentProvider implements PaymentProvider {
   }
 
   async parseWebhook(req: Request): Promise<BillingEvent[]> {
-    const entries = await this.parseWebhookEntries(req);
-    return entries.map((entry) => entry.event);
+    const deliveries = await this.parseWebhookDeliveries(req);
+    return deliveries.map((delivery) => delivery.event);
+  }
+
+  /**
+   * Port-level deliveries with the stub's native event ids (`stub_evt_N`).
+   * The webhook route (#267) resolves through this so ledger dedupe runs on
+   * real ids instead of synthetic keys; the e2e harness does the same.
+   */
+  async parseWebhookDeliveries(req: Request): Promise<StubLoggedEvent[]> {
+    return this.parseWebhookEntries(req);
   }
 
   /**
    * Same signature check + outbox drain as parseWebhook, but retaining the
-   * provider event ids. The e2e harness delivers through this so ledger
-   * dedupe runs on the real `stub_evt_N` ids instead of synthetic keys.
+   * provider event ids. Kept as the named entry point the e2e harness
+   * delivers through; `parseWebhookDeliveries` above is the port alias the
+   * route resolves through.
    */
   async parseWebhookEntries(req: Request): Promise<StubLoggedEvent[]> {
     // Signature first, exactly like every real adapter must: an unverifiable
