@@ -66,3 +66,56 @@ describe("ExportSection 402 handling (#264)", () => {
     expect(screen.queryByText("billing.upgrade.title")).toBeNull();
   });
 });
+
+describe("ExportSection temporary link (#269)", () => {
+  const HOUSEHOLD = "10000000-0000-4000-8000-000000000001";
+
+  function setup() {
+    vi.mocked(useHousehold).mockReturnValue({
+      householdId: HOUSEHOLD,
+      householdName: "Home",
+    } as unknown as ReturnType<typeof useHousehold>);
+    vi.mocked(useEntitlement).mockReturnValue({
+      entitled: true,
+      limit: 2147483647,
+      unlimited: true,
+      pending: false,
+    } as unknown as ReturnType<typeof useEntitlement>);
+  }
+
+  it("mints a 24h link via POST /api/exports", async () => {
+    setup();
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === "/api/exports") {
+        return Promise.resolve({
+          token: "a".repeat(64),
+          expires_at: "2026-09-30T00:00:00Z",
+          url: `http://localhost/api/exports/${"a".repeat(64)}`,
+          expires_in_hours: 24,
+        });
+      }
+      return Promise.reject(new Error(`unexpected ${path}`));
+    });
+
+    render(<ExportSection />);
+    fireEvent.click(screen.getByRole("button", { name: "settings.export.createLink" }));
+
+    expect(await screen.findByText("settings.export.copyLink")).toBeTruthy();
+    expect(apiFetch).toHaveBeenCalledWith("/api/exports", {
+      method: "POST",
+      body: { householdId: HOUSEHOLD, format: "json" },
+    });
+  });
+
+  it("maps a 402 from link minting onto the upgrade prompt", async () => {
+    setup();
+    vi.mocked(apiFetch).mockRejectedValue(
+      new ApiError(402, { error: "plan upgrade required" }, ""),
+    );
+
+    render(<ExportSection />);
+    fireEvent.click(screen.getByRole("button", { name: "settings.export.createLink" }));
+
+    expect(await screen.findByText("billing.upgrade.title")).toBeTruthy();
+  });
+});

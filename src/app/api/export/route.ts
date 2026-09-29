@@ -5,7 +5,7 @@ import type { Database } from "@/lib/supabase/types";
 
 export const revalidate = 1;
 
-const EXPORT_TABLES = [
+export const EXPORT_TABLES = [
   "accounts",
   "transactions",
   "categories",
@@ -17,13 +17,13 @@ const EXPORT_TABLES = [
   "import_batches",
   "fx_overrides",
 ] as const;
-const EXPORT_CACHE_HEADERS = {
+export const EXPORT_CACHE_HEADERS = {
   "Cache-Control": "private, no-store",
   Pragma: "no-cache",
 };
 
-type ExportTable = (typeof EXPORT_TABLES)[number];
-type ExportData = Record<ExportTable, unknown[]>;
+export type ExportTable = (typeof EXPORT_TABLES)[number];
+export type ExportData = Record<ExportTable, unknown[]>;
 
 const EXPORT_ORDER_COLUMNS: Record<ExportTable, readonly string[]> = {
   accounts: ["id"],
@@ -45,7 +45,7 @@ function escapeCsv(value: unknown): string {
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-function transactionsToCsv(transactions: Record<string, unknown>[]): string {
+export function transactionsToCsv(transactions: Record<string, unknown>[]): string {
   const fields = [
     "id",
     "occurred_on",
@@ -71,7 +71,7 @@ function transactionsToCsv(transactions: Record<string, unknown>[]): string {
   ].join("\r\n");
 }
 
-function safeFilenamePart(value: string): string {
+export function safeFilenamePart(value: string): string {
   return (
     value
       .trim()
@@ -88,7 +88,7 @@ type ScopeFilter = {
   allowedAccountIds?: string[];
 };
 
-async function fetchAllRows(
+export async function fetchAllRows(
   supabase: SupabaseClient<Database>,
   table: ExportTable,
   householdId: string,
