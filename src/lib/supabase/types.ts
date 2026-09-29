@@ -34,6 +34,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          purged_at: string | null
+          requested_at: string
+          scheduled_purge_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          purged_at?: string | null
+          requested_at?: string
+          scheduled_purge_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          purged_at?: string | null
+          requested_at?: string
+          scheduled_purge_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       accounts: {
         Row: {
           balance_mode: string
@@ -627,6 +660,121 @@ export type Database = {
           symbol?: string | null
         }
         Relationships: []
+      }
+      data_export_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          format: string
+          household_id: string
+          id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          format?: string
+          household_id: string
+          id?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          format?: string
+          household_id?: string
+          id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_export_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_export_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_export_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deletion_audit_log: {
+        Row: {
+          actor_member_id: string | null
+          event_type: string
+          household_id: string | null
+          id: string
+          occurred_at: string
+          target_member_id: string | null
+        }
+        Insert: {
+          actor_member_id?: string | null
+          event_type: string
+          household_id?: string | null
+          id?: string
+          occurred_at?: string
+          target_member_id?: string | null
+        }
+        Update: {
+          actor_member_id?: string | null
+          event_type?: string
+          household_id?: string | null
+          id?: string
+          occurred_at?: string
+          target_member_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deletion_audit_log_actor_member_id_fkey"
+            columns: ["actor_member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_audit_log_actor_member_id_fkey"
+            columns: ["actor_member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_audit_log_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_audit_log_target_member_id_fkey"
+            columns: ["target_member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_audit_log_target_member_id_fkey"
+            columns: ["target_member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dunning_deliveries: {
         Row: {
@@ -1921,6 +2069,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      purge_account_deletion: { Args: { p_request: string }; Returns: Json }
       record_fx_refresh_failure: {
         Args: { failure_error: string; refresh_date: string }
         Returns: undefined

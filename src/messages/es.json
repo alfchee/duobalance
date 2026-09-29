@@ -1072,7 +1072,36 @@
       "json": "Descargar JSON",
       "csv": "Descargar CSV",
       "exporting": "Preparando…",
-      "error": "No se pudo crear la exportación. Intenta de nuevo."
+      "error": "No se pudo crear la exportación. Intenta de nuevo.",
+      "linkDescription": "O genera un enlace temporal de 24 horas para descargar esta copia desde otro dispositivo. El enlace solo funciona para miembros del hogar.",
+      "createLink": "Generar enlace temporal",
+      "linkError": "No se pudo generar el enlace. Intenta de nuevo.",
+      "linkExpires": "El enlace vence el {date}.",
+      "copyLink": "Copiar enlace",
+      "copied": "¡Copiado!",
+      "dismissLink": "Descartar"
+    },
+    "accountDeletion": {
+      "title": "Eliminar mi cuenta",
+      "description": "Solicita la eliminación de tu cuenta. Tus movimientos pasados se conservan en el hogar sin tus datos personales.",
+      "loadError": "No se pudo consultar el estado de eliminación. Intenta de nuevo.",
+      "requestButton": "Solicitar eliminación de cuenta",
+      "requestNotice": "Esto abre una solicitud de eliminación. Nada se borra todavía: el borrado requiere confirmación explícita y tiene un periodo de gracia de 30 días.",
+      "confirmRequestButton": "Sí, solicitar eliminación",
+      "requesting": "Solicitando…",
+      "pendingNotice": "Solicitud abierta. Para confirmar, escribe tu correo y pulsa confirmar. Luego tendrás 30 días de gracia para arrepentirte.",
+      "emailPrompt": "Escribe tu correo {email} para confirmar:",
+      "confirmButton": "Confirmar eliminación",
+      "confirming": "Confirmando…",
+      "graceNotice": "Eliminación confirmada. Tus datos personales se anonimizarán el {date}. Puedes cancelar hasta ese momento.",
+      "cancelButton": "Cancelar eliminación",
+      "errors": {
+        "generic": "Algo salió mal. Intenta de nuevo.",
+        "alreadyRequested": "Ya tienes una solicitud de eliminación abierta.",
+        "emailMismatch": "El correo no coincide con tu cuenta.",
+        "noPending": "No hay una solicitud pendiente que confirmar.",
+        "noOpen": "No hay una solicitud abierta que cancelar."
+      }
     },
     "actions": {
       "title": "Acciones del hogar",

@@ -9,13 +9,13 @@ export interface LegalDocument {
 export const PRIVACY_POLICY: Record<"es" | "en", LegalDocument> = {
   es: {
     title: "Política de Privacidad",
-    version: "1.0",
-    effectiveDate: "17 de agosto de 2026",
+    version: "1.1",
+    effectiveDate: "29 de septiembre de 2026",
     isAuthoritativeNotice:
       "La versión oficial y legalmente vinculante de esta Política de Privacidad es la versión en español. Las traducciones a otros idiomas se proporcionan únicamente para conveniencia del usuario.",
     content: `# Política de Privacidad de DuoBalance
 
-*Versión 1.0 — Fecha de entrada en vigor: 17 de agosto de 2026*
+*Versión 1.1 — Fecha de entrada en vigor: 29 de septiembre de 2026*
 
 > **Nota sobre el idioma autoritativo:** La versión oficial y legalmente vinculante de esta Política de Privacidad es la versión en español. Las traducciones a otros idiomas (como el inglés) se proporcionan únicamente para conveniencia del usuario. En caso de cualquier discrepancia, la versión en español prevalecerá.
 
@@ -90,7 +90,9 @@ Mantendremos esta lista actualizada ante cualquier cambio en nuestros proveedore
 ## 6. Retención de Datos y Eliminación
 
 - **Periodo de retención:** Conservamos sus datos personales únicamente mientras su cuenta y/o su hogar permanezcan activos en DuoBalance.
-- **Eliminación de datos:** Puede solicitar la eliminación completa de su cuenta u hogar en cualquier momento desde la sección de Configuración de la aplicación o enviando una solicitud a \`privacy@duobalanceapp.com\`. Al confirmar la eliminación, todos los datos asociados al hogar y a su perfil personal son eliminados permanentemente de nuestra base de datos activa.
+- **Eliminación del hogar:** Desde la sección de Configuración puede eliminar su hogar con confirmación explícita. La eliminación es blanda y reversible durante 30 días; transcurrido ese plazo los datos se purgan de forma irreversible.
+- **Eliminación de la cuenta:** Puede solicitar la eliminación de su cuenta desde Configuración → Tus datos → Eliminar mi cuenta. El flujo exige confirmación explícita (escribir su correo) y aplica un periodo de gracia de 30 días durante el cual puede cancelar. Al purgarse, sus identificadores personales (nombre de visualización) se anonimizan y su membresía se retira; sus movimientos históricos se conservan sin sus datos personales para que los libros del hogar sigan cuadrando. Cada eliminación queda registrada en un registro de auditoría que contiene solo identificadores y fechas, nunca datos personales.
+- **También puede solicitar la eliminación** escribiendo a \`privacy@duobalanceapp.com\`.
 
 ---
 
@@ -99,7 +101,7 @@ Mantendremos esta lista actualizada ante cualquier cambio en nuestros proveedore
 Usted tiene los siguientes derechos respecto a sus datos personales:
 
 - **Derecho de Acceso y Rectificación:** Puede consultar y corregir su información personal y financiera en cualquier momento dentro de la aplicación.
-- **Derecho de Exportación (Portabilidad):** DuoBalance incluye una herramienta nativa de **Exportación de Datos** (disponible en *Configuración → Sus Datos*) que le permite descargar en cualquier momento una copia completa de su información financiera en formato JSON y CSV.
+- **Derecho de Exportación (Portabilidad):** DuoBalance incluye una herramienta nativa de **Exportación de Datos** (disponible en *Configuración → Tus Datos*) que le permite descargar en cualquier momento una copia completa de su información financiera en formato JSON y CSV, ya sea por descarga directa o mediante un enlace temporal de 24 horas válido solo para miembros de su hogar.
 - **Derecho de Cancelación / Eliminación:** Puede solicitar la supresión total de su cuenta e información personal.
 
 Para ejercer sus derechos de forma manual o realizar cualquier consulta sobre privacidad, puede escribir a: \`privacy@duobalanceapp.com\`.
@@ -124,13 +126,13 @@ Si tiene preguntas, comentarios o inquietudes referentes a esta Política de Pri
   },
   en: {
     title: "Privacy Policy",
-    version: "1.0",
-    effectiveDate: "August 17, 2026",
+    version: "1.1",
+    effectiveDate: "September 29, 2026",
     isAuthoritativeNotice:
       "The authoritative and legally binding version of this Privacy Policy is the Spanish version. Translations into other languages are provided solely for convenience.",
     content: `# DuoBalance Privacy Policy
 
-*Version 1.0 — Effective Date: August 17, 2026*
+*Version 1.1 — Effective Date: September 29, 2026*
 
 > **Language & Version Note:** The authoritative and legally binding version of this Privacy Policy is the Spanish version. Translations into other languages (such as English) are provided solely for convenience. In the event of any conflict or inconsistency, the Spanish version shall govern.
 
@@ -205,7 +207,9 @@ We will keep this list updated whenever our service providers change.
 ## 6. Data Retention and Account Deletion
 
 - **Retention Period:** We retain your personal data only as long as your account and/or household remain active in DuoBalance.
-- **Account Deletion:** You may request complete deletion of your account or household at any time from the Settings section of the app or by contacting \`privacy@duobalanceapp.com\`. Upon deletion, all data associated with the household and your profile will be permanently removed from our active database.
+- **Household deletion:** You can delete your household from Settings with explicit confirmation. Deletion is soft and recoverable for 30 days; afterwards the data is purged irreversibly.
+- **Account deletion:** You can request deletion of your account from Settings → Your Data → Delete my account. The flow requires explicit confirmation (typing your email) and applies a 30-day grace period during which you can cancel. At purge time your personal identifiers (display name) are anonymized and your membership is withdrawn; your historical transactions are kept without your personal data so the household's books still balance. Each deletion is recorded in an audit log containing only identifiers and timestamps, never personal data.
+- **You may also request deletion** by contacting \`privacy@duobalanceapp.com\`.
 
 ---
 
@@ -214,7 +218,7 @@ We will keep this list updated whenever our service providers change.
 You have the following rights regarding your personal data:
 
 - **Right of Access and Rectification:** You can view and update your personal and financial information at any time within the app.
-- **Right to Export (Portability):** DuoBalance includes a built-in **Data Export** tool (available in *Settings → Your Data*) allowing you to download a complete copy of your financial data in JSON and CSV formats at any time.
+- **Right to Export (Portability):** DuoBalance includes a built-in **Data Export** tool (available in *Settings → Your Data*) allowing you to download a complete copy of your financial data in JSON and CSV formats at any time, either by direct download or through a 24-hour temporary link that only works for members of your household.
 - **Right to Deletion:** You may request the full erasure of your account and personal data.
 
 To exercise your rights manually or submit any privacy inquiry, contact us at: \`privacy@duobalanceapp.com\`.

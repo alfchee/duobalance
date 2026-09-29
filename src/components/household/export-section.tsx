@@ -36,6 +36,11 @@ export function ExportSection() {
   // still lands on the upgrade prompt instead of a dead error.
   const [planBlocked, setPlanBlocked] = useState(false);
   const [error, setError] = useState(false);
+  // Time-limited link (#269): minted server-side, 256-bit token, 24h expiry.
+  const [linkPending, setLinkPending] = useState(false);
+  const [linkError, setLinkError] = useState(false);
+  const [link, setLink] = useState<{ url: string; expires_at: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function download(format: ExportFormat) {
     setPending(format);
@@ -60,6 +65,36 @@ export function ExportSection() {
     }
   }
 
+  async function createLink() {
+    if (!householdId) return;
+    setLinkPending(true);
+    setLinkError(false);
+    setPlanBlocked(false);
+    setCopied(false);
+    try {
+      const res = await apiFetch<{ url: string; expires_at: string }>("/api/exports", {
+        method: "POST",
+        body: { householdId, format: "json" },
+      });
+      setLink({ url: res.url, expires_at: res.expires_at });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 402) setPlanBlocked(true);
+      else setLinkError(true);
+    } finally {
+      setLinkPending(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link.url);
+      setCopied(true);
+    } catch {
+      setLinkError(true);
+    }
+  }
+
   return (
     <section className="space-y-3 px-4 py-4">
       <div>
@@ -75,25 +110,59 @@ export function ExportSection() {
         {planBlocked ? (
           <UpgradePrompt />
         ) : (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!householdId || pending !== null}
-              onClick={() => void download("json")}
-            >
-              <Download aria-hidden />
-              {pending === "json" ? t("exporting") : t("json")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!householdId || pending !== null}
-              onClick={() => void download("csv")}
-            >
-              <Download aria-hidden />
-              {pending === "csv" ? t("exporting") : t("csv")}
-            </Button>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!householdId || pending !== null}
+                onClick={() => void download("json")}
+              >
+                <Download aria-hidden />
+                {pending === "json" ? t("exporting") : t("json")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!householdId || pending !== null}
+                onClick={() => void download("csv")}
+              >
+                <Download aria-hidden />
+                {pending === "csv" ? t("exporting") : t("csv")}
+              </Button>
+            </div>
+            <div className="space-y-2 border-t pt-3">
+              <p className="text-xs text-muted-foreground">{t("linkDescription")}</p>
+              {linkError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {t("linkError")}
+                </p>
+              ) : null}
+              {link ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    {t("linkExpires", { date: link.expires_at })}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={() => void copyLink()}>
+                      {copied ? t("copied") : t("copyLink")}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setLink(null)}>
+                      {t("dismissLink")}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!householdId || linkPending}
+                  onClick={() => void createLink()}
+                >
+                  {linkPending ? t("exporting") : t("createLink")}
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </FeatureGate>
