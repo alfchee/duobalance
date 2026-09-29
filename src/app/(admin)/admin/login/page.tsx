@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useBillingEnabled } from "@/hooks/useBillingEnabled";
 import { useSession } from "@/hooks/useSession";
 import { useAuthCommands } from "@/hooks/useAuthCommands";
 
@@ -20,6 +21,7 @@ const initialState: FormState = { errorKey: null };
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const billingEnabled = useBillingEnabled();
   const { session, loading } = useSession();
   const { login: submitLogin } = useAuthCommands();
 
@@ -39,6 +41,12 @@ export default function AdminLoginPage() {
   }
 
   const [state, formAction, pending] = useActionState(login, initialState);
+
+  // While billing is off the admin surface does not exist: neutral denial,
+  // same as every other admin URL (the API returns 404 there too).
+  if (!billingEnabled) {
+    notFound();
+  }
 
   return (
     <Card className="w-full">

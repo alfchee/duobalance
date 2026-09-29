@@ -41,6 +41,7 @@ function AdminHouseholdList() {
   const [status, setStatus] = useState("");
   const [rows, setRows] = useState<AdminHousehold[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,7 +62,7 @@ function AdminHouseholdList() {
     return () => {
       cancelled = true;
     };
-  }, [search, status]);
+  }, [search, status, retryKey]);
 
   return (
     <Card className="w-full">
@@ -104,7 +105,7 @@ function AdminHouseholdList() {
         {error ? (
           <p role="alert" className="text-sm text-destructive">
             {error}{" "}
-            <button type="button" className="underline" onClick={() => setStatus((s) => s)}>
+            <button type="button" className="underline" onClick={() => setRetryKey((k) => k + 1)}>
               Retry
             </button>
           </p>

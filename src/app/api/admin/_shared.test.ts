@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/supabase/server", () => ({ createSupabaseServiceRoleClient: vi.fn() }));
+vi.mock("@/lib/supabase/server", () => ({ createSupabaseUserClient: vi.fn() }));
 vi.mock("@/app/api/_shared", () => ({
   createRouteContext: vi.fn(),
   getAuthedUser: vi.fn(),
@@ -15,39 +15,33 @@ vi.mock("@/app/api/_shared", () => ({
 }));
 
 import { createRouteContext, getAuthedUser } from "@/app/api/_shared";
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { adminNotFound, auditAdminAction, requireAdmin } from "./_shared";
+import { createSupabaseUserClient } from "@/lib/supabase/server";
+import { adminNotFound, adminTargetAllows, auditAdminAction, requireAdmin } from "./_shared";
 
 const routeContext = vi.mocked(createRouteContext);
 const authedUser = vi.mocked(getAuthedUser);
-const serviceRole = vi.mocked(createSupabaseServiceRoleClient);
+const userClientFactory = vi.mocked(createSupabaseUserClient);
 
-function rosterDb(hasRow: boolean) {
+const req = (url = "http://localhost/api/admin/me") => new Request(url);
+
+function userDb(isAdmin: boolean | null, rpcError: boolean) {
   return {
-    from: (table: string) => {
-      expect(table).toBe("admin_users");
-      return {
-        select: () => ({
-          eq: () => ({
-            maybeSingle: async () => ({ data: hasRow ? { user_id: "u-admin" } : null }),
-          }),
-        }),
-      };
+    rpc: async (fn: string) => {
+      expect(fn).toBe("is_admin");
+      return rpcError
+        ? { data: null, error: { message: "db down" } }
+        : { data: isAdmin, error: null };
     },
   };
 }
 
 function auditDb(fail: boolean, seen: Array<Record<string, unknown>>) {
   return {
-    from: (table: string) => {
-      expect(table).toBe("admin_audit_log");
-      return {
-        insert: async (row: Record<string, unknown>) => {
-          if (fail) throw new Error("audit down");
-          seen.push(row);
-          return { error: null };
-        },
-      };
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      expect(fn).toBe("admin_log_action");
+      if (fail) return { data: null, error: { message: "audit down" } };
+      seen.push(args);
+      return { data: "audit-id", error: null };
     },
   };
 }
@@ -55,42 +49,75 @@ function auditDb(fail: boolean, seen: Array<Record<string, unknown>>) {
 beforeEach(() => {
   vi.resetAllMocks();
   delete process.env.BUILD_TARGET;
+  delete process.env.APP_MODE;
+  delete process.env.ADMIN_APP_URL;
 });
 
 describe("requireAdmin (#271)", () => {
-  it("returns null while billing is off, without touching auth", () => {
+  it("returns null while billing is off, without touching auth", async () => {
     process.env.BILLING_ENABLED = "";
-    return requireAdmin().then((ctx) => {
-      expect(ctx).toBeNull();
-      expect(routeContext).not.toHaveBeenCalled();
-    });
+    expect(await requireAdmin(req())).toBeNull();
+    expect(routeContext).not.toHaveBeenCalled();
+  });
+
+  it("returns null on user-target deployments", async () => {
+    process.env.BILLING_ENABLED = "1";
+    process.env.APP_MODE = "user";
+    expect(await requireAdmin(req())).toBeNull();
+    expect(routeContext).not.toHaveBeenCalled();
   });
 
   it("returns null for unauthenticated callers (neutral 404 upstream)", async () => {
     process.env.BILLING_ENABLED = "1";
     routeContext.mockResolvedValue({} as never);
     authedUser.mockRejectedValue(new Error("no session"));
-    expect(await requireAdmin()).toBeNull();
-    expect(serviceRole).not.toHaveBeenCalled();
+    expect(await requireAdmin(req())).toBeNull();
+    expect(userClientFactory).not.toHaveBeenCalled();
   });
 
-  it("returns null for authenticated non-admins", async () => {
+  it("returns null when is_admin() is false or errors", async () => {
     process.env.BILLING_ENABLED = "1";
     routeContext.mockResolvedValue({} as never);
     authedUser.mockResolvedValue({ id: "u-outsider" } as never);
-    serviceRole.mockReturnValue(rosterDb(false) as never);
-    expect(await requireAdmin()).toBeNull();
+    userClientFactory.mockResolvedValue(userDb(false, false) as never);
+    expect(await requireAdmin(req())).toBeNull();
+
+    userClientFactory.mockResolvedValue(userDb(null, true) as never);
+    expect(await requireAdmin(req())).toBeNull();
   });
 
   it("returns the caller-scoped context for rostered admins", async () => {
     process.env.BILLING_ENABLED = "1";
     routeContext.mockResolvedValue({} as never);
     authedUser.mockResolvedValue({ id: "u-admin" } as never);
-    const admin = rosterDb(true);
-    serviceRole.mockReturnValue(admin as never);
-    const ctx = await requireAdmin();
+    const db = userDb(true, false);
+    userClientFactory.mockResolvedValue(db as never);
+    const ctx = await requireAdmin(req());
     expect(ctx?.userId).toBe("u-admin");
-    expect(ctx?.admin).toBe(admin);
+    expect(ctx?.db).toBe(db);
+  });
+});
+
+describe("adminTargetAllows (#271)", () => {
+  const target = (url: string) => adminTargetAllows(new Request(url));
+
+  it("allows when APP_MODE is unset (local dev; the flag still gates)", () => {
+    expect(target("http://localhost:3000/api/admin/me")).toBe(true);
+  });
+
+  it("denies everything on user-target deployments", () => {
+    process.env.APP_MODE = "user";
+    expect(target("http://localhost:3000/api/admin/me")).toBe(false);
+  });
+
+  it("binds admin mode to ADMIN_APP_URL when pinned", () => {
+    process.env.APP_MODE = "admin";
+    expect(target("http://localhost:3000/api/admin/me")).toBe(true);
+
+    process.env.ADMIN_APP_URL = "https://admin.duobalanceapp.com";
+    expect(target("https://admin.duobalanceapp.com/api/admin/me")).toBe(true);
+    expect(target("https://duobalanceapp.com/api/admin/me")).toBe(false);
+    expect(target("https://evil.com/api/admin/me")).toBe(false);
   });
 });
 
@@ -106,18 +133,24 @@ describe("adminNotFound (#271)", () => {
 });
 
 describe("auditAdminAction (#271)", () => {
-  it("appends actor, action and target", async () => {
+  it("audits through admin_log_action with the caller as actor", async () => {
     const seen: Array<Record<string, unknown>> = [];
-    await auditAdminAction(auditDb(false, seen) as never, "u-admin", "households.list", null);
+    await auditAdminAction(auditDb(false, seen) as never, "households.list", null);
     expect(seen).toEqual([
-      { actor: "u-admin", action: "households.list", target_household: null, reason: null },
+      {
+        p_action: "households.list",
+        p_target_household: undefined,
+        p_reason: undefined,
+        p_before: undefined,
+        p_after: undefined,
+      },
     ]);
   });
 
-  it("never throws: an audit outage must not break the read", async () => {
+  it("fails closed: an audit outage fails the action instead of succeeding unaudited", async () => {
     const seen: Array<Record<string, unknown>> = [];
     await expect(
-      auditAdminAction(auditDb(true, seen) as never, "u-admin", "households.view", "h-1"),
-    ).resolves.toBeUndefined();
+      auditAdminAction(auditDb(true, seen) as never, "households.view", "h-1"),
+    ).rejects.toThrow("admin audit write failed");
   });
 });

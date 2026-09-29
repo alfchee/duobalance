@@ -129,6 +129,20 @@ describe("admin no-impersonation rule (#271)", () => {
 });
 
 describe("admin response shape (#271)", () => {
+  it("admin data flows through the DEFINER readers, never direct table reads", () => {
+    // Routes call admin_* RPCs on the caller-scoped client so authorization
+    // (is_admin()) and the response shape stay enforced at the database
+    // boundary. A general service-role table query here would make the
+    // TypeScript allowlist the only protection — exactly what this bans.
+    for (const file of adminRouteFiles()) {
+      if (file.endsWith("_shared.ts")) continue;
+      if (file.endsWith("me/route.ts")) continue; // { isAdmin: true } — its RPCs run inside requireAdmin/audit
+      const source = read(file);
+      expect(source, `${file} must read through admin RPCs`).toContain(".rpc(");
+      expect(source, `${file} must not query tables directly`).not.toContain('.from("');
+    }
+  });
+
   it("no admin route selects transaction-content columns", () => {
     for (const file of adminRouteFiles()) {
       const source = read(file);
@@ -191,6 +205,13 @@ describe("admin gating (#271)", () => {
     // would hint the resource exists to a probe.
     expect(source).not.toContain("status: 401");
     expect(source).not.toContain("status: 403");
+  });
+
+  it("shared gate denies per deployment target and binds the admin domain", () => {
+    const source = read("src/app/api/admin/_shared.ts");
+    expect(source).toContain("APP_MODE");
+    expect(source).toContain("ADMIN_APP_URL");
+    expect(source).toContain("adminTargetAllows");
   });
 
   it("every admin route writes an audit row on success", () => {

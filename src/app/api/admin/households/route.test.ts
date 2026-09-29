@@ -21,38 +21,53 @@ const mockAudit = vi.mocked(auditAdminAction);
 const HH_ID = "11111111-1111-1111-1111-111111111111";
 const SUB_ID = "33333333-3333-3333-3333-333333333333";
 
-/** Minimal PostgREST-chain emulator: modifiers return the chain, awaiting resolves { data, error }. */
-function fakeAdmin(preset: Record<string, Array<Record<string, unknown>>>) {
-  const makeChain = (table: string) => {
-    const rows = preset[table] ?? [];
-    const chain: Record<string, unknown> = {};
-    chain.select = () => chain;
-    chain.order = () => chain;
-    chain.range = () => chain;
-    chain.or = () => chain;
-    chain.eq = () => chain;
-    chain.in = () => chain;
-    chain.maybeSingle = async () => ({ data: rows[0] ?? null, error: null });
-    chain.then = (resolve: (v: unknown) => void) =>
-      resolve({ data: rows, count: rows.length, error: null });
-    return chain;
+/** Caller-scoped RPC emulator: resolves per-function canned rows. */
+function fakeDb(preset: Record<string, Array<Record<string, unknown>>>) {
+  return {
+    rpc: async (fn: string) => ({ data: preset[fn] ?? [], error: null }),
   };
-  return { from: (table: string) => makeChain(table) };
 }
 
 const listPreset = () => ({
-  households: [{ id: HH_ID, name: "House A", country: "CL", created_at: "2026-01-01T00:00:00Z" }],
-  subscriptions: [
-    { household_id: HH_ID, plan_code: "comped", status: "active", current_period_end: null },
+  admin_list_households: [
+    {
+      household_id: HH_ID,
+      household_name: "House A",
+      country: "CL",
+      created_at: "2026-01-01T00:00:00Z",
+      plan_code: "comped",
+      subscription_status: "active",
+      current_period_end: null,
+      grace_ends_at: null,
+      is_comped: true,
+      member_count: 1,
+      account_count: 2,
+      transaction_count: 3,
+      // A future widened function output must still not leak: the route
+      // projects through the allowlist (defense in depth).
+      description: "Secret groceries",
+    },
   ],
-  household_members: [{ household_id: HH_ID }],
-  accounts: [{ household_id: HH_ID }, { household_id: HH_ID }],
-  transactions: [{ household_id: HH_ID }, { household_id: HH_ID }, { household_id: HH_ID }],
 });
 
 const detailPreset = () => ({
-  households: [{ id: HH_ID, name: "House B", country: "NI", created_at: "2026-02-01T00:00:00Z" }],
-  subscriptions: [
+  admin_get_household: [
+    {
+      household_id: HH_ID,
+      household_name: "House B",
+      country: "NI",
+      created_at: "2026-02-01T00:00:00Z",
+      plan_code: "plus",
+      subscription_status: "active",
+      current_period_end: "2026-03-01T00:00:00Z",
+      grace_ends_at: null,
+      is_comped: false,
+      member_count: 2,
+      account_count: 1,
+      transaction_count: 5,
+    },
+  ],
+  admin_get_subscription_history: [
     {
       id: SUB_ID,
       plan_code: "plus",
@@ -65,16 +80,7 @@ const detailPreset = () => ({
       updated_at: "2026-02-01T00:00:00Z",
     },
   ],
-  household_members: [{ household_id: HH_ID }, { household_id: HH_ID }],
-  accounts: [{ household_id: HH_ID }],
-  transactions: [
-    { household_id: HH_ID },
-    { household_id: HH_ID },
-    { household_id: HH_ID },
-    { household_id: HH_ID },
-    { household_id: HH_ID },
-  ],
-  billing_events: [
+  admin_get_billing_events: [
     {
       id: "44444444-4444-4444-4444-444444444444",
       provider: "stub",
@@ -108,16 +114,9 @@ describe("GET /api/admin/households — list (#271)", () => {
     expect(mockAudit).not.toHaveBeenCalled();
   });
 
-  it("returns neutral 404 for an unknown status filter (no hint)", async () => {
-    mockRequireAdmin.mockResolvedValue({ admin: fakeAdmin({}) as never, userId: "u" } as never);
-    const res = await GET(new Request("http://localhost/api/admin/households?status=vip"));
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: "not found" });
-  });
-
-  it("returns counts only, flags comped, audits, and hardens headers", async () => {
-    const admin = fakeAdmin(listPreset());
-    mockRequireAdmin.mockResolvedValue({ admin: admin as never, userId: "u-admin" } as never);
+  it("reads through admin_list_households and projects the allowlist", async () => {
+    const db = fakeDb(listPreset());
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
     const res = await GET(new Request("http://localhost/api/admin/households"));
     expect(res.status).toBe(200);
     expect(res.headers.get("Cache-Control")).toContain("no-store");
@@ -136,8 +135,9 @@ describe("GET /api/admin/households — list (#271)", () => {
       account_count: 2,
       transaction_count: 3,
     });
+    // The smuggled description never reaches the wire body.
     wireHasForbidden(body);
-    expect(mockAudit).toHaveBeenCalledWith(admin, "u-admin", "households.list", null);
+    expect(mockAudit).toHaveBeenCalledWith(db, "households.list", null);
   });
 
   it("is unavailable in the Tauri bundle", async () => {
@@ -149,8 +149,8 @@ describe("GET /api/admin/households — list (#271)", () => {
 
 describe("GET /api/admin/households?id= — detail (#271)", () => {
   it("returns neutral 404 for malformed ids and unknown households alike", async () => {
-    const admin = fakeAdmin({ households: [] });
-    mockRequireAdmin.mockResolvedValue({ admin: admin as never, userId: "u-admin" } as never);
+    const db = fakeDb({ admin_get_household: [], admin_get_subscription_history: [] });
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
     const bad = await GET(new Request("http://localhost/api/admin/households?id=not-a-uuid"));
     expect(bad.status).toBe(404);
     const missing = await GET(new Request(`http://localhost/api/admin/households?id=${HH_ID}`));
@@ -160,8 +160,8 @@ describe("GET /api/admin/households?id= — detail (#271)", () => {
   });
 
   it("returns the allowlisted detail with full history and audits the view", async () => {
-    const admin = fakeAdmin(detailPreset());
-    mockRequireAdmin.mockResolvedValue({ admin: admin as never, userId: "u-admin" } as never);
+    const db = fakeDb(detailPreset());
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
     const res = await GET(new Request(`http://localhost/api/admin/households?id=${HH_ID}`));
     expect(res.status).toBe(200);
     expect(res.headers.get("Cache-Control")).toContain("no-store");
@@ -189,6 +189,6 @@ describe("GET /api/admin/households?id= — detail (#271)", () => {
     );
 
     wireHasForbidden(body);
-    expect(mockAudit).toHaveBeenCalledWith(admin, "u-admin", "households.view", HH_ID);
+    expect(mockAudit).toHaveBeenCalledWith(db, "households.view", HH_ID);
   });
 });

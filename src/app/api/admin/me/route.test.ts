@@ -20,19 +20,19 @@ beforeEach(() => {
 describe("GET /api/admin/me (#271)", () => {
   it("returns neutral 404 for non-admins", async () => {
     mockRequireAdmin.mockResolvedValue(null);
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/admin/me"));
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "not found" });
     expect(mockAudit).not.toHaveBeenCalled();
   });
 
   it("confirms rostered admins and audits the check", async () => {
-    const admin = {};
-    mockRequireAdmin.mockResolvedValue({ admin: admin as never, userId: "u-admin" } as never);
-    const res = await GET();
+    const db = {};
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const res = await GET(new Request("http://localhost/api/admin/me"));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ isAdmin: true });
     expect(res.headers.get("Cache-Control")).toContain("no-store");
-    expect(mockAudit).toHaveBeenCalledWith(admin, "u-admin", "me.check", null);
+    expect(mockAudit).toHaveBeenCalledWith(db, "me.check", null);
   });
 });

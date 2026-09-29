@@ -24,6 +24,10 @@ RESEND_REPLY_TO=hola@duobalanceapp.com
 # Admin deployment canonical origin (Phase A, #271) — separate deployment
 # with its own domain-scoped session (docs/admin-boundary.md). Public.
 # ADMIN_APP_URL=http://localhost:3000
+# Per-target admin serving (Phase A, #271): leave unset for local dev (both
+# targets served; the billing flag still gates admin). Production/staging
+# user Workers set APP_MODE=user; the admin Worker sets APP_MODE=admin.
+# APP_MODE=
 
 # Secrets — required for local `wrangler dev` to exercise handlers/crons
 SUPABASE_SERVICE_ROLE_KEY=
