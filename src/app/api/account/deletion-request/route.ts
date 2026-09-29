@@ -1,6 +1,10 @@
 // POST /api/account/deletion-request — open an account deletion request
 // (#269). Step 1 of request → confirm (typed email) → 30-day grace → purge.
 // A second request while one is pending/confirmed gets 409.
+//
+// Writes are route-only (no client INSERT grant — the lifecycle belongs to
+// these handlers + the DB trigger backstop): the service-role client below
+// is explicitly scoped to the caller's user_id on every query.
 
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
 import { tryAudit } from "../_shared";
@@ -30,7 +34,10 @@ export async function POST() {
     throw error;
   }
 
-  const { data: open, error: openError } = await supabase
+  const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
+  const admin = createSupabaseServiceRoleClient();
+
+  const { data: open, error: openError } = await admin
     .from("account_deletion_requests")
     .select("id, status")
     .eq("user_id", user.id)
@@ -45,7 +52,7 @@ export async function POST() {
     );
   }
 
-  const { data: created, error: insertError } = await supabase
+  const { data: created, error: insertError } = await admin
     .from("account_deletion_requests")
     .insert({ user_id: user.id })
     .select("id, status, requested_at, confirmed_at, scheduled_purge_at, purged_at")

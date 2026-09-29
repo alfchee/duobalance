@@ -50,18 +50,21 @@ begin
 end
 $$;
 
-select plan(20);
+select plan(22);
 
 -- ============================================================================
--- 1. data_export_links: tenancy + token defaults
+-- 1. data_export_links: route-only minting, tenancy on reads
 -- ============================================================================
+-- Minting is route-only (POST /api/exports mints on the service role after
+-- the membership + plan checks, which RLS cannot express): clients hold no
+-- INSERT grant. Token default + TTL clamp are still pinned here via a
+-- privileged insert (triggers fire for every role).
 
--- Member can mint a link for their own household; token + expiry default in.
-select tests.authenticate_as('a9000000-0000-0000-0000-000000000002', 'ownerA34@test.local');
+select tests.clear_auth();
 select lives_ok(
   $$ insert into public.data_export_links (household_id, created_by, format)
      values ('a9000000-0000-0000-0000-000000000001', 'a9000000-0000-0000-0000-000000000003', 'json') $$,
-  'member can mint an export link for their own household'
+  'privileged link insert works (route path)'
 );
 
 select ok(
@@ -74,6 +77,17 @@ select ok(
   (select expires_at > created_at from public.data_export_links
     where household_id = 'a9000000-0000-0000-0000-000000000001' limit 1),
   'export link expiry is after creation (24h window)'
+);
+
+-- Members hold no INSERT grant: direct minting is denied even for their own
+-- household (plan-gated mint route only).
+select tests.authenticate_as('a9000000-0000-0000-0000-000000000002', 'ownerA34@test.local');
+select throws_ok(
+  $$ insert into public.data_export_links (household_id, format)
+     values ('a9000000-0000-0000-0000-000000000001', 'json') $$,
+  '42501',
+  null,
+  'member cannot mint an export link directly (route-only)'
 );
 
 -- Member of A cannot mint a link for household B.
@@ -100,14 +114,17 @@ select is_empty(
 );
 
 -- ============================================================================
--- 2. account_deletion_requests: own-row only + single open window
+-- 2. account_deletion_requests: route-only writes, own-row reads, one window
 -- ============================================================================
+-- All transitions run in the account routes on the service role (scoped to
+-- auth.uid()); clients hold SELECT-own only. The trigger + unique index are
+-- pinned here via privileged writes.
 
-select tests.authenticate_as('a9000000-0000-0000-0000-000000000004', 'partnerA34@test.local');
+select tests.clear_auth();
 select lives_ok(
   $$ insert into public.account_deletion_requests (user_id)
      values ('a9000000-0000-0000-0000-000000000004') $$,
-  'user can open their own deletion request'
+  'privileged request insert works (route path)'
 );
 
 -- Second open request for the same user is rejected (one grace window).
@@ -117,6 +134,16 @@ select throws_ok(
   '23505',
   null,
   'second open deletion request for the same user is rejected'
+);
+
+-- Clients cannot write requests directly — not even their own.
+select tests.authenticate_as('a9000000-0000-0000-0000-000000000004', 'partnerA34@test.local');
+select throws_ok(
+  $$ insert into public.account_deletion_requests (user_id)
+     values ('a9000000-0000-0000-0000-000000000004') $$,
+  '42501',
+  null,
+  'user cannot open a deletion request directly (route-only)'
 );
 
 -- User cannot see another user's request.

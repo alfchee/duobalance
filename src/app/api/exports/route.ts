@@ -42,14 +42,16 @@ export async function POST(request: Request) {
   }
   const { householdId, format } = parsed.data;
 
-  // Active-membership check: a member of A asking for B gets 403 here,
-  // before any link row exists.
+  // Active-membership check (the repository's definition: removed_at null
+  // AND the household not soft-deleted): a member of A asking for B — or
+  // for a closed household — gets 403 here, before any link row exists.
   const { data: membership, error: membershipError } = await supabase
     .from("household_members")
-    .select("id, household_id")
+    .select("id, household_id, households!inner(deleted_at)")
     .eq("user_id", user.id)
     .eq("household_id", householdId)
     .is("removed_at", null)
+    .is("households.deleted_at", null)
     .maybeSingle();
 
   if (membershipError) throw membershipError;
@@ -68,7 +70,12 @@ export async function POST(request: Request) {
     }
   }
 
-  const { data: link, error: insertError } = await supabase
+  // Minting is route-only (no client INSERT grant — RLS cannot express the
+  // plan gate, which must stay fail-open while billing is off). The TTL
+  // trigger + token CHECK remain as defense in depth.
+  const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
+  const admin = createSupabaseServiceRoleClient();
+  const { data: link, error: insertError } = await admin
     .from("data_export_links")
     .insert({ household_id: householdId, created_by: membership.id, format })
     .select("token, expires_at, format")
@@ -79,8 +86,6 @@ export async function POST(request: Request) {
   // Best-effort audit (service role appends; clients cannot). Never fails
   // the export if the audit write hiccups.
   try {
-    const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
-    const admin = createSupabaseServiceRoleClient();
     await admin.from("deletion_audit_log").insert({
       household_id: householdId,
       event_type: "export_link_created",

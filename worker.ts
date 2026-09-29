@@ -20,6 +20,7 @@ import { runFxRefresh } from "@/lib/fx/refresh";
 import { generateAllInstances } from "@/lib/bill-instances";
 import { runSendBillReminders } from "@/lib/cron/send-bill-reminders";
 import { runPurgeHouseholds } from "@/lib/cron/purge-households";
+import { runPurgeAccounts } from "@/lib/cron/purge-accounts";
 import { isCronDisabled } from "@/lib/cron/guard";
 import { createSupabaseCronClient } from "@/lib/supabase/cron";
 
@@ -156,6 +157,11 @@ export default {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const result = await runPurgeHouseholds(supabase as any);
           console.info("[scheduled] purge-households", result);
+          // #269 shares this slot (no free trigger left in Phase A): account
+          // deletions past their 30-day grace purge right after households.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const accounts = await runPurgeAccounts(supabase as any);
+          console.info("[scheduled] purge-accounts", accounts);
           break;
         }
         default:

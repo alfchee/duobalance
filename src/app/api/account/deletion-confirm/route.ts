@@ -2,6 +2,9 @@
 // Body: { email }. The typed email must match the authenticated user's email
 // (explicit confirmation). Moves a pending request to confirmed and starts
 // the 30-day grace clock (scheduled_purge_at). Cancellable until purged.
+//
+// Writes are route-only (service role scoped to the caller); the DB trigger
+// backstops the transition and the 29–31 day grace window.
 
 import { z } from "zod";
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
@@ -45,7 +48,10 @@ export async function POST(request: Request) {
     return Response.json({ error: "confirmation email does not match" }, { status: 400 });
   }
 
-  const { data: pending, error: pendingError } = await supabase
+  const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
+  const admin = createSupabaseServiceRoleClient();
+
+  const { data: pending, error: pendingError } = await admin
     .from("account_deletion_requests")
     .select("id")
     .eq("user_id", user.id)
@@ -58,7 +64,7 @@ export async function POST(request: Request) {
   }
 
   const nowIso = new Date().toISOString();
-  const { data: confirmed, error: updateError } = await supabase
+  const { data: confirmed, error: updateError } = await admin
     .from("account_deletion_requests")
     .update({ status: "confirmed", confirmed_at: nowIso, scheduled_purge_at: scheduledPurgeAt() })
     .eq("id", pending.id)

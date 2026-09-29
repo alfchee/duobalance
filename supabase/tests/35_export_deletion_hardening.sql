@@ -19,23 +19,44 @@ declare
   owner_b_member  uuid := 'c9000000-0000-0000-0000-000000000010';
   acct_a          uuid := 'c9000000-0000-0000-0000-000000000008';
   tx_a            uuid := 'c9000000-0000-0000-0000-000000000009';
+  -- Ownership fixtures: solo owner-member, and an only-owner with a partner.
+  hh_c            uuid := 'c9000000-0000-0000-0000-000000000011';
+  hh_d            uuid := 'c9000000-0000-0000-0000-000000000012';
+  solo_user       uuid := 'c9000000-0000-0000-0000-000000000013';
+  solo_member     uuid := 'c9000000-0000-0000-0000-000000000014';
+  boss_user       uuid := 'c9000000-0000-0000-0000-000000000015';
+  boss_member     uuid := 'c9000000-0000-0000-0000-000000000016';
+  minion_user     uuid := 'c9000000-0000-0000-0000-000000000017';
+  minion_member   uuid := 'c9000000-0000-0000-0000-000000000018';
+  boss_acc        uuid := 'c9000000-0000-0000-0000-000000000019';
+  boss_bill       uuid := 'c9000000-0000-0000-0000-000000000020';
 begin
   insert into auth.users (id, email) values
     (owner_user, 'owner35@test.local'),
-    (leaver_user, 'leaver35@test.local');
+    (leaver_user, 'leaver35@test.local'),
+    (solo_user, 'solo35@test.local'),
+    (boss_user, 'boss35@test.local'),
+    (minion_user, 'minion35@test.local');
 
   insert into public.households (id, name, country, base_currency, timezone) values
     (hh_a, 'House A', 'CL', 'CLP', 'America/Santiago'),
-    (hh_b, 'House B', 'CL', 'CLP', 'America/Santiago');
+    (hh_b, 'House B', 'CL', 'CLP', 'America/Santiago'),
+    (hh_c, 'Solo House', 'CL', 'CLP', 'America/Santiago'),
+    (hh_d, 'Boss House', 'CL', 'CLP', 'America/Santiago');
 
   insert into public.household_members (id, household_id, user_id, role, display_name) values
     (owner_member, hh_a, owner_user, 'owner', 'Owner'),
     (leaver_mem_a, hh_a, leaver_user, 'partner', 'Leaver Realname'),
     (owner_b_member, hh_b, owner_user, 'owner', 'Owner B'),
-    (leaver_mem_b, hh_b, leaver_user, 'partner', 'Leaver Oldname');
+    (leaver_mem_b, hh_b, leaver_user, 'partner', 'Leaver Oldname'),
+    (solo_member, hh_c, solo_user, 'owner', 'Solo'),
+    (boss_member, hh_d, boss_user, 'owner', 'Boss'),
+    (minion_member, hh_d, minion_user, 'partner', 'Minion');
 
   perform tests.entitle_household(hh_a);
   perform tests.entitle_household(hh_b);
+  perform tests.entitle_household(hh_c);
+  perform tests.entitle_household(hh_d);
 
   -- leaver already left household B long ago (removed row, name intact).
   update public.household_members
@@ -50,11 +71,22 @@ begin
   values
     (tx_a, hh_a, acct_a, -2500, 'CLP', current_date, 'Leaver groceries', leaver_mem_a, leaver_mem_a);
 
+  -- Boss owns a shared account and a bill in household D.
+  insert into public.accounts (id, household_id, name, kind, currency, owner_member_id, is_shared) values
+    (boss_acc, hh_d, 'Boss Shared', 'checking', 'CLP', boss_member, true);
+
+  insert into public.bills
+    (id, household_id, name, default_amount, currency, rrule, starts_on, responsible_member_id)
+  values
+    (boss_bill, hh_d, 'Internet', 30000, 'CLP', 'FREQ=MONTHLY', current_date, boss_member);
+
   insert into public.account_deletion_requests (user_id) values (leaver_user);
+  insert into public.account_deletion_requests (user_id) values (solo_user);
+  insert into public.account_deletion_requests (user_id) values (boss_user);
 end
 $$;
 
-select plan(15);
+select plan(24);
 
 -- ============================================================================
 -- 1. Export link TTL is stamped server-side, token shape enforced
@@ -209,6 +241,89 @@ select results_eq(
      where user_id = 'c9000000-0000-0000-0000-000000000005' $$,
   array['purged'::text],
   'request marked purged'
+);
+
+-- ============================================================================
+-- 4. Purge-time ownership: sole member closes, only owner transfers
+-- ============================================================================
+
+-- Confirm both ownership requests, then age them past grace.
+update public.account_deletion_requests
+  set status = 'confirmed', confirmed_at = now(), scheduled_purge_at = now() + interval '30 days'
+  where user_id in ('c9000000-0000-0000-0000-000000000013', 'c9000000-0000-0000-0000-000000000015');
+
+alter table public.account_deletion_requests disable trigger tg_enforce_deletion_transition;
+update public.account_deletion_requests
+  set scheduled_purge_at = now() - interval '1 day'
+  where user_id in ('c9000000-0000-0000-0000-000000000013', 'c9000000-0000-0000-0000-000000000015');
+alter table public.account_deletion_requests enable trigger tg_enforce_deletion_transition;
+
+select lives_ok(
+  $$ select public.purge_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'c9000000-0000-0000-0000-000000000013')) $$,
+  'sole member purges'
+);
+
+-- Sole active member: household closed instead of orphaned...
+select ok(
+  (select deleted_at is not null from public.households
+   where id = 'c9000000-0000-0000-0000-000000000011'),
+  'sole-member household soft-deleted by the purge'
+);
+
+select results_eq(
+  $$ select event_type from public.deletion_audit_log
+     where household_id = 'c9000000-0000-0000-0000-000000000011'
+     order by event_type $$,
+  -- Alphabetical (occurred_at ties: both rows share the transaction clock).
+  array['account_deletion_purged'::text, 'household_deleted'::text],
+  'household closure and purge both audited'
+);
+
+select lives_ok(
+  $$ select public.purge_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'c9000000-0000-0000-0000-000000000015')) $$,
+  'only owner purges'
+);
+
+-- ...only owner: earliest other member promoted, bills + accounts follow...
+select results_eq(
+  $$ select role from public.household_members
+     where id = 'c9000000-0000-0000-0000-000000000018' $$,
+  array['owner'::public.household_member_role],
+  'remaining partner promoted to owner'
+);
+
+select results_eq(
+  $$ select responsible_member_id from public.bills
+     where id = 'c9000000-0000-0000-0000-000000000020' $$,
+  array['c9000000-0000-0000-0000-000000000018'::uuid],
+  'purged owner''s bills reassigned to the successor'
+);
+
+select results_eq(
+  $$ select owner_member_id from public.accounts
+     where id = 'c9000000-0000-0000-0000-000000000019' $$,
+  array[null::uuid],
+  'purged owner''s shared account becomes joint'
+);
+
+select results_eq(
+  $$ select display_name, removal_reason from public.household_members
+     where id = 'c9000000-0000-0000-0000-000000000016' $$,
+  $$ values ('Deleted member'::text, 'left'::text) $$,
+  'purged owner anonymized and soft-removed'
+);
+
+-- ...and the household keeps its owner invariant.
+select results_eq(
+  $$ select count(*)::int from public.household_members
+     where household_id = 'c9000000-0000-0000-0000-000000000012'
+       and removed_at is null and role = 'owner' $$,
+  array[1::int],
+  'household retains exactly one active owner'
 );
 
 select tests.clear_auth();

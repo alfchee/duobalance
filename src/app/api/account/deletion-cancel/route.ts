@@ -1,6 +1,8 @@
 // POST /api/account/deletion-cancel — cancel an open deletion request (#269).
 // Works while the request is pending or confirmed (i.e. any time before the
 // purge runs). After purging there is nothing to cancel (404).
+//
+// Writes are route-only (service role scoped to the caller).
 
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
 import { tryAudit } from "../_shared";
@@ -30,7 +32,10 @@ export async function POST() {
     throw error;
   }
 
-  const { data: open, error: openError } = await supabase
+  const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
+  const admin = createSupabaseServiceRoleClient();
+
+  const { data: open, error: openError } = await admin
     .from("account_deletion_requests")
     .select("id")
     .eq("user_id", user.id)
@@ -42,7 +47,7 @@ export async function POST() {
     return Response.json({ error: "no open deletion request" }, { status: 404 });
   }
 
-  const { data: cancelled, error: updateError } = await supabase
+  const { data: cancelled, error: updateError } = await admin
     .from("account_deletion_requests")
     .update({ status: "cancelled" })
     .eq("id", open.id)

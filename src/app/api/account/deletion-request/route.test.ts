@@ -13,18 +13,12 @@ vi.mock("@/app/api/_shared", () => ({
   getAuthedUser: vi.fn(),
 }));
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
-
 vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServiceRoleClient: vi.fn(() => ({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
-      })),
-      insert: vi.fn().mockResolvedValue({ error: null }),
-    })),
-  })),
+  createSupabaseServiceRoleClient: vi.fn(),
 }));
+
+import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { POST } from "./route";
 
 const created = {
@@ -36,30 +30,43 @@ const created = {
   purged_at: null,
 };
 
+// Writes are route-only: the request table is touched through the service
+// role (explicitly scoped to the caller), never the auth client.
 function makeClient(opts: {
   open?: { id: string; status: string } | null;
   created?: typeof created | null;
   insertError?: { message: string; code: string } | null;
 }) {
+  vi.mocked(createRouteContext).mockResolvedValue({} as never);
   const openMaybe = vi.fn().mockResolvedValue({ data: opts.open ?? null, error: null });
   const createSingle = vi.fn().mockResolvedValue({
     data: opts.created ?? null,
     error: opts.insertError ?? null,
   });
   const selectEq = vi.fn(() => ({ in: vi.fn(() => ({ maybeSingle: openMaybe })) }));
-  const from = vi.fn((table: string) => {
-    if (table !== "account_deletion_requests") throw new Error(`unexpected table ${table}`);
-    return {
-      select: vi.fn(() => ({ eq: selectEq })),
-      insert: vi.fn(() => ({ select: vi.fn(() => ({ single: createSingle })) })),
-    };
+  const adminFrom = vi.fn((table: string) => {
+    if (table === "account_deletion_requests") {
+      return {
+        select: vi.fn(() => ({ eq: selectEq })),
+        insert: vi.fn(() => ({ select: vi.fn(() => ({ single: createSingle })) })),
+      };
+    }
+    if (table === "household_members" || table === "deletion_audit_log") {
+      return {
+        select: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) })),
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      };
+    }
+    throw new Error(`unexpected table ${table}`);
   });
-  return { from, openMaybe, createSingle };
+  vi.mocked(createSupabaseServiceRoleClient).mockReturnValue({ from: adminFrom } as never);
+  return { adminFrom, openMaybe, createSingle };
 }
 
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(createSupabaseServiceRoleClient).mockReset();
   delete process.env.BUILD_TARGET;
 });
 
@@ -70,15 +77,14 @@ afterEach(() => {
 
 describe("POST /api/account/deletion-request", () => {
   it("rejects unauthenticated callers", async () => {
-    vi.mocked(createRouteContext).mockResolvedValue({} as never);
+    makeClient({ open: null });
     vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
 
     expect((await POST()).status).toBe(401);
   });
 
   it("returns 409 when a request is already open", async () => {
-    const client = makeClient({ open: { id: "req-0", status: "confirmed" } });
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    makeClient({ open: { id: "req-0", status: "confirmed" } });
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const res = await POST();
@@ -87,8 +93,7 @@ describe("POST /api/account/deletion-request", () => {
   });
 
   it("creates a pending request", async () => {
-    const client = makeClient({ open: null, created });
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    makeClient({ open: null, created });
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const res = await POST();
@@ -98,11 +103,10 @@ describe("POST /api/account/deletion-request", () => {
   });
 
   it("maps a concurrent-insert race to 409", async () => {
-    const client = makeClient({
+    makeClient({
       open: null,
       insertError: { message: "duplicate key value", code: "23505" },
     });
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const res = await POST();

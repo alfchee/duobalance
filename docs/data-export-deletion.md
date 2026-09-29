@@ -53,20 +53,45 @@ email must match) → 30-day grace (cancellable) → purge:
 1. `pending` — request recorded, nothing changes.
 2. `confirmed` — confirmation recorded, `scheduled_purge_at =
 confirmed_at + 30 days`. The user can still cancel; data is untouched.
-3. `purged` — the cron job (`POST /api/cron/purge-accounts`, bearer
-   secret, service role) calls the atomic `purge_account_deletion()`
-   RPC, which anonymizes every membership of that user — including
-   already-removed rows, whose display name is still personal data —
-   appends one audit row per household, and marks the request purged in
-   a single transaction (a retry can never half-apply or duplicate audit
-   rows): `display_name → 'Deleted member'`; active rows are additionally
-   soft-removed (`removed_at`, `removal_reason = 'left'`).
-   Transactions keep pointing at the same membership ids, so the
-   household's books still balance. One row per affected household is
-   appended to `deletion_audit_log` containing only ids, event type, and
-   timestamps — never email, display name, amounts, descriptions, or
-   notes. The same cron run sweeps expired export links (no PII, no
-   audit row needed).
+3. `purged` — the atomic `purge_account_deletion()` RPC anonymizes
+   every membership of that user — including already-removed rows,
+   whose display name is still personal data — appends one audit row
+   per household, and marks the request purged in a single transaction
+   (a retry can never half-apply or duplicate audit rows):
+   `display_name → 'Deleted member'`; active rows are additionally
+   soft-removed (`removed_at`, `removal_reason = 'left'`). Transactions
+   keep pointing at the same membership ids, so the household's books
+   still balance; the audit rows carry ids only, never PII.
+
+The RPC is ownership-aware, because blindly soft-removing would either
+trip `check_household_has_owner` or orphan a household. Per household
+with an active membership of the purged user:
+
+- sole active member → the household is soft-deleted (audited as
+  `household_deleted`), mirroring `leave_household`'s last-member rule;
+- only active owner → the earliest-joined other member is promoted,
+  their bills are reassigned to them, and their shared accounts become
+  joint (`owner_member_id → NULL`) so the household keeps access.
+  Private accounts stay owned by the anonymized row — same as any
+  departure;
+- already-soft-deleted households are anonymized only (no ownership
+  moves needed).
+
+Scheduling: `POST /api/cron/purge-accounts` (Vercel daily 05:00,
+bearer secret) fronts `runPurgeAccounts`, which purges each due
+request through the RPC and sweeps expired export links in the same
+run. In production Vercel crons are disabled (`CRON_DISABLED`) and the
+Cloudflare worker executes instead — with no free trigger slot left in
+Phase A, the purge piggybacks the existing `purge-households` slot
+(`worker.ts`), running right after it nightly.
+
+All request transitions run in the account routes on the service role,
+explicitly scoped to the caller's user id — clients hold SELECT-own
+only (invite-flow precedent), so direct PostgREST writes cannot drive
+the lifecycle at all. The `enforce_deletion_transition` trigger remains
+as defense in depth: `pending → confirmed` requires `confirmed_at` ≈
+now with `scheduled_purge_at` 29–31 days out (no shrunken graces),
+`purged` is writable by nobody but the purge path.
 
 Membership rows are **never hard-deleted** while transactions reference
 them; the `ON DELETE RESTRICT` FKs make a cascade fail loudly instead
@@ -76,13 +101,14 @@ anonymization: the `auth.users` identity itself is removed out-of-band
 `purged`, no personal identifier remains in application tables either
 way.
 
-The state machine is enforced twice: the `enforce_deletion_transition`
-trigger restricts rows to `pending → confirmed → purged` (either →
-`cancelled`) with anti-backdating bounds (`confirmed_at` ≈ now,
-`scheduled_purge_at` within 31 days), so direct PostgREST writes cannot
-skip the confirmation or shrink the grace period; RLS additionally bars
-clients from writing `status = 'purged'` at all — only the purge RPC
-(service role, RLS-bypassing owner) may.
+The state machine is enforced twice: clients hold no INSERT/UPDATE
+grants on the request table at all (all transitions run in the account
+routes on the service role, scoped to the caller), and the
+`enforce_deletion_transition` trigger backstops every write —
+`pending → confirmed → purged` (either → `cancelled`) with
+anti-backdating bounds (`confirmed_at` ≈ now, `scheduled_purge_at`
+29–31 days out), so even a privileged-path bug cannot shrink the grace
+period or skip confirmation.
 
 ## Household deletion
 
@@ -103,11 +129,18 @@ gets 403). The time-limited path adds:
   hex-shape enforced by CHECK), `format` json/csv. The 24h TTL is
   stamped server-side by trigger (`force_export_link_ttl`), so even
   direct writes cannot mint long-lived links.
+- Minting is route-only (no client INSERT grant — invite-flow
+  precedent): RLS cannot express the plan gate, which must stay
+  fail-open while billing is off whereas `has_feature()` is
+  fail-closed. The state-machine trigger remains as defense in depth.
 - `GET /api/exports/[token]` resolves the token via the service role
   (RLS would otherwise downgrade cross-household callers to a bare
   404), then enforces membership (403) before expiry (410), and serves
   the link's minted format only (a disagreeing `?format` gets 400).
-  The plan check is intentionally not repeated at redemption: the mint
+  Membership means `removed_at IS NULL` **and** the household not
+  soft-deleted — links die with the household, and minting to a closed
+  household is refused the same way.
+- The plan check is intentionally not repeated at redemption: the mint
   already enforced `has_feature('export')`, and a 24h link survives a
   mid-day plan change the way a downloaded file would.
 - Tokens are bearer secrets but never a substitute for membership: a

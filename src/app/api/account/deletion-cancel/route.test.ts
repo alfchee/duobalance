@@ -13,18 +13,12 @@ vi.mock("@/app/api/_shared", () => ({
   getAuthedUser: vi.fn(),
 }));
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
-
 vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServiceRoleClient: vi.fn(() => ({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
-      })),
-      insert: vi.fn().mockResolvedValue({ error: null }),
-    })),
-  })),
+  createSupabaseServiceRoleClient: vi.fn(),
 }));
+
+import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { POST } from "./route";
 import { GET } from "../deletion-status/route";
 
@@ -40,8 +34,15 @@ const cancelled = {
 function makeClient(open: { id: string } | null) {
   const openMaybe = vi.fn().mockResolvedValue({ data: open, error: null });
   const cancelSingle = vi.fn().mockResolvedValue({ data: cancelled, error: null });
-  const from = vi.fn((table: string) => {
-    if (table !== "account_deletion_requests") throw new Error(`unexpected table ${table}`);
+  // Request table via the service role (route-only writes); the status GET
+  // below reads through the auth client (SELECT-own retained).
+  const adminFrom = vi.fn((table: string) => {
+    if (table !== "account_deletion_requests") {
+      return {
+        select: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) })),
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      };
+    }
     return {
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
@@ -53,12 +54,25 @@ function makeClient(open: { id: string } | null) {
       })),
     };
   });
-  return { from, openMaybe, cancelSingle };
+  vi.mocked(createSupabaseServiceRoleClient).mockReturnValue({ from: adminFrom } as never);
+  const authFrom = vi.fn((table: string) => {
+    if (table !== "account_deletion_requests") throw new Error(`unexpected table ${table}`);
+    return {
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          in: vi.fn(() => ({ maybeSingle: openMaybe })),
+        })),
+      })),
+    };
+  });
+  vi.mocked(createRouteContext).mockResolvedValue({ from: authFrom } as never);
+  return { adminFrom, authFrom, openMaybe, cancelSingle };
 }
 
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(createSupabaseServiceRoleClient).mockReset();
   delete process.env.BUILD_TARGET;
 });
 
@@ -76,16 +90,14 @@ describe("POST /api/account/deletion-cancel", () => {
   });
 
   it("returns 404 without an open request", async () => {
-    const client = makeClient(null);
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    makeClient(null);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     expect((await POST()).status).toBe(404);
   });
 
   it("cancels an open request", async () => {
-    const client = makeClient({ id: "req-1" });
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    makeClient({ id: "req-1" });
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const res = await POST();
@@ -104,8 +116,7 @@ describe("GET /api/account/deletion-status", () => {
   });
 
   it("returns null without an open request", async () => {
-    const client = makeClient(null);
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    makeClient(null);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const res = await GET();
@@ -116,8 +127,7 @@ describe("GET /api/account/deletion-status", () => {
 
   it("returns the open request", async () => {
     const open = { id: "req-1", status: "confirmed" };
-    const client = makeClient(open);
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
+    makeClient(open);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const res = await GET();

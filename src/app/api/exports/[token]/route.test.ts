@@ -63,12 +63,18 @@ function setup(opts: { link?: LinkRow; member?: { id: string } | null }) {
 
   const authFrom = vi.fn((table: string) => {
     if (table === "household_members") {
+      // Membership chain incl. the soft-deleted-household predicate:
+      // select → eq → eq → is → is → maybeSingle.
       return {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             eq: vi.fn(() => ({
               is: vi.fn(() => ({
-                maybeSingle: vi.fn().mockResolvedValue({ data: opts.member ?? null, error: null }),
+                is: vi.fn(() => ({
+                  maybeSingle: vi
+                    .fn()
+                    .mockResolvedValue({ data: opts.member ?? null, error: null }),
+                })),
               })),
             })),
           })),
@@ -134,6 +140,17 @@ describe("GET /api/exports/[token]", () => {
   it("returns 403 before checking expiry for a non-member", async () => {
     // Even with an expired link, a non-member gets 403: membership first.
     setup({ link: linkRow(past), member: null });
+
+    const res = await GET(request(), { params: Promise.resolve({ token }) });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 403 for a member of a soft-deleted household", async () => {
+    // Household deletion revokes access immediately: the membership join
+    // filters out deleted households, so the lookup yields no row — same
+    // 403 as a non-member, and the link dies with the household.
+    setup({ link: linkRow(future), member: null });
 
     const res = await GET(request(), { params: Promise.resolve({ token }) });
 

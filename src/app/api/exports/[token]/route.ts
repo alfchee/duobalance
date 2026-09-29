@@ -80,14 +80,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
 
   const { data: membership, error: membershipError } = await supabase
     .from("household_members")
-    .select("id")
+    .select("id, households!inner(deleted_at)")
     .eq("user_id", user.id)
     .eq("household_id", link.household_id)
     .is("removed_at", null)
+    .is("households.deleted_at", null)
     .maybeSingle();
 
   if (membershipError) throw membershipError;
   if (!membership) {
+    // Covers non-members AND members of a soft-deleted household: deletion
+    // revokes access immediately, so existing links die with the household.
     return Response.json({ error: "household membership required" }, { status: 403 });
   }
 
