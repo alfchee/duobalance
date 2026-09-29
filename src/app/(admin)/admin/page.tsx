@@ -42,11 +42,19 @@ function AdminHouseholdList() {
   const [rows, setRows] = useState<AdminHousehold[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  // Debounced search: every list fetch writes a `households.list` audit row
+  // server-side, so typing "smith" must not issue 5 audited requests.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     let cancelled = false;
     const params = new URLSearchParams();
-    if (search.trim()) params.set("search", search.trim());
+    if (debouncedSearch) params.set("search", debouncedSearch);
     if (status) params.set("status", status);
     const suffix = params.size > 0 ? `?${params.toString()}` : "";
     apiFetch<{ households: AdminHousehold[] }>(`/api/admin/households${suffix}`)
@@ -62,7 +70,7 @@ function AdminHouseholdList() {
     return () => {
       cancelled = true;
     };
-  }, [search, status, retryKey]);
+  }, [debouncedSearch, status, retryKey]);
 
   return (
     <Card className="w-full">

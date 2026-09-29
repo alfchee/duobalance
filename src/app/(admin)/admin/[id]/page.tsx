@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { AdminGate } from "@/components/admin/admin-gate";
 import { AdminHouseholdDetailClient } from "./admin-household-detail-client";
 
 // One placeholder so the static export can prerender. The placeholder URL
@@ -16,5 +17,11 @@ export default async function AdminHouseholdDetailPage({
   const { id } = await params;
   if (id === "__placeholder__") notFound();
 
-  return <AdminHouseholdDetailClient id={id} />;
+  // AdminGate first: unauthenticated callers get the neutral denial
+  // without ever seeing the "Loading household…" flash or firing a fetch.
+  return (
+    <AdminGate>
+      <AdminHouseholdDetailClient id={id} />
+    </AdminGate>
+  );
 }

@@ -42,7 +42,7 @@ begin
 end
 $$;
 
-select plan(8);
+select plan(11);
 
 -- 1-2. Granting an admin role to a household member fails closed.
 select throws_ok(
@@ -106,4 +106,43 @@ select results_eq(
   'audit row preserves the deleted household id as evidence'
 );
 
+-- 9. admin_list_households returns the real grace_ends_at (follow-up
+-- migration 20260930000001): a household in grace must not project null.
+select tests.clear_auth();
+do $$
+declare
+  hh_g       uuid := 'd1000000-0000-0000-0000-000000000010';
+  member_g   uuid := 'd1000000-0000-0000-0000-000000000011';
+  user_g     uuid := 'd1000000-0000-0000-0000-000000000012';
+begin
+  insert into auth.users (id, email) values (user_g, 'grace37@test.local');
+  insert into public.households (id, name, country, base_currency, timezone) values
+    (hh_g, 'House G37', 'CL', 'CLP', 'America/Santiago');
+  insert into public.household_members (id, household_id, user_id, role, display_name) values
+    (member_g, hh_g, user_g, 'owner', 'Owner G37');
+  insert into public.subscriptions (household_id, plan_code, provider, status, grace_ends_at) values
+    (hh_g, 'plus', 'stub', 'grace', now() + interval '7 days');
+end
+$$;
+select tests.authenticate_as('d1000000-0000-0000-0000-000000000004');
+select results_eq(
+  $$ select grace_ends_at is not null from public.admin_list_households()
+     where household_id = 'd1000000-0000-0000-0000-000000000010' $$,
+  $$ values (true) $$,
+  'admin_list_households returns grace_ends_at for a household in grace'
+);
+
+select tests.clear_auth();
+-- Trigger grant posture (follow-up migration 20260930000001): the overlap
+-- trigger must stay executable by authenticated (it fires on their member
+-- writes — a bare REVOKE would break those with "permission denied for
+-- function"), while anon holds no direct execute grant.
+select ok(
+  has_function_privilege('authenticated', 'public.tg_reject_admin_membership_overlap()', 'execute'),
+  'overlap trigger executable by authenticated (member writes keep working)'
+);
+select ok(
+  not has_function_privilege('anon', 'public.tg_reject_admin_membership_overlap()', 'execute'),
+  'overlap trigger not directly executable by anon'
+);
 select * from finish();

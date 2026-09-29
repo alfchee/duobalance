@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 import { apiFetch } from "@/lib/api-fetch";
 import { useBillingEnabled } from "@/hooks/useBillingEnabled";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
@@ -43,7 +43,6 @@ type HouseholdSummary = {
 // transaction contents never leave the server (the API allowlist drops them
 // before responding, and the DEFINER functions cannot return them at all).
 export function AdminHouseholdDetailClient({ id }: { id: string }) {
-  const router = useRouter();
   const billingEnabled = useBillingEnabled();
   const [data, setData] = useState<{
     household: HouseholdSummary;
@@ -62,7 +61,7 @@ export function AdminHouseholdDetailClient({ id }: { id: string }) {
       household: HouseholdSummary;
       subscriptions: SubscriptionRow[];
       billingEvents: BillingEventRow[];
-    }>(`/api/admin/households?id=${id}`)
+    }>(`/api/admin/households?id=${encodeURIComponent(id)}`)
       .then((res) => {
         if (!cancelled) setData(res);
       })
@@ -74,11 +73,12 @@ export function AdminHouseholdDetailClient({ id }: { id: string }) {
     };
   }, [billingEnabled, id]);
 
-  useEffect(() => {
-    if (denied) router.replace("/not-found");
-  }, [denied, router]);
-
-  if (denied) return null;
+  // Neutral denial, same as every other admin URL: notFound() preserves
+  // the URL (unlike a redirect to a /not-found route, which does not exist)
+  // and reveals nothing about whether the household exists.
+  if (denied) {
+    notFound();
+  }
   if (!data) {
     return (
       <p role="status" aria-live="polite" className="text-sm text-muted-foreground">

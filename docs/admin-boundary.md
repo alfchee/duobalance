@@ -128,7 +128,7 @@ add framing upstream: Vercel `headers` in `vercel.json` for `/admin/*` and
 
 ## Adding to the admin app (#272+)
 
-1. New field → new migration after `20260930000000` + RLS/pgTAP update.
+1. New field → new migration after `20260930000001` + RLS/pgTAP update.
    Counts and billing metadata only; transaction contents need an ADR, not
    a PR.
 2. New env var → `.env.example` with the right scope; server secrets stay

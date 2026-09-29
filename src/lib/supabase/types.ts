@@ -2035,6 +2035,7 @@ export type Database = {
           country: string
           created_at: string
           current_period_end: string
+          grace_ends_at: string
           household_id: string
           household_name: string
           is_comped: boolean
