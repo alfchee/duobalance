@@ -2,8 +2,14 @@
 //
 // The token is a 256-bit hex bearer secret (24h expiry), but it is never a
 // substitute for membership: the caller must still be authenticated AND an
-// active member of the link's household. Expired links get 410; unknown or
-// malformed tokens get 404; cross-household callers get 403.
+// active member of the link's household. Unknown or malformed tokens get
+// 404, cross-household callers get 403, expired links get 410. The payload
+// always uses the link's minted format (a ?format override that disagrees
+// gets 400 — links are format-bound).
+//
+// No plan re-check here by design: the mint (POST /api/exports) already
+// enforced has_feature('export'), and a 24h link must survive a mid-day plan
+// change the same way a downloaded file would.
 
 // Web-only API route. Under `output: "export"` (Tauri) it is not exported at
 // all — a placeholder param list satisfies the exporter without emitting
@@ -55,10 +61,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     throw error;
   }
 
-  // RLS on data_export_links already scopes reads to the caller's
-  // households, but we check membership explicitly so the failure mode is a
-  // deliberate 403 (cross-household) rather than a bare 404.
-  const { data: link, error: linkError } = await supabase
+  // Privileged lookup: RLS on data_export_links would turn a cross-household
+  // token into a bare 404, hiding the deliberate 403 below. The token itself
+  // is already a 256-bit secret, so resolving it server-side leaks nothing —
+  // and membership is still enforced before any data is touched.
+  const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
+  const admin = createSupabaseServiceRoleClient();
+  const { data: link, error: linkError } = await admin
     .from("data_export_links")
     .select("token, household_id, format, expires_at, households(id, name)")
     .eq("token", token)
@@ -67,10 +76,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   if (linkError) throw linkError;
   if (!link) {
     return Response.json({ error: "export link not found" }, { status: 404 });
-  }
-
-  if (new Date(link.expires_at).getTime() <= Date.now()) {
-    return Response.json({ error: "export link expired" }, { status: 410 });
   }
 
   const { data: membership, error: membershipError } = await supabase
@@ -86,6 +91,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     return Response.json({ error: "household membership required" }, { status: 403 });
   }
 
+  if (new Date(link.expires_at).getTime() <= Date.now()) {
+    return Response.json({ error: "export link expired" }, { status: 410 });
+  }
+
   const household = Array.isArray(link.households) ? link.households[0] : link.households;
   if (!household) {
     return Response.json({ error: "household not found" }, { status: 404 });
@@ -93,8 +102,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
 
   const url = new URL(request.url);
   const format = url.searchParams.get("format") ?? link.format;
-  if (format !== "json" && format !== "csv") {
-    return Response.json({ error: "format must be json or csv" }, { status: 400 });
+  if (format !== link.format) {
+    return Response.json({ error: "format must match the export link" }, { status: 400 });
   }
 
   const date = new Date().toISOString().slice(0, 10);

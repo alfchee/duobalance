@@ -54,21 +54,35 @@ email must match) → 30-day grace (cancellable) → purge:
 2. `confirmed` — confirmation recorded, `scheduled_purge_at =
 confirmed_at + 30 days`. The user can still cancel; data is untouched.
 3. `purged` — the cron job (`POST /api/cron/purge-accounts`, bearer
-   secret, service role) anonymizes every membership of that user:
-   `display_name → 'Deleted member'`, `removed_at = now()`,
-   `removal_reason = 'left'`. Transactions keep pointing at the same
-   membership ids, so the household's books still balance. One row per
-   affected household is appended to `deletion_audit_log` containing
-   only ids, event type, and timestamps — never email, display name,
-   amounts, descriptions, or notes.
+   secret, service role) calls the atomic `purge_account_deletion()`
+   RPC, which anonymizes every membership of that user — including
+   already-removed rows, whose display name is still personal data —
+   appends one audit row per household, and marks the request purged in
+   a single transaction (a retry can never half-apply or duplicate audit
+   rows): `display_name → 'Deleted member'`; active rows are additionally
+   soft-removed (`removed_at`, `removal_reason = 'left'`).
+   Transactions keep pointing at the same membership ids, so the
+   household's books still balance. One row per affected household is
+   appended to `deletion_audit_log` containing only ids, event type, and
+   timestamps — never email, display name, amounts, descriptions, or
+   notes. The same cron run sweeps expired export links (no PII, no
+   audit row needed).
 
 Membership rows are **never hard-deleted** while transactions reference
 them; the `ON DELETE RESTRICT` FKs make a cascade fail loudly instead
-of silently orphaning the ledger. The `auth.users` row itself is deleted
-by the purge only when no ledger row blocks it; otherwise the anonymized
-membership survives as the attribution stub and the auth identity is
-removed through the Supabase admin API on a later pass. Either way no
-personal identifier remains in application tables.
+of silently orphaning the ledger. The purge therefore ends at
+anonymization: the `auth.users` identity itself is removed out-of-band
+(and only once no ledger row blocks it), never by the purge job — after
+`purged`, no personal identifier remains in application tables either
+way.
+
+The state machine is enforced twice: the `enforce_deletion_transition`
+trigger restricts rows to `pending → confirmed → purged` (either →
+`cancelled`) with anti-backdating bounds (`confirmed_at` ≈ now,
+`scheduled_purge_at` within 31 days), so direct PostgREST writes cannot
+skip the confirmation or shrink the grace period; RLS additionally bars
+clients from writing `status = 'purged'` at all — only the purge RPC
+(service role, RLS-bypassing owner) may.
 
 ## Household deletion
 
@@ -85,11 +99,17 @@ active-membership check on every request — a member of A asking for B
 gets 403). The time-limited path adds:
 
 - `POST /api/exports` creates a `data_export_links` row with a
-  256-bit token (`encode(gen_random_bytes(32), 'hex')`, unguessable),
-  `format` json/csv, `expires_at = now() + 24 hours`.
-- `GET /api/exports/[token]` re-checks auth + active membership for the
-  link's household, rejects expired links with 410, and streams the
-  same payload as `GET /api/export` (JSON bundle or transactions CSV).
+  256-bit token (`encode(gen_random_bytes(32), 'hex')`, unguessable,
+  hex-shape enforced by CHECK), `format` json/csv. The 24h TTL is
+  stamped server-side by trigger (`force_export_link_ttl`), so even
+  direct writes cannot mint long-lived links.
+- `GET /api/exports/[token]` resolves the token via the service role
+  (RLS would otherwise downgrade cross-household callers to a bare
+  404), then enforces membership (403) before expiry (410), and serves
+  the link's minted format only (a disagreeing `?format` gets 400).
+  The plan check is intentionally not repeated at redemption: the mint
+  already enforced `has_feature('export')`, and a 24h link survives a
+  mid-day plan change the way a downloaded file would.
 - Tokens are bearer secrets but never a substitute for membership: a
   valid token for household A presented by a non-member still gets 403.
 - Removed members keep the direct-export fallback (cutoff + account

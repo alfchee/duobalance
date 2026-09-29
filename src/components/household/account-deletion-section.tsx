@@ -47,7 +47,9 @@ export function AccountDeletionSection() {
     setActionError(null);
     try {
       const res = await fn();
-      setRequest(res.request);
+      // A cancelled request is terminal in this UI: map it back to the
+      // no-request state so the user can start over without reloading.
+      setRequest(res.request?.status === "cancelled" ? null : res.request);
       setConfirmOpen(false);
       setTypedEmail("");
     } catch (err) {

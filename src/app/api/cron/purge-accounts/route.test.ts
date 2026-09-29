@@ -48,6 +48,7 @@ describe("/api/cron/purge-accounts", () => {
     vi.mocked(runPurgeAccounts).mockResolvedValue({
       purgedCount: 1,
       users: [{ user_id: "user-1", households: ["hh-a"] }],
+      expiredLinksDeleted: 2,
     });
 
     const res = await GET(authed("http://localhost/api/cron/purge-accounts"));
@@ -56,17 +57,26 @@ describe("/api/cron/purge-accounts", () => {
     await expect(res.json()).resolves.toEqual({
       purgedCount: 1,
       users: [{ user_id: "user-1", households: ["hh-a"] }],
+      expiredLinksDeleted: 2,
     });
   });
 
   it("returns zero when nothing is due (POST)", async () => {
     vi.mocked(createSupabaseRouteHandler).mockResolvedValue({} as never);
-    vi.mocked(runPurgeAccounts).mockResolvedValue({ purgedCount: 0, users: [] });
+    vi.mocked(runPurgeAccounts).mockResolvedValue({
+      purgedCount: 0,
+      users: [],
+      expiredLinksDeleted: 0,
+    });
 
     const res = await POST(authed("http://localhost/api/cron/purge-accounts", { method: "POST" }));
 
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ purgedCount: 0, users: [] });
+    await expect(res.json()).resolves.toEqual({
+      purgedCount: 0,
+      users: [],
+      expiredLinksDeleted: 0,
+    });
   });
 
   it("returns 422 past the sanity cap", async () => {

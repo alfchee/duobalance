@@ -1,22 +1,23 @@
 import { describe, expect, it, vi } from "vitest";
 import { runPurgeAccounts, PurgeAccountsCapError } from "./purge-accounts";
-import { ANONYMIZED_MEMBER_NAME } from "@/lib/account-deletion";
 
 function makeClient(opts: {
-  due?: Array<{ id: string; user_id: string }>;
+  due?: Array<{ id: string }>;
   selectError?: Error | null;
-  members?: Record<string, Array<{ id: string; household_id: string }>>;
-  membersError?: Error | null;
-  updateError?: Error | null;
-  auditError?: Error | null;
-  markError?: Error | null;
+  rpc?: (id: string) => { data: unknown; error: { message: string } | null };
+  sweepError?: Error | null;
 }) {
-  const calls = {
-    updates: [] as unknown[],
-    audits: [] as unknown[],
-    marks: [] as unknown[],
-  };
-  const from = vi.fn((table: string) => {
+  const calls = { rpcIds: [] as string[], sweeps: 0 };
+  const rpc = vi.fn((fn: string, args: { p_request: string }) => {
+    if (fn !== "purge_account_deletion") throw new Error(`unexpected rpc ${fn}`);
+    calls.rpcIds.push(args.p_request);
+    const out = opts.rpc?.(args.p_request) ?? {
+      data: { user_id: `user-for-${args.p_request}`, households: ["hh-a"] },
+      error: null,
+    };
+    return Promise.resolve(out);
+  });
+  function query(table: string) {
     if (table === "account_deletion_requests") {
       return {
         select: vi.fn(() => ({
@@ -29,110 +30,88 @@ function makeClient(opts: {
             })),
           })),
         })),
-        update: vi.fn((values: unknown) => {
-          calls.marks.push(values);
-          return { eq: vi.fn().mockResolvedValue({ error: opts.markError ?? null }) };
-        }),
       };
     }
-    if (table === "household_members") {
+    if (table === "data_export_links") {
       return {
-        select: vi.fn(() => ({
-          eq: vi.fn((col: string, userId: string) => {
-            void col;
-            return Promise.resolve({
-              data: opts.members?.[userId] ?? [],
-              error: opts.membersError ?? null,
-            });
-          }),
+        delete: vi.fn(() => ({
+          lt: vi.fn().mockResolvedValue({ error: opts.sweepError ?? null, count: 3 }),
         })),
-        update: vi.fn((values: unknown) => {
-          calls.updates.push(values);
-          return {
-            eq: vi.fn(() => ({
-              is: vi.fn().mockResolvedValue({ error: opts.updateError ?? null }),
-            })),
-          };
-        }),
-      };
-    }
-    if (table === "deletion_audit_log") {
-      return {
-        insert: vi.fn((row: unknown) => {
-          calls.audits.push(row);
-          return Promise.resolve({ error: opts.auditError ?? null });
-        }),
       };
     }
     throw new Error(`unexpected table ${table}`);
+  }
+  // Count sweeps via the delete chain.
+  const wrappedFrom = vi.fn((table: string) => {
+    const q = query(table);
+    if (table === "data_export_links") calls.sweeps += 1;
+    return q;
   });
-  return { from, calls } as unknown as {
+  return { from: wrappedFrom, rpc, calls } as unknown as {
     from: ReturnType<typeof vi.fn>;
+    rpc: ReturnType<typeof vi.fn>;
     calls: typeof calls;
   };
 }
 
 describe("runPurgeAccounts", () => {
-  it("returns zero when nothing is past grace", async () => {
+  it("returns zero when nothing is past grace (still sweeps expired links)", async () => {
     const client = makeClient({ due: [] });
 
     await expect(runPurgeAccounts(client as never)).resolves.toEqual({
       purgedCount: 0,
       users: [],
+      expiredLinksDeleted: 3,
     });
+    expect(client.calls.rpcIds).toHaveLength(0);
+    expect(client.calls.sweeps).toBe(1);
   });
 
-  it("anonymizes memberships, audits per household, and marks purged", async () => {
-    const client = makeClient({
-      due: [{ id: "req-1", user_id: "user-1" }],
-      members: {
-        "user-1": [
-          { id: "m-1", household_id: "hh-a" },
-          { id: "m-2", household_id: "hh-b" },
-        ],
-      },
-    });
+  it("purges each due request through the atomic RPC", async () => {
+    const client = makeClient({ due: [{ id: "req-1" }, { id: "req-2" }] });
 
     const result = await runPurgeAccounts(client as never);
 
     expect(result).toEqual({
-      purgedCount: 1,
-      users: [{ user_id: "user-1", households: ["hh-a", "hh-b"] }],
+      purgedCount: 2,
+      users: [
+        { user_id: "user-for-req-1", households: ["hh-a"] },
+        { user_id: "user-for-req-2", households: ["hh-a"] },
+      ],
+      expiredLinksDeleted: 3,
     });
-    // Anonymize in place: display name stubbed, soft-removed as left.
-    expect(client.calls.updates).toEqual([
-      expect.objectContaining({
-        display_name: ANONYMIZED_MEMBER_NAME,
-        removal_reason: "left",
-      }),
-    ]);
-    // One audit row per household, ids only — no email, name, or amounts.
-    expect(client.calls.audits).toHaveLength(2);
-    for (const audit of client.calls.audits as Array<Record<string, unknown>>) {
-      expect(audit.event_type).toBe("account_deletion_purged");
-      expect(Object.keys(audit).sort()).toEqual(
-        ["event_type", "household_id", "target_member_id"].sort(),
-      );
-    }
-    expect(client.calls.marks).toEqual([expect.objectContaining({ status: "purged" })]);
+    expect(client.calls.rpcIds).toEqual(["req-1", "req-2"]);
   });
 
-  it("marks purged without touching members when the user has none", async () => {
+  it("surfaces an RPC failure without marking purged", async () => {
     const client = makeClient({
-      due: [{ id: "req-1", user_id: "ghost" }],
-      members: {},
+      due: [{ id: "req-1" }],
+      rpc: () => ({ data: null, error: { message: "grace period has not elapsed" } }),
     });
+
+    await expect(runPurgeAccounts(client as never)).rejects.toThrow(/purge failed/);
+  });
+
+  it("still returns the purge result when the link sweep fails", async () => {
+    const client = makeClient({
+      due: [{ id: "req-1" }],
+      sweepError: new Error("db hiccup"),
+    });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const result = await runPurgeAccounts(client as never);
 
     expect(result.purgedCount).toBe(1);
-    expect(client.calls.updates).toHaveLength(0);
-    expect(client.calls.audits).toHaveLength(0);
-    expect(client.calls.marks).toHaveLength(1);
+    expect(result.expiredLinksDeleted).toBe(0);
+    expect(spy).toHaveBeenCalledWith(
+      "purge-accounts: expired-link sweep failed",
+      expect.anything(),
+    );
+    spy.mockRestore();
   });
 
   it("refuses to run past the sanity cap", async () => {
-    const due = Array.from({ length: 51 }, (_, i) => ({ id: `req-${i}`, user_id: `u-${i}` }));
+    const due = Array.from({ length: 51 }, (_, i) => ({ id: `req-${i}` }));
     const client = makeClient({ due });
 
     await expect(runPurgeAccounts(client as never)).rejects.toBeInstanceOf(PurgeAccountsCapError);

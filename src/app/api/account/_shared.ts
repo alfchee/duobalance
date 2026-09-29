@@ -33,7 +33,9 @@ export async function tryAudit(userId: string, eventType: AuditEvent): Promise<v
   try {
     const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
     await auditAccountEvent(createSupabaseServiceRoleClient(), userId, eventType);
-  } catch {
-    // Ignored — audit must not break the deletion path.
+  } catch (err) {
+    // Ignored — audit must not break the deletion path — but logged so a
+    // persistently failing audit leaves a trace instead of silent gaps.
+    console.error("account-deletion: audit write failed", { userId, eventType, err });
   }
 }

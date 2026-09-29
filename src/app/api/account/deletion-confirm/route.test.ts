@@ -14,6 +14,17 @@ vi.mock("@/app/api/_shared", () => ({
 }));
 
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServiceRoleClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+      })),
+      insert: vi.fn().mockResolvedValue({ error: null }),
+    })),
+  })),
+}));
 import { POST } from "./route";
 
 const confirmed = {

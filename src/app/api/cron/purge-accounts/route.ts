@@ -53,7 +53,7 @@ async function handle(request: Request) {
       console.error("purge-accounts: lookup failed", err);
       return Response.json({ error: "lookup failed" }, { status: 502 });
     }
-    if (message.includes("anonymization failed") || message.includes("audit failed")) {
+    if (message.includes("purge failed")) {
       console.error("purge-accounts: purge step failed", err);
       return Response.json({ error: "purge failed" }, { status: 502 });
     }

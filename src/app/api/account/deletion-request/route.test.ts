@@ -14,6 +14,17 @@ vi.mock("@/app/api/_shared", () => ({
 }));
 
 import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServiceRoleClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+      })),
+      insert: vi.fn().mockResolvedValue({ error: null }),
+    })),
+  })),
+}));
 import { POST } from "./route";
 
 const created = {
@@ -24,10 +35,6 @@ const created = {
   scheduled_purge_at: null,
   purged_at: null,
 };
-
-function request() {
-  return new Request("http://localhost/api/account/deletion-request", { method: "POST" });
-}
 
 function makeClient(opts: {
   open?: { id: string; status: string } | null;
@@ -66,7 +73,7 @@ describe("POST /api/account/deletion-request", () => {
     vi.mocked(createRouteContext).mockResolvedValue({} as never);
     vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
 
-    expect((await POST(request())).status).toBe(401);
+    expect((await POST()).status).toBe(401);
   });
 
   it("returns 409 when a request is already open", async () => {
@@ -74,7 +81,7 @@ describe("POST /api/account/deletion-request", () => {
     vi.mocked(createRouteContext).mockResolvedValue(client as never);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
-    const res = await POST(request());
+    const res = await POST();
 
     expect(res.status).toBe(409);
   });
@@ -84,7 +91,7 @@ describe("POST /api/account/deletion-request", () => {
     vi.mocked(createRouteContext).mockResolvedValue(client as never);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
-    const res = await POST(request());
+    const res = await POST();
 
     expect(res.status).toBe(201);
     await expect(res.json()).resolves.toEqual({ request: created });
@@ -98,7 +105,7 @@ describe("POST /api/account/deletion-request", () => {
     vi.mocked(createRouteContext).mockResolvedValue(client as never);
     vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
-    const res = await POST(request());
+    const res = await POST();
 
     expect(res.status).toBe(409);
   });
