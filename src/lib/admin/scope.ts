@@ -1,4 +1,4 @@
-// Admin response allowlist (issues #271–#272). Client-safe — no secrets here.
+// Admin response allowlist (issues #271–#273). Client-safe — no secrets here.
 //
 // The admin API returns billing state, subscription status and aggregate
 // COUNTS only. These key lists are the single definition of that boundary:
@@ -12,6 +12,10 @@
 // timestamps are on the detail timeline instead). Member email is
 // searchable (p_search matches auth.users email) but NEVER returned:
 // "email" stays in ADMIN_FORBIDDEN_KEYS.
+//
+// #273 note: override responses reuse these same allowlists — POST
+// /api/admin/households re-reads the detail through the readers above and
+// projects through these keys, so no new key was needed here.
 
 export const ADMIN_HOUSEHOLD_KEYS = [
   "household_id",

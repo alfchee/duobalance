@@ -13,7 +13,7 @@ vi.mock("../_shared", async (importOriginal) => ({
 }));
 
 import { auditAdminAction, requireAdmin } from "../_shared";
-import { GET } from "./route";
+import { GET, POST } from "./route";
 
 const mockRequireAdmin = vi.mocked(requireAdmin);
 const mockAudit = vi.mocked(auditAdminAction);
@@ -236,5 +236,174 @@ describe("GET /api/admin/households?id= — detail (#271)", () => {
 
     wireHasForbidden(body);
     expect(mockAudit).toHaveBeenCalledWith(db, "households.view", HH_ID);
+  });
+});
+
+const overridePreset = () => ({
+  ...detailPreset(),
+  admin_override_subscription: [
+    {
+      subscription_id: SUB_ID,
+      plan_code: "comped",
+      status: "active",
+      trial_ends_at: null,
+      current_period_end: null,
+      grace_ends_at: null,
+      updated_at: "2026-02-20T08:00:00Z",
+      was_idempotent: false,
+    },
+  ],
+});
+
+function postReq(body: unknown) {
+  return new Request("http://localhost/api/admin/households", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+describe("POST /api/admin/households — plan overrides (#273)", () => {
+  it("returns neutral 404 for non-admins", async () => {
+    mockRequireAdmin.mockResolvedValue(null);
+    const res = await POST(
+      postReq({ household_id: HH_ID, action: "grant_comped", reason: "ticket 1" }),
+    );
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not found" });
+  });
+
+  it("rejects bodies without a recorded reason", async () => {
+    const db = fakeDb(overridePreset());
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    for (const body of [
+      { household_id: HH_ID, action: "grant_comped" },
+      { household_id: HH_ID, action: "grant_comped", reason: "x" },
+      { household_id: HH_ID, action: "mint_money", reason: "ticket 2" },
+      { household_id: "not-a-uuid", action: "revoke", reason: "ticket 3", confirm: true },
+    ]) {
+      const res = await POST(postReq(body));
+      expect(res.status).toBe(400);
+    }
+  });
+
+  it("maps reason/confirm failures to 400 and one-live violations to 409", async () => {
+    const calls: Array<{ fn: string; args: unknown }> = [];
+    const db = {
+      calls,
+      rpc: async (fn: string, args?: unknown) => {
+        calls.push({ fn, args });
+        if (fn === "admin_override_subscription") {
+          return {
+            data: null,
+            error: { message: "household already holds a live subscription (active)" },
+          };
+        }
+        return { data: [], error: null };
+      },
+    };
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const conflict = await POST(
+      postReq({ household_id: HH_ID, action: "grant_comped", reason: "ticket 4" }),
+    );
+    expect(conflict.status).toBe(409);
+
+    const db2 = {
+      rpc: async (fn: string) => {
+        if (fn === "admin_override_subscription") {
+          return {
+            data: null,
+            error: { message: "revoking entitlement requires explicit confirmation" },
+          };
+        }
+        return { data: [], error: null };
+      },
+    };
+    mockRequireAdmin.mockResolvedValue({ db: db2 as never, userId: "u-admin" } as never);
+    const bad = await POST(postReq({ household_id: HH_ID, action: "revoke", reason: "ticket 5" }));
+    expect(bad.status).toBe(400);
+    expect(await bad.json()).toMatchObject({
+      error: "revoking entitlement requires explicit confirmation",
+    });
+  });
+
+  it("applies the override and returns the resulting allowlisted state", async () => {
+    const calls: Array<{ fn: string; args: unknown }> = [];
+    const db = fakeDb(overridePreset(), calls);
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const res = await POST(
+      postReq({
+        household_id: HH_ID,
+        action: "grant_comped",
+        reason: "founder comp, ticket 6",
+        idempotency_key: "key-6",
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Cache-Control")).toContain("no-store");
+
+    const overrideCall = calls.find((c) => c.fn === "admin_override_subscription");
+    expect(overrideCall!.args).toMatchObject({
+      p_household: HH_ID,
+      p_action: "grant_comped",
+      p_reason: "founder comp, ticket 6",
+      p_confirm: false,
+      p_idempotency_key: "key-6",
+    });
+
+    const body = (await res.json()) as {
+      household: Record<string, unknown>;
+      subscriptions: Array<Record<string, unknown>>;
+      billingEvents: Array<Record<string, unknown>>;
+      idempotent: boolean;
+    };
+    expect(Object.keys(body.household).sort()).toEqual([...ADMIN_HOUSEHOLD_KEYS].sort());
+    expect(Object.keys(body.subscriptions[0]!).sort()).toEqual([...ADMIN_SUBSCRIPTION_KEYS].sort());
+    expect(Object.keys(body.billingEvents[0]!).sort()).toEqual(
+      [...ADMIN_BILLING_EVENT_KEYS].sort(),
+    );
+    expect(body.idempotent).toBe(false);
+    wireHasForbidden(body);
+  });
+
+  it("forwards extend_to as an ISO timestamp with confirm for revokes", async () => {
+    const calls: Array<{ fn: string; args: unknown }> = [];
+    const db = {
+      calls,
+      rpc: async (fn: string, args?: unknown) => {
+        calls.push({ fn, args });
+        if (fn === "admin_override_subscription") {
+          return { data: [], error: null };
+        }
+        const preset = overridePreset() as Record<string, Array<Record<string, unknown>>>;
+        return { data: preset[fn] ?? [], error: null };
+      },
+    };
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const res = await POST(
+      postReq({
+        household_id: HH_ID,
+        action: "extend_trial",
+        extend_to: "2026-04-01T00:00:00.000Z",
+        reason: "trial extension, ticket 7",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const overrideCall = calls.find((c) => c.fn === "admin_override_subscription");
+    expect(overrideCall!.args).toMatchObject({
+      p_action: "extend_trial",
+      p_extend_to: "2026-04-01T00:00:00.000Z",
+    });
+    const body = (await res.json()) as { idempotent: boolean };
+    // Revoke no-op shape (zero override rows) reads as idempotent.
+    expect(body.idempotent).toBe(true);
+  });
+
+  it("is unavailable in the Tauri bundle", async () => {
+    process.env.BUILD_TARGET = "tauri";
+    const res = await POST(
+      postReq({ household_id: HH_ID, action: "grant_comped", reason: "ticket 8" }),
+    );
+    expect(res.status).toBe(404);
   });
 });
