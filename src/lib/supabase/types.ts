@@ -156,6 +156,63 @@ export type Database = {
           },
         ]
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor: string
+          after_state: Json | null
+          before_state: Json | null
+          created_at: string
+          id: string
+          reason: string | null
+          target_household: string | null
+        }
+        Insert: {
+          action: string
+          actor: string
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_household?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_household?: string | null
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          note: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          note?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          note?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bill_instance_deletions: {
         Row: {
           bill_id: string
@@ -1923,6 +1980,81 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      admin_get_billing_events: {
+        Args: { p_household: string }
+        Returns: {
+          id: string
+          processed_at: string
+          provider: string
+          provider_event_id: string
+          received_at: string
+          subscription_id: string
+          type: string
+        }[]
+      }
+      admin_get_household: {
+        Args: { p_household: string }
+        Returns: {
+          account_count: number
+          country: string
+          created_at: string
+          current_period_end: string
+          grace_ends_at: string
+          household_id: string
+          household_name: string
+          is_comped: boolean
+          member_count: number
+          plan_code: string
+          subscription_status: string
+          transaction_count: number
+        }[]
+      }
+      admin_get_subscription_history: {
+        Args: { p_household: string }
+        Returns: {
+          created_at: string
+          current_period_end: string
+          grace_ends_at: string
+          id: string
+          plan_code: string
+          provider: string
+          status: string
+          trial_ends_at: string
+          updated_at: string
+        }[]
+      }
+      admin_list_households: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_status?: string
+        }
+        Returns: {
+          account_count: number
+          country: string
+          created_at: string
+          current_period_end: string
+          grace_ends_at: string
+          household_id: string
+          household_name: string
+          is_comped: boolean
+          member_count: number
+          plan_code: string
+          subscription_status: string
+          transaction_count: number
+        }[]
+      }
+      admin_log_action: {
+        Args: {
+          p_action: string
+          p_after?: Json
+          p_before?: Json
+          p_reason?: string
+          p_target_household?: string
+        }
+        Returns: string
+      }
       assert_same_household: {
         Args: {
           p_actual_household_id: string
@@ -2056,6 +2188,7 @@ export type Database = {
         Returns: number
       }
       household_plan: { Args: { p_household: string }; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
       is_member: { Args: { household: string }; Returns: boolean }
       is_owner: { Args: { household: string }; Returns: boolean }
       leave_household: { Args: { p_household: string }; Returns: undefined }
