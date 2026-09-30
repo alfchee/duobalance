@@ -1,17 +1,24 @@
-// Admin response allowlist (issue #271). Client-safe — no secrets here.
+// Admin response allowlist (issues #271–#272). Client-safe — no secrets here.
 //
 // The admin API returns billing state, subscription status and aggregate
 // COUNTS only. These key lists are the single definition of that boundary:
 // route handlers project every row through them, and boundary.test.ts
 // asserts no route file references a forbidden column. If you need a new
 // field, add it here AND to the matching DEFINER function in
-// supabase/migrations/20260929000000_admin_access_model.sql — never inline.
+// supabase/migrations/20260930000002_admin_household_views_272.sql — never inline.
+//
+// #272 additions: last_activity (latest user-driven timestamp: household
+// creation vs newest transaction/account/membership row — billing
+// timestamps are on the detail timeline instead). Member email is
+// searchable (p_search matches auth.users email) but NEVER returned:
+// "email" stays in ADMIN_FORBIDDEN_KEYS.
 
 export const ADMIN_HOUSEHOLD_KEYS = [
   "household_id",
   "household_name",
   "country",
   "created_at",
+  "last_activity",
   "plan_code",
   "subscription_status",
   "current_period_end",

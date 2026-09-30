@@ -22,9 +22,16 @@ const HH_ID = "11111111-1111-1111-1111-111111111111";
 const SUB_ID = "33333333-3333-3333-3333-333333333333";
 
 /** Caller-scoped RPC emulator: resolves per-function canned rows. */
-function fakeDb(preset: Record<string, Array<Record<string, unknown>>>) {
+function fakeDb(
+  preset: Record<string, Array<Record<string, unknown>>>,
+  calls: Array<{ fn: string; args: unknown }> = [],
+) {
   return {
-    rpc: async (fn: string) => ({ data: preset[fn] ?? [], error: null }),
+    calls,
+    rpc: async (fn: string, args?: unknown) => {
+      calls.push({ fn, args });
+      return { data: preset[fn] ?? [], error: null };
+    },
   };
 }
 
@@ -35,6 +42,7 @@ const listPreset = () => ({
       household_name: "House A",
       country: "CL",
       created_at: "2026-01-01T00:00:00Z",
+      last_activity: "2026-02-15T12:00:00Z",
       plan_code: "comped",
       subscription_status: "active",
       current_period_end: null,
@@ -44,8 +52,21 @@ const listPreset = () => ({
       account_count: 2,
       transaction_count: 3,
       // A future widened function output must still not leak: the route
-      // projects through the allowlist (defense in depth).
+      // projects through the allowlist (defense in depth). Smuggle the
+      // full forbidden vocabulary here so the wire assertion below pins
+      // AC1 (#272: no view or API response returns descriptions, amounts,
+      // categories or account names).
       description: "Secret groceries",
+      amount: -2500,
+      merchant: "Secret store",
+      notes: "Secret note",
+      category: "Groceries",
+      category_id: "99999999-9999-9999-9999-999999999999",
+      account_id: "88888888-8888-8888-8888-888888888888",
+      account_name: "Shared checking",
+      opening_balance: 1000,
+      payload: { secret: true },
+      email: "owner@test.local",
     },
   ],
 });
@@ -57,6 +78,7 @@ const detailPreset = () => ({
       household_name: "House B",
       country: "NI",
       created_at: "2026-02-01T00:00:00Z",
+      last_activity: "2026-02-20T08:00:00Z",
       plan_code: "plus",
       subscription_status: "active",
       current_period_end: "2026-03-01T00:00:00Z",
@@ -89,6 +111,8 @@ const detailPreset = () => ({
       type: "subscription.activated",
       received_at: "2026-02-01T00:00:00Z",
       processed_at: "2026-02-01T00:00:01Z",
+      // Smuggled provider payload must never reach the wire (#272 AC1).
+      payload: { amount: 999, description: "Secret" },
     },
   ],
 });
@@ -134,10 +158,31 @@ describe("GET /api/admin/households — list (#271)", () => {
       member_count: 1,
       account_count: 2,
       transaction_count: 3,
+      last_activity: "2026-02-15T12:00:00Z",
     });
-    // The smuggled description never reaches the wire body.
+    // The smuggled forbidden vocabulary never reaches the wire body (#272 AC1).
     wireHasForbidden(body);
     expect(mockAudit).toHaveBeenCalledWith(db, "households.list", null);
+  });
+
+  it("forwards search, status, and pagination to the reader (#272)", async () => {
+    const calls: Array<{ fn: string; args: unknown }> = [];
+    const db = fakeDb(listPreset(), calls);
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const res = await GET(
+      new Request(
+        "http://localhost/api/admin/households?search=owner%40test.local&status=comped&limit=50&offset=50",
+      ),
+    );
+    expect(res.status).toBe(200);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.fn).toBe("admin_list_households");
+    expect(calls[0]!.args).toMatchObject({
+      p_search: "owner@test.local",
+      p_status: "comped",
+      p_limit: 50,
+      p_offset: 50,
+    });
   });
 
   it("is unavailable in the Tauri bundle", async () => {
@@ -180,6 +225,7 @@ describe("GET /api/admin/households?id= — detail (#271)", () => {
       member_count: 2,
       account_count: 1,
       transaction_count: 5,
+      last_activity: "2026-02-20T08:00:00Z",
     });
     expect(body.subscriptions).toHaveLength(1);
     expect(Object.keys(body.subscriptions[0]!).sort()).toEqual([...ADMIN_SUBSCRIPTION_KEYS].sort());
