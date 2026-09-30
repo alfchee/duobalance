@@ -1,11 +1,20 @@
-// GET /api/admin/households — household list + household detail (#271).
+// GET /api/admin/households — household list + household detail (#271, #272).
 //
 // List: ?search=&status=&limit=&offset=. Detail: ?id=<uuid> returns
 // { household, subscriptions, billingEvents } — the count summary plus the
-// FULL subscription history (every state transition with timestamps, the
-// "why did access change" answer) and billing-event metadata (type +
-// timestamps, never the payload). Comped households are flagged via
-// is_comped so support cannot mistake them for paying ones.
+// FULL subscription history (every subscription row incl. expired, each
+// with its timestamps — the "why did access change" answer) and
+// billing-event metadata (type + timestamps + subscription link, never the
+// payload). Comped households are flagged via is_comped so support cannot
+// mistake them for paying ones.
+//
+// #272 additions: last_activity on every household row (latest
+// user-driven timestamp — the list and detail headers agree on it),
+// member-email search (p_search matches auth.users email server-side but
+// the address is never returned — "email" stays forbidden), and extended
+// status filters: comped (live comped row), none (no live subscription),
+// expired (no live row but an expired subscription exists), plus the plain
+// lifecycle statuses against the live row. Unknown statuses match nothing.
 //
 // Detail lives on this route as ?id= rather than a [id] segment on purpose:
 // under `output: "export"` (Tauri) a GET collection route and a GET member

@@ -2003,6 +2003,7 @@ export type Database = {
           household_id: string
           household_name: string
           is_comped: boolean
+          last_activity: string
           member_count: number
           plan_code: string
           subscription_status: string
@@ -2039,6 +2040,7 @@ export type Database = {
           household_id: string
           household_name: string
           is_comped: boolean
+          last_activity: string
           member_count: number
           plan_code: string
           subscription_status: string
