@@ -351,6 +351,35 @@ describe("POST /api/admin/households — plan overrides (#273)", () => {
     expect(shorten.status).toBe(400);
   });
 
+  it("classifies by SQLSTATE code: FK violations stay neutral, unknowns stay 500", async () => {
+    const coded = (code: string, message: string) => ({
+      rpc: async (fn: string) => {
+        if (fn === "admin_override_subscription") {
+          return { data: null, error: { code, message } };
+        }
+        return { data: [], error: null };
+      },
+    });
+    const attempt = (db: unknown) => {
+      mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+      return POST(postReq({ household_id: HH_ID, action: "grant_comped", reason: "ticket 5c" }));
+    };
+
+    // Well-formed but nonexistent household (subscriptions FK): neutral 404,
+    // not a 500 that would oracle existence (existing-empty → 200,
+    // existing-live → 409, nonexistent → 404 would leak the same fact if 500).
+    const fk = await attempt(coded("23503", 'violates foreign key constraint "x"'));
+    expect(fk.status).toBe(404);
+    expect(await fk.json()).toEqual({ error: "not found" });
+
+    // Code wins over message text: an unrecognized 23514/23505 message still
+    // maps to 400/409 rather than falling through to 500.
+    const validation = await attempt(coded("23514", "something entirely new"));
+    expect(validation.status).toBe(400);
+    const conflict = await attempt(coded("23505", "something entirely new"));
+    expect(conflict.status).toBe(409);
+  });
+
   it("applies the override and returns the resulting allowlisted state", async () => {
     const calls: Array<{ fn: string; args: unknown }> = [];
     const db = fakeDb(overridePreset(), calls);

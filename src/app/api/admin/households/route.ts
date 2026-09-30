@@ -180,7 +180,18 @@ type OverrideRow = {
 };
 
 function overrideErrorStatus(message: string, code?: string): number {
-  if (code === "42501") return 404; // is_admin() race: stay neutral, like requireAdmin
+  // Primary classification is the SQLSTATE code — the function's errcodes
+  // are deliberate (23514 validation, 23505 conflict, 42501 denied).
+  // 23503 is the subscriptions.household_id FK: a well-formed but unknown
+  // household id. It maps to the neutral 404 so an operator typo is not a
+  // 500 and the status code is not an existence oracle (existing-empty →
+  // 200, existing-live → 409, nonexistent → 404 would leak the same fact).
+  if (code === "42501" || code === "23503") return 404;
+  if (code === "23505") return 409;
+  if (code === "23514") return 400;
+  if (code !== undefined) return 500;
+  // Fallback for error shapes without a code (kept for the mocked-client
+  // tests; PostgREST errors always carry one).
   if (
     message.includes("reason is required") ||
     message.includes("confirmation") ||

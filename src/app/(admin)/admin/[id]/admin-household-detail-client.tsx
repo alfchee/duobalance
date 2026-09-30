@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { notFound } from "next/navigation";
 import { ApiError, apiFetch } from "@/lib/api-fetch";
 import { useBillingEnabled } from "@/hooks/useBillingEnabled";
@@ -401,21 +401,31 @@ function AdminOverridePanel({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const keyRef = useRef<string>("");
-
-  if (!keyRef.current) keyRef.current = newIdempotencyKey();
+  // Lazy initializer: the key is minted once per mount, rotated on success.
+  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
 
   const meta = OVERRIDE_ACTION_META[action];
   const reasonOk = reason.trim().length >= 3;
-  const canSubmit =
-    !pending &&
-    reasonOk &&
-    (!meta.needsConfirm || confirm) &&
-    (!meta.needsExtend || extendTo !== "");
+  const extendOk = !meta.needsExtend || extendTo !== "";
+  const planOk = !meta.needsPlan || planCode.trim() !== "";
+  const canSubmit = !pending && reasonOk && extendOk && planOk && (!meta.needsConfirm || confirm);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!canSubmit) return;
+    // datetime-local yields "" or a parseable value through the picker, but
+    // a devtools-edited string can be malformed — validate before the
+    // toISOString() call throws, so the message is actionable instead of
+    // the generic catch-all below.
+    let extendIso: string | undefined;
+    if (meta.needsExtend) {
+      const at = new Date(extendTo);
+      if (Number.isNaN(at.getTime())) {
+        setError("Enter a valid date and time for the new window end.");
+        return;
+      }
+      extendIso = at.toISOString();
+    }
     setPending(true);
     setError(null);
     setNotice(null);
@@ -426,10 +436,10 @@ function AdminOverridePanel({
           household_id: householdId,
           action,
           ...(meta.needsPlan ? { plan_code: planCode.trim() } : {}),
-          ...(meta.needsExtend ? { extend_to: new Date(extendTo).toISOString() } : {}),
+          ...(extendIso !== undefined ? { extend_to: extendIso } : {}),
           reason: reason.trim(),
           ...(meta.needsConfirm ? { confirm } : {}),
-          idempotency_key: keyRef.current,
+          idempotency_key: idempotencyKey,
         },
       });
       onApplied(res);
@@ -438,7 +448,7 @@ function AdminOverridePanel({
           ? "Already applied — no change was made."
           : "Applied. The resulting state is shown above.",
       );
-      keyRef.current = newIdempotencyKey();
+      setIdempotencyKey(newIdempotencyKey());
       setConfirm(false);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -471,6 +481,7 @@ function AdminOverridePanel({
             onChange={(e) => {
               setAction(e.target.value as OverrideAction);
               setConfirm(false);
+              setError(null);
               setNotice(null);
             }}
             className="rounded-md border border-input bg-background px-3 py-2 text-sm"
