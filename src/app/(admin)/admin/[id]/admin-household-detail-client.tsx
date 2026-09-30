@@ -121,6 +121,20 @@ export function AdminHouseholdDetailClient({ id }: { id: string }) {
     return entries;
   }, [data]);
 
+  const eventsBySubscription = useMemo(() => {
+    const map = new Map<string, BillingEventRow[]>();
+    if (!data) return map;
+    for (const e of data.billingEvents) {
+      const list = map.get(e.subscription_id) ?? [];
+      list.push(e);
+      map.set(e.subscription_id, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => +new Date(a.received_at) - +new Date(b.received_at));
+    }
+    return map;
+  }, [data]);
+
   // Neutral denial, same as every other admin URL: notFound() preserves
   // the URL (unlike a redirect to a /not-found route, which does not exist)
   // and reveals nothing about whether the household exists.
@@ -136,12 +150,6 @@ export function AdminHouseholdDetailClient({ id }: { id: string }) {
   }
 
   const comped = data.household.is_comped === true;
-  const eventsBySubscription = new Map<string, BillingEventRow[]>();
-  for (const e of data.billingEvents) {
-    const list = eventsBySubscription.get(e.subscription_id) ?? [];
-    list.push(e);
-    eventsBySubscription.set(e.subscription_id, list);
-  }
 
   return (
     <Card className={cn("w-full", comped && "border-amber-500/60")}>
@@ -175,9 +183,8 @@ export function AdminHouseholdDetailClient({ id }: { id: string }) {
           ) : (
             <ul className="flex flex-col gap-3">
               {data.subscriptions.map((s) => {
-                const triggers = (eventsBySubscription.get(s.id) ?? []).sort(
-                  (a, b) => +new Date(a.received_at) - +new Date(b.received_at),
-                );
+                // Pre-sorted in the eventsBySubscription memo above.
+                const triggers = eventsBySubscription.get(s.id) ?? [];
                 return (
                   <li key={s.id} className="rounded-lg border p-3 text-sm">
                     <div className="flex flex-wrap items-center gap-2">

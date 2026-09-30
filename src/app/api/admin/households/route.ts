@@ -14,7 +14,10 @@
 // the address is never returned — "email" stays forbidden), and extended
 // status filters: comped (live comped row), none (no live subscription),
 // expired (no live row but an expired subscription exists), plus the plain
-// lifecycle statuses against the live row. Unknown statuses match nothing.
+// lifecycle statuses against the live row. `cancelled` is the live-row
+// sense (currently cancelled with remaining entitlement — a household
+// whose cancellation period already elapsed has no live row and reads as
+// `none`, same as an expired one). Unknown statuses match nothing.
 //
 // Detail lives on this route as ?id= rather than a [id] segment on purpose:
 // under `output: "export"` (Tauri) a GET collection route and a GET member

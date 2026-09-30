@@ -76,7 +76,7 @@ begin
 end
 $$;
 
-select plan(19);
+select plan(21);
 
 select tests.authenticate_as('e1000000-0000-0000-0000-000000000020');
 
@@ -102,6 +102,17 @@ select results_eq(
   $$ select household_id::text from public.admin_list_households(p_search := 'House B38') $$,
   $$ values ('e1000000-0000-0000-0000-000000000002'::text) $$,
   'name search still finds the household'
+);
+
+-- 4b-4c. LIKE metacharacters match literally (migration 20260930000003):
+-- `_` must not stand in for `.`, and a bare `%` must not return the table.
+select is_empty(
+  $$ select * from public.admin_list_households(p_search := 'alice38@test_local') $$,
+  'underscore in search matches a literal underscore only (no over-match)'
+);
+select is_empty(
+  $$ select * from public.admin_list_households(p_search := '%') $$,
+  'percent in search matches a literal percent only (no full-table return)'
 );
 
 -- 5. The email address itself is never returned: no email OUT column

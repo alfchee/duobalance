@@ -68,7 +68,9 @@ export default function AdminPage() {
 function AdminHouseholdList() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [rows, setRows] = useState<AdminHousehold[]>([]);
+  // null = not yet loaded (renders the loading state); [] = loaded, no matches.
+  const [rows, setRows] = useState<AdminHousehold[] | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -86,16 +88,21 @@ function AdminHouseholdList() {
 
   useEffect(() => {
     let cancelled = false;
+    setRows(null);
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (status) params.set("status", status);
-    params.set("limit", String(PAGE_SIZE));
+    // Fetch one extra row to know whether a next page exists: comparing
+    // rows.length to PAGE_SIZE dead-ends on exact multiples (Next lands on
+    // an empty page). The extra row is sliced off before render.
+    params.set("limit", String(PAGE_SIZE + 1));
     params.set("offset", String(offset));
     const suffix = `?${params.toString()}`;
     apiFetch<{ households: AdminHousehold[] }>(`/api/admin/households${suffix}`)
       .then((data) => {
         if (!cancelled) {
-          setRows(data.households);
+          setHasMore(data.households.length > PAGE_SIZE);
+          setRows(data.households.slice(0, PAGE_SIZE));
           setError(null);
         }
       })
@@ -106,8 +113,6 @@ function AdminHouseholdList() {
       cancelled = true;
     };
   }, [debouncedSearch, status, offset, retryKey]);
-
-  const hasMore = rows.length === PAGE_SIZE;
 
   return (
     <Card className="w-full">
@@ -155,6 +160,10 @@ function AdminHouseholdList() {
             <button type="button" className="underline" onClick={() => setRetryKey((k) => k + 1)}>
               Retry
             </button>
+          </p>
+        ) : rows === null ? (
+          <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+            Loading households…
           </p>
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No households match.</p>
