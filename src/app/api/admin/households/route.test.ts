@@ -325,6 +325,30 @@ describe("POST /api/admin/households — plan overrides (#273)", () => {
     expect(await bad.json()).toMatchObject({
       error: "revoking entitlement requires explicit confirmation",
     });
+
+    const db3 = {
+      rpc: async (fn: string) => {
+        if (fn === "admin_override_subscription") {
+          return {
+            data: null,
+            error: {
+              message: "extend_trial needs a p_extend_to on or after the current trial end",
+            },
+          };
+        }
+        return { data: [], error: null };
+      },
+    };
+    mockRequireAdmin.mockResolvedValue({ db: db3 as never, userId: "u-admin" } as never);
+    const shorten = await POST(
+      postReq({
+        household_id: HH_ID,
+        action: "extend_trial",
+        extend_to: "2026-03-01T00:00:00.000Z",
+        reason: "ticket 5b",
+      }),
+    );
+    expect(shorten.status).toBe(400);
   });
 
   it("applies the override and returns the resulting allowlisted state", async () => {
