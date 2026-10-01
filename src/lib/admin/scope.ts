@@ -1,4 +1,4 @@
-// Admin response allowlist (issues #271–#273). Client-safe — no secrets here.
+// Admin response allowlist (issues #271–#274). Client-safe — no secrets here.
 //
 // The admin API returns billing state, subscription status and aggregate
 // COUNTS only. These key lists are the single definition of that boundary:
@@ -16,6 +16,29 @@
 // #273 note: override responses reuse these same allowlists — POST
 // /api/admin/households re-reads the detail through the readers above and
 // projects through these keys, so no new key was needed here.
+//
+// #274 additions: coupon + redemption allowlists. Redemption rows carry
+// household IDENTIFIERS only (coupon_code, household_id, redeemed_at) —
+// emails and names stay forbidden, so support sees who redeemed without
+// seeing who they are.
+export const ADMIN_COUPON_KEYS = [
+  "code",
+  "discount_type",
+  "discount_value",
+  "currency",
+  "valid_from",
+  "valid_until",
+  "max_redemptions",
+  "per_household_limit",
+  "duration",
+  "active",
+  "created_at",
+  "updated_at",
+  "redemption_count",
+  "remaining_capacity",
+] as const;
+
+export const ADMIN_COUPON_REDEMPTION_KEYS = ["coupon_code", "household_id", "redeemed_at"] as const;
 
 export const ADMIN_HOUSEHOLD_KEYS = [
   "household_id",

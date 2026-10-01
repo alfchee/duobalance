@@ -694,6 +694,95 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_redemptions: {
+        Row: {
+          coupon_code: string
+          household_id: string
+          id: string
+          redeemed_at: string
+        }
+        Insert: {
+          coupon_code: string
+          household_id: string
+          id?: string
+          redeemed_at?: string
+        }
+        Update: {
+          coupon_code?: string
+          household_id?: string
+          id?: string
+          redeemed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_code_fkey"
+            columns: ["coupon_code"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string | null
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          currency?: string | null
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          updated_at?: string
+          valid_from: string
+          valid_until: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          currency?: string | null
+          discount_type?: string
+          discount_value?: number
+          duration?: string
+          max_redemptions?: number
+          per_household_limit?: number
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupons_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       currencies: {
         Row: {
           code: string
@@ -1983,6 +2072,34 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      admin_create_coupon: {
+        Args: {
+          p_code: string
+          p_currency: string
+          p_discount_type: string
+          p_discount_value: number
+          p_duration: string
+          p_max_redemptions: number
+          p_per_household_limit: number
+          p_reason: string
+          p_valid_from: string
+          p_valid_until: string
+        }
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }[]
+      }
       admin_get_billing_events: {
         Args: { p_household: string }
         Returns: {
@@ -1993,6 +2110,14 @@ export type Database = {
           received_at: string
           subscription_id: string
           type: string
+        }[]
+      }
+      admin_get_coupon_redemptions: {
+        Args: { p_code: string }
+        Returns: {
+          coupon_code: string
+          household_id: string
+          redeemed_at: string
         }[]
       }
       admin_get_household: {
@@ -2025,6 +2150,24 @@ export type Database = {
           status: string
           trial_ends_at: string
           updated_at: string
+        }[]
+      }
+      admin_list_coupons: {
+        Args: never
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          redemption_count: number
+          remaining_capacity: number
+          valid_from: string
+          valid_until: string
         }[]
       }
       admin_list_households: {
@@ -2078,6 +2221,24 @@ export type Database = {
           subscription_id: string
           trial_ends_at: string
           updated_at: string
+          was_idempotent: boolean
+        }[]
+      }
+      admin_set_coupon_active: {
+        Args: { p_active: boolean; p_code: string; p_reason: string }
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
           was_idempotent: boolean
         }[]
       }
@@ -2236,6 +2397,15 @@ export type Database = {
       record_fx_refresh_success: {
         Args: { refresh_date: string; updated_currencies: number }
         Returns: boolean
+      }
+      redeem_coupon: {
+        Args: { p_code: string; p_household: string }
+        Returns: {
+          coupon_code: string
+          household_id: string
+          redeemed_at: string
+          redemption_id: string
+        }[]
       }
       remove_member: {
         Args: {
