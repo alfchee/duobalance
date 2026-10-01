@@ -41,6 +41,8 @@ not a cache:
 3. The dashboard route reads the snapshot; staleness is explicit in the
    UI (`captured_at`).
 
-Do not add polling, ISR caching (`revalidate`), or client-side timers
+Do not add polling, longer ISR windows, or client-side timers
 before that — all three either break the neutral denial or cost more
-than the queries they avoid.
+than the queries they avoid. (The shared `export const revalidate = 1`
+one-liner on every admin route stays: responses still carry
+`private, no-store`, so nothing is cached beyond the segment default.)

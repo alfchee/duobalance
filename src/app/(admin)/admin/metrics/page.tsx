@@ -121,10 +121,10 @@ function AdminMetrics() {
 
   const load = useCallback(async () => {
     setRefreshing(true);
+    setError(null);
     try {
       const res = await apiFetch<MetricsResponse>("/api/admin/metrics");
       setData(res);
-      setError(null);
     } catch (err) {
       setError(serverMessage(err));
     } finally {
@@ -133,7 +133,6 @@ function AdminMetrics() {
   }, []);
 
   useEffect(() => {
-    setData(null);
     void load();
   }, [load, retryKey]);
 
@@ -221,7 +220,7 @@ function SubscriptionsCard({
               <tr className="text-left text-muted-foreground">
                 <th className="py-1 pr-4 font-semibold">Plan</th>
                 <th className="py-1 pr-4 font-semibold">Status</th>
-                <th className="py-1 text-right font-semibold">Households</th>
+                <th className="py-1 text-right font-semibold">Subscriptions</th>
                 <th className="py-1 text-right font-semibold">Share</th>
               </tr>
             </thead>
