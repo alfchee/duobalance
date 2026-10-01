@@ -164,6 +164,7 @@ export type Database = {
           before_state: Json | null
           created_at: string
           id: string
+          idempotency_key: string | null
           reason: string | null
           target_household: string | null
         }
@@ -174,6 +175,7 @@ export type Database = {
           before_state?: Json | null
           created_at?: string
           id?: string
+          idempotency_key?: string | null
           reason?: string | null
           target_household?: string | null
         }
@@ -184,6 +186,7 @@ export type Database = {
           before_state?: Json | null
           created_at?: string
           id?: string
+          idempotency_key?: string | null
           reason?: string | null
           target_household?: string | null
         }
@@ -2056,6 +2059,27 @@ export type Database = {
           p_target_household?: string
         }
         Returns: string
+      }
+      admin_override_subscription: {
+        Args: {
+          p_action: string
+          p_confirm?: boolean
+          p_extend_to?: string
+          p_household: string
+          p_idempotency_key?: string
+          p_plan_code?: string
+          p_reason?: string
+        }
+        Returns: {
+          current_period_end: string
+          grace_ends_at: string
+          plan_code: string
+          status: string
+          subscription_id: string
+          trial_ends_at: string
+          updated_at: string
+          was_idempotent: boolean
+        }[]
       }
       assert_same_household: {
         Args: {

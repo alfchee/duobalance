@@ -48,13 +48,14 @@ Admin routes themselves never use the service role (see below).
 Admin access goes through **purpose-built functions that cannot return
 transaction rows**, never through general-purpose queries trusted to behave:
 
-| Function                         | Returns                                                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `admin_list_households`          | household id/name/country/created + plan, status, period ends, comped flag + member/account/transaction **counts** |
-| `admin_get_household`            | same, for one household                                                                                            |
-| `admin_get_subscription_history` | every subscription row (plan/provider/status/timestamps) — the "why did access change" log                         |
-| `admin_get_billing_events`       | billing-event metadata (provider, event id, type, timestamps) — **never the payload**                              |
-| `admin_log_action`               | appends the audit row (throws on failure — the action then fails instead of succeeding unaudited)                  |
+| Function                         | Returns                                                                                                                                                                                                                                |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `admin_list_households`          | household id/name/country/created + plan, status, period ends, comped flag + member/account/transaction **counts**                                                                                                                     |
+| `admin_get_household`            | same, for one household                                                                                                                                                                                                                |
+| `admin_get_subscription_history` | every subscription row (plan/provider/status/timestamps) — the "why did access change" log                                                                                                                                             |
+| `admin_get_billing_events`       | billing-event metadata (provider, event id, type, timestamps) — **never the payload**                                                                                                                                                  |
+| `admin_log_action`               | appends the audit row (throws on failure — the action then fails instead of succeeding unaudited)                                                                                                                                      |
+| `admin_override_subscription`    | plan overrides (#273: grant_comped / revoke / extend_trial / extend_grace / change_plan) — mandatory reason, before/after audit, confirm-to-revoke, one-live respected, idempotency-key replay; returns the resulting subscription row |
 
 All are `SECURITY DEFINER` with `set search_path = ''`, revoked from
 `public`, granted to `authenticated`, and check `public.is_admin()` first
