@@ -120,7 +120,10 @@ function AdminHouseholdList() {
         <h1 className="text-2xl font-black tracking-tight">Admin — households</h1>
         <CardDescription>
           Billing state and aggregate counts only. Transaction contents are never shown here by
-          design (see docs/admin-boundary.md).
+          design (see docs/admin-boundary.md).{" "}
+          <Link href="/admin/coupons" className="underline">
+            Manage coupons
+          </Link>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

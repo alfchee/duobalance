@@ -56,6 +56,10 @@ transaction rows**, never through general-purpose queries trusted to behave:
 | `admin_get_billing_events`       | billing-event metadata (provider, event id, type, timestamps) — **never the payload**                                                                                                                                                  |
 | `admin_log_action`               | appends the audit row (throws on failure — the action then fails instead of succeeding unaudited)                                                                                                                                      |
 | `admin_override_subscription`    | plan overrides (#273: grant_comped / revoke / extend_trial / extend_grace / change_plan) — mandatory reason, before/after audit, confirm-to-revoke, one-live respected, idempotency-key replay; returns the resulting subscription row |
+| `admin_create_coupon`            | coupon creation (#274) — every constraint explicit, mandatory reason, in-transaction audit                                                                                                                                             |
+| `admin_list_coupons`             | coupon list (#274) with redemption counts and remaining capacity                                                                                                                                                                       |
+| `admin_set_coupon_active`        | coupon activate/deactivate (#274) — mandatory reason, before/after audit; redeemed-terms trigger allows deactivation only                                                                                                              |
+| `admin_get_coupon_redemptions`   | which households redeemed a coupon (#274) — household ids and timestamps only, never emails or names                                                                                                                                   |
 
 All are `SECURITY DEFINER` with `set search_path = ''`, revoked from
 `public`, granted to `authenticated`, and check `public.is_admin()` first
