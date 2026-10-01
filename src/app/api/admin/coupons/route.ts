@@ -75,10 +75,15 @@ function findCoupon(rows: CouponRow[], code: string): CouponRow | undefined {
 function couponErrorStatus(message: string, code?: string): number {
   // Same discipline as the households POST: SQLSTATE first. 42501 stays
   // neutral; validation is 400; a duplicate code is 409, never a second
-  // row (the redelivered-create answer to double-clicks).
+  // row (the redelivered-create answer to double-clicks). Unknown codes
+  // read as neutral 404 like unknown households/ids elsewhere — the
+  // function reports them as 23514, so they match on message here.
   if (code === "42501") return 404;
   if (code === "23505") return 409;
-  if (code === "23514") return 400;
+  if (code === "23514") {
+    if (message.includes("unknown coupon")) return 404;
+    return 400;
+  }
   if (code !== undefined) return 500;
   if (message.includes("already exists")) return 409;
   return 500;

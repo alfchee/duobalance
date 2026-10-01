@@ -26,6 +26,7 @@ export const ADMIN_COUPON_KEYS = [
   "discount_type",
   "discount_value",
   "currency",
+  "minor_unit",
   "valid_from",
   "valid_until",
   "max_redemptions",

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiError, apiFetch } from "@/lib/api-fetch";
+import { formatMoney } from "@/lib/money";
 import { AdminGate } from "@/components/admin/admin-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ type AdminCoupon = {
   discount_type: string;
   discount_value: number;
   currency: string | null;
+  minor_unit: number | null;
   valid_from: string;
   valid_until: string;
   max_redemptions: number;
@@ -47,9 +49,11 @@ function formatDateTime(value: string | null): string {
 }
 
 function discountLabel(c: AdminCoupon): string {
-  return c.discount_type === "percent"
-    ? `${c.discount_value}%`
-    : `${c.discount_value} ${c.currency ?? ""}`.trim();
+  if (c.discount_type === "percent") return `${c.discount_value}%`;
+  // Amounts are stored in minor units — scale by the currency's own
+  // minor_unit (never a guessed decimal count) before formatting.
+  if (!c.currency) return `${c.discount_value} (minor units)`;
+  return formatMoney(c.discount_value / 10 ** (c.minor_unit ?? 2), c.currency);
 }
 
 function serverMessage(err: unknown): string {
@@ -174,6 +178,10 @@ function CreateCouponCard({ onCreated }: { onCreated: () => void }) {
     setForm((f) => ({ ...f, [key]: value }));
 
   const isAmount = form.discountType === "amount";
+  // Per-household limit is 1 by design (one redemption row per household
+  // per coupon — the server rejects anything else). The field stays
+  // explicit: the operator still sets it, and the guard explains why.
+  const limitIsOne = Number.parseInt(form.perHouseholdLimit, 10) === 1;
   const canSubmit =
     !pending &&
     form.code.trim() !== "" &&
@@ -183,7 +191,7 @@ function CreateCouponCard({ onCreated }: { onCreated: () => void }) {
     form.validFrom !== "" &&
     form.validUntil !== "" &&
     form.maxRedemptions.trim() !== "" &&
-    form.perHouseholdLimit.trim() !== "" &&
+    limitIsOne &&
     (form.duration === "first_period" || form.duration === "lifetime") &&
     form.reason.trim().length >= 3;
 
@@ -306,7 +314,7 @@ function CreateCouponCard({ onCreated }: { onCreated: () => void }) {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="coupon-limit">Per-household limit</Label>
+            <Label htmlFor="coupon-limit">Per-household limit (must be 1)</Label>
             <Input
               id="coupon-limit"
               inputMode="numeric"
@@ -315,6 +323,10 @@ function CreateCouponCard({ onCreated }: { onCreated: () => void }) {
               placeholder="1"
               autoComplete="off"
             />
+            <p className="text-xs text-muted-foreground">
+              One redemption per household is enforced by design — larger limits cannot produce
+              extra rows.
+            </p>
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="coupon-duration">Duration</Label>

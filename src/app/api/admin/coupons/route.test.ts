@@ -252,6 +252,26 @@ describe("POST /api/admin/coupons — create + set_active (#274)", () => {
     expect(await bad.json()).toMatchObject({ error: "percent discount must be 1-100" });
   });
 
+  it("maps unknown codes to the neutral 404 like unknown households", async () => {
+    const db = {
+      rpc: async (fn: string) => {
+        if (fn === "admin_set_coupon_active") {
+          return {
+            data: null,
+            error: { code: "23514", message: 'unknown coupon "NOPE99"' },
+          };
+        }
+        return { data: [], error: null };
+      },
+    };
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const res = await POST(
+      postReq({ action: "set_active", code: "NOPE99", active: false, reason: "ticket 9" }),
+    );
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not found" });
+  });
+
   it("deactivates with a reason and reports idempotency", async () => {
     const calls: Array<{ fn: string; args: unknown }> = [];
     const db = fakeDb(
