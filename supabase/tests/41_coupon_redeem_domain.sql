@@ -1,7 +1,12 @@
 -- Coupon domain (#268 substrate): redeem validation with distinct reasons,
 -- double-redemption guards, and RLS proving households cannot enumerate
--- codes. redeem_coupon() is the member path — the code itself is the
--- capability; no SELECT policies exist on either table by design.
+-- codes.
+--
+-- Gating note (PR #303 review): production revokes EXECUTE on
+-- redeem_coupon() from authenticated — direct RPC would bypass
+-- BILLING_ENABLED with no gated checkout yet (#268 re-grants if it ships
+-- one). The grant below is TEST-LOCAL (rolled back with the file) so the
+-- member-path behavior stays covered; test 1 pins the production absence.
 
 \set ON_ERROR_STOP on
 \i supabase/tests/_lib/helpers.sql
@@ -51,7 +56,20 @@ begin
 end
 $$;
 
-select plan(14);
+select plan(15);
+
+-- Gating. Production locks member redemption until a billing-gated checkout
+-- ships it (#268): no EXECUTE for authenticated outside this file.
+select ok(
+  not has_function_privilege(
+    'authenticated', 'public.redeem_coupon(text, uuid)', 'execute'
+  ),
+  'redeem_coupon: revoked from authenticated in production (flag boundary)'
+);
+
+-- Test-local grant for the member-path behavior below (rolled back with
+-- the file; production stays locked per test 1).
+grant execute on function public.redeem_coupon(text, uuid) to authenticated;
 
 -- 1. Happy path: a member redeems a live code for their own household.
 select tests.authenticate_as('a3000000-0000-0000-0000-000000000011');

@@ -66,6 +66,20 @@ function serverMessage(err: unknown): string {
   return "Request failed.";
 }
 
+/**
+ * Strict whole-number parsing for operator-entered integers. parseInt
+ * silently truncates ("20.5" → 20, "20abc" → 20), submitting a different
+ * value than entered; here anything but digits is null, so the form stays
+ * disabled and the server (zod int + range checks) never sees a mangled
+ * value either.
+ */
+function parseWholeNumber(value: string): number | null {
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  const n = Number(trimmed);
+  return Number.isSafeInteger(n) ? n : null;
+}
+
 // Admin coupons (#274): the operational surface for campaign codes.
 // Creation requires every constraint explicitly (the form starts empty —
 // no preselected type, duration, or limits — and the server rejects
@@ -178,19 +192,21 @@ function CreateCouponCard({ onCreated }: { onCreated: () => void }) {
     setForm((f) => ({ ...f, [key]: value }));
 
   const isAmount = form.discountType === "amount";
+  const discountValue = parseWholeNumber(form.discountValue);
+  const maxRedemptions = parseWholeNumber(form.maxRedemptions);
   // Per-household limit is 1 by design (one redemption row per household
   // per coupon — the server rejects anything else). The field stays
   // explicit: the operator still sets it, and the guard explains why.
-  const limitIsOne = Number.parseInt(form.perHouseholdLimit, 10) === 1;
+  const limitIsOne = parseWholeNumber(form.perHouseholdLimit) === 1;
   const canSubmit =
     !pending &&
     form.code.trim() !== "" &&
     (form.discountType === "percent" || form.discountType === "amount") &&
-    form.discountValue.trim() !== "" &&
+    discountValue !== null &&
     (!isAmount || form.currency.trim() !== "") &&
     form.validFrom !== "" &&
     form.validUntil !== "" &&
-    form.maxRedemptions.trim() !== "" &&
+    maxRedemptions !== null &&
     limitIsOne &&
     (form.duration === "first_period" || form.duration === "lifetime") &&
     form.reason.trim().length >= 3;
@@ -208,12 +224,12 @@ function CreateCouponCard({ onCreated }: { onCreated: () => void }) {
           action: "create",
           code: form.code.trim(),
           discount_type: form.discountType,
-          discount_value: Number.parseInt(form.discountValue, 10),
+          discount_value: discountValue,
           currency: isAmount ? form.currency.trim() : null,
           valid_from: new Date(form.validFrom).toISOString(),
           valid_until: new Date(form.validUntil).toISOString(),
-          max_redemptions: Number.parseInt(form.maxRedemptions, 10),
-          per_household_limit: Number.parseInt(form.perHouseholdLimit, 10),
+          max_redemptions: maxRedemptions,
+          per_household_limit: 1,
           duration: form.duration,
           reason: form.reason.trim(),
         },

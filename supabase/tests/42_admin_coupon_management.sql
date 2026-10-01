@@ -35,6 +35,12 @@ $$;
 
 select plan(25);
 
+-- Test-local EXECUTE grant on redeem_coupon(): production revokes it from
+-- authenticated (flag boundary — direct RPC would bypass BILLING_ENABLED;
+-- absence pinned in file 41). The member redeems below need it, and the
+-- file rolls the grant back with everything else.
+grant execute on function public.redeem_coupon(text, uuid) to authenticated;
+
 select tests.authenticate_as('b4000000-0000-0000-0000-000000000020');
 
 -- 1. Happy-path creation with every constraint explicit.
