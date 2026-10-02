@@ -2112,8 +2112,28 @@ export type Database = {
           type: string
         }[]
       }
-      admin_get_coupon_redemptions: {
+      admin_get_coupon: {
         Args: { p_code: string }
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          minor_unit: number
+          per_household_limit: number
+          redemption_count: number
+          remaining_capacity: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }[]
+      }
+      admin_get_coupon_redemptions: {
+        Args: { p_code: string; p_limit?: number; p_offset?: number }
         Returns: {
           coupon_code: string
           household_id: string
@@ -2153,7 +2173,7 @@ export type Database = {
         }[]
       }
       admin_list_coupons: {
-        Args: never
+        Args: { p_limit?: number; p_offset?: number }
         Returns: {
           active: boolean
           code: string

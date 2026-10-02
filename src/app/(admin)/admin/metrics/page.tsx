@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ApiError, apiFetch } from "@/lib/api-fetch";
+import { apiFetch } from "@/lib/api-fetch";
 import { AdminGate } from "@/components/admin/admin-gate";
+import { adminApiErrorMessage } from "@/components/admin/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
@@ -71,12 +72,12 @@ function pct(numerator: number, denominator: number): string {
   return `${((100 * numerator) / denominator).toFixed(1)}%`;
 }
 
-function formatDate(value: string | null): string {
+function formatCohortWeek(value: string | null): string {
   // Cohort weeks are UTC midnights: format in UTC so admins west of it see
   // the report's signup-week date (to_char(cohort_week, 'YYYY-MM-DD')).
   // Local formatting would shift midnight back a day (e.g. Managua).
-  // This helper serves the cohort label only; nothing else here renders
-  // a bare date.
+  // Kept local (not in components/admin/format.ts): the UTC semantic is
+  // cohort-specific, not a general date display.
   if (!value) return "—";
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-CA", { timeZone: "UTC" });
@@ -86,16 +87,6 @@ function formatDate(value: string | null): string {
 function retentionCell(active: number, eligible: number): string {
   if (!eligible) return "not mature";
   return `${active} / ${eligible} (${pct(active, eligible)})`;
-}
-
-function serverMessage(err: unknown): string {
-  if (err instanceof ApiError) {
-    const body = err.body;
-    if (typeof body === "object" && body !== null && "error" in body) {
-      return String((body as { error: unknown }).error);
-    }
-  }
-  return "Could not load metrics.";
 }
 
 // Admin metrics dashboard (#275): the generated report's numbers without
@@ -131,7 +122,7 @@ function AdminMetrics() {
       const res = await apiFetch<MetricsResponse>("/api/admin/metrics");
       setData(res);
     } catch (err) {
-      setError(serverMessage(err));
+      setError(adminApiErrorMessage(err, "Could not load metrics."));
     } finally {
       setRefreshing(false);
     }
@@ -337,7 +328,7 @@ function RetentionCard({ rows }: { rows: RetentionRow[] }) {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.cohort_week} className="border-t">
-                  <td className="py-1 pr-4">{formatDate(r.cohort_week)}</td>
+                  <td className="py-1 pr-4">{formatCohortWeek(r.cohort_week)}</td>
                   <td className="py-1 pr-4 text-right">{r.households}</td>
                   <td className="py-1 pr-4 text-right">
                     {retentionCell(r.week_2_active, r.week_2_eligible)}

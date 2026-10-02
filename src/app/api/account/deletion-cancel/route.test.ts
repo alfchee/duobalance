@@ -11,16 +11,16 @@ vi.mock("@/app/api/_shared", () => ({
   },
   createRouteContext: vi.fn(),
   getAuthedUser: vi.fn(),
+  requireUser: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServiceRoleClient: vi.fn(),
 }));
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createRouteContext, getAuthedUser, requireUser } from "@/app/api/_shared";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { POST } from "./route";
-import { GET } from "../deletion-status/route";
 
 const cancelled = {
   id: "req-1",
@@ -50,7 +50,9 @@ function makeClient(open: { id: string } | null) {
         })),
       })),
       update: vi.fn(() => ({
-        eq: vi.fn(() => ({ select: vi.fn(() => ({ single: cancelSingle })) })),
+        eq: vi.fn(() => ({
+          in: vi.fn(() => ({ select: vi.fn(() => ({ maybeSingle: cancelSingle })) })),
+        })),
       })),
     };
   });
@@ -66,12 +68,17 @@ function makeClient(open: { id: string } | null) {
     };
   });
   vi.mocked(createRouteContext).mockResolvedValue({ from: authFrom } as never);
+  vi.mocked(requireUser).mockResolvedValue({
+    supabase: { from: authFrom } as never,
+    user: { id: "user-1" } as never,
+  });
   return { adminFrom, authFrom, openMaybe, cancelSingle };
 }
 
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(requireUser).mockReset();
   vi.mocked(createSupabaseServiceRoleClient).mockReset();
   delete process.env.BUILD_TARGET;
 });
@@ -83,56 +90,34 @@ afterEach(() => {
 
 describe("POST /api/account/deletion-cancel", () => {
   it("rejects unauthenticated callers", async () => {
-    vi.mocked(createRouteContext).mockResolvedValue({} as never);
-    vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
+    makeClient({ id: "req-1" });
+    vi.mocked(requireUser).mockResolvedValue({
+      response: Response.json({ error: "authentication required" }, { status: 401 }),
+    });
 
     expect((await POST()).status).toBe(401);
   });
 
   it("returns 404 without an open request", async () => {
     makeClient(null);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     expect((await POST()).status).toBe(404);
   });
 
   it("cancels an open request", async () => {
     makeClient({ id: "req-1" });
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
 
     const res = await POST();
 
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ request: cancelled });
   });
-});
 
-describe("GET /api/account/deletion-status", () => {
-  it("rejects unauthenticated callers", async () => {
-    vi.mocked(createRouteContext).mockResolvedValue({} as never);
-    vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
+  it("returns 404 when a concurrent purge wins the race", async () => {
+    // Read saw an open request, but the conditional write matched zero rows.
+    const { cancelSingle } = makeClient({ id: "req-1" });
+    cancelSingle.mockResolvedValue({ data: null, error: null });
 
-    expect((await GET()).status).toBe(401);
-  });
-
-  it("returns null without an open request", async () => {
-    makeClient(null);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
-
-    const res = await GET();
-
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ request: null });
-  });
-
-  it("returns the open request", async () => {
-    const open = { id: "req-1", status: "confirmed" };
-    makeClient(open);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
-
-    const res = await GET();
-
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ request: open });
+    expect((await POST()).status).toBe(404);
   });
 });

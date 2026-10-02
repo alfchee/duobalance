@@ -37,7 +37,9 @@ import {
   adminJson,
   adminNotFound,
   auditAdminAction,
-  requireAdmin,
+  mapAdminSqlError,
+  parseIsoDate,
+  withAdmin,
   ADMIN_NO_STORE_HEADERS,
   type AdminContext,
 } from "../_shared";
@@ -66,18 +68,11 @@ function parseListParams(url: string) {
 }
 
 export async function GET(request: Request) {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json(
-      { error: "not found" },
-      { status: 404, headers: { ...ADMIN_NO_STORE_HEADERS } },
-    );
-  }
-  const ctx = await requireAdmin(request);
-  if (!ctx) return adminNotFound();
-
-  const id = new URL(request.url).searchParams.get("id")?.trim() || null;
-  if (id) return getHouseholdDetail(ctx, id);
-  return listHouseholds(ctx, request.url);
+  return withAdmin(request, async (ctx, req) => {
+    const id = new URL(req.url).searchParams.get("id")?.trim() || null;
+    if (id) return getHouseholdDetail(ctx, id);
+    return listHouseholds(ctx, req.url);
+  });
 }
 
 async function listHouseholds(ctx: AdminContext, url: string) {
@@ -102,21 +97,21 @@ async function listHouseholds(ctx: AdminContext, url: string) {
 async function getHouseholdDetail(ctx: AdminContext, id: string) {
   if (!UUID_RE.test(id)) return adminNotFound();
 
-  const [{ data: summary, error: summaryError }, { data: subs, error: subsError }] =
-    await Promise.all([
-      ctx.db.rpc("admin_get_household", { p_household: id }),
-      ctx.db.rpc("admin_get_subscription_history", { p_household: id }),
-    ]);
+  const [
+    { data: summary, error: summaryError },
+    { data: subs, error: subsError },
+    { data: events, error: eventsError },
+  ] = await Promise.all([
+    ctx.db.rpc("admin_get_household", { p_household: id }),
+    ctx.db.rpc("admin_get_subscription_history", { p_household: id }),
+    ctx.db.rpc("admin_get_billing_events", { p_household: id }),
+  ]);
   if (summaryError) throw summaryError;
   if (subsError) throw subsError;
+  if (eventsError) throw eventsError;
 
   const householdRow = (summary ?? [])[0] as Record<string, unknown> | undefined;
   if (!householdRow) return adminNotFound();
-
-  const { data: events, error: eventsError } = await ctx.db.rpc("admin_get_billing_events", {
-    p_household: id,
-  });
-  if (eventsError) throw eventsError;
 
   const household = projectAdminKeys(householdRow, ADMIN_HOUSEHOLD_KEYS);
   const subscriptions = ((subs ?? []) as Array<Record<string, unknown>>).map((s) =>
@@ -180,63 +175,30 @@ type OverrideRow = {
 };
 
 function overrideErrorStatus(message: string, code?: string): number {
-  // Primary classification is the SQLSTATE code — the function's errcodes
-  // are deliberate (23514 validation, 23505 conflict, 42501 denied).
-  // 23503 is the subscriptions.household_id FK: a well-formed but unknown
-  // household id. It maps to the neutral 404 so an operator typo is not a
-  // 500 and the status code is not an existence oracle (existing-empty →
-  // 200, existing-live → 409, nonexistent → 404 would leak the same fact).
-  if (code === "42501" || code === "23503") return 404;
-  if (code === "23505") return 409;
-  if (code === "23514") return 400;
-  if (code !== undefined) return 500;
-  // Fallback for error shapes without a code (kept for the mocked-client
-  // tests; PostgREST errors always carry one).
-  if (
-    message.includes("reason is required") ||
-    message.includes("confirmation") ||
-    message.includes("needs a") ||
-    message.includes("unknown override action") ||
-    message.includes("unknown plan code") ||
-    message.includes("no live subscription") ||
-    message.includes("invalid input") ||
-    message.includes("idempotency key too long")
-  ) {
-    return 400;
-  }
-  if (message.includes("already holds a live subscription")) return 409;
-  return 500;
+  // Unified in _shared.mapAdminSqlError (same SQLSTATE discipline).
+  return mapAdminSqlError(message, code);
 }
 
 export async function POST(request: Request) {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json(
-      { error: "not found" },
-      { status: 404, headers: { ...ADMIN_NO_STORE_HEADERS } },
-    );
-  }
-  const ctx = await requireAdmin(request);
-  if (!ctx) return adminNotFound();
-
-  const parsed = overrideBodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return Response.json(
-      { error: "invalid request body" },
-      { status: 400, headers: { ...ADMIN_NO_STORE_HEADERS } },
-    );
-  }
-  const body = parsed.data;
-
-  let extendTo: string | undefined;
-  if (body.extend_to !== undefined) {
-    const at = new Date(body.extend_to);
-    if (Number.isNaN(at.getTime())) {
+  return withAdmin(request, async (ctx, req) => {
+    const parsed = overrideBodySchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) {
       return Response.json(
-        { error: "extend_to must be an ISO timestamp" },
+        { error: "invalid request body" },
         { status: 400, headers: { ...ADMIN_NO_STORE_HEADERS } },
       );
     }
-    extendTo = at.toISOString();
+    return applyOverride(ctx, parsed.data);
+  });
+}
+
+async function applyOverride(ctx: AdminContext, body: z.infer<typeof overrideBodySchema>) {
+  const extendTo = body.extend_to === undefined ? undefined : parseIsoDate(body.extend_to);
+  if (body.extend_to !== undefined && extendTo === undefined) {
+    return Response.json(
+      { error: "extend_to must be an ISO timestamp" },
+      { status: 400, headers: { ...ADMIN_NO_STORE_HEADERS } },
+    );
   }
 
   const { data, error } = await ctx.db.rpc("admin_override_subscription", {
@@ -265,21 +227,21 @@ export async function POST(request: Request) {
   // Re-read the resulting state through the detail readers so the operator
   // sees what the override did without a second round-trip. A revoke no-op
   // (zero override rows) still returns the current detail + idempotent.
-  const [{ data: summary, error: summaryError }, { data: subs, error: subsError }] =
-    await Promise.all([
-      ctx.db.rpc("admin_get_household", { p_household: body.household_id }),
-      ctx.db.rpc("admin_get_subscription_history", { p_household: body.household_id }),
-    ]);
+  const [
+    { data: summary, error: summaryError },
+    { data: subs, error: subsError },
+    { data: events, error: eventsError },
+  ] = await Promise.all([
+    ctx.db.rpc("admin_get_household", { p_household: body.household_id }),
+    ctx.db.rpc("admin_get_subscription_history", { p_household: body.household_id }),
+    ctx.db.rpc("admin_get_billing_events", { p_household: body.household_id }),
+  ]);
   if (summaryError) throw summaryError;
   if (subsError) throw subsError;
+  if (eventsError) throw eventsError;
 
   const householdRow = (summary ?? [])[0] as Record<string, unknown> | undefined;
   if (!householdRow) return adminNotFound();
-
-  const { data: events, error: eventsError } = await ctx.db.rpc("admin_get_billing_events", {
-    p_household: body.household_id,
-  });
-  if (eventsError) throw eventsError;
 
   return adminJson({
     household: projectAdminKeys(householdRow, ADMIN_HOUSEHOLD_KEYS),

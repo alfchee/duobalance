@@ -4,33 +4,15 @@
 //
 // Writes are route-only (service role scoped to the caller).
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { requireUser } from "@/app/api/_shared";
 import { tryAudit } from "../_shared";
 
 export const revalidate = 1;
 
 export async function POST() {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json({ error: "unavailable" }, { status: 401 });
-  }
-  if (
-    (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY)) &&
-    process.env.NODE_ENV === "production"
-  ) {
-    return Response.json({ error: "not configured" }, { status: 200 });
-  }
-
-  const supabase = await createRouteContext();
-  let user;
-  try {
-    user = await getAuthedUser(supabase);
-  } catch (error) {
-    if (error instanceof HttpError) {
-      return Response.json({ error: "authentication required" }, { status: error.status });
-    }
-    throw error;
-  }
+  const auth = await requireUser();
+  if ("response" in auth) return auth.response;
+  const { user } = auth;
 
   const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
   const admin = createSupabaseServiceRoleClient();
@@ -47,14 +29,27 @@ export async function POST() {
     return Response.json({ error: "no open deletion request" }, { status: 404 });
   }
 
+  // Conditional write: the row must still be open when the update lands. A
+  // concurrent purge (confirmed → purged) between the read above and this
+  // write then matches zero rows instead of tripping the transition trigger
+  // into a 500 — the caller gets the same 404 as "already gone".
   const { data: cancelled, error: updateError } = await admin
     .from("account_deletion_requests")
     .update({ status: "cancelled" })
     .eq("id", open.id)
+    .in("status", ["pending", "confirmed"])
     .select("id, status, requested_at, confirmed_at, scheduled_purge_at, purged_at")
-    .single();
+    .maybeSingle();
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    if (updateError.code === "23514") {
+      return Response.json({ error: "no open deletion request" }, { status: 404 });
+    }
+    throw updateError;
+  }
+  if (!cancelled) {
+    return Response.json({ error: "no open deletion request" }, { status: 404 });
+  }
 
   await tryAudit(user.id, "account_deletion_cancelled");
 

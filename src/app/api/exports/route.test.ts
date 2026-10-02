@@ -11,13 +11,14 @@ vi.mock("@/app/api/_shared", () => ({
   },
   createRouteContext: vi.fn(),
   getAuthedUser: vi.fn(),
+  requireUser: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServiceRoleClient: vi.fn(),
 }));
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createRouteContext, getAuthedUser, requireUser } from "@/app/api/_shared";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { POST } from "./route";
 
@@ -55,6 +56,10 @@ function makeClient(opts: {
     throw new Error(`unexpected auth table ${table}`);
   });
   vi.mocked(createRouteContext).mockResolvedValue({ from: authFrom, rpc } as never);
+  vi.mocked(requireUser).mockResolvedValue({
+    supabase: { from: authFrom, rpc } as never,
+    user: { id: "user-1" } as never,
+  });
 
   const insertSingle = vi.fn().mockResolvedValue({
     data: opts.link ?? null,
@@ -74,6 +79,7 @@ function makeClient(opts: {
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(requireUser).mockReset();
   vi.mocked(createSupabaseServiceRoleClient).mockReset();
   delete process.env.BUILD_TARGET;
 });
@@ -87,7 +93,9 @@ afterEach(() => {
 describe("POST /api/exports", () => {
   it("rejects unauthenticated callers", async () => {
     makeClient({ member: { id: "m-1", household_id: householdId } });
-    vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
+    vi.mocked(requireUser).mockResolvedValue({
+      response: Response.json({ error: "authentication required" }, { status: 401 }),
+    });
 
     const res = await POST(request({ householdId }));
 

@@ -5,11 +5,21 @@ import {
   ADMIN_FORBIDDEN_KEYS,
 } from "@/lib/admin/scope";
 
-vi.mock("../_shared", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../_shared")>()),
-  requireAdmin: vi.fn(),
-  auditAdminAction: vi.fn(),
-}));
+vi.mock("../_shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../_shared")>();
+  const requireAdmin = vi.fn();
+  return {
+    ...actual,
+    requireAdmin,
+    auditAdminAction: vi.fn(),
+    // withAdmin delegates to the mocked requireAdmin so per-test contexts flow through.
+    withAdmin: async (request: Request, handler: (ctx: unknown, req: Request) => unknown) => {
+      const ctx = await requireAdmin(request);
+      if (!ctx) return actual.adminNotFound();
+      return handler(ctx, request);
+    },
+  };
+});
 
 import { auditAdminAction, requireAdmin } from "../_shared";
 import { GET, POST } from "./route";
@@ -112,14 +122,21 @@ describe("GET /api/admin/coupons — list (#274)", () => {
   });
 
   it("lists coupons through the allowlist with live counts", async () => {
-    const db = fakeDb({ admin_list_coupons: [couponRow()] });
+    const calls: Array<{ fn: string; args: unknown }> = [];
+    const db = fakeDb({ admin_list_coupons: [couponRow()] }, calls);
     mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
     const res = await GET(new Request("http://localhost/api/admin/coupons"));
     expect(res.status).toBe(200);
     expect(res.headers.get("Cache-Control")).toContain("no-store");
 
-    const body = (await res.json()) as { coupons: Array<Record<string, unknown>> };
+    const body = (await res.json()) as {
+      coupons: Array<Record<string, unknown>>;
+      limit: number;
+      offset: number;
+    };
     expect(body.coupons).toHaveLength(1);
+    expect(body).toMatchObject({ limit: 100, offset: 0 });
+    expect(calls).toContainEqual({ fn: "admin_list_coupons", args: { p_limit: 100, p_offset: 0 } });
     expect(Object.keys(body.coupons[0]!).sort()).toEqual([...ADMIN_COUPON_KEYS].sort());
     expect(body.coupons[0]).toMatchObject({
       code: "BLOG20",
@@ -128,6 +145,21 @@ describe("GET /api/admin/coupons — list (#274)", () => {
     });
     wireHasForbidden(body);
     expect(mockAudit).toHaveBeenCalledWith(db, "coupons.list", null);
+  });
+
+  it("pages the list through limit/offset (clamped)", async () => {
+    const calls: Array<{ fn: string; args: unknown }> = [];
+    const db = fakeDb({ admin_list_coupons: [] }, calls);
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const res = await GET(new Request("http://localhost/api/admin/coupons?limit=5&offset=10"));
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { limit: number; offset: number };
+    expect(body).toMatchObject({ limit: 5, offset: 10 });
+    expect(calls).toContainEqual({ fn: "admin_list_coupons", args: { p_limit: 5, p_offset: 10 } });
+
+    const wild = await GET(new Request("http://localhost/api/admin/coupons?limit=9999&offset=-3"));
+    const wildBody = (await wild.json()) as { limit: number; offset: number };
+    expect(wildBody).toMatchObject({ limit: 500, offset: 0 });
   });
 
   it("is unavailable in the Tauri bundle", async () => {
@@ -140,7 +172,7 @@ describe("GET /api/admin/coupons — list (#274)", () => {
 describe("GET /api/admin/coupons?code= — redemptions (#274)", () => {
   it("returns the coupon with identifier-only redemptions", async () => {
     const db = fakeDb({
-      admin_list_coupons: [couponRow()],
+      admin_get_coupon: [couponRow()],
       admin_get_coupon_redemptions: [redemptionRow()],
     });
     mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
@@ -150,9 +182,12 @@ describe("GET /api/admin/coupons?code= — redemptions (#274)", () => {
     const body = (await res.json()) as {
       coupon: Record<string, unknown>;
       redemptions: Array<Record<string, unknown>>;
+      redemptions_limit: number;
+      redemptions_offset: number;
     };
     expect(Object.keys(body.coupon).sort()).toEqual([...ADMIN_COUPON_KEYS].sort());
     expect(body.redemptions).toHaveLength(1);
+    expect(body).toMatchObject({ redemptions_limit: 100, redemptions_offset: 0 });
     expect(Object.keys(body.redemptions[0]!).sort()).toEqual(
       [...ADMIN_COUPON_REDEMPTION_KEYS].sort(),
     );
@@ -165,11 +200,16 @@ describe("GET /api/admin/coupons?code= — redemptions (#274)", () => {
   });
 
   it("matches codes case-insensitively and 404s neutrally when unknown", async () => {
-    const db = fakeDb({ admin_list_coupons: [couponRow()], admin_get_coupon_redemptions: [] });
-    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const found = fakeDb({
+      admin_get_coupon: [couponRow()],
+      admin_get_coupon_redemptions: [],
+    });
+    mockRequireAdmin.mockResolvedValue({ db: found as never, userId: "u-admin" } as never);
     const lower = await GET(new Request("http://localhost/api/admin/coupons?code=blog20"));
     expect(lower.status).toBe(200);
 
+    const empty = fakeDb({ admin_get_coupon: [], admin_get_coupon_redemptions: [] });
+    mockRequireAdmin.mockResolvedValue({ db: empty as never, userId: "u-admin" } as never);
     const missing = await GET(new Request("http://localhost/api/admin/coupons?code=NOPE99"));
     expect(missing.status).toBe(404);
     expect(await missing.json()).toEqual({ error: "not found" });
@@ -203,7 +243,7 @@ describe("POST /api/admin/coupons — create + set_active (#274)", () => {
 
   it("creates with every constraint forwarded and returns the live row", async () => {
     const calls: Array<{ fn: string; args: unknown }> = [];
-    const db = fakeDb({ admin_create_coupon: [{}], admin_list_coupons: [couponRow()] }, calls);
+    const db = fakeDb({ admin_create_coupon: [{}], admin_get_coupon: [couponRow()] }, calls);
     mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
     const res = await POST(postReq(createBody()));
     expect(res.status).toBe(200);
@@ -277,7 +317,7 @@ describe("POST /api/admin/coupons — create + set_active (#274)", () => {
     const db = fakeDb(
       {
         admin_set_coupon_active: [{ was_idempotent: true }],
-        admin_list_coupons: [{ ...couponRow(), active: false }],
+        admin_get_coupon: [{ ...couponRow(), active: false }],
       },
       calls,
     );
@@ -301,6 +341,26 @@ describe("POST /api/admin/coupons — create + set_active (#274)", () => {
     expect(body.coupon).toMatchObject({ code: "BLOG20", active: false });
     expect(body.idempotent).toBe(true);
     wireHasForbidden(body);
+  });
+
+  it("reports idempotent:false on an empty set_active shape (never vacuous true)", async () => {
+    const db = fakeDb(
+      {
+        admin_set_coupon_active: [],
+        admin_get_coupon: [{ ...couponRow(), active: false }],
+      },
+      [],
+    );
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+    const res = await POST(
+      postReq({ action: "set_active", code: "BLOG20", active: false, reason: "abuse wave" }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      coupon: Record<string, unknown>;
+      idempotent: boolean;
+    };
+    expect(body.idempotent).toBe(false);
   });
 
   it("is unavailable in the Tauri bundle", async () => {

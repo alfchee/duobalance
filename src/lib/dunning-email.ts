@@ -32,6 +32,12 @@ export type DunningEmailParams = {
   manageUrl: string;
   /** Grace deadline ISO string; shown on the final notice only. */
   graceEndsOn?: string;
+  /**
+   * Deterministic per (subscription, stage, recipient): sent as the Resend
+   * Idempotency-Key so a retried stage never double-delivers to an address
+   * that already got it.
+   */
+  idempotencyKey?: string;
 };
 
 const SUBJECTS: Record<DunningStage, string> = {
@@ -122,14 +128,17 @@ export async function sendDunningEmail(params: DunningEmailParams): Promise<void
 
   try {
     const resend = new Resend(RESEND_API_KEY);
-    const { error } = await resend.emails.send({
-      from: FROM,
-      to: params.to,
-      subject,
-      html,
-      text,
-      ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
-    });
+    const { error } = await resend.emails.send(
+      {
+        from: FROM,
+        to: params.to,
+        subject,
+        html,
+        text,
+        ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
+      },
+      ...(params.idempotencyKey ? [{ idempotencyKey: params.idempotencyKey }] : []),
+    );
 
     if (error) {
       console.error("dunning-email: Resend delivery failed", {

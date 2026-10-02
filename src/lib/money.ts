@@ -76,10 +76,37 @@ function separatorsFor(locale: string, pref: NumberFormatPref = "locale"): Separ
 // "dot_decimal"/"comma_decimal", the fixed separators are used instead of the
 // locale's, overriding locale entirely. Currency symbols and the U+2212 minus
 // sign are tolerated; non-numeric garbage yields null.
+//
+// LENIENT by design: grouping separators are stripped wherever they appear,
+// so "5.25" in es parses as 525 and "1..2..3" collapses instead of failing.
+// This pairs with maskMoneyInput, which keeps grouping separators verbatim
+// for this parser. For submit paths that must reject malformed grouping
+// ("1..2..3", "1.2.3"), use parseMoneyInputStrict instead.
 export function parseMoneyInput(
   raw: string,
   locale = "es",
   pref: NumberFormatPref = "locale",
+): number | null {
+  return parseMoneyInputInternal(raw, locale, pref, false);
+}
+
+// Strict sibling: additionally requires the integer part to match the
+// locale's grouping pattern (1-3 digits, then groups of exactly 3), so
+// typos like "1..2..3" or "1.2.3" yield null instead of a 100x value.
+// Use on submit when the field is not pre-sanitized by maskMoneyInput.
+export function parseMoneyInputStrict(
+  raw: string,
+  locale = "es",
+  pref: NumberFormatPref = "locale",
+): number | null {
+  return parseMoneyInputInternal(raw, locale, pref, true);
+}
+
+function parseMoneyInputInternal(
+  raw: string,
+  locale: string,
+  pref: NumberFormatPref,
+  strict: boolean,
 ): number | null {
   const firstDigit = raw.search(/\d/);
   if (firstDigit === -1) return null;
@@ -101,7 +128,7 @@ export function parseMoneyInput(
   const unsignedInteger = sign ? integer.slice(1) : integer;
   const groupPattern = new RegExp(`^\\d{1,3}(?:${escapeRegExp(group)}\\d{3})*$|^\\d+$`);
   if (
-    (pref !== "locale" && !groupPattern.test(unsignedInteger)) ||
+    ((strict || pref !== "locale") && !groupPattern.test(unsignedInteger)) ||
     (fraction !== undefined && !/^\d+$/.test(fraction))
   ) {
     return null;
@@ -177,8 +204,10 @@ export function appendMoneyPadInput(
 export function roundToMinorUnit(amount: number, minorUnit: number): number {
   const f = 10 ** minorUnit;
   // Number.EPSILON nudges binary float error (1.005 * 100 = 100.49999…)
-  // so half-cent values round the way a human expects.
-  return Math.round((amount + Number.EPSILON) * f) / f;
+  // so half-cent values round the way a human expects. The nudge follows
+  // the sign — a fixed +EPSILON would push negative halves toward zero
+  // (-1.005 -> -1 instead of -1.01), biasing refunds/credits.
+  return Math.round((amount + Math.sign(amount) * Number.EPSILON) * f) / f;
 }
 
 export function formatSignedMoney(

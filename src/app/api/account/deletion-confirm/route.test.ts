@@ -11,13 +11,14 @@ vi.mock("@/app/api/_shared", () => ({
   },
   createRouteContext: vi.fn(),
   getAuthedUser: vi.fn(),
+  requireUser: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServiceRoleClient: vi.fn(),
 }));
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createRouteContext, getAuthedUser, requireUser } from "@/app/api/_shared";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { POST } from "./route";
 
@@ -50,7 +51,9 @@ function makeClient(opts: { pending?: { id: string } | null }) {
           })),
         })),
         update: vi.fn(() => ({
-          eq: vi.fn(() => ({ select: vi.fn(() => ({ single: confirmSingle })) })),
+          eq: vi.fn(() => ({
+            eq: vi.fn(() => ({ select: vi.fn(() => ({ maybeSingle: confirmSingle })) })),
+          })),
         })),
       };
     }
@@ -67,12 +70,16 @@ function makeClient(opts: { pending?: { id: string } | null }) {
 }
 
 function auth(email: string | null) {
-  vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1", email } as never);
+  vi.mocked(requireUser).mockResolvedValue({
+    supabase: {} as never,
+    user: { id: "user-1", email } as never,
+  });
 }
 
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(requireUser).mockReset();
   vi.mocked(createSupabaseServiceRoleClient).mockReset();
   delete process.env.BUILD_TARGET;
 });
@@ -85,7 +92,9 @@ afterEach(() => {
 describe("POST /api/account/deletion-confirm", () => {
   it("rejects unauthenticated callers", async () => {
     makeClient({ pending: { id: "req-1" } });
-    vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
+    vi.mocked(requireUser).mockResolvedValue({
+      response: Response.json({ error: "authentication required" }, { status: 401 }),
+    });
 
     expect((await POST(request({ email: "a@b.c" }))).status).toBe(401);
   });
@@ -125,5 +134,15 @@ describe("POST /api/account/deletion-confirm", () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ request: confirmed });
     expect(client.confirmSingle).toHaveBeenCalledOnce();
+  });
+
+  it("returns 404 when a concurrent cancel wins the race", async () => {
+    const client = makeClient({ pending: { id: "req-1" } });
+    client.confirmSingle.mockResolvedValue({ data: null, error: null });
+    auth("user@example.com");
+
+    const res = await POST(request({ email: "user@example.com" }));
+
+    expect(res.status).toBe(404);
   });
 });

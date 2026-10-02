@@ -7,34 +7,16 @@
 // secret valid for 24h; redemption (GET /api/exports/[token]) re-checks
 // membership, so a leaked token alone grants nothing to a non-member.
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { requireUser } from "@/app/api/_shared";
 import { shouldBypassPlanGating } from "@/lib/billing/enabled";
 import { exportLinkBodySchema, EXPORT_LINK_TTL_HOURS, exportLinkUrl } from "./_shared";
 
 export const revalidate = 1;
 
 export async function POST(request: Request) {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json({ error: "unavailable" }, { status: 401 });
-  }
-  if (
-    (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY)) &&
-    process.env.NODE_ENV === "production"
-  ) {
-    return Response.json({ error: "not configured" }, { status: 200 });
-  }
-
-  const supabase = await createRouteContext();
-  let user;
-  try {
-    user = await getAuthedUser(supabase);
-  } catch (error) {
-    if (error instanceof HttpError) {
-      return Response.json({ error: "authentication required" }, { status: error.status });
-    }
-    throw error;
-  }
+  const auth = await requireUser();
+  if ("response" in auth) return auth.response;
+  const { supabase, user } = auth;
 
   const parsed = exportLinkBodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

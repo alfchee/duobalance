@@ -135,6 +135,13 @@ export interface DunningJobDeps {
     householdName: string;
     manageUrl: string;
     graceEndsOn?: string;
+    /**
+     * Deterministic per (subscription, stage, recipient), passed as the
+     * Resend Idempotency-Key: a retry after a partial multi-recipient
+     * failure replays already-delivered recipients safely instead of
+     * double-sending. Always set by runDunningJob.
+     */
+    idempotencyKey?: string;
   }) => Promise<void>;
 }
 
@@ -220,16 +227,30 @@ export async function runDunningJob(
       if (!owned) {
         continue;
       }
+      // Every recipient is attempted even when an earlier one fails: without
+      // this, one bad address starves the rest of the household. Failures are
+      // collected and rethrown after the loop, so the claim stays open for
+      // lease adoption and the next run retries the stage. The retry is safe
+      // for already-notified recipients — each send carries a deterministic
+      // per-recipient idempotency key (subscription, stage, address) that the
+      // mailer dedupes on.
+      let firstSendError: unknown = null;
       for (const recipient of household.recipients) {
-        await deps.sendStageEmail({
-          to: [recipient.to],
-          stage,
-          memberName: recipient.memberName,
-          householdName: household.householdName,
-          manageUrl: household.manageUrl,
-          graceEndsOn: row.grace_ends_at ?? undefined,
-        });
+        try {
+          await deps.sendStageEmail({
+            to: [recipient.to],
+            stage,
+            memberName: recipient.memberName,
+            householdName: household.householdName,
+            manageUrl: household.manageUrl,
+            graceEndsOn: row.grace_ends_at ?? undefined,
+            idempotencyKey: `dunning:${row.id}:${stage}:${recipient.to}`,
+          });
+        } catch (error) {
+          if (firstSendError === null) firstSendError = error;
+        }
       }
+      if (firstSendError !== null) throw firstSendError;
       await completeClaim(db, row.id, stage, clock);
       ledger.set(key(row.id, stage), {
         subscription_id: row.id,

@@ -9,14 +9,24 @@ import {
   ADMIN_METRIC_SUBSCRIPTION_KEYS,
 } from "@/lib/admin/scope";
 
-vi.mock("../_shared", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../_shared")>()),
-  requireAdmin: vi.fn(),
-  auditAdminAction: vi.fn(),
-}));
+vi.mock("../_shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../_shared")>();
+  const requireAdmin = vi.fn();
+  return {
+    ...actual,
+    requireAdmin,
+    auditAdminAction: vi.fn(),
+    // withAdmin delegates to the mocked requireAdmin so per-test contexts flow through.
+    withAdmin: async (request: Request, handler: (ctx: unknown, req: Request) => unknown) => {
+      const ctx = await requireAdmin(request);
+      if (!ctx) return actual.adminNotFound();
+      return handler(ctx, request);
+    },
+  };
+});
 
 import { auditAdminAction, requireAdmin } from "../_shared";
-import { GET } from "./route";
+import { GET, __resetMetricsCacheForTests } from "./route";
 
 const mockRequireAdmin = vi.mocked(requireAdmin);
 const mockAudit = vi.mocked(auditAdminAction);
@@ -89,6 +99,7 @@ function wireHasForbidden(body: unknown) {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  __resetMetricsCacheForTests();
   delete process.env.BUILD_TARGET;
   delete process.env.BILLING_ENABLED;
   delete process.env.NEXT_PUBLIC_BILLING_ENABLED;
@@ -134,6 +145,28 @@ describe("GET /api/admin/metrics (#275)", () => {
 
     wireHasForbidden(body);
     expect(mockAudit).toHaveBeenCalledWith(db, "metrics.view", null);
+  });
+
+  it("serves the TTL snapshot on repeat views but audits every view", async () => {
+    const calls: string[] = [];
+    const db = {
+      rpc: async (fn: string, args?: unknown) => {
+        void args;
+        calls.push(fn);
+        return { data: preset()[fn] ?? [], error: null };
+      },
+    };
+    mockRequireAdmin.mockResolvedValue({ db: db as never, userId: "u-admin" } as never);
+
+    const first = await GET(new Request("http://localhost/api/admin/metrics"));
+    expect(first.status).toBe(200);
+    expect(calls.filter((fn) => fn.startsWith("admin_metrics_"))).toHaveLength(6);
+
+    const second = await GET(new Request("http://localhost/api/admin/metrics"));
+    expect(second.status).toBe(200);
+    // No new reader calls — the snapshot served — but the audit ran twice.
+    expect(calls.filter((fn) => fn.startsWith("admin_metrics_"))).toHaveLength(6);
+    expect(mockAudit).toHaveBeenCalledTimes(2);
   });
 
   it("omits revenue while billing is disabled and shows it once live", async () => {

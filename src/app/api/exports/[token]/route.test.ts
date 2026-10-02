@@ -11,13 +11,14 @@ vi.mock("@/app/api/_shared", () => ({
   },
   createRouteContext: vi.fn(),
   getAuthedUser: vi.fn(),
+  requireUser: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServiceRoleClient: vi.fn(),
 }));
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createRouteContext, getAuthedUser, requireUser } from "@/app/api/_shared";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { GET } from "./route";
 
@@ -84,7 +85,10 @@ function setup(opts: { link?: LinkRow; member?: { id: string } | null }) {
     return { select: vi.fn(() => ({ eq: vi.fn(() => tableChain()) })) };
   });
   vi.mocked(createRouteContext).mockResolvedValue({ from: authFrom } as never);
-  vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+  vi.mocked(requireUser).mockResolvedValue({
+    supabase: { from: authFrom } as never,
+    user: { id: "user-1" } as never,
+  });
   return { adminFrom, authFrom };
 }
 
@@ -101,6 +105,7 @@ function linkRow(expires_at: string, format = "json"): Exclude<LinkRow, null> {
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(requireUser).mockReset();
   vi.mocked(createSupabaseServiceRoleClient).mockReset();
   delete process.env.BUILD_TARGET;
 });
@@ -118,11 +123,13 @@ describe("GET /api/exports/[token]", () => {
 
     expect(res.status).toBe(404);
     expect(createRouteContext).not.toHaveBeenCalled();
+    expect(requireUser).not.toHaveBeenCalled();
   });
 
   it("rejects unauthenticated callers", async () => {
-    vi.mocked(createRouteContext).mockResolvedValue({} as never);
-    vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
+    vi.mocked(requireUser).mockResolvedValue({
+      response: Response.json({ error: "authentication required" }, { status: 401 }),
+    });
 
     const res = await GET(request(), { params: Promise.resolve({ token }) });
 

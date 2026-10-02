@@ -7,7 +7,7 @@
 // backstops the transition and the 29–31 day grace window.
 
 import { z } from "zod";
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { requireUser } from "@/app/api/_shared";
 import { scheduledPurgeAt } from "@/lib/account-deletion";
 import { tryAudit } from "../_shared";
 
@@ -16,27 +16,9 @@ export const revalidate = 1;
 const bodySchema = z.object({ email: z.string().trim().min(1) });
 
 export async function POST(request: Request) {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json({ error: "unavailable" }, { status: 401 });
-  }
-  if (
-    (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY)) &&
-    process.env.NODE_ENV === "production"
-  ) {
-    return Response.json({ error: "not configured" }, { status: 200 });
-  }
-
-  const supabase = await createRouteContext();
-  let user;
-  try {
-    user = await getAuthedUser(supabase);
-  } catch (error) {
-    if (error instanceof HttpError) {
-      return Response.json({ error: "authentication required" }, { status: error.status });
-    }
-    throw error;
-  }
+  const auth = await requireUser();
+  if ("response" in auth) return auth.response;
+  const { user } = auth;
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -64,14 +46,26 @@ export async function POST(request: Request) {
   }
 
   const nowIso = new Date().toISOString();
+  // Conditional write (same race as deletion-cancel): the row must still be
+  // pending when the update lands, otherwise a concurrent cancel/purge
+  // surfaces as 404 instead of a trigger 500.
   const { data: confirmed, error: updateError } = await admin
     .from("account_deletion_requests")
     .update({ status: "confirmed", confirmed_at: nowIso, scheduled_purge_at: scheduledPurgeAt() })
     .eq("id", pending.id)
+    .eq("status", "pending")
     .select("id, status, requested_at, confirmed_at, scheduled_purge_at, purged_at")
-    .single();
+    .maybeSingle();
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    if (updateError.code === "23514") {
+      return Response.json({ error: "no pending deletion request" }, { status: 409 });
+    }
+    throw updateError;
+  }
+  if (!confirmed) {
+    return Response.json({ error: "no pending deletion request" }, { status: 404 });
+  }
 
   await tryAudit(user.id, "account_deletion_confirmed");
 

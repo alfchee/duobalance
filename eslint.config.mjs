@@ -9,6 +9,46 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
+// Shared ban fragments. Flat-config entries sharing a rule key overwrite
+// each other, so every entry matching billing files must repeat the bans
+// from the entries above it — from these consts, not copy-paste, so the
+// next boundary change is one edit.
+const USE_SERVER_BANS = [
+  {
+    selector: "Literal[value='use server']",
+    message:
+      "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+  },
+  {
+    selector: 'Literal[value="use server"]',
+    message:
+      "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+  },
+];
+
+const ADAPTER_IMPORT_BANS = [
+  {
+    selector: "ImportDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+    message:
+      "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Import the port from @/lib/billing/provider and resolve implementations via @/lib/billing/registry — never import an adapter directly.",
+  },
+  {
+    selector: "ExportNamedDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+    message:
+      "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
+  },
+  {
+    selector: "ExportAllDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+    message:
+      "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
+  },
+  {
+    selector: "ImportExpression[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+    message:
+      "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Resolve implementations via @/lib/billing/registry — never dynamically import an adapter.",
+  },
+];
+
 const eslintConfig = [
   // Global ignores first — must precede the next/core-web-vitals config
   // because FlatCompat's extends blocks later re-match *.ts/*.tsx files and
@@ -62,19 +102,7 @@ const eslintConfig = [
           ],
         },
       ],
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "Literal[value='use server']",
-          message:
-            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
-        },
-        {
-          selector: 'Literal[value="use server"]',
-          message:
-            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
-        },
-      ],
+      "no-restricted-syntax": ["error", ...USE_SERVER_BANS],
     },
   },
   {
@@ -95,41 +123,7 @@ const eslintConfig = [
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["**/lib/billing/adapters/**", "**/lib/billing/registry.ts"],
     rules: {
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "Literal[value='use server']",
-          message:
-            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
-        },
-        {
-          selector: 'Literal[value="use server"]',
-          message:
-            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
-        },
-        {
-          selector: "ImportDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
-          message:
-            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Import the port from @/lib/billing/provider and resolve implementations via @/lib/billing/registry — never import an adapter directly.",
-        },
-        {
-          selector:
-            "ExportNamedDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
-          message:
-            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
-        },
-        {
-          selector:
-            "ExportAllDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
-          message:
-            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
-        },
-        {
-          selector: "ImportExpression[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
-          message:
-            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Resolve implementations via @/lib/billing/registry — never dynamically import an adapter.",
-        },
-      ],
+      "no-restricted-syntax": ["error", ...USE_SERVER_BANS, ...ADAPTER_IMPORT_BANS],
     },
   },
   {
@@ -156,38 +150,8 @@ const eslintConfig = [
     rules: {
       "no-restricted-syntax": [
         "error",
-        {
-          selector: "Literal[value='use server']",
-          message:
-            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
-        },
-        {
-          selector: 'Literal[value="use server"]',
-          message:
-            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
-        },
-        {
-          selector: "ImportDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
-          message:
-            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Import the port from @/lib/billing/provider and resolve implementations via @/lib/billing/registry — never import an adapter directly.",
-        },
-        {
-          selector:
-            "ExportNamedDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
-          message:
-            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
-        },
-        {
-          selector:
-            "ExportAllDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
-          message:
-            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
-        },
-        {
-          selector: "ImportExpression[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
-          message:
-            "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Resolve implementations via @/lib/billing/registry — never dynamically import an adapter.",
-        },
+        ...USE_SERVER_BANS,
+        ...ADAPTER_IMPORT_BANS,
         {
           selector: 'CallExpression[callee.object.name="Date"][callee.property.name="now"]',
           message:

@@ -11,13 +11,14 @@ vi.mock("@/app/api/_shared", () => ({
   },
   createRouteContext: vi.fn(),
   getAuthedUser: vi.fn(),
+  requireUser: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServiceRoleClient: vi.fn(),
 }));
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createRouteContext, getAuthedUser, requireUser } from "@/app/api/_shared";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { POST } from "./route";
 
@@ -66,6 +67,7 @@ function makeClient(opts: {
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(requireUser).mockReset();
   vi.mocked(createSupabaseServiceRoleClient).mockReset();
   delete process.env.BUILD_TARGET;
 });
@@ -78,14 +80,19 @@ afterEach(() => {
 describe("POST /api/account/deletion-request", () => {
   it("rejects unauthenticated callers", async () => {
     makeClient({ open: null });
-    vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
+    vi.mocked(requireUser).mockResolvedValue({
+      response: Response.json({ error: "authentication required" }, { status: 401 }),
+    });
 
     expect((await POST()).status).toBe(401);
   });
 
   it("returns 409 when a request is already open", async () => {
     makeClient({ open: { id: "req-0", status: "confirmed" } });
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: {} as never,
+      user: { id: "user-1" } as never,
+    });
 
     const res = await POST();
 
@@ -94,7 +101,10 @@ describe("POST /api/account/deletion-request", () => {
 
   it("creates a pending request", async () => {
     makeClient({ open: null, created });
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: {} as never,
+      user: { id: "user-1" } as never,
+    });
 
     const res = await POST();
 
@@ -107,7 +117,10 @@ describe("POST /api/account/deletion-request", () => {
       open: null,
       insertError: { message: "duplicate key value", code: "23505" },
     });
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: {} as never,
+      user: { id: "user-1" } as never,
+    });
 
     const res = await POST();
 

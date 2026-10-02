@@ -5,6 +5,7 @@ import {
   formatSignedMoney,
   maskMoneyInput,
   parseMoneyInput,
+  parseMoneyInputStrict,
   roundToMinorUnit,
 } from "./money";
 
@@ -132,6 +133,16 @@ describe("parseMoneyInput", () => {
     expect(parseMoneyInput(".", "en")).toBeNull();
     expect(parseMoneyInput("-", "es")).toBeNull();
   });
+
+  it("strict mode rejects malformed grouping that lenient mode collapses", () => {
+    // Lenient (mask pair): strips groups wherever they appear.
+    expect(parseMoneyInput("1..2..3", "es")).toBe(123);
+    // Strict (submit path): typos yield null instead of a 100x value.
+    expect(parseMoneyInputStrict("1..2..3", "es")).toBeNull();
+    expect(parseMoneyInputStrict("1.2.3", "es")).toBeNull();
+    expect(parseMoneyInputStrict("1.234,56", "es")).toBe(1234.56);
+    expect(parseMoneyInputStrict("12,345", "es", "comma_decimal")).toBe(12.345);
+  });
 });
 
 describe("maskMoneyInput", () => {
@@ -179,6 +190,8 @@ describe("roundToMinorUnit", () => {
   it("rounds half-cent values the way a human expects", () => {
     // 1.005*100 is 100.4999… in IEEE-754; must still round to 1.01.
     expect(roundToMinorUnit(1.005, 2)).toBe(1.01);
+    // Symmetric for negatives: -1.005 must round to -1.01, not toward zero.
+    expect(roundToMinorUnit(-1.005, 2)).toBe(-1.01);
   });
 });
 

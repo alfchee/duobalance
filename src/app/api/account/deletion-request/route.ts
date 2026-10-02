@@ -6,33 +6,15 @@
 // these handlers + the DB trigger backstop): the service-role client below
 // is explicitly scoped to the caller's user_id on every query.
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { requireUser } from "@/app/api/_shared";
 import { tryAudit } from "../_shared";
 
 export const revalidate = 1;
 
 export async function POST() {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json({ error: "unavailable" }, { status: 401 });
-  }
-  if (
-    (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY)) &&
-    process.env.NODE_ENV === "production"
-  ) {
-    return Response.json({ error: "not configured" }, { status: 200 });
-  }
-
-  const supabase = await createRouteContext();
-  let user;
-  try {
-    user = await getAuthedUser(supabase);
-  } catch (error) {
-    if (error instanceof HttpError) {
-      return Response.json({ error: "authentication required" }, { status: error.status });
-    }
-    throw error;
-  }
+  const auth = await requireUser();
+  if ("response" in auth) return auth.response;
+  const { user } = auth;
 
   const { createSupabaseServiceRoleClient } = await import("@/lib/supabase/server");
   const admin = createSupabaseServiceRoleClient();

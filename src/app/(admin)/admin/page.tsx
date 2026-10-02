@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api-fetch";
 import { AdminGate } from "@/components/admin/admin-gate";
+import { formatDate } from "@/components/admin/format";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,12 +45,6 @@ const STATUS_OPTIONS = [
   { value: "comped", label: "comped" },
   { value: "none", label: "no subscription" },
 ] as const;
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
-}
 
 // Admin home (#271 scaffolding, #272 views): searchable household list
 // showing plan, subscription status, member count, created date and last

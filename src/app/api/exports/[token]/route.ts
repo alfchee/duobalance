@@ -22,7 +22,7 @@ export function generateStaticParams() {
 
 export const revalidate = 1;
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { requireUser } from "@/app/api/_shared";
 import {
   EXPORT_CACHE_HEADERS,
   EXPORT_TABLES,
@@ -51,16 +51,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     return Response.json({ error: "export link not found" }, { status: 404 });
   }
 
-  const supabase = await createRouteContext();
-  let user;
-  try {
-    user = await getAuthedUser(supabase);
-  } catch (error) {
-    if (error instanceof HttpError) {
-      return Response.json({ error: "authentication required" }, { status: error.status });
-    }
-    throw error;
-  }
+  const auth = await requireUser();
+  if ("response" in auth) return auth.response;
+  const { supabase, user } = auth;
 
   // Privileged lookup: RLS on data_export_links would turn a cross-household
   // token into a bare 404, hiding the deliberate 403 below. The token itself

@@ -126,16 +126,23 @@ describe("admin no-impersonation rule (#271)", () => {
     }
   });
 
-  it("no admin route gates on household membership", () => {
+  it("no admin route gates on household membership", async () => {
     // The roster (admin_users) is the only check. is_member() would let a
     // household session imply admin access — the exact path that must not
-    // exist (roles are distinct, ADR 0005).
+    // exist (roles are distinct, ADR 0005). Routes gate through requireAdmin
+    // directly or through withAdmin, which delegates to requireAdmin
+    // (pinned in app/api/admin/_shared.test.ts).
+    const { withAdmin, requireAdmin } = await import("@/app/api/admin/_shared");
+    expect(withAdmin.toString()).toContain("requireAdmin");
+    expect(requireAdmin.toString()).toContain("is_admin");
     for (const file of adminRouteFiles()) {
       const source = read(file);
       expect(source, `${file} must gate through requireAdmin, not is_member()`).not.toContain(
         "is_member(",
       );
-      expect(source, `${file} must gate through requireAdmin`).toContain("requireAdmin");
+      expect(source, `${file} must gate through requireAdmin (directly or via withAdmin)`).toMatch(
+        /requireAdmin|withAdmin/,
+      );
     }
   });
 });

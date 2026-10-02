@@ -127,3 +127,61 @@ export async function auditAdminAction(
     throw new Error(`admin audit write failed: ${action}`);
   }
 }
+
+/**
+ * Shared admin preamble (was copy-pasted into every admin GET/POST):
+ * Tauri guard, requireAdmin, neutral 404. Handlers receive the admin
+ * context plus the request (for query params / bodies):
+ *
+ *   export async function GET(request: Request) {
+ *     return withAdmin(request, async (ctx, req) => { ... });
+ *   }
+ */
+export async function withAdmin(
+  request: Request,
+  handler: (ctx: AdminContext, request: Request) => Promise<Response>,
+): Promise<Response> {
+  if (process.env.BUILD_TARGET === "tauri") return adminNotFound();
+  const ctx = await requireAdmin(request);
+  if (!ctx) return adminNotFound();
+  return handler(ctx, request);
+}
+
+/**
+ * Shared SQLSTATE → status mapping for the admin mutation routes
+ * (was duplicated as couponErrorStatus / overrideErrorStatus).
+ * SQLSTATE first: 42501/23503 stay neutral, 23505 is a conflict,
+ * validation is 400 — except unknown-coupon 23514, which reads as the
+ * neutral 404 like unknown households. The message fallbacks exist for
+ * error shapes without a code (PostgREST errors always carry one).
+ */
+export function mapAdminSqlError(message: string, code?: string): number {
+  if (code === "42501" || code === "23503") return 404;
+  if (code === "23505") return 409;
+  if (code === "23514") {
+    if (message.includes("unknown coupon")) return 404;
+    return 400;
+  }
+  if (code !== undefined) return 500;
+  if (
+    message.includes("reason is required") ||
+    message.includes("confirmation") ||
+    message.includes("needs a") ||
+    message.includes("unknown override action") ||
+    message.includes("unknown plan code") ||
+    message.includes("no live subscription") ||
+    message.includes("invalid input") ||
+    message.includes("idempotency key too long")
+  ) {
+    return 400;
+  }
+  if (message.includes("already holds a live subscription")) return 409;
+  if (message.includes("already exists")) return 409;
+  return 500;
+}
+
+/** Parse an operator-entered ISO timestamp, null when invalid. */
+export function parseIsoDate(value: string): string | null {
+  const at = new Date(value);
+  return Number.isNaN(at.getTime()) ? null : at.toISOString();
+}

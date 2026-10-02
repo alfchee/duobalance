@@ -1,10 +1,13 @@
 // GET/POST /api/admin/coupons — coupon management (#274).
 //
-// GET: the coupon list with redemption counts and remaining capacity.
+// GET: the coupon list with redemption counts and remaining capacity,
+// paged via ?limit= (1..500, default 100) and ?offset= (>= 0, default 0).
 // GET ?code=<CODE>: that coupon plus its redemptions (household
-// identifiers + timestamps only — never emails or names). The coupon row
-// is picked from the list reader, so unknown codes read as neutral 404,
-// same as unknown household ids on the households route.
+// identifiers + timestamps only — never emails or names), read through the
+// single-coupon reader so one detail view never buffers the full list.
+// Unknown codes read as neutral 404, same as unknown household ids on the
+// households route. Redemptions page via ?redemption_limit= (1..1000,
+// default 100) and ?redemption_offset=.
 //
 // POST: { action: "create" | "set_active", ... }. Creation requires every
 // constraint field explicitly (currency is an explicit null for percent —
@@ -26,7 +29,9 @@ import {
   adminJson,
   adminNotFound,
   auditAdminAction,
-  requireAdmin,
+  mapAdminSqlError,
+  parseIsoDate,
+  withAdmin,
   ADMIN_NO_STORE_HEADERS,
   type AdminContext,
 } from "../_shared";
@@ -67,45 +72,38 @@ const postBodySchema = z.union([createBodySchema, setActiveBodySchema]);
 
 type CouponRow = Record<string, unknown> & { code?: unknown };
 
-function findCoupon(rows: CouponRow[], code: string): CouponRow | undefined {
-  const want = code.trim().toUpperCase();
-  return rows.find((r) => String(r.code ?? "").toUpperCase() === want);
-}
-
 function couponErrorStatus(message: string, code?: string): number {
-  // Same discipline as the households POST: SQLSTATE first. 42501 stays
-  // neutral; validation is 400; a duplicate code is 409, never a second
-  // row (the redelivered-create answer to double-clicks). Unknown codes
-  // read as neutral 404 like unknown households/ids elsewhere — the
-  // function reports them as 23514, so they match on message here.
-  if (code === "42501") return 404;
-  if (code === "23505") return 409;
-  if (code === "23514") {
-    if (message.includes("unknown coupon")) return 404;
-    return 400;
-  }
-  if (code !== undefined) return 500;
-  if (message.includes("already exists")) return 409;
-  return 500;
+  // Unified in _shared.mapAdminSqlError (same SQLSTATE discipline).
+  return mapAdminSqlError(message, code);
 }
 
 export async function GET(request: Request) {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json(
-      { error: "not found" },
-      { status: 404, headers: { ...ADMIN_NO_STORE_HEADERS } },
-    );
-  }
-  const ctx = await requireAdmin(request);
-  if (!ctx) return adminNotFound();
-
-  const code = new URL(request.url).searchParams.get("code")?.trim() || null;
-  if (code) return getCouponDetail(ctx, code);
-  return listCoupons(ctx);
+  return withAdmin(request, async (ctx, req) => {
+    const url = new URL(req.url);
+    const code = url.searchParams.get("code")?.trim() || null;
+    if (code) {
+      const redemptionLimit = clampInt(url.searchParams.get("redemption_limit"), 1, 1000, 100);
+      const redemptionOffset = clampInt(url.searchParams.get("redemption_offset"), 0, null, 0);
+      return getCouponDetail(ctx, code, redemptionLimit, redemptionOffset);
+    }
+    const limit = clampInt(url.searchParams.get("limit"), 1, 500, 100);
+    const offset = clampInt(url.searchParams.get("offset"), 0, null, 0);
+    return listCoupons(ctx, limit, offset);
+  });
 }
 
-async function listCoupons(ctx: AdminContext) {
-  const { data, error } = await ctx.db.rpc("admin_list_coupons");
+function clampInt(raw: string | null, min: number, max: number | null, fallback: number): number {
+  const parsed = raw === null ? Number.NaN : Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  const floored = Math.max(min, Math.floor(parsed));
+  return max === null ? floored : Math.min(max, floored);
+}
+
+async function listCoupons(ctx: AdminContext, limit: number, offset: number) {
+  const { data, error } = await ctx.db.rpc("admin_list_coupons", {
+    p_limit: limit,
+    p_offset: offset,
+  });
   if (error) throw error;
 
   const coupons = ((data ?? []) as CouponRow[]).map((row) =>
@@ -113,18 +111,28 @@ async function listCoupons(ctx: AdminContext) {
   );
 
   await auditAdminAction(ctx.db, "coupons.list", null);
-  return adminJson({ coupons });
+  return adminJson({ coupons, limit, offset });
 }
 
-async function getCouponDetail(ctx: AdminContext, code: string) {
-  const [{ data: list, error: listError }, { data: reds, error: redsError }] = await Promise.all([
-    ctx.db.rpc("admin_list_coupons"),
-    ctx.db.rpc("admin_get_coupon_redemptions", { p_code: code }),
-  ]);
-  if (listError) throw listError;
+async function getCouponDetail(
+  ctx: AdminContext,
+  code: string,
+  redemptionLimit: number,
+  redemptionOffset: number,
+) {
+  const [{ data: single, error: singleError }, { data: reds, error: redsError }] =
+    await Promise.all([
+      ctx.db.rpc("admin_get_coupon", { p_code: code }),
+      ctx.db.rpc("admin_get_coupon_redemptions", {
+        p_code: code,
+        p_limit: redemptionLimit,
+        p_offset: redemptionOffset,
+      }),
+    ]);
+  if (singleError) throw singleError;
   if (redsError) throw redsError;
 
-  const couponRow = findCoupon((list ?? []) as CouponRow[], code);
+  const couponRow = ((single ?? []) as CouponRow[])[0];
   if (!couponRow) return adminNotFound();
 
   const coupon = projectAdminKeys(couponRow, ADMIN_COUPON_KEYS);
@@ -133,36 +141,31 @@ async function getCouponDetail(ctx: AdminContext, code: string) {
   );
 
   await auditAdminAction(ctx.db, "coupon.redemptions.view", null);
-  return adminJson({ coupon, redemptions });
-}
-
-function parseIso(value: string): string | null {
-  const at = new Date(value);
-  return Number.isNaN(at.getTime()) ? null : at.toISOString();
+  return adminJson({
+    coupon,
+    redemptions,
+    redemptions_limit: redemptionLimit,
+    redemptions_offset: redemptionOffset,
+  });
 }
 
 export async function POST(request: Request) {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json(
-      { error: "not found" },
-      { status: 404, headers: { ...ADMIN_NO_STORE_HEADERS } },
-    );
-  }
-  const ctx = await requireAdmin(request);
-  if (!ctx) return adminNotFound();
+  return withAdmin(request, async (ctx, req) => {
+    const parsed = postBodySchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) {
+      return Response.json(
+        { error: "invalid request body" },
+        { status: 400, headers: { ...ADMIN_NO_STORE_HEADERS } },
+      );
+    }
+    return applyCouponPost(ctx, parsed.data);
+  });
+}
 
-  const parsed = postBodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return Response.json(
-      { error: "invalid request body" },
-      { status: 400, headers: { ...ADMIN_NO_STORE_HEADERS } },
-    );
-  }
-  const body = parsed.data;
-
+async function applyCouponPost(ctx: AdminContext, body: z.infer<typeof postBodySchema>) {
   if (body.action === "create") {
-    const validFrom = parseIso(body.valid_from);
-    const validUntil = parseIso(body.valid_until);
+    const validFrom = parseIsoDate(body.valid_from);
+    const validUntil = parseIsoDate(body.valid_until);
     if (!validFrom || !validUntil) {
       return Response.json(
         { error: "valid_from and valid_until must be ISO timestamps" },
@@ -194,8 +197,8 @@ export async function POST(request: Request) {
         { status, headers: { ...ADMIN_NO_STORE_HEADERS } },
       );
     }
-    // Re-read through the list reader so the response carries the live
-    // counts (0 / max) in the same shape as GET.
+    // Re-read through the single-coupon reader so the response carries the
+    // live counts (0 / max) in the same shape as GET.
     return couponByCode(ctx, body.code, false);
   }
 
@@ -213,18 +216,20 @@ export async function POST(request: Request) {
       { status, headers: { ...ADMIN_NO_STORE_HEADERS } },
     );
   }
-  const idempotent = ((data ?? []) as Array<{ was_idempotent?: unknown }>).every(
-    (r) => r.was_idempotent === true,
-  );
+  // Non-empty required: [].every(...) is vacuously true, so a null/empty
+  // transport shape would otherwise report idempotent:true on an unknown
+  // write. Unknown → false (not idempotent) is the safe default.
+  const rows = (data ?? []) as Array<{ was_idempotent?: unknown }>;
+  const idempotent = rows.length > 0 && rows.every((r) => r.was_idempotent === true);
   const res = await couponByCode(ctx, body.code, idempotent);
   return res;
 }
 
-/** Re-read one coupon through admin_list_coupons and project it. */
+/** Re-read one coupon through the single-coupon reader and project it. */
 async function couponByCode(ctx: AdminContext, code: string, idempotent: boolean) {
-  const { data, error } = await ctx.db.rpc("admin_list_coupons");
+  const { data, error } = await ctx.db.rpc("admin_get_coupon", { p_code: code });
   if (error) throw error;
-  const couponRow = findCoupon((data ?? []) as CouponRow[], code);
+  const couponRow = ((data ?? []) as CouponRow[])[0];
   if (!couponRow) return adminNotFound();
   return adminJson({
     coupon: projectAdminKeys(couponRow, ADMIN_COUPON_KEYS),

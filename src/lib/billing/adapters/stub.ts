@@ -160,10 +160,14 @@ export class StubPaymentProvider implements PaymentProvider {
     }
     const now = this.clock.now();
     // Immediate cancellation keeps access until the paid period ends
-    // (epic #255: `cancelled` stays entitled until period end).
+    // (epic #255: `cancelled` stays entitled until period end). Mirrors the
+    // lifecycle's cancelledEntry (clearGrace): a past_due row cancelled with
+    // a future grace keeps no grace window, so stub-based tests see the same
+    // entitlement prod computes.
     const effectiveAt = sub.currentPeriodEnd ?? now;
     sub.status = "cancelled";
     sub.cancelAtPeriodEnd = true;
+    sub.graceEndsAt = null;
     this.record({ type: "subscription.cancelled", ref: sub.ref, effectiveAt });
   }
 
@@ -249,6 +253,9 @@ export class StubPaymentProvider implements PaymentProvider {
     }
     if (status === "cancelled") {
       sub.cancelAtPeriodEnd = true;
+      // Mirrors the lifecycle's cancelledEntry (clearGrace) — see
+      // cancelSubscription above.
+      sub.graceEndsAt = null;
     }
     if (status === "grace" && !sub.graceEndsAt) {
       sub.graceEndsAt = addDays(now, STUB_GRACE_DAYS);

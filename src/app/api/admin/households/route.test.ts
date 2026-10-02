@@ -6,11 +6,21 @@ import {
   ADMIN_SUBSCRIPTION_KEYS,
 } from "@/lib/admin/scope";
 
-vi.mock("../_shared", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../_shared")>()),
-  requireAdmin: vi.fn(),
-  auditAdminAction: vi.fn(),
-}));
+vi.mock("../_shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../_shared")>();
+  const requireAdmin = vi.fn();
+  return {
+    ...actual,
+    requireAdmin,
+    auditAdminAction: vi.fn(),
+    // withAdmin delegates to the mocked requireAdmin so per-test contexts flow through.
+    withAdmin: async (request: Request, handler: (ctx: unknown, req: Request) => unknown) => {
+      const ctx = await requireAdmin(request);
+      if (!ctx) return actual.adminNotFound();
+      return handler(ctx, request);
+    },
+  };
+});
 
 import { auditAdminAction, requireAdmin } from "../_shared";
 import { GET, POST } from "./route";

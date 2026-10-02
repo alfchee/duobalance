@@ -468,4 +468,48 @@ describe("runDunningJob (#265)", () => {
     ]);
     expect(state.deliveries).toHaveLength(1);
   });
+
+  it("a partial multi-recipient failure attempts everyone and retries with stable keys", async () => {
+    // One bad address must not starve the rest of the household, and the
+    // retry must be safe for already-notified recipients: every send carries
+    // a deterministic per-recipient idempotency key the mailer dedupes on.
+    const clock = new ManualClock(START);
+    const state = { subs: [sub()], deliveries: [] as Delivery[] };
+    const db = makeDb(state);
+    const attempted: string[] = [];
+    const keys: (string | undefined)[] = [];
+    let failAna = true;
+    const household = {
+      householdName: "Casa Luna",
+      manageUrl: "https://app.test/settings",
+      recipients: [
+        { to: "ana@test.local", memberName: "Ana" },
+        { to: "bruno@test.local", memberName: "Bruno" },
+      ],
+    };
+    const d = deps({
+      resolveHousehold: async () => household,
+      sendStageEmail: async (input) => {
+        attempted.push(input.to[0] ?? "");
+        keys.push(input.idempotencyKey);
+        if (failAna && input.to[0] === "ana@test.local") throw new Error("smtp down");
+      },
+    });
+
+    await expect(runDunningJob(db, clock, d)).rejects.toThrow("smtp down");
+    // Bruno was attempted despite Ana failing first; the claim stays open.
+    expect(attempted).toEqual(["ana@test.local", "bruno@test.local"]);
+    expect(state.deliveries[0]?.sent_at).toBeNull();
+
+    failAna = false;
+    clock.advance(16 * 60 * 1000);
+    const retry = await runDunningJob(db, clock, deps());
+    expect(retry.sent).toHaveLength(1);
+    expect(state.deliveries[0]?.sent_at).not.toBeNull();
+    // Keys are deterministic per (subscription, stage, recipient).
+    expect(keys).toEqual([
+      "dunning:sub_1:first_reminder:ana@test.local",
+      "dunning:sub_1:first_reminder:bruno@test.local",
+    ]);
+  });
 });
