@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Money } from "./money";
+import { moneySchema, type Money } from "./money";
 
 // Coupons and discount codes (issue #268, parent epic #255).
 //
@@ -57,9 +57,17 @@ export interface DiscountedPrice {
  *
  * @throws {RangeError} On a negative price, an out-of-range percent, a
  * non-positive amount, or a currency mismatch.
+ * @throws {z.ZodError} On a malformed plan price (non-integer amount,
+ * unknown currency) or a malformed coupon shape.
  */
 export function applyCouponDiscount(planPrice: Money, coupon: Coupon): DiscountedPrice {
-  if (!Number.isInteger(planPrice.amount) || planPrice.amount < 0) {
+  // Validate the price as Money first: without this an unknown currency
+  // ("ABC") would pass through into the returned Discount, and a
+  // null/undefined price would throw a bare TypeError instead of a
+  // structured error. moneySchema allows negatives (credits/refunds), so
+  // the non-negative guard stays explicit below.
+  const price = moneySchema.parse(planPrice);
+  if (price.amount < 0) {
     throw new RangeError(`plan price must be a non-negative integer of minor units`);
   }
   const parsed = couponSchema.parse(coupon);
@@ -72,26 +80,26 @@ export function applyCouponDiscount(planPrice: Money, coupon: Coupon): Discounte
     if (currency !== null) {
       throw new RangeError(`percent coupons carry no currency`);
     }
-    const discountAmount = Math.floor((planPrice.amount * discountValue) / 100);
+    const discountAmount = Math.floor((price.amount * discountValue) / 100);
     return {
-      original: planPrice,
-      discount: { amount: discountAmount, currency: planPrice.currency },
-      total: { amount: planPrice.amount - discountAmount, currency: planPrice.currency },
+      original: { amount: price.amount, currency: price.currency },
+      discount: { amount: discountAmount, currency: price.currency },
+      total: { amount: price.amount - discountAmount, currency: price.currency },
     };
   }
 
   if (discountValue < 1) {
     throw new RangeError(`amount discount must be at least 1 minor unit`);
   }
-  if (currency === null || currency !== planPrice.currency) {
+  if (currency === null || currency !== price.currency) {
     throw new RangeError(
-      `amount coupon currency (${currency ?? "null"}) does not match price currency (${planPrice.currency})`,
+      `amount coupon currency (${currency ?? "null"}) does not match price currency (${price.currency})`,
     );
   }
-  const discountAmount = Math.min(discountValue, planPrice.amount);
+  const discountAmount = Math.min(discountValue, price.amount);
   return {
-    original: planPrice,
-    discount: { amount: discountAmount, currency: planPrice.currency },
-    total: { amount: planPrice.amount - discountAmount, currency: planPrice.currency },
+    original: { amount: price.amount, currency: price.currency },
+    discount: { amount: discountAmount, currency: price.currency },
+    total: { amount: price.amount - discountAmount, currency: price.currency },
   };
 }

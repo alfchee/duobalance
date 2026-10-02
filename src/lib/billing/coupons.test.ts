@@ -111,6 +111,23 @@ describe("applyCouponDiscount (#268)", () => {
     );
   });
 
+  it("rejects a malformed plan price instead of passing invalid Money through", () => {
+    // Unknown currency would previously flow into discount/total unchecked.
+    expect(() => applyCouponDiscount({ amount: 100, currency: "ABC" }, percent(20))).toThrow();
+    // Nullish and fractional prices must not throw a bare TypeError.
+    expect(() =>
+      applyCouponDiscount(null as unknown as { amount: number; currency: string }, percent(20)),
+    ).toThrow();
+    expect(() => applyCouponDiscount({ amount: 12.5, currency: "NIO" }, percent(20))).toThrow();
+  });
+
+  it("does not alias the caller's price object", () => {
+    const price = { amount: 10000, currency: "NIO" };
+    const result = applyCouponDiscount(price, percent(20));
+    expect(result.original).toEqual(price);
+    expect(result.original).not.toBe(price);
+  });
+
   it("prices a zero plan at zero", () => {
     const result = applyCouponDiscount({ amount: 0, currency: "NIO" }, percent(50));
     expect(result.total).toEqual({ amount: 0, currency: "NIO" });

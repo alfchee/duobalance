@@ -101,8 +101,11 @@ select is(
 
 -- Serialization leg: concurrent attempts serialize on the coupon row lock,
 -- so the exhaustion count above cannot pass twice for one remaining slot.
+-- Line comments are stripped before matching so the pin cannot be satisfied
+-- by the explanatory comment alone — the FOR UPDATE clause must be present
+-- in executable SQL.
 select ok(
-  (select prosrc ilike '%for update%'
+  (select regexp_replace(prosrc, '--[^\n]*', '', 'g') ilike '%for update%'
      from pg_proc
     where proname = 'redeem_coupon'
       and pg_function_is_visible(oid)),
