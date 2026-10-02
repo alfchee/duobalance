@@ -140,14 +140,12 @@ export function maskMoneyInput(
   const hasMinus = filtered.startsWith("-");
   let unsigned = (hasMinus ? filtered.slice(1) : filtered).replace(/-/g, "");
 
-  // No fraction for whole-unit currencies: the decimal separator would read as
-  // a decimal to parseMoneyInput (es "12,345" -> 12.345), so treat it as a
-  // group separator and drop it.
+  // No fraction for whole-unit currencies: truncate at the first decimal
+  // separator instead of joining — joining would silently inflate a typed
+  // fraction ("12.34" -> "1234", 100x) before roundToMinorUnit persists it.
   if (minorUnit === 0) {
-    unsigned = unsigned
-      .split(decimal)
-      .join("")
-      .replace(new RegExp(`${escapeRegExp(group)}$`), "");
+    const intOnly = unsigned.split(decimal)[0] ?? "";
+    unsigned = intOnly.replace(new RegExp(`${escapeRegExp(group)}$`), "");
     return (hasMinus ? "-" : "") + unsigned;
   }
 

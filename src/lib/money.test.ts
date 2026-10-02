@@ -153,7 +153,10 @@ describe("maskMoneyInput", () => {
 
   it("caps the fraction at minorUnit places (CLP accepts no decimals)", () => {
     expect(maskMoneyInput("12,345678", "es", 2)).toBe("12,34");
-    expect(maskMoneyInput("12,345", "es", 0)).toBe("12345");
+    // Whole-unit currencies truncate at the decimal separator: "12,345" in es
+    // is 12 + fraction 345, so the mask keeps "12" instead of inflating to
+    // "12345" (1000x) before roundToMinorUnit persists it.
+    expect(maskMoneyInput("12,345", "es", 0)).toBe("12");
   });
 
   it("drops a trailing separator for minorUnit = 0", () => {

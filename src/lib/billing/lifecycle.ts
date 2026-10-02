@@ -400,8 +400,10 @@ export async function applyBillingEvent(
     // Same provider event id seen before: adopt it when a previous attempt
     // recorded receipt but never finished, otherwise it is an exact
     // redelivery whose outcome (applied or recorded rejection) stands.
-    // (A null select here means the conflicting writer rolled back; the
-    // provider's next redelivery then records fresh — still no double-apply.)
+    // A null select here means the conflicting row is not visible
+    // (rolled-back writer or read-visibility gap): throwing surfaces a 500
+    // so the provider redelivers fresh instead of a 200 "duplicate" that
+    // would drop the delivery without ever applying it.
     const prior = await db
       .from("billing_events")
       .select("subscription_id,processed_at")
@@ -411,7 +413,10 @@ export async function applyBillingEvent(
     if (prior.error) {
       throw prior.error;
     }
-    if (!prior.data || prior.data.processed_at !== null) {
+    if (!prior.data) {
+      throw logged.error;
+    }
+    if (prior.data.processed_at !== null) {
       return { outcome: "duplicate" };
     }
   }
@@ -617,7 +622,12 @@ export interface ExpirableRow {
  */
 export function isExpirable(row: ExpirableRow, now: Date): boolean {
   if (row.status === "past_due" || row.status === "grace") {
-    return row.grace_ends_at !== null && new Date(row.grace_ends_at).getTime() <= now.getTime();
+    // Fail-closed: a null grace deadline (legacy/manual row) is immediately
+    // expirable instead of squatting the one-live slot forever. Matches
+    // planDunningStages, which treats the same null as urgent/due, so the
+    // sweeper and dunning converge instead of diverging.
+    if (row.grace_ends_at === null) return true;
+    return new Date(row.grace_ends_at).getTime() <= now.getTime();
   }
   if (row.status === "cancelled") {
     // Null period end means no entitlement window at all: without this arm a

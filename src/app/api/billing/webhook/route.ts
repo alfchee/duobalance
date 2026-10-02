@@ -205,15 +205,39 @@ async function verifyAndTranslate(
 
 /** Stable content key for adapters without native delivery ids (see above). */
 function syntheticEventId(event: BillingEvent): string {
-  return `synth_${fnv1a(JSON.stringify(event))}`;
+  return `synth_${fnv1a64(stableStringify(event))}`;
 }
 
-/** FNV-1a 32-bit hex — sync and Workers-safe (no Node crypto, no subtle). */
-function fnv1a(input: string): string {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
+/**
+ * Canonical JSON with sorted object keys: the same logical event hashes the
+ * same way regardless of key order, so reshaped redeliveries dedupe instead
+ * of double-applying. Dates serialize as ISO strings (matching JSON).
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || value === undefined) return "null";
+  if (value instanceof Date) return JSON.stringify(value.toISOString());
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    );
+    return `{${entries.map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`).join(",")}}`;
   }
-  return (hash >>> 0).toString(16).padStart(8, "0");
+  return JSON.stringify(value) ?? "null";
+}
+
+/**
+ * FNV-1a 64-bit hex (16 chars) — sync and Workers-safe (BigInt only, no Node
+ * crypto, no subtle). 64 bits over the canonical form: key-order stable and
+ * far less collision-prone than the previous 32-bit hash of raw JSON.
+ */
+function fnv1a64(input: string): string {
+  let hash = 0xcbf29ce484222325n;
+  const prime = 0x100000001b3n;
+  const mask = 0xffffffffffffffffn;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= BigInt(input.charCodeAt(i));
+    hash = (hash * prime) & mask;
+  }
+  return hash.toString(16).padStart(16, "0");
 }

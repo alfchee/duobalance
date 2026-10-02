@@ -25,6 +25,19 @@ export const EXPORT_CACHE_HEADERS = {
 export type ExportTable = (typeof EXPORT_TABLES)[number];
 export type ExportData = Record<ExportTable, unknown[]>;
 
+// Guard against OOM: one table's worth of buffered rows is the route's peak
+// memory (full JSON/CSV string built in memory). Past this the export is
+// rejected with 413 instead of crashing the function — streaming the payload
+// is the follow-up, this keeps the current shape safe.
+export const MAX_EXPORT_ROWS_PER_TABLE = 50_000;
+
+export class ExportTooLargeError extends Error {
+  constructor(table: ExportTable) {
+    super(`export too large: ${table} exceeds ${MAX_EXPORT_ROWS_PER_TABLE} rows`);
+    this.name = "ExportTooLargeError";
+  }
+}
+
 const EXPORT_ORDER_COLUMNS: Record<ExportTable, readonly string[]> = {
   accounts: ["id"],
   transactions: ["id"],
@@ -137,6 +150,7 @@ export async function fetchAllRows(
     if (error) throw error;
     const page = data ?? [];
     rows.push(...page);
+    if (rows.length > MAX_EXPORT_ROWS_PER_TABLE) throw new ExportTooLargeError(table);
     if (page.length < pageSize) return rows;
   }
 }
@@ -274,6 +288,9 @@ export async function GET(request: Request) {
     try {
       transactions = await fetchAllRows(fetchClient, "transactions", household.id, scopeFilter);
     } catch (error) {
+      if (error instanceof ExportTooLargeError) {
+        return Response.json({ error: "export too large" }, { status: 413 });
+      }
       console.error("export: failed to fetch transactions", { householdId, error });
       return Response.json({ error: "export failed" }, { status: 502 });
     }
@@ -288,10 +305,21 @@ export async function GET(request: Request) {
 
   const data = {} as ExportData;
   try {
-    for (const table of EXPORT_TABLES) {
-      data[table] = await fetchAllRows(fetchClient, table, household.id, scopeFilter);
+    // Per-table fetches are independent — run them together instead of 10
+    // serial round-trips.
+    const fetched = await Promise.all(
+      EXPORT_TABLES.map(
+        async (table) =>
+          [table, await fetchAllRows(fetchClient, table, household.id, scopeFilter)] as const,
+      ),
+    );
+    for (const [table, rows] of fetched) {
+      data[table] = rows;
     }
   } catch (error) {
+    if (error instanceof ExportTooLargeError) {
+      return Response.json({ error: "export too large" }, { status: 413 });
+    }
     console.error("export: failed to fetch household data", { householdId, error });
     return Response.json({ error: "export failed" }, { status: 502 });
   }

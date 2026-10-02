@@ -26,6 +26,7 @@ import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared"
 import {
   EXPORT_CACHE_HEADERS,
   EXPORT_TABLES,
+  ExportTooLargeError,
   fetchAllRows,
   safeFilenamePart,
   transactionsToCsv,
@@ -117,6 +118,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     try {
       transactions = await fetchAllRows(supabase, "transactions", household.id);
     } catch (error) {
+      if (error instanceof ExportTooLargeError) {
+        return Response.json({ error: "export too large" }, { status: 413 });
+      }
       console.error("export-link: failed to fetch transactions", { error });
       return Response.json({ error: "export failed" }, { status: 502 });
     }
@@ -131,10 +135,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
 
   const data = {} as ExportData;
   try {
-    for (const table of EXPORT_TABLES) {
-      data[table] = await fetchAllRows(supabase, table, household.id);
+    const fetched = await Promise.all(
+      EXPORT_TABLES.map(
+        async (table) => [table, await fetchAllRows(supabase, table, household.id)] as const,
+      ),
+    );
+    for (const [table, rows] of fetched) {
+      data[table] = rows;
     }
   } catch (error) {
+    if (error instanceof ExportTooLargeError) {
+      return Response.json({ error: "export too large" }, { status: 413 });
+    }
     console.error("export-link: failed to fetch household data", { error });
     return Response.json({ error: "export failed" }, { status: 502 });
   }

@@ -543,7 +543,12 @@ describe("isExpirable (#260)", () => {
       { ...base, status: "grace", grace_ends_at: "2026-11-01T00:00:00.000Z" },
       true,
     ],
-    ["grace without a window", { ...base, status: "grace", grace_ends_at: null }, false],
+    ["grace without a window", { ...base, status: "grace", grace_ends_at: null }, true],
+    [
+      "past_due without a window (fail-closed, matches dunning urgent)",
+      { ...base, status: "past_due", grace_ends_at: null },
+      true,
+    ],
     [
       "cancelled past period end",
       { ...base, status: "cancelled", current_period_end: "2026-10-23T00:00:00.000Z" },
