@@ -22,9 +22,16 @@ const migration = readFileSync(
 // edits its logic without the other, this test fails: agreement is
 // referenced (mechanically verified), not trusted.
 const SHARED_FRAGMENTS = [
-  // Activation summary: setup-complete and partner-joined predicates.
+  // Activation summary: active-household, setup-complete, budget, and
+  // partner predicates — every EXISTS / join condition that decides a
+  // count, so no predicate can drift unnoticed.
+  "h.deleted_at is null",
   "and not a.is_archived",
+  "exists (select 1 from public.transactions t where t.household_id = h.id)",
+  "exists (select 1 from public.budgets b where b.household_id = h.id)",
   "m.household_id = h.id and m.removed_at is null) >= 2",
+  "m.removed_at is null and m.role = 'owner'",
+  "m.role = 'partner' and m.removed_at is null",
   // Funnel: ordered steps, drop-off step list, clamped loss. (The
   // furthest-step CASE lives in the per-household table, which the
   // dashboard excludes by AC — so it is pinned here by absence below.)
@@ -35,14 +42,19 @@ const SHARED_FRAGMENTS = [
   "greatest(lag(s.reached) over (order by s.step) - s.reached, 0)",
   "m.role = 'owner'",
   "i.role = 'partner'",
-  // Retention: eligibility and window expressions.
+  // Retention: cohort grouping, every eligibility filter, every window.
+  "date_trunc('week', created_at) as cohort_week",
   "count(*) filter (where now() >= c.created_at + interval '2 weeks')",
+  "count(*) filter (where now() >= c.created_at + interval '3 weeks')",
+  "count(*) filter (where now() >= c.created_at + interval '4 weeks')",
   "t.created_at >= c.created_at + interval '1 week' and t.created_at < c.created_at + interval '2 weeks'",
   "t.created_at >= c.created_at + interval '3 weeks' and t.created_at < c.created_at + interval '4 weeks'",
-  // Content: mount sources, depth anchors, scroll exclusion.
+  // Content: mount sources and every depth anchor, scroll exclusion.
   "source in ('guide-view', 'help-center')",
-  "anchor = 'depth-100'",
   "anchor = 'depth-25'",
+  "anchor = 'depth-50'",
+  "anchor = 'depth-75'",
+  "anchor = 'depth-100'",
   "source is distinct from 'guide-scroll'",
 ];
 

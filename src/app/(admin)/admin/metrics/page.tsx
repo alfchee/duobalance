@@ -72,9 +72,14 @@ function pct(numerator: number, denominator: number): string {
 }
 
 function formatDate(value: string | null): string {
+  // Cohort weeks are UTC midnights: format in UTC so admins west of it see
+  // the report's signup-week date (to_char(cohort_week, 'YYYY-MM-DD')).
+  // Local formatting would shift midnight back a day (e.g. Managua).
+  // This helper serves the cohort label only; nothing else here renders
+  // a bare date.
   if (!value) return "—";
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-CA", { timeZone: "UTC" });
 }
 
 /** Retention cell: the report's "active / eligible (rate%)", "not mature" at 0. */

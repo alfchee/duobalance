@@ -36,8 +36,12 @@ not a cache:
 
 1. `metrics_snapshot` table (one row per section, JSONB payload,
    `captured_at`).
-2. A cron route following `src/app/api/cron/billing-expire/` writing it
-   (the repo already runs Vercel crons; add a `vercel.json` entry).
+2. A Cloudflare Cron Trigger dispatching through `worker.ts` `scheduled()`
+   (add the schedule to `wrangler.toml [triggers]` plus a `CRON_MAP`
+   entry, sharing the existing trigger set — the free plan caps triggers
+   per account, and Vercel crons are hard-disabled via `CRON_DISABLED`,
+   so a `vercel.json` entry alone would never fire; see
+   `docs/production-cutover.md`).
 3. The dashboard route reads the snapshot; staleness is explicit in the
    UI (`captured_at`).
 
