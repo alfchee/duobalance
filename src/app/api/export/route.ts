@@ -1,10 +1,11 @@
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { requireUser } from "@/app/api/_shared";
+import { shouldBypassPlanGating } from "@/lib/billing/enabled";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
 export const revalidate = 1;
 
-const EXPORT_TABLES = [
+export const EXPORT_TABLES = [
   "accounts",
   "transactions",
   "categories",
@@ -16,13 +17,26 @@ const EXPORT_TABLES = [
   "import_batches",
   "fx_overrides",
 ] as const;
-const EXPORT_CACHE_HEADERS = {
+export const EXPORT_CACHE_HEADERS = {
   "Cache-Control": "private, no-store",
   Pragma: "no-cache",
 };
 
-type ExportTable = (typeof EXPORT_TABLES)[number];
-type ExportData = Record<ExportTable, unknown[]>;
+export type ExportTable = (typeof EXPORT_TABLES)[number];
+export type ExportData = Record<ExportTable, unknown[]>;
+
+// Guard against OOM: one table's worth of buffered rows is the route's peak
+// memory (full JSON/CSV string built in memory). Past this the export is
+// rejected with 413 instead of crashing the function — streaming the payload
+// is the follow-up, this keeps the current shape safe.
+export const MAX_EXPORT_ROWS_PER_TABLE = 50_000;
+
+export class ExportTooLargeError extends Error {
+  constructor(table: ExportTable) {
+    super(`export too large: ${table} exceeds ${MAX_EXPORT_ROWS_PER_TABLE} rows`);
+    this.name = "ExportTooLargeError";
+  }
+}
 
 const EXPORT_ORDER_COLUMNS: Record<ExportTable, readonly string[]> = {
   accounts: ["id"],
@@ -44,7 +58,7 @@ function escapeCsv(value: unknown): string {
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-function transactionsToCsv(transactions: Record<string, unknown>[]): string {
+export function transactionsToCsv(transactions: Record<string, unknown>[]): string {
   const fields = [
     "id",
     "occurred_on",
@@ -70,7 +84,7 @@ function transactionsToCsv(transactions: Record<string, unknown>[]): string {
   ].join("\r\n");
 }
 
-function safeFilenamePart(value: string): string {
+export function safeFilenamePart(value: string): string {
   return (
     value
       .trim()
@@ -87,7 +101,7 @@ type ScopeFilter = {
   allowedAccountIds?: string[];
 };
 
-async function fetchAllRows(
+export async function fetchAllRows(
   supabase: SupabaseClient<Database>,
   table: ExportTable,
   householdId: string,
@@ -136,36 +150,22 @@ async function fetchAllRows(
     if (error) throw error;
     const page = data ?? [];
     rows.push(...page);
+    if (rows.length > MAX_EXPORT_ROWS_PER_TABLE) throw new ExportTooLargeError(table);
     if (page.length < pageSize) return rows;
   }
 }
 
 export async function GET(request: Request) {
-  if (process.env.BUILD_TARGET === "tauri") {
-    return Response.json({ error: "unavailable" }, { status: 401 });
-  }
   // Allow `next build` to prerender without Supabase env (Cloudflare deploy
   // on main previously failed with "Supabase env not set" during prerender
   // of /api/export). At runtime the env is set via wrangler vars / Dashboard.
   // Only for production build without env — not in tests (NODE_ENV=test)
   // where the route is mocked and should proceed to auth checks.
-  if (
-    (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY)) &&
-    process.env.NODE_ENV === "production"
-  ) {
-    return Response.json({ error: "not configured" }, { status: 200 });
-  }
-  const supabase = await createRouteContext();
-  let user;
-  try {
-    user = await getAuthedUser(supabase);
-  } catch (error) {
-    if (error instanceof HttpError) {
-      return Response.json({ error: "authentication required" }, { status: error.status });
-    }
-    throw error;
-  }
+  // (requireUser below repeats the same not-configured guard; the comment
+  // stays here because this route was the original incident.)
+  const auth = await requireUser();
+  if ("response" in auth) return auth.response;
+  const { supabase, user } = auth;
 
   const url = new URL(request.url);
   const format = url.searchParams.get("format") ?? "json";
@@ -248,6 +248,23 @@ export async function GET(request: Request) {
     return Response.json({ error: "household not found" }, { status: 404 });
   }
 
+  // #264: export is a Plus feature (ADR 0001). The UI gate in ExportSection
+  // is a hint; this is the boundary — the same has_feature() helper the RLS
+  // policies call, evaluated server-side. No-op while the billing exposure
+  // flag is off (the #262 fail-open rule), and the removed-member fallback
+  // path is equally subject to the plan: a household without the feature
+  // cannot export regardless of who asks.
+  if (!shouldBypassPlanGating()) {
+    const { data: exportEntitled, error: exportError } = await supabase.rpc("has_feature", {
+      p_household: household.id,
+      p_feature: "export",
+    });
+    if (exportError) throw exportError;
+    if (!exportEntitled) {
+      return Response.json({ error: "plan upgrade required" }, { status: 402 });
+    }
+  }
+
   const date = new Date().toISOString().slice(0, 10);
   const filename = `duobalance-${safeFilenamePart(household.name)}-${date}`;
 
@@ -256,6 +273,9 @@ export async function GET(request: Request) {
     try {
       transactions = await fetchAllRows(fetchClient, "transactions", household.id, scopeFilter);
     } catch (error) {
+      if (error instanceof ExportTooLargeError) {
+        return Response.json({ error: "export too large" }, { status: 413 });
+      }
       console.error("export: failed to fetch transactions", { householdId, error });
       return Response.json({ error: "export failed" }, { status: 502 });
     }
@@ -270,10 +290,21 @@ export async function GET(request: Request) {
 
   const data = {} as ExportData;
   try {
-    for (const table of EXPORT_TABLES) {
-      data[table] = await fetchAllRows(fetchClient, table, household.id, scopeFilter);
+    // Per-table fetches are independent — run them together instead of 10
+    // serial round-trips.
+    const fetched = await Promise.all(
+      EXPORT_TABLES.map(
+        async (table) =>
+          [table, await fetchAllRows(fetchClient, table, household.id, scopeFilter)] as const,
+      ),
+    );
+    for (const [table, rows] of fetched) {
+      data[table] = rows;
     }
   } catch (error) {
+    if (error instanceof ExportTooLargeError) {
+      return Response.json({ error: "export too large" }, { status: 413 });
+    }
     console.error("export: failed to fetch household data", { householdId, error });
     return Response.json({ error: "export failed" }, { status: 502 });
   }

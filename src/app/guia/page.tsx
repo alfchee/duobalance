@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import { getAllGuideArticles } from "@/lib/guide/guide-service";
+import { PublicFooter } from "@/components/site/public-footer";
 import { EducationalDisclaimer } from "@/components/guide/educational-disclaimer";
 
 export const dynamic = "force-static";
@@ -52,6 +53,7 @@ export default function GuiaIndexPage() {
         ))}
       </section>
       <EducationalDisclaimer locale="es" />
+      <PublicFooter />
     </main>
   );
 }

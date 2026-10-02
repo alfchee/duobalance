@@ -161,6 +161,7 @@
       "legal": "Legal",
       "terms": "Términos",
       "privacy": "Privacidad",
+      "refunds": "Reembolsos",
       "disclaimer": "Aviso legal"
     }
   },
@@ -1071,7 +1072,36 @@
       "json": "Descargar JSON",
       "csv": "Descargar CSV",
       "exporting": "Preparando…",
-      "error": "No se pudo crear la exportación. Intenta de nuevo."
+      "error": "No se pudo crear la exportación. Intenta de nuevo.",
+      "linkDescription": "O genera un enlace temporal de 24 horas para descargar esta copia desde otro dispositivo. El enlace solo funciona para miembros del hogar.",
+      "createLink": "Generar enlace temporal",
+      "linkError": "No se pudo generar el enlace. Intenta de nuevo.",
+      "linkExpires": "El enlace vence el {date}.",
+      "copyLink": "Copiar enlace",
+      "copied": "¡Copiado!",
+      "dismissLink": "Descartar"
+    },
+    "accountDeletion": {
+      "title": "Eliminar mi cuenta",
+      "description": "Solicita la eliminación de tu cuenta. Tus movimientos pasados se conservan en el hogar sin tus datos personales.",
+      "loadError": "No se pudo consultar el estado de eliminación. Intenta de nuevo.",
+      "requestButton": "Solicitar eliminación de cuenta",
+      "requestNotice": "Esto abre una solicitud de eliminación. Nada se borra todavía: el borrado requiere confirmación explícita y tiene un periodo de gracia de 30 días.",
+      "confirmRequestButton": "Sí, solicitar eliminación",
+      "requesting": "Solicitando…",
+      "pendingNotice": "Solicitud abierta. Para confirmar, escribe tu correo y pulsa confirmar. Luego tendrás 30 días de gracia para arrepentirte.",
+      "emailPrompt": "Escribe tu correo {email} para confirmar:",
+      "confirmButton": "Confirmar eliminación",
+      "confirming": "Confirmando…",
+      "graceNotice": "Eliminación confirmada. Tus datos personales se anonimizarán el {date}. Puedes cancelar hasta ese momento.",
+      "cancelButton": "Cancelar eliminación",
+      "errors": {
+        "generic": "Algo salió mal. Intenta de nuevo.",
+        "alreadyRequested": "Ya tienes una solicitud de eliminación abierta.",
+        "emailMismatch": "El correo no coincide con tu cuenta.",
+        "noPending": "No hay una solicitud pendiente que confirmar.",
+        "noOpen": "No hay una solicitud abierta que cancelar."
+      }
     },
     "actions": {
       "title": "Acciones del hogar",
@@ -1108,7 +1138,27 @@
         "generic": "Algo salió mal. Intenta de nuevo."
       }
     },
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "plan": {
+      "title": "Plan",
+      "subtitle": "Lo que incluye tu plan y lo que se agrega con Plus. Cambiar de plan nunca borra tus datos.",
+      "currentPlanBadge": "Tu plan",
+      "unlimited": "Ilimitado",
+      "unlimitedHistory": "Historial ilimitado",
+      "days": "{count} días",
+      "notIncluded": "No incluido",
+      "error": "No se pudo cargar la comparación de planes. Intenta de nuevo.",
+      "features": {
+        "accounts": "Cuentas",
+        "bill_reminders": "Recordatorios de cuentas por pagar",
+        "budgets": "Presupuestos",
+        "export": "Exportar tus datos",
+        "history_days": "Historial visible",
+        "long_range_reports": "Reportes de más de un año",
+        "member_seats": "Miembros",
+        "partner_sharing": "Compartir con tu pareja"
+      }
+    }
   },
   "reports": {
     "title": "Análisis",
@@ -1205,5 +1255,17 @@
     "promptSubmit": "Enviar comentarios",
     "dismiss": "No volver a mostrar",
     "cancel": "Cancelar"
+  },
+  "billing": {
+    "upgrade": {
+      "title": "Disponible en Plus",
+      "description": "Esta función es parte del plan Plus. Mejorar de plan agrega lo que falta; no castiga lo que ya usas.",
+      "dataSafe": "Tus datos guardados quedan intactos: bajar de plan nunca borra nada.",
+      "cta": "Ver planes"
+    },
+    "limits": {
+      "approaching": "{label}: usas {used} de {limit}. Con Plus, este límite desaparece.",
+      "atLimit": "{label}: llegaste al límite de {limit} de tu plan. Puedes archivar lo que no uses, o pasar a Plus para continuar."
+    }
   }
 }

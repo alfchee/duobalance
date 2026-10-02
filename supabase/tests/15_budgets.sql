@@ -46,6 +46,11 @@ begin
     (mem_owner,  hh_es, usr_owner,   'owner',   'Owner'),
     (mem_partner, hh_es, usr_partner, 'partner', 'Partner');
 
+  -- #261: live subscriptions (fail-closed enforcement reads them).
+  perform tests.entitle_household(hh_es);
+  perform tests.entitle_household(hh_en);
+  perform tests.entitle_household('eeeeeeee-0000-0000-0000-000000000001');
+
   insert into public.accounts (household_id, name, kind, currency, is_shared) values
     (hh_es, 'ES Checking', 'checking', 'CLP', true);
 
@@ -339,13 +344,18 @@ select is_empty(
 -- 13. RLS — member can create a household budget (owner_member_id null)
 -- ============================================================================
 
+-- NOTE (Oct 2026 drive-by, #274): the month below was a hardcoded
+-- '2026-10-01' that collided with the current-month setup row at line 126
+-- the day the calendar reached October (budgets_household_uniq). It is now
+-- current-month + 3, which can never equal the setup row, the 2026-09 rows
+-- above, or the 2026-11/12 rows below.
 select tests.authenticate_as('e1000000-0000-0000-0000-000000000002');
 
 select lives_ok(
   $$ insert into public.budgets (household_id, category_id, period_month, amount)
-       values ('e0000000-0000-0000-0000-000000000001',
-               'e4000000-0000-0000-0000-000000000002',
-               '2026-10-01', 150000) $$,
+        values ('e0000000-0000-0000-0000-000000000001',
+                'e4000000-0000-0000-0000-000000000002',
+                (date_trunc('month', current_date) + interval '3 months')::date, 150000) $$,
   'partner can create a household budget (owner_member_id null)'
 );
 
@@ -355,9 +365,10 @@ select lives_ok(
 
 select lives_ok(
   $$ insert into public.budgets (household_id, category_id, period_month, amount, owner_member_id)
-       values ('e0000000-0000-0000-0000-000000000001',
-               'e4000000-0000-0000-0000-000000000002',
-               '2026-10-01', 100000, 'e2000000-0000-0000-0000-000000000002') $$,
+        values ('e0000000-0000-0000-0000-000000000001',
+                'e4000000-0000-0000-0000-000000000002',
+                (date_trunc('month', current_date) + interval '3 months')::date,
+                100000, 'e2000000-0000-0000-0000-000000000002') $$,
   'partner can create their own personal budget'
 );
 
@@ -367,9 +378,10 @@ select lives_ok(
 
 select throws_ok(
   $$ insert into public.budgets (household_id, category_id, period_month, amount, owner_member_id)
-       values ('e0000000-0000-0000-0000-000000000001',
-               'e4000000-0000-0000-0000-000000000002',
-               '2026-10-01', 100000, 'e2000000-0000-0000-0000-000000000001') $$,
+        values ('e0000000-0000-0000-0000-000000000001',
+                'e4000000-0000-0000-0000-000000000002',
+                (date_trunc('month', current_date) + interval '3 months')::date,
+                100000, 'e2000000-0000-0000-0000-000000000001') $$,
   '42501',
   null,
   'partner cannot create a budget owned by the owner (RLS WITH CHECK)'

@@ -15,18 +15,20 @@ Safe to commit and to ship in the client bundle (`NEXT_PUBLIC_*`). Deployed via
 (Workers & Pages → duobalance → Settings → Variables). Local dev: `.dev.vars`
 (gitignored) or `.env.local`.
 
-| Env var                                | Vercel                        | Cloudflare | Type   | Notes                                                                                                                         |
-| -------------------------------------- | ----------------------------- | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Environment Variable          | `[vars]`   | public | Supabase project URL — same value runtime and build-time                                                                      |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Environment Variable          | `[vars]`   | public | Browser-safe key (`sb_publishable_…`). Preferred over anon JWT.                                                               |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`        | Environment Variable (legacy) | `[vars]`   | public | Compat alias — `src/lib/env.ts:25` falls back to it                                                                           |
-| `NEXT_PUBLIC_API_BASE_URL`             | Environment Variable          | `[vars]`   | public | `""` on web (same-origin). Absolute URL only for `tauri://localhost`                                                          |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Environment Variable          | `[vars]`   | public | Client VAPID key for push subscription                                                                                        |
-| `VAPID_PUBLIC_KEY`                     | Environment Variable          | `[vars]`   | public | Server alias for `web-push` (`src/lib/web-push.ts:15`). Same material as above; kept separate to avoid handler churn per #156 |
-| `APP_URL`                              | Environment Variable          | `[vars]`   | public | Deployed origin (`https://duobalanceapp.com`) — builds invite accept links                                                    |
-| `FEEDBACK_RECIPIENT_EMAIL`             | Environment Variable          | `[vars]`   | public | Recipient for `feedback` route (`src/lib/feedback-email.ts:26`)                                                               |
-| `RESEND_FROM`                          | Environment Variable          | `[vars]`   | public | `From` header (`DuoBalance <hola@duobalanceapp.com>`)                                                                         |
-| `RESEND_REPLY_TO`                      | Environment Variable          | `[vars]`   | public | Optional reply-to for Resend — public email address                                                                           |
+| Env var                                | Vercel                        | Cloudflare | Type   | Notes                                                                                                                                                                                                     |
+| -------------------------------------- | ----------------------------- | ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Environment Variable          | `[vars]`   | public | Supabase project URL — same value runtime and build-time                                                                                                                                                  |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Environment Variable          | `[vars]`   | public | Browser-safe key (`sb_publishable_…`). Preferred over anon JWT.                                                                                                                                           |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`        | Environment Variable (legacy) | `[vars]`   | public | Compat alias — `src/lib/env.ts:25` falls back to it                                                                                                                                                       |
+| `NEXT_PUBLIC_API_BASE_URL`             | Environment Variable          | `[vars]`   | public | `""` on web (same-origin). Absolute URL only for `tauri://localhost`                                                                                                                                      |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Environment Variable          | `[vars]`   | public | Client VAPID key for push subscription                                                                                                                                                                    |
+| `VAPID_PUBLIC_KEY`                     | Environment Variable          | `[vars]`   | public | Server alias for `web-push` (`src/lib/web-push.ts:15`). Same material as above; kept separate to avoid handler churn per #156                                                                             |
+| `APP_URL`                              | Environment Variable          | `[vars]`   | public | Deployed origin (`https://duobalanceapp.com`) — builds invite accept links                                                                                                                                |
+| `FEEDBACK_RECIPIENT_EMAIL`             | Environment Variable          | `[vars]`   | public | Recipient for `feedback` route (`src/lib/feedback-email.ts:26`)                                                                                                                                           |
+| `RESEND_FROM`                          | Environment Variable          | `[vars]`   | public | `From` header (`DuoBalance <hola@duobalanceapp.com>`)                                                                                                                                                     |
+| `RESEND_REPLY_TO`                      | Environment Variable          | `[vars]`   | public | Optional reply-to for Resend — public email address                                                                                                                                                       |
+| `BILLING_ENABLED`                      | Environment Variable          | `[vars]`   | flag   | Billing exposure flag, server side (#262). `""`/unset = OFF. Single accessor `src/lib/billing/enabled.ts` — never read directly                                                                           |
+| `NEXT_PUBLIC_BILLING_ENABLED`          | Environment Variable          | `[vars]`   | flag   | Client mirror for UI gating (`useBillingEnabled`/`BillingGate`). Build-time inlined from the CI deploy job env — the runtime `[vars]` entry alone cannot flip it; see `docs/billing-go-live-checklist.md` |
 
 ## Secrets — `wrangler secret put` / dashboard secrets
 
@@ -62,6 +64,11 @@ Additional secret **not in Worker runtime** (scripts only): `SUPABASE_DB_URL` �
 - `[vars]` placeholders (`example.*` / `sb_publishable_example`) are deployed defaults.
   Override real values per-environment in the Cloudflare dashboard before production;
   the verify script does not block placeholders locally but production must not ship them.
+- `BILLING_ENABLED` / `NEXT_PUBLIC_BILLING_ENABLED` ship as `""` (OFF) in
+  `wrangler.toml` `[vars]` and `[env.staging.vars]` (#262). No environment —
+  local, preview, staging or production — may carry a truthy value until the
+  go-live checklist (`docs/billing-go-live-checklist.md`) is signed off.
+  Locked by `src/lib/billing/enabled.test.ts` and the CI billing-flag guard.
 - Every handler resolves its configuration on Cloudflare via `process.env` populated
   from the Worker `env` (OpenNext `populateProcessEnv` for `fetch`, `worker.ts:45`
   for `scheduled`). No handler was migrated to `getCloudflareContext()` in this issue.

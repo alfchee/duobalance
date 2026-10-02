@@ -45,7 +45,7 @@ If both fire, `send-bill-reminders` double-sends. `CRON_DISABLED` makes every Ve
 4. Verify guard is live (Vercel, not Cloudflare):
 
 ```bash
-for p in fx-refresh generate-bill-instances purge-households send-bill-reminders; do
+for p in fx-refresh generate-bill-instances purge-households purge-accounts send-bill-reminders; do
   curl -i -H "Authorization: Bearer $CRON_SECRET" https://duobalanceapp.com/api/cron/$p | head -n 5
 done
 # → each 200 { "disabled": true, "job": "..." } and Vercel logs: [cron] … skipped — CRON_DISABLED is set
@@ -113,7 +113,7 @@ npm run deploy
 ```bash
 dig duobalanceapp.com +short # → Cloudflare anycast (e.g. 104.21.x.x), not 64.29.17.65
 curl -s https://duobalanceapp.com/api/health | jq .
-for p in fx-refresh generate-bill-instances purge-households send-bill-reminders; do
+for p in fx-refresh generate-bill-instances purge-households purge-accounts send-bill-reminders; do
   curl -i -H "Authorization: Bearer $CRON_SECRET" https://duobalanceapp.com/api/cron/$p | head -n 1
 done
 # → 200, and same via custom domain vs workers.dev

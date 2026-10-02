@@ -45,6 +45,10 @@ begin
     (owner2_member, hh2_id, owner2_user, 'owner', 'Owner 2'),
     (partner2_member, hh2_id, partner2_user, 'partner', 'Partner 2');
 
+  -- #261: live subscriptions (fail-closed enforcement reads them).
+  perform tests.entitle_household(hh1_id);
+  perform tests.entitle_household(hh2_id);
+
   insert into public.accounts (id, household_id, name, kind, currency, owner_member_id, is_shared) values
     (bob_shared_acc, hh1_id, 'Bob Shared Checking', 'checking', 'CLP', bob_member, true),
     (bob_priv_acc, hh1_id, 'Bob Private Savings', 'savings', 'CLP', bob_member, false);
@@ -214,6 +218,9 @@ begin
   insert into public.household_members (id, household_id, user_id, role, display_name) values
     (owner_a_mem, hh3_id, owner_a, 'owner', 'Owner A'),
     (owner_b_mem, hh3_id, owner_b, 'owner', 'Owner B');
+
+  -- #261: live subscription (fail-closed enforcement reads it).
+  perform tests.entitle_household(hh3_id);
 end
 $$;
 

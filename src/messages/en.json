@@ -161,6 +161,7 @@
       "legal": "Legal",
       "terms": "Terms",
       "privacy": "Privacy",
+      "refunds": "Refunds",
       "disclaimer": "Disclaimer"
     }
   },
@@ -1071,7 +1072,36 @@
       "json": "Download JSON",
       "csv": "Download CSV",
       "exporting": "Preparing…",
-      "error": "Couldn't create your export. Try again."
+      "error": "Couldn't create your export. Try again.",
+      "linkDescription": "Or generate a 24-hour temporary link to download this backup from another device. The link only works for household members.",
+      "createLink": "Generate temporary link",
+      "linkError": "Couldn't generate the link. Try again.",
+      "linkExpires": "The link expires on {date}.",
+      "copyLink": "Copy link",
+      "copied": "Copied!",
+      "dismissLink": "Dismiss"
+    },
+    "accountDeletion": {
+      "title": "Delete my account",
+      "description": "Request deletion of your account. Your past transactions stay in the household without your personal data.",
+      "loadError": "Couldn't check the deletion status. Try again.",
+      "requestButton": "Request account deletion",
+      "requestNotice": "This opens a deletion request. Nothing is deleted yet: erasure needs explicit confirmation and has a 30-day grace period.",
+      "confirmRequestButton": "Yes, request deletion",
+      "requesting": "Requesting…",
+      "pendingNotice": "Request open. To confirm, type your email and press confirm. You then have a 30-day grace period to change your mind.",
+      "emailPrompt": "Type your email {email} to confirm:",
+      "confirmButton": "Confirm deletion",
+      "confirming": "Confirming…",
+      "graceNotice": "Deletion confirmed. Your personal data will be anonymized on {date}. You can cancel until then.",
+      "cancelButton": "Cancel deletion",
+      "errors": {
+        "generic": "Something went wrong. Try again.",
+        "alreadyRequested": "You already have an open deletion request.",
+        "emailMismatch": "The email doesn't match your account.",
+        "noPending": "There is no pending request to confirm.",
+        "noOpen": "There is no open request to cancel."
+      }
     },
     "actions": {
       "title": "Household actions",
@@ -1108,7 +1138,27 @@
         "generic": "Something went wrong. Try again."
       }
     },
-    "logout": "Log out"
+    "logout": "Log out",
+    "plan": {
+      "title": "Plan",
+      "subtitle": "What your plan includes and what Plus adds. Changing plans never deletes your data.",
+      "currentPlanBadge": "Your plan",
+      "unlimited": "Unlimited",
+      "unlimitedHistory": "Unlimited history",
+      "days": "{count} days",
+      "notIncluded": "Not included",
+      "error": "Could not load the plan comparison. Try again.",
+      "features": {
+        "accounts": "Accounts",
+        "bill_reminders": "Bill reminders",
+        "budgets": "Budgets",
+        "export": "Export your data",
+        "history_days": "Visible history",
+        "long_range_reports": "Reports over one year",
+        "member_seats": "Members",
+        "partner_sharing": "Share with your partner"
+      }
+    }
   },
   "reports": {
     "title": "Reports",
@@ -1205,5 +1255,17 @@
     "promptSubmit": "Send feedback",
     "dismiss": "Dismiss",
     "cancel": "Cancel"
+  },
+  "billing": {
+    "upgrade": {
+      "title": "Available with Plus",
+      "description": "This feature is part of the Plus plan. Upgrading adds what's missing; it doesn't take away what you already use.",
+      "dataSafe": "Your saved data stays intact: downgrading never deletes anything.",
+      "cta": "View plans"
+    },
+    "limits": {
+      "approaching": "{label}: you're using {used} of {limit}. With Plus, this limit goes away.",
+      "atLimit": "{label}: you've reached your plan's limit of {limit}. You can archive what you don't use, or move to Plus to keep going."
+    }
   }
 }

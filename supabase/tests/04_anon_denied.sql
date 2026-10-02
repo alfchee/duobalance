@@ -23,6 +23,9 @@ begin
   insert into public.household_members (household_id, user_id, role, display_name) values
     (hh_id, usr_id, 'owner', 'Member');
 
+  -- #261: live subscription (fail-closed enforcement reads it).
+  perform tests.entitle_household(hh_id);
+
   insert into public.accounts (id, household_id, name, kind, currency) values
     (acct_id, hh_id, 'Hidden', 'checking', 'CLP');
 

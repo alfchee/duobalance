@@ -9,6 +9,7 @@ import { trackGuideOpen } from "@/lib/guide-events";
 import { MarkdownRenderer } from "@/components/help/markdown-renderer";
 import { TableOfContents } from "./table-of-contents";
 import { EducationalDisclaimer } from "./educational-disclaimer";
+import { PublicFooter } from "@/components/site/public-footer";
 
 export function GuideArticleLayout({
   article,
@@ -165,6 +166,7 @@ export function GuideArticleLayout({
           </section>
         ) : null}
       </article>
+      <PublicFooter />
     </main>
   );
 }
