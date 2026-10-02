@@ -2163,9 +2163,11 @@ export type Database = {
           discount_value: number
           duration: string
           max_redemptions: number
+          minor_unit: number
           per_household_limit: number
           redemption_count: number
           remaining_capacity: number
+          updated_at: string
           valid_from: string
           valid_until: string
         }[]
@@ -2202,6 +2204,66 @@ export type Database = {
           p_target_household?: string
         }
         Returns: string
+      }
+      admin_metrics_activation: {
+        Args: never
+        Returns: {
+          active_households: number
+          budget_created: number
+          partner_joined: number
+          setup_and_partner_joined: number
+          setup_complete: number
+          signed_up_users: number
+        }[]
+      }
+      admin_metrics_content_articles: {
+        Args: never
+        Returns: {
+          d100: number
+          d25: number
+          d50: number
+          d75: number
+          readers: number
+          slug: string
+          views: number
+        }[]
+      }
+      admin_metrics_content_sources: {
+        Args: never
+        Returns: {
+          cnt: number
+          src: string
+        }[]
+      }
+      admin_metrics_funnel: {
+        Args: never
+        Returns: {
+          lost_at_step: number
+          name: string
+          reached: number
+          step: number
+        }[]
+      }
+      admin_metrics_retention: {
+        Args: never
+        Returns: {
+          cohort_week: string
+          households: number
+          week_2_active: number
+          week_2_eligible: number
+          week_3_active: number
+          week_3_eligible: number
+          week_4_active: number
+          week_4_eligible: number
+        }[]
+      }
+      admin_metrics_subscriptions: {
+        Args: never
+        Returns: {
+          households: number
+          plan_code: string
+          status: string
+        }[]
       }
       admin_override_subscription: {
         Args: {

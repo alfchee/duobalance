@@ -41,6 +41,46 @@ export const ADMIN_COUPON_KEYS = [
 
 export const ADMIN_COUPON_REDEMPTION_KEYS = ["coupon_code", "household_id", "redeemed_at"] as const;
 
+// #275 additions: metrics-dashboard allowlists. Every row is an aggregate
+// (counts and labels) — no identifiers, contents, or amounts. The revenue
+// section has no DB reader yet (no prices, no provider); the route builds
+// its placeholder, so no keys are needed for it here.
+export const ADMIN_METRIC_ACTIVATION_KEYS = [
+  "signed_up_users",
+  "active_households",
+  "setup_complete",
+  "budget_created",
+  "partner_joined",
+  "setup_and_partner_joined",
+] as const;
+
+export const ADMIN_METRIC_FUNNEL_KEYS = ["step", "name", "reached", "lost_at_step"] as const;
+
+export const ADMIN_METRIC_RETENTION_KEYS = [
+  "cohort_week",
+  "households",
+  "week_2_active",
+  "week_2_eligible",
+  "week_3_active",
+  "week_3_eligible",
+  "week_4_active",
+  "week_4_eligible",
+] as const;
+
+export const ADMIN_METRIC_ARTICLE_KEYS = [
+  "slug",
+  "views",
+  "readers",
+  "d25",
+  "d50",
+  "d75",
+  "d100",
+] as const;
+
+export const ADMIN_METRIC_SOURCE_KEYS = ["src", "cnt"] as const;
+
+export const ADMIN_METRIC_SUBSCRIPTION_KEYS = ["plan_code", "status", "households"] as const;
+
 export const ADMIN_HOUSEHOLD_KEYS = [
   "household_id",
   "household_name",

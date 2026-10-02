@@ -123,6 +123,9 @@ function AdminHouseholdList() {
           design (see docs/admin-boundary.md).{" "}
           <Link href="/admin/coupons" className="underline">
             Manage coupons
+          </Link>{" "}
+          <Link href="/admin/metrics" className="underline">
+            View metrics
           </Link>
         </CardDescription>
       </CardHeader>
