@@ -217,6 +217,41 @@ export async function runSendBillReminders(
   let pushGoneCount = 0;
   const succeededInstanceIds: string[] = [];
 
+  // Bounded pool: serial awaits across households hit cron timeouts while
+  // later groups starve, but unbounded fan-out risks Resend/push rate
+  // limits. Ten in flight is the middle ground.
+  const SEND_CONCURRENCY = 10;
+  async function runWithConcurrency<T>(
+    tasks: Array<() => Promise<T>>,
+    limit: number,
+  ): Promise<T[]> {
+    const results: T[] = new Array(tasks.length) as T[];
+    let next = 0;
+    const workers = Array.from({ length: Math.min(limit, tasks.length) }, async () => {
+      while (next < tasks.length) {
+        const index = next;
+        next += 1;
+        const task = tasks[index];
+        if (task) results[index] = await task();
+      }
+    });
+    await Promise.all(workers);
+    return results;
+  }
+
+  type GroupOutcome = {
+    ok: boolean;
+    hhId: string;
+    key: string;
+    itemCount: number;
+    memberInstanceIds: string[];
+    deadSubscriptionIds: string[];
+    pushGone: number;
+    pushFailed: number;
+  };
+
+  const groupTasks: Array<() => Promise<GroupOutcome>> = [];
+
   for (const [hhId, hh] of grouped) {
     for (const [key, entry] of hh.members) {
       if (entry.items.length === 0) continue;
@@ -245,67 +280,101 @@ export async function runSendBillReminders(
 
       if (toEmails.length === 0) continue;
 
-      let allSucceeded = true;
-      const deadSubscriptionIds: string[] = [];
-      for (const [index, email] of toEmails.entries()) {
-        const recipientMemberId = recipientMemberIds[index];
-        const subscriptions = recipientMemberId
-          ? (subscriptionsByMember.get(recipientMemberId) ?? [])
-          : [];
-        let pushSent = false;
-        for (const subscription of subscriptions) {
-          const result = await sendBillReminderPush(subscription, entry.items.length, hh.locale);
-          if (result === "gone") {
-            deadSubscriptionIds.push(subscription.id);
-            pushGoneCount++;
-          } else if (result === "sent") {
-            pushSent = true;
-          } else {
-            pushFailedCount++;
+      const capturedEmails = [...toEmails];
+      const capturedRecipientIds = [...recipientMemberIds];
+      const capturedInstances = [...memberInstanceIds];
+      const capturedItems = [...entry.items];
+      const capturedDisplayName = entry.displayName;
+      const capturedHousehold = { name: hh.name, locale: hh.locale };
+      groupTasks.push(async (): Promise<GroupOutcome> => {
+        let allSucceeded = true;
+        const deadSubscriptionIds: string[] = [];
+        let pushGone = 0;
+        let pushFailed = 0;
+        for (const [index, email] of capturedEmails.entries()) {
+          const recipientMemberId = capturedRecipientIds[index];
+          const subscriptions = recipientMemberId
+            ? (subscriptionsByMember.get(recipientMemberId) ?? [])
+            : [];
+          // Push fan-out within one recipient is independent per
+          // subscription — run together instead of serial round-trips.
+          const pushResults = await Promise.all(
+            subscriptions.map((subscription) =>
+              sendBillReminderPush(subscription, capturedItems.length, capturedHousehold.locale),
+            ),
+          );
+          let pushSent = false;
+          pushResults.forEach((result, resultIndex) => {
+            if (result === "gone") {
+              const goneId = subscriptions[resultIndex]?.id;
+              if (goneId) deadSubscriptionIds.push(goneId);
+              pushGone++;
+            } else if (result === "sent") {
+              pushSent = true;
+            } else {
+              pushFailed++;
+            }
+          });
+          if (pushSent) continue;
+          // No push delivered (or no subscription) — fall back to email. A
+          // push failure is already logged inside sendBillReminderPush so
+          // Workers logs will show it even when email succeeds.
+          try {
+            await sendReminderDigest({
+              to: [email],
+              memberName: capturedDisplayName,
+              householdName: capturedHousehold.name,
+              items: capturedItems,
+              locale: capturedHousehold.locale,
+            });
+          } catch (err) {
+            allSucceeded = false;
+            console.error(
+              `send-bill-reminders: failed to send digest for household=${hhId} member=${key} recipientDomain=${email.split("@")[1] ?? "unknown"}`,
+              err,
+            );
           }
         }
-        if (pushSent) continue;
-        // No push delivered (or no subscription) — fall back to email. A
-        // push failure is already logged inside sendBillReminderPush so
-        // Workers logs will show it even when email succeeds.
-        try {
-          await sendReminderDigest({
-            to: [email],
-            memberName: entry.displayName,
-            householdName: hh.name,
-            items: entry.items,
-            locale: hh.locale,
-          });
-        } catch (err) {
-          allSucceeded = false;
-          console.error(
-            `send-bill-reminders: failed to send digest for household=${hhId} member=${key} recipientDomain=${email.split("@")[1] ?? "unknown"}`,
-            err,
-          );
-        }
-      }
+        return {
+          ok: allSucceeded,
+          hhId,
+          key,
+          itemCount: capturedItems.length,
+          memberInstanceIds: capturedInstances,
+          deadSubscriptionIds,
+          pushGone,
+          pushFailed,
+        };
+      });
+    }
+  }
 
-      if (deadSubscriptionIds.length > 0) {
-        const { error: pruneError } = await supabase
-          .from("push_subscriptions")
-          .delete()
-          .in("id", deadSubscriptionIds);
-        if (pruneError) {
-          console.error("send-bill-reminders: failed to prune push subscriptions", pruneError);
-        }
-      }
+  const outcomes = await runWithConcurrency(groupTasks, SEND_CONCURRENCY);
+  const allDeadSubscriptionIds: string[] = [];
+  for (const outcome of outcomes) {
+    pushGoneCount += outcome.pushGone;
+    pushFailedCount += outcome.pushFailed;
+    allDeadSubscriptionIds.push(...outcome.deadSubscriptionIds);
+    if (outcome.ok) {
+      succeededInstanceIds.push(...outcome.memberInstanceIds);
+      totalSent++;
+    } else {
+      totalFailedGroups++;
+      console.warn("send-bill-reminders: group delivery failed", {
+        householdId: outcome.hhId,
+        memberKey: outcome.key,
+        itemCount: outcome.itemCount,
+      });
+    }
+  }
 
-      if (allSucceeded) {
-        succeededInstanceIds.push(...memberInstanceIds);
-        totalSent++;
-      } else {
-        totalFailedGroups++;
-        console.warn("send-bill-reminders: group delivery failed", {
-          householdId: hhId,
-          memberKey: key,
-          itemCount: entry.items.length,
-        });
-      }
+  if (allDeadSubscriptionIds.length > 0) {
+    const { error: pruneError } = await supabase
+      .from("push_subscriptions")
+      .delete()
+      .in("id", Array.from(new Set(allDeadSubscriptionIds)));
+    if (pruneError) {
+      console.error("send-bill-reminders: failed to prune push subscriptions", pruneError);
     }
   }
 

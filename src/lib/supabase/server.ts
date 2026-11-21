@@ -13,7 +13,7 @@ import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import type { Database } from "./types";
-import { env } from "@/lib/env";
+import { env, supabaseClientKey } from "@/lib/env";
 
 function getServiceRoleKey(): string | undefined {
   return z
@@ -60,6 +60,33 @@ export function createSupabaseServiceRoleClient() {
       autoRefreshToken: false,
       detectSessionInUrl: false,
       persistSession: false,
+    },
+  });
+}
+
+// Caller-scoped server client (#271). Same cookie session as the route
+// handler, but authenticated with the PUBLIC anon/publishable key instead of
+// the service role — so PostgREST sees the caller's JWT: auth.uid() is set,
+// RLS applies, and SECURITY DEFINER helpers that check the caller (e.g.
+// is_admin()) enforce at the database boundary. Admin routes use this for
+// data + audit and never touch the service role.
+export async function createSupabaseUserClient() {
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !supabaseClientKey) {
+    throw new Error("Supabase env not set — see issue #9");
+  }
+  const cookieStore = await cookies();
+  return createServerClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, supabaseClientKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        } catch (error) {
+          console.warn("[supabase] setAll failed — session refresh may not persist", error);
+        }
+      },
     },
   });
 }

@@ -40,6 +40,31 @@ APP_URL = "https://duobalanceapp.com"
 FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
 RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
 RESEND_REPLY_TO = "hola@duobalanceapp.com"
+# Billing exposure flag (Phase A, #262) — explicitly OFF. Single accessor:
+# src/lib/billing/enabled.ts (server BILLING_ENABLED, NEXT_PUBLIC_ mirror for
+# UI gating). Empty means not live: checkout, webhook, plan gating and admin
+# billing screens stay hidden while entitlements evaluate as entitled. Do NOT
+# set a truthy value until docs/billing-go-live-checklist.md is signed off.
+BILLING_ENABLED = ""
+NEXT_PUBLIC_BILLING_ENABLED = ""
+# Admin deployment canonical origin (Phase A, #271) — separate deployment
+# with its own domain-scoped session (docs/admin-boundary.md). Public origin,
+# no secret. Consumed by src/app/api/admin/_shared.ts: on APP_MODE=admin the
+# admin surface answers only when the request host matches this origin.
+# The admin Worker (--env admin below) pins the real origin; the user
+# targets leave this empty.
+ADMIN_APP_URL = ""
+# Per-target admin serving (Phase A, #271 review) — server-only, read by
+# src/app/api/admin/_shared.ts. Top-level [vars] (production user Worker and
+# local `wrangler dev`) intentionally omit APP_MODE: unset means "serve"
+# (dev-friendly; the BILLING_ENABLED flag still gates admin). Set APP_MODE
+# explicitly per target instead:
+# - production + staging user Workers → APP_MODE=user via Dashboard →
+#   Variables (or [env.staging.vars] below), so /admin/* + /api/admin/*
+#   404 there even after go-live;
+# - admin Worker → APP_MODE=admin in [env.admin.vars] below, so the admin
+#   surface answers only on ADMIN_APP_URL.
+# APP_MODE =
 
 # Secrets — NEVER put these in [vars]. They bypass RLS or enable external
 # services and must not reach a client bundle.
@@ -134,10 +159,48 @@ APP_URL = "https://staging.duobalanceapp.com"
 FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
 RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
 RESEND_REPLY_TO = "hola@duobalanceapp.com"
+# Staging mirrors production: billing stays OFF here too (#262). Flip it on
+# only in a staging Worker when rehearsing go-live, never in production vars.
+BILLING_ENABLED = ""
+NEXT_PUBLIC_BILLING_ENABLED = ""
+# Staging is a user deployment: it never serves admin (#271 review), even
+# after go-live. The admin surface is exercised on the admin Worker below.
+APP_MODE = "user"
 
 # Free plan allows 5 cron triggers per account. With 4 for production and 4
 # for staging we would exceed it (8). Keep staging at 0 for now so production
 # can have its 4; staging crons are still testable via `wrangler dev
 # --test-scheduled` and via HTTP `Authorization: Bearer $CRON_SECRET`.
 [env.staging.triggers]
+crons = []
+
+# Admin environment — #271 review. `wrangler deploy --env admin` deploys to
+# `duobalance-admin`, backing https://admin.duobalanceapp.com (add the custom
+# domain via the Dashboard: Worker → Settings → Domains & Routes — same as
+# staging, so the CI token needs no extra scopes). Same repo, same Supabase
+# project (shared Auth backend; sessions stay separate because cookies are
+# domain-scoped), but APP_MODE=admin means /admin/* + /api/admin/* answer
+# ONLY when the request host matches ADMIN_APP_URL, while the production and
+# staging user Workers (APP_MODE=user) 404 them. No crons here — scheduled
+# jobs belong to the user Worker. Secrets (service role, Resend, cron,
+# VAPID) are set via `wrangler secret put --env admin` / Dashboard Secrets.
+[env.admin]
+[env.admin.vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://xfjhzkgaxbycubcsurdn.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Skbn9yZ8iBEOVD0Cz8JtjA_sH4NtLjJ"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "example-anon-key-compat"
+NEXT_PUBLIC_API_BASE_URL = ""
+NEXT_PUBLIC_VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
+VAPID_PUBLIC_KEY = "BLZTGM0jMxny8fFJCJSLr2J-MF18hcRuOJNlSx8p-yjJNpC5jS69SaCXjjftXmBOpRWpDrwckBdCsLwloVKKMzQ"
+APP_URL = "https://admin.duobalanceapp.com"
+ADMIN_APP_URL = "https://admin.duobalanceapp.com"
+APP_MODE = "admin"
+FEEDBACK_RECIPIENT_EMAIL = "hola@duobalanceapp.com"
+RESEND_FROM = "DuoBalance <hola@duobalanceapp.com>"
+RESEND_REPLY_TO = "hola@duobalanceapp.com"
+# Billing stays OFF on admin too until the go-live checklist is signed off.
+BILLING_ENABLED = ""
+NEXT_PUBLIC_BILLING_ENABLED = ""
+
+[env.admin.triggers]
 crons = []

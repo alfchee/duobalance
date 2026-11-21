@@ -11,13 +11,14 @@ vi.mock("@/app/api/_shared", () => ({
   },
   createRouteContext: vi.fn(),
   getAuthedUser: vi.fn(),
+  requireUser: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServiceRoleClient: vi.fn(),
 }));
 
-import { createRouteContext, getAuthedUser, HttpError } from "@/app/api/_shared";
+import { createRouteContext, getAuthedUser, requireUser } from "@/app/api/_shared";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { GET } from "./route";
 
@@ -31,6 +32,7 @@ function makeClient(
   } | null,
   tablePages: Record<string, unknown[][]> = {},
   errorTables: ReadonlySet<string> = new Set(),
+  rpcResult: { data: unknown; error: { message: string } | null } = { data: true, error: null },
 ) {
   const orderCalls: Array<{ table: string; column: string }> = [];
   const rangeCalls: Array<{ table: string; from: number; to: number }> = [];
@@ -102,7 +104,16 @@ function makeClient(
     return { select: vi.fn(() => ({ eq: vi.fn(() => tableChain(table)) })) };
   });
 
-  return { from, orderCalls, rangeCalls, fromCalls, lteCalls, orCalls, inCalls };
+  return {
+    from,
+    rpc: vi.fn().mockResolvedValue(rpcResult),
+    orderCalls,
+    rangeCalls,
+    fromCalls,
+    lteCalls,
+    orCalls,
+    inCalls,
+  };
 }
 
 function request(format = "json") {
@@ -112,6 +123,7 @@ function request(format = "json") {
 beforeEach(() => {
   vi.mocked(createRouteContext).mockReset();
   vi.mocked(getAuthedUser).mockReset();
+  vi.mocked(requireUser).mockReset();
   vi.mocked(createSupabaseServiceRoleClient).mockReset();
   vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(makeClient(null) as never);
   delete process.env.BUILD_TARGET;
@@ -119,12 +131,70 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.BUILD_TARGET;
+  vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
 
 describe("GET /api/export", () => {
+  it("skips the plan check while billing is disabled (#264)", async () => {
+    const client = makeClient({ households: { id: householdId, name: "Alex Home" } });
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
+  it("returns 402 when the household's plan lacks export (#264)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "1");
+    const client = makeClient(
+      { households: { id: householdId, name: "Alex Home" } },
+      {},
+      new Set(),
+      { data: false, error: null },
+    );
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(402);
+    expect(client.rpc).toHaveBeenCalledWith("has_feature", {
+      p_household: householdId,
+      p_feature: "export",
+    });
+    expect(client.fromCalls).not.toContain("transactions");
+  });
+
+  it("exports when the plan has the export feature (#264)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_BILLING_ENABLED", "1");
+    const client = makeClient(
+      { households: { id: householdId, name: "Alex Home" } },
+      {},
+      new Set(),
+      { data: true, error: null },
+    );
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+  });
+
   it("returns an unavailable response during Tauri static export", async () => {
     process.env.BUILD_TARGET = "tauri";
+    vi.mocked(requireUser).mockResolvedValue({
+      response: Response.json({ error: "unavailable" }, { status: 401 }),
+    });
 
     const response = await GET(request());
 
@@ -133,8 +203,9 @@ describe("GET /api/export", () => {
   });
 
   it("rejects unauthenticated requests", async () => {
-    vi.mocked(createRouteContext).mockResolvedValue({} as never);
-    vi.mocked(getAuthedUser).mockRejectedValue(new HttpError(401, "authentication required"));
+    vi.mocked(requireUser).mockResolvedValue({
+      response: Response.json({ error: "authentication required" }, { status: 401 }),
+    });
 
     const response = await GET(request());
 
@@ -144,9 +215,11 @@ describe("GET /api/export", () => {
 
   it("rejects callers who are not members of the requested household", async () => {
     const client = makeClient(null);
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
     vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(makeClient(null) as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request());
 
@@ -164,7 +237,10 @@ describe("GET /api/export", () => {
     });
     vi.mocked(createRouteContext).mockResolvedValue(client as never);
     vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(admin as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request());
 
@@ -194,9 +270,11 @@ describe("GET /api/export", () => {
       },
       { accounts: [[{ id: "acc-shared" }, { id: "acc-own-private" }]] },
     );
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
     vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(admin as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request());
 
@@ -215,9 +293,11 @@ describe("GET /api/export", () => {
       removed_at: null,
       households: { id: householdId, name: "Past Home", deleted_at: "2026-08-05T00:00:00Z" },
     });
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
     vi.mocked(createSupabaseServiceRoleClient).mockReturnValue(admin as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request());
 
@@ -231,8 +311,10 @@ describe("GET /api/export", () => {
 
   it("returns a non-cacheable JSON backup, ordering every table by id except fx_overrides", async () => {
     const client = makeClient({ households: { id: householdId, name: "Alex Home" } });
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request());
 
@@ -253,8 +335,10 @@ describe("GET /api/export", () => {
       {},
       new Set(["fx_overrides"]),
     );
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request());
 
@@ -269,8 +353,10 @@ describe("GET /api/export", () => {
       { households: { id: householdId, name: "Alex Home" } },
       { transactions: [fullPage, partialPage] },
     );
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request());
     const body = (await response.json()) as { data: { transactions: unknown[] } };
@@ -284,8 +370,10 @@ describe("GET /api/export", () => {
 
   it("returns a non-cacheable transaction CSV, only fetching the transactions table", async () => {
     const client = makeClient({ households: { id: householdId, name: "Alex Home" } });
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request("csv"));
 
@@ -322,8 +410,10 @@ describe("GET /api/export", () => {
       { households: { id: householdId, name: "Alex Home" } },
       { transactions: [[row]] },
     );
-    vi.mocked(createRouteContext).mockResolvedValue(client as never);
-    vi.mocked(getAuthedUser).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      supabase: client as never,
+      user: { id: "user-1" } as never,
+    });
 
     const response = await GET(request("csv"));
     const text = await response.text();

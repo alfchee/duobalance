@@ -53,11 +53,33 @@ export function searchArticles(locale: string, query: string): Article[] {
   const q = query.trim().toLowerCase();
   if (!q) return articles;
 
-  return articles.filter((art) => {
-    const titleMatch = art.frontmatter.title.toLowerCase().includes(q);
-    const categoryMatch = art.frontmatter.category.toLowerCase().includes(q);
-    const headingMatch = art.headings.some((h) => h.text.toLowerCase().includes(q));
-    const contentMatch = art.content.toLowerCase().includes(q);
-    return titleMatch || categoryMatch || headingMatch || contentMatch;
-  });
+  // Lowercase index computed once per article (not per keystroke): the
+  // previous filter lowercased title + category + every heading + the full
+  // body on each call, i.e. per keystroke.
+  const index = getSearchIndex(locale);
+  return articles.filter((art) => (index.get(art.frontmatter.slug) ?? "").includes(q));
+}
+
+const searchIndexCache = new Map<string, Map<string, string>>();
+
+function getSearchIndex(locale: string): Map<string, string> {
+  const normLocale = locale === "pt-BR" ? "pt-BR" : locale === "en" ? "en" : "es";
+  const cached = searchIndexCache.get(normLocale);
+  if (cached) return cached;
+  const index = new Map<string, string>();
+  for (const art of getAllArticles(normLocale)) {
+    index.set(
+      art.frontmatter.slug,
+      [
+        art.frontmatter.title,
+        art.frontmatter.category,
+        ...art.headings.map((h) => h.text),
+        art.content,
+      ]
+        .join("\n")
+        .toLowerCase(),
+    );
+  }
+  searchIndexCache.set(normLocale, index);
+  return index;
 }

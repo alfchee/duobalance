@@ -392,9 +392,12 @@ for (const h of HANDLERS) {
     h.auth === "cookie" &&
     !content.includes("getUser") &&
     !content.includes("getAuthedUser") &&
+    !content.includes("requireUser") &&
     !content.includes("createSupabaseRouteHandler")
   ) {
-    warn(`${h.id}: cookie-auth pattern not obvious (expected getUser/createSupabaseRouteHandler)`);
+    warn(
+      `${h.id}: cookie-auth pattern not obvious (expected getUser/requireUser/createSupabaseRouteHandler)`,
+    );
   }
   if (h.id === "GET /api/health" && !content.includes("force-static")) {
     fail(`${h.id}: missing force-static (required for static export gate)`);

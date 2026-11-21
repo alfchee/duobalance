@@ -48,6 +48,10 @@ begin
     (bob_member,   hh_a, bob_user,   'partner', 'Bob'),
     (carol_member, hh_b, carol_user, 'owner',   'Carol');
 
+  -- #261: live subscriptions (fail-closed enforcement reads them).
+  perform tests.entitle_household(hh_a);
+  perform tests.entitle_household(hh_b);
+
   insert into public.accounts (id, household_id, name, kind, currency) values
     (acct_a, hh_a, 'Household A checking', 'checking', 'CLP'),
     (acct_b, hh_b, 'Household B checking', 'checking', 'BRL');

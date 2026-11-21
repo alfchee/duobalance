@@ -30,6 +30,10 @@ begin
     (partner_member, household_a, partner_user, 'partner', 'Partner'),
     (other_member, household_b, other_user, 'owner', 'Other');
 
+  -- #261: live subscriptions (fail-closed enforcement reads them).
+  perform tests.entitle_household(household_a);
+  perform tests.entitle_household(household_b);
+
   insert into public.accounts (id, household_id, name, kind, currency) values
     ('f3000000-0000-0000-0000-000000000001', household_a, 'Account A', 'checking', 'USD'),
     ('f3000000-0000-0000-0000-000000000002', household_b, 'Account B', 'checking', 'USD');

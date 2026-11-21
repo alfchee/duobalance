@@ -7,6 +7,7 @@ import { useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MarkdownRenderer } from "@/components/help/markdown-renderer";
+import { PublicFooter } from "@/components/site/public-footer";
 import { TERMS_OF_SERVICE } from "@/lib/legal/terms";
 
 export default function TermsPage() {
@@ -70,17 +71,7 @@ export default function TermsPage() {
         </CardContent>
       </Card>
 
-      <footer className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground border-t pt-4">
-        <p>© {new Date().getFullYear()} DuoBalance</p>
-        <div className="flex gap-4">
-          <Link href="/privacy" className="hover:underline">
-            {selectedLang === "es" ? "Política de Privacidad" : "Privacy Policy"}
-          </Link>
-          <Link href="/" className="hover:underline">
-            {selectedLang === "es" ? "Inicio" : "Home"}
-          </Link>
-        </div>
-      </footer>
+      <PublicFooter />
     </main>
   );
 }

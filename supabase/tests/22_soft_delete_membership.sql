@@ -37,6 +37,10 @@ begin
     (removed_member, hh_id, removed_user, 'partner', 'Removed Partner'),
     (hh2_member, hh2_id, hh2_user, 'owner', 'HH2 Owner');
 
+  -- #261: live subscriptions (fail-closed enforcement reads them).
+  perform tests.entitle_household(hh_id);
+  perform tests.entitle_household(hh2_id);
+
   -- Soft-remove the partner.
   update public.household_members
     set removed_at = now(), removed_by = owner_member, removal_reason = 'removed'

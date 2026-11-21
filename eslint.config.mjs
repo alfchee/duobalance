@@ -9,6 +9,46 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
+// Shared ban fragments. Flat-config entries sharing a rule key overwrite
+// each other, so every entry matching billing files must repeat the bans
+// from the entries above it — from these consts, not copy-paste, so the
+// next boundary change is one edit.
+const USE_SERVER_BANS = [
+  {
+    selector: "Literal[value='use server']",
+    message:
+      "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+  },
+  {
+    selector: 'Literal[value="use server"]',
+    message:
+      "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+  },
+];
+
+const ADAPTER_IMPORT_BANS = [
+  {
+    selector: "ImportDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+    message:
+      "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Import the port from @/lib/billing/provider and resolve implementations via @/lib/billing/registry — never import an adapter directly.",
+  },
+  {
+    selector: "ExportNamedDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+    message:
+      "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
+  },
+  {
+    selector: "ExportAllDeclaration[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+    message:
+      "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Re-export the port from @/lib/billing/provider instead — never re-export an adapter.",
+  },
+  {
+    selector: "ImportExpression[source.value=/billing\\/adapters|^\\.\\.?\\/adapters\\//]",
+    message:
+      "Provider adapters are behind the PaymentProvider port (issue #258, ADR 0002). Resolve implementations via @/lib/billing/registry — never dynamically import an adapter.",
+  },
+];
+
 const eslintConfig = [
   // Global ignores first — must precede the next/core-web-vitals config
   // because FlatCompat's extends blocks later re-match *.ts/*.tsx files and
@@ -62,17 +102,65 @@ const eslintConfig = [
           ],
         },
       ],
+      "no-restricted-syntax": ["error", ...USE_SERVER_BANS],
+    },
+  },
+  {
+    // Billing provider boundary (issue #258, ADR 0002). The PaymentProvider
+    // port is the only interface the app knows; vendor types must never leak
+    // past src/lib/billing/adapters/. The registry is the composition root
+    // and the sole exemption.
+    //
+    // Uses no-restricted-syntax rather than no-restricted-imports, which
+    // would clobber the next/headers ban above for overlapping files (flat
+    // config entries sharing a rule key overwrite). The use-server selectors
+    // are repeated here for the same reason — omitting them would unban
+    // server actions for every file this entry matches.
+    // The path pattern matches both aliased/absolute imports
+    // (`@/lib/billing/adapters/stub`) and relative ones (`./adapters/stub`,
+    // `../adapters/stub`) — a domain file next to the adapters dir could
+    // otherwise evade the boundary with a `./adapters/…` import.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["**/lib/billing/adapters/**", "**/lib/billing/registry.ts"],
+    rules: {
+      "no-restricted-syntax": ["error", ...USE_SERVER_BANS, ...ADAPTER_IMPORT_BANS],
+    },
+  },
+  {
+    // Billing clock boundary (issue #259). No shippable billing code reads
+    // the system clock directly: every timestamp under src/lib/billing/
+    // comes from an injected Clock (see clock.ts). `new Date()` with
+    // arguments (fixed dates, defensive copies) is fine — only the
+    // zero-argument read is banned, alongside Date.now().
+    //
+    // Flat-config entries sharing a rule key overwrite, so this entry
+    // repeats the use-server AND adapter selectors from above: without them,
+    // the overlapping files (provider.ts, money.ts) would lose those bans
+    // wherever this entry wins. Test files, clock.ts (the one module allowed
+    // to touch the clock), and the adapter-entry exemptions are ignored
+    // here; boundary.test.ts text-scans those for clock reads instead, and
+    // the adapter entry above still guards tests. Locked by boundary.test.ts.
+    files: ["src/lib/billing/**/*.{ts,tsx}"],
+    ignores: [
+      "**/lib/billing/adapters/**",
+      "**/lib/billing/registry.ts",
+      "**/lib/billing/clock.ts",
+      "**/*.test.ts",
+    ],
+    rules: {
       "no-restricted-syntax": [
         "error",
+        ...USE_SERVER_BANS,
+        ...ADAPTER_IMPORT_BANS,
         {
-          selector: "Literal[value='use server']",
+          selector: 'CallExpression[callee.object.name="Date"][callee.property.name="now"]',
           message:
-            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+            "Billing code must not read the system clock directly (issue #259). Inject a Clock (clock.ts) and call clock.now() instead.",
         },
         {
-          selector: 'Literal[value="use server"]',
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
           message:
-            "Server actions are forbidden (issue #8). Use a route handler under app/api/** instead.",
+            "Billing code must not read the system clock directly (issue #259). Inject a Clock (clock.ts) and call clock.now() instead — new Date() with arguments is fine.",
         },
       ],
     },

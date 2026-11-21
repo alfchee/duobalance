@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -34,10 +34,16 @@ export default function HelpPage() {
   const t = useTranslations("help");
   const locale = useLocale();
   const [query, setQuery] = useState("");
+  // Defer the search term so typing stays responsive while the full-text
+  // filter over every article body runs at a lower priority.
+  const deferredQuery = useDeferredValue(query);
 
-  const isSearching = query.trim().length > 0;
-  const searchResults = isSearching ? searchArticles(locale, query) : [];
-  const groupedArticles = getArticlesByCategory(locale);
+  const isSearching = deferredQuery.trim().length > 0;
+  const searchResults = useMemo(
+    () => (isSearching ? searchArticles(locale, deferredQuery) : []),
+    [isSearching, locale, deferredQuery],
+  );
+  const groupedArticles = useMemo(() => getArticlesByCategory(locale), [locale]);
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6 pb-20 md:pb-6">

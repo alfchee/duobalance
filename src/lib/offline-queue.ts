@@ -42,7 +42,16 @@ type QueuedTransactionWriteRecord = Omit<QueuedTransactionWrite, "payload"> & {
 const DATABASE_NAME = "duobalance";
 const STORE_NAME = "queued-transaction-writes";
 const FEEDBACK_STORE_NAME = "queued-feedback-reports";
-const DATABASE_VERSION = 2;
+// v3 adds the by-scope compound index ([householdId, ownerUserId]) so scoped
+// reads use a key range instead of loading every household's queue.
+const DATABASE_VERSION = 3;
+const SCOPE_INDEX_NAME = "by-scope";
+
+function ensureScopeIndex(store: IDBObjectStore) {
+  if (!store.indexNames.contains(SCOPE_INDEX_NAME)) {
+    store.createIndex(SCOPE_INDEX_NAME, ["householdId", "ownerUserId"], { unique: false });
+  }
+}
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -50,12 +59,17 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onerror = () => reject(request.error);
     request.onupgradeneeded = () => {
       const database = request.result;
-      if (!database.objectStoreNames.contains(STORE_NAME)) {
-        database.createObjectStore(STORE_NAME, { keyPath: "id" });
-      }
-      if (!database.objectStoreNames.contains(FEEDBACK_STORE_NAME)) {
-        database.createObjectStore(FEEDBACK_STORE_NAME, { keyPath: "id" });
-      }
+      const upgradeTx = request.transaction;
+      const scopeStore = (name: string) => {
+        if (!database.objectStoreNames.contains(name)) {
+          const created = database.createObjectStore(name, { keyPath: "id" });
+          ensureScopeIndex(created);
+        } else if (upgradeTx) {
+          ensureScopeIndex(upgradeTx.objectStore(name));
+        }
+      };
+      scopeStore(STORE_NAME);
+      scopeStore(FEEDBACK_STORE_NAME);
     };
     request.onsuccess = () => resolve(request.result);
   });
@@ -103,7 +117,9 @@ export async function getQueuedTransactionWrites({
   ownerUserId,
 }: QueueScope): Promise<QueuedTransactionWrite[]> {
   const writes = await withStore<QueuedTransactionWriteRecord[]>(STORE_NAME, "readonly", (store) =>
-    store.getAll(),
+    store.indexNames.contains(SCOPE_INDEX_NAME)
+      ? store.index(SCOPE_INDEX_NAME).getAll(IDBKeyRange.only([householdId, ownerUserId]))
+      : store.getAll(),
   );
   return writes
     .filter((write) => write.householdId === householdId && write.ownerUserId === ownerUserId)
@@ -137,7 +153,10 @@ export async function getQueuedFeedbackReports({
   const reports = await withStore<QueuedFeedbackReport[]>(
     FEEDBACK_STORE_NAME,
     "readonly",
-    (store) => store.getAll(),
+    (store) =>
+      store.indexNames.contains(SCOPE_INDEX_NAME)
+        ? store.index(SCOPE_INDEX_NAME).getAll(IDBKeyRange.only([householdId, ownerUserId]))
+        : store.getAll(),
   );
   return reports
     .filter((report) => report.householdId === householdId && report.ownerUserId === ownerUserId)
@@ -169,24 +188,28 @@ const MAX_FEEDBACK_ATTEMPTS = 5;
 export async function flushQueuedFeedbackReports(scope: QueueScope): Promise<void> {
   if (typeof window === "undefined" || !navigator.onLine) return;
   const reports = await getQueuedFeedbackReports(scope);
-  for (const report of reports) {
-    if (report.attempts >= MAX_FEEDBACK_ATTEMPTS) {
-      await removeQueuedFeedbackReport(report.id);
-      continue;
-    }
-    try {
-      await apiFetch("/api/feedback", {
-        method: "POST",
-        body: report.payload,
-      });
-      await removeQueuedFeedbackReport(report.id);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "flush failed";
-      await updateQueuedFeedbackReport({
-        ...report,
-        attempts: report.attempts + 1,
-        lastError: msg,
-      });
-    }
+  // Reports are independent POSTs and N is small — flush together instead of
+  // serial round-trips.
+  await Promise.allSettled(reports.map((report) => flushOneFeedbackReport(report)));
+}
+
+async function flushOneFeedbackReport(report: QueuedFeedbackReport): Promise<void> {
+  if (report.attempts >= MAX_FEEDBACK_ATTEMPTS) {
+    await removeQueuedFeedbackReport(report.id);
+    return;
+  }
+  try {
+    await apiFetch("/api/feedback", {
+      method: "POST",
+      body: report.payload,
+    });
+    await removeQueuedFeedbackReport(report.id);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "flush failed";
+    await updateQueuedFeedbackReport({
+      ...report,
+      attempts: report.attempts + 1,
+      lastError: msg,
+    });
   }
 }

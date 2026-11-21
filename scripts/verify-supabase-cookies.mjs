@@ -135,9 +135,20 @@ async function main() {
 
   // 2) Enumerate handlers that read request cookies
   // When adding a new api route that reads cookies, update the allowlist below.
+  // Note: `requireUser` from @/app/api/_shared is the shared cookie-aware
+  // preamble (Tauri guard + not-configured guard + createRouteContext +
+  // JWT verification) — routes using it are cookie-aware without naming
+  // createSupabaseRouteHandler directly.
   const expectedCookieHandlers = [
+    "src/app/api/account/deletion-cancel/route.ts",
+    "src/app/api/account/deletion-confirm/route.ts",
+    "src/app/api/account/deletion-request/route.ts",
+    "src/app/api/account/deletion-status/route.ts",
     "src/app/api/bills/[id]/generate/route.ts",
+    "src/app/api/billing/debug/route.ts",
     "src/app/api/export/route.ts",
+    "src/app/api/exports/route.ts",
+    "src/app/api/exports/[token]/route.ts",
     "src/app/api/feedback/route.ts",
     "src/app/api/guide-event/route.ts",
     "src/app/api/invites/route.ts",
@@ -147,9 +158,28 @@ async function main() {
     "src/app/api/push-subscriptions/route.ts",
   ];
 
+  // Routes allowed to use the service role in a scoped way (on top of
+  // cookie auth, never as an auth bypass). Each scopes every privileged
+  // query to the authenticated caller:
+  // - export: removed-member fallback re-scoped to allowedAccountIds + cutoff
+  // - push-subscriptions: globally-unique endpoint reassignment after ownership check
+  // - account/deletion-*: route-only writes scoped to user.id (no client grant)
+  // - exports (+ [token]): link mint/redeem — mint requires active membership
+  //   + plan gate, redeem re-checks active membership before any data fetch
+  const scopedServiceRoleAllowed = new Set([
+    "src/app/api/export/route.ts",
+    "src/app/api/push-subscriptions/route.ts",
+    "src/app/api/account/deletion-cancel/route.ts",
+    "src/app/api/account/deletion-confirm/route.ts",
+    "src/app/api/account/deletion-request/route.ts",
+    "src/app/api/exports/route.ts",
+    "src/app/api/exports/[token]/route.ts",
+  ]);
+
   const cronHandlers = [
     "src/app/api/cron/fx-refresh/route.ts",
     "src/app/api/cron/generate-bill-instances/route.ts",
+    "src/app/api/cron/purge-accounts/route.ts",
     "src/app/api/cron/purge-households/route.ts",
     "src/app/api/cron/send-bill-reminders/route.ts",
   ];
@@ -160,15 +190,17 @@ async function main() {
       const usesCookies =
         content.includes("createSupabaseRouteHandler") ||
         content.includes("createRouteContext") ||
-        content.includes("createInviteRouteContext");
+        content.includes("createInviteRouteContext") ||
+        content.includes("requireUser");
       if (!usesCookies)
         fail(
           `${p} should use createSupabaseRouteHandler/createRouteContext (cookie-aware) for auth`,
         );
       else pass(`${p}: cookie-aware auth`);
       // Ensure no handler accidentally bypasses auth with bare service role for user data
-      if (p !== "src/app/api/export/route.ts" && p !== "src/app/api/push-subscriptions/route.ts") {
-        // These two are allowed to use service role in scoped ways; others should not import it directly
+      if (!scopedServiceRoleAllowed.has(p)) {
+        // Only the scopedServiceRoleAllowed set may use service role; others
+        // should not import it directly
         if (
           content.includes("createSupabaseServiceRoleClient") &&
           !content.includes("createInviteRouteContext")
@@ -177,6 +209,15 @@ async function main() {
             `${p} imports createSupabaseServiceRoleClient directly — auth must stay cookie-based (RLS), not service-role fallback`,
           );
         }
+      } else if (content.includes("createSupabaseServiceRoleClient")) {
+        // Scoped users must still prove caller scoping (user.id / membership).
+        const scoped =
+          content.includes("user.id") ||
+          content.includes("allowedAccountIds") ||
+          content.includes("membership");
+        if (!scoped) {
+          fail(`${p} uses service role without visible caller scoping (user.id/membership)`);
+        } else pass(`${p}: scoped service-role use (caller-bound)`);
       }
     }
 
@@ -209,16 +250,22 @@ async function main() {
         ...expectedCookieHandlers,
         ...cronHandlers,
         "src/app/api/health/route.ts",
+        // Reviewed non-cookie routes: provider-signed webhook (service role
+        // only, signature verification, no user cookies) — excluded from the
+        // cookie allowlist on purpose.
+        "src/app/api/billing/webhook/route.ts",
       ]);
       for (const route of allRoutes) {
         if (allowlisted.has(route)) continue;
         try {
           const content = read(route);
+          // Match real imports, not prose comments mentioning the identifiers
+          // (e.g. webhook's "no next/headers" note previously false-positived
+          // on a bare substring check).
           const isCookieHandler =
-            content.includes("createSupabaseRouteHandler") ||
-            content.includes("createRouteContext") ||
-            content.includes("createInviteRouteContext") ||
-            content.includes("next/headers");
+            /import\s+[^;]*?(createSupabaseRouteHandler|createRouteContext|createInviteRouteContext|requireUser)/.test(
+              content,
+            ) || /from\s+["']next\/headers["']/.test(content);
           if (isCookieHandler) {
             warn(
               `${route} appears to be a cookie-aware handler but is not in the allowlist — add it to expectedCookieHandlers or cronHandlers in scripts/verify-supabase-cookies.mjs`,

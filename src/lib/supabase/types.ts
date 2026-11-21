@@ -34,6 +34,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          purged_at: string | null
+          requested_at: string
+          scheduled_purge_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          purged_at?: string | null
+          requested_at?: string
+          scheduled_purge_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          purged_at?: string | null
+          requested_at?: string
+          scheduled_purge_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       accounts: {
         Row: {
           balance_mode: string
@@ -122,6 +155,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor: string
+          after_state: Json | null
+          before_state: Json | null
+          created_at: string
+          id: string
+          idempotency_key: string | null
+          reason: string | null
+          target_household: string | null
+        }
+        Insert: {
+          action: string
+          actor: string
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          reason?: string | null
+          target_household?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          reason?: string | null
+          target_household?: string | null
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          note: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          note?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          note?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       bill_instance_deletions: {
         Row: {
@@ -236,6 +329,47 @@ export type Database = {
             columns: ["paid_transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_events: {
+        Row: {
+          id: string
+          payload: Json
+          processed_at: string | null
+          provider: string
+          provider_event_id: string
+          received_at: string
+          subscription_id: string | null
+          type: string
+        }
+        Insert: {
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          provider: string
+          provider_event_id: string
+          received_at?: string
+          subscription_id?: string | null
+          type: string
+        }
+        Update: {
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          provider_event_id?: string
+          received_at?: string
+          subscription_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -560,6 +694,95 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_redemptions: {
+        Row: {
+          coupon_code: string
+          household_id: string
+          id: string
+          redeemed_at: string
+        }
+        Insert: {
+          coupon_code: string
+          household_id: string
+          id?: string
+          redeemed_at?: string
+        }
+        Update: {
+          coupon_code?: string
+          household_id?: string
+          id?: string
+          redeemed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_code_fkey"
+            columns: ["coupon_code"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string | null
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          currency?: string | null
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          updated_at?: string
+          valid_from: string
+          valid_until: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          currency?: string | null
+          discount_type?: string
+          discount_value?: number
+          duration?: string
+          max_redemptions?: number
+          per_household_limit?: number
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupons_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       currencies: {
         Row: {
           code: string
@@ -586,6 +809,163 @@ export type Database = {
           symbol?: string | null
         }
         Relationships: []
+      }
+      data_export_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          format: string
+          household_id: string
+          id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          format?: string
+          household_id: string
+          id?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          format?: string
+          household_id?: string
+          id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_export_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_export_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_export_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deletion_audit_log: {
+        Row: {
+          actor_member_id: string | null
+          event_type: string
+          household_id: string | null
+          id: string
+          occurred_at: string
+          target_member_id: string | null
+        }
+        Insert: {
+          actor_member_id?: string | null
+          event_type: string
+          household_id?: string | null
+          id?: string
+          occurred_at?: string
+          target_member_id?: string | null
+        }
+        Update: {
+          actor_member_id?: string | null
+          event_type?: string
+          household_id?: string | null
+          id?: string
+          occurred_at?: string
+          target_member_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deletion_audit_log_actor_member_id_fkey"
+            columns: ["actor_member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_audit_log_actor_member_id_fkey"
+            columns: ["actor_member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_audit_log_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_audit_log_target_member_id_fkey"
+            columns: ["target_member_id"]
+            isOneToOne: false
+            referencedRelation: "active_membership"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_audit_log_target_member_id_fkey"
+            columns: ["target_member_id"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dunning_deliveries: {
+        Row: {
+          claimed_at: string
+          household_id: string
+          id: string
+          sent_at: string | null
+          stage: string
+          subscription_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          household_id: string
+          id?: string
+          sent_at?: string | null
+          stage: string
+          subscription_id: string
+        }
+        Update: {
+          claimed_at?: string
+          household_id?: string
+          id?: string
+          sent_at?: string | null
+          stage?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_deliveries_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_deliveries_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedback_submissions: {
         Row: {
@@ -1152,6 +1532,59 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_features: {
+        Row: {
+          enabled: boolean
+          feature_key: string
+          limit_value: number | null
+          plan_code: string
+        }
+        Insert: {
+          enabled?: boolean
+          feature_key: string
+          limit_value?: number | null
+          plan_code: string
+        }
+        Update: {
+          enabled?: boolean
+          feature_key?: string
+          limit_value?: number | null
+          plan_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_features_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          code: string
+          created_at: string
+          is_public: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          is_public?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          is_public?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1204,6 +1637,66 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "household_members"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          grace_ends_at: string | null
+          household_id: string
+          id: string
+          plan_code: string
+          provider: string
+          provider_ref: string | null
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          grace_ends_at?: string | null
+          household_id: string
+          id?: string
+          plan_code: string
+          provider?: string
+          provider_ref?: string | null
+          status: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          grace_ends_at?: string | null
+          household_id?: string
+          id?: string
+          plan_code?: string
+          provider?: string
+          provider_ref?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -1576,64 +2069,261 @@ export type Database = {
           },
         ]
       }
-      pg_all_foreign_keys: {
-        Row: {
-          fk_columns: unknown[] | null
-          fk_constraint_name: unknown
-          fk_schema_name: unknown
-          fk_table_name: unknown
-          fk_table_oid: unknown
-          is_deferrable: boolean | null
-          is_deferred: boolean | null
-          match_type: string | null
-          on_delete: string | null
-          on_update: string | null
-          pk_columns: unknown[] | null
-          pk_constraint_name: unknown
-          pk_index_name: unknown
-          pk_schema_name: unknown
-          pk_table_name: unknown
-          pk_table_oid: unknown
-        }
-        Relationships: []
-      }
-      tap_funky: {
-        Row: {
-          args: string | null
-          is_definer: boolean | null
-          is_strict: boolean | null
-          is_visible: boolean | null
-          kind: unknown
-          langoid: unknown
-          name: unknown
-          oid: unknown
-          owner: unknown
-          returns: string | null
-          returns_set: boolean | null
-          schema: unknown
-          volatility: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
-      _cleanup: { Args: never; Returns: boolean }
-      _contract_on: { Args: { "": string }; Returns: unknown }
-      _currtest: { Args: never; Returns: number }
-      _db_privs: { Args: never; Returns: unknown[] }
-      _extensions: { Args: never; Returns: unknown[] }
-      _get: { Args: { "": string }; Returns: number }
-      _get_latest: { Args: { "": string }; Returns: number[] }
-      _get_note: { Args: { "": string }; Returns: string }
-      _is_verbose: { Args: never; Returns: boolean }
-      _prokind: { Args: { p_oid: unknown }; Returns: unknown }
-      _query: { Args: { "": string }; Returns: string }
-      _refine_vol: { Args: { "": string }; Returns: string }
-      _retval: { Args: { "": string }; Returns: string }
-      _table_privs: { Args: never; Returns: unknown[] }
-      _temptypes: { Args: { "": string }; Returns: string }
-      _todo: { Args: never; Returns: string }
       accept_invite: { Args: { p_token: string }; Returns: string }
+      admin_create_coupon: {
+        Args: {
+          p_code: string
+          p_currency: string
+          p_discount_type: string
+          p_discount_value: number
+          p_duration: string
+          p_max_redemptions: number
+          p_per_household_limit: number
+          p_reason: string
+          p_valid_from: string
+          p_valid_until: string
+        }
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }[]
+      }
+      admin_get_billing_events: {
+        Args: { p_household: string }
+        Returns: {
+          id: string
+          processed_at: string
+          provider: string
+          provider_event_id: string
+          received_at: string
+          subscription_id: string
+          type: string
+        }[]
+      }
+      admin_get_coupon: {
+        Args: { p_code: string }
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          minor_unit: number
+          per_household_limit: number
+          redemption_count: number
+          remaining_capacity: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }[]
+      }
+      admin_get_coupon_redemptions: {
+        Args: { p_code: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          coupon_code: string
+          household_id: string
+          redeemed_at: string
+        }[]
+      }
+      admin_get_household: {
+        Args: { p_household: string }
+        Returns: {
+          account_count: number
+          country: string
+          created_at: string
+          current_period_end: string
+          grace_ends_at: string
+          household_id: string
+          household_name: string
+          is_comped: boolean
+          last_activity: string
+          member_count: number
+          plan_code: string
+          subscription_status: string
+          transaction_count: number
+        }[]
+      }
+      admin_get_subscription_history: {
+        Args: { p_household: string }
+        Returns: {
+          created_at: string
+          current_period_end: string
+          grace_ends_at: string
+          id: string
+          plan_code: string
+          provider: string
+          status: string
+          trial_ends_at: string
+          updated_at: string
+        }[]
+      }
+      admin_list_coupons: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          minor_unit: number
+          per_household_limit: number
+          redemption_count: number
+          remaining_capacity: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }[]
+      }
+      admin_list_households: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_status?: string
+        }
+        Returns: {
+          account_count: number
+          country: string
+          created_at: string
+          current_period_end: string
+          grace_ends_at: string
+          household_id: string
+          household_name: string
+          is_comped: boolean
+          last_activity: string
+          member_count: number
+          plan_code: string
+          subscription_status: string
+          transaction_count: number
+        }[]
+      }
+      admin_log_action: {
+        Args: {
+          p_action: string
+          p_after?: Json
+          p_before?: Json
+          p_reason?: string
+          p_target_household?: string
+        }
+        Returns: string
+      }
+      admin_metrics_activation: {
+        Args: never
+        Returns: {
+          active_households: number
+          budget_created: number
+          partner_joined: number
+          setup_and_partner_joined: number
+          setup_complete: number
+          signed_up_users: number
+        }[]
+      }
+      admin_metrics_content_articles: {
+        Args: never
+        Returns: {
+          d100: number
+          d25: number
+          d50: number
+          d75: number
+          readers: number
+          slug: string
+          views: number
+        }[]
+      }
+      admin_metrics_content_sources: {
+        Args: never
+        Returns: {
+          cnt: number
+          src: string
+        }[]
+      }
+      admin_metrics_funnel: {
+        Args: never
+        Returns: {
+          lost_at_step: number
+          name: string
+          reached: number
+          step: number
+        }[]
+      }
+      admin_metrics_retention: {
+        Args: never
+        Returns: {
+          cohort_week: string
+          households: number
+          week_2_active: number
+          week_2_eligible: number
+          week_3_active: number
+          week_3_eligible: number
+          week_4_active: number
+          week_4_eligible: number
+        }[]
+      }
+      admin_metrics_subscriptions: {
+        Args: never
+        Returns: {
+          households: number
+          plan_code: string
+          status: string
+        }[]
+      }
+      admin_override_subscription: {
+        Args: {
+          p_action: string
+          p_confirm?: boolean
+          p_extend_to?: string
+          p_household: string
+          p_idempotency_key?: string
+          p_plan_code?: string
+          p_reason?: string
+        }
+        Returns: {
+          current_period_end: string
+          grace_ends_at: string
+          plan_code: string
+          status: string
+          subscription_id: string
+          trial_ends_at: string
+          updated_at: string
+          was_idempotent: boolean
+        }[]
+      }
+      admin_set_coupon_active: {
+        Args: { p_active: boolean; p_code: string; p_reason: string }
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          duration: string
+          max_redemptions: number
+          per_household_limit: number
+          updated_at: string
+          valid_from: string
+          valid_until: string
+          was_idempotent: boolean
+        }[]
+      }
       assert_same_household: {
         Args: {
           p_actual_household_id: string
@@ -1642,6 +2332,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      backfill_comped_subscriptions: { Args: never; Returns: number }
       bill_instance_generation_bounds: {
         Args: { p_bill_id: string }
         Returns: {
@@ -1669,47 +2360,12 @@ export type Database = {
           responsible_member_id: string
         }[]
       }
+      can_write: { Args: { p_household: string }; Returns: boolean }
       check_member_in_household: {
         Args: { p_household_id: string; p_member_id: string }
         Returns: undefined
       }
       claim_fx_refresh: { Args: { refresh_date: string }; Returns: boolean }
-      col_is_null:
-        | {
-            Args: {
-              column_name: unknown
-              description?: string
-              schema_name: unknown
-              table_name: unknown
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              column_name: unknown
-              description?: string
-              table_name: unknown
-            }
-            Returns: string
-          }
-      col_not_null:
-        | {
-            Args: {
-              column_name: unknown
-              description?: string
-              schema_name: unknown
-              table_name: unknown
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              column_name: unknown
-              description?: string
-              table_name: unknown
-            }
-            Returns: string
-          }
       create_household: {
         Args: {
           p_base_currency: string
@@ -1768,29 +2424,10 @@ export type Database = {
         Args: { p_transaction_id: string }
         Returns: undefined
       }
-      diag:
-        | {
-            Args: { msg: unknown }
-            Returns: {
-              error: true
-            } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
-          }
-        | {
-            Args: { msg: string }
-            Returns: {
-              error: true
-            } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
-          }
-      diag_test_name: { Args: { "": string }; Returns: string }
-      do_tap:
-        | { Args: never; Returns: string[] }
-        | { Args: { "": string }; Returns: string[] }
-      fail:
-        | { Args: never; Returns: string }
-        | { Args: { "": string }; Returns: string }
-      findfuncs: { Args: { "": string }; Returns: string[] }
-      finish: { Args: { exception_on_failure?: boolean }; Returns: string[] }
-      format_type_string: { Args: { "": string }; Returns: string }
+      feature_limit: {
+        Args: { p_feature: string; p_household: string }
+        Returns: number
+      }
       fx_rate_on: {
         Args: {
           p_date: string
@@ -1811,20 +2448,19 @@ export type Database = {
           id: string
         }[]
       }
-      has_unique: { Args: { "": string }; Returns: string }
-      in_todo: { Args: never; Returns: boolean }
-      is_empty: { Args: { "": string }; Returns: string }
+      has_feature: {
+        Args: { p_feature: string; p_household: string }
+        Returns: boolean
+      }
+      household_account_usage: {
+        Args: { p_household: string }
+        Returns: number
+      }
+      household_plan: { Args: { p_household: string }; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
       is_member: { Args: { household: string }; Returns: boolean }
       is_owner: { Args: { household: string }; Returns: boolean }
-      isnt_empty: { Args: { "": string }; Returns: string }
       leave_household: { Args: { p_household: string }; Returns: undefined }
-      lives_ok: { Args: { "": string }; Returns: string }
-      no_plan: { Args: never; Returns: boolean[] }
-      num_failed: { Args: never; Returns: number }
-      os_name: { Args: never; Returns: string }
-      pass:
-        | { Args: never; Returns: string }
-        | { Args: { "": string }; Returns: string }
       pay_bill_instance: {
         Args: {
           p_amount: number
@@ -1835,9 +2471,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      pg_version: { Args: never; Returns: string }
-      pg_version_num: { Args: never; Returns: number }
-      pgtap_version: { Args: never; Returns: number }
+      purge_account_deletion: { Args: { p_request: string }; Returns: Json }
       record_fx_refresh_failure: {
         Args: { failure_error: string; refresh_date: string }
         Returns: undefined
@@ -1845,6 +2479,15 @@ export type Database = {
       record_fx_refresh_success: {
         Args: { refresh_date: string; updated_currencies: number }
         Returns: boolean
+      }
+      redeem_coupon: {
+        Args: { p_code: string; p_household: string }
+        Returns: {
+          coupon_code: string
+          household_id: string
+          redeemed_at: string
+          redemption_id: string
+        }[]
       }
       remove_member: {
         Args: {
@@ -1884,9 +2527,6 @@ export type Database = {
           period_month: string
         }[]
       }
-      runtests:
-        | { Args: never; Returns: string[] }
-        | { Args: { "": string }; Returns: string[] }
       seed_default_categories: {
         Args: { p_household_id: string; p_locale: string }
         Returns: undefined
@@ -1899,19 +2539,6 @@ export type Database = {
         Args: { p_household_id: string; p_locale: string }
         Returns: undefined
       }
-      skip:
-        | { Args: { "": string }; Returns: string }
-        | { Args: { how_many: number; why: string }; Returns: string }
-      throws_ok: { Args: { "": string }; Returns: string }
-      todo:
-        | { Args: { how_many: number }; Returns: boolean[] }
-        | { Args: { how_many: number; why: string }; Returns: boolean[] }
-        | { Args: { why: string }; Returns: boolean[] }
-        | { Args: { how_many: number; why: string }; Returns: boolean[] }
-      todo_end: { Args: never; Returns: boolean[] }
-      todo_start:
-        | { Args: never; Returns: boolean[] }
-        | { Args: { "": string }; Returns: boolean[] }
       transfer_ownership: {
         Args: {
           p_demote_self?: boolean
@@ -1931,9 +2558,7 @@ export type Database = {
       import_file_format: "csv" | "ofx" | "qif"
     }
     CompositeTypes: {
-      _time_trial_type: {
-        a_time: number | null
-      }
+      [_ in never]: never
     }
   }
 }

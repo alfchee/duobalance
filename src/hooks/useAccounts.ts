@@ -48,12 +48,41 @@ function requireSupabase() {
   return supabase;
 }
 
+// Household-wide non-archived account count (#264, review follow-up). The
+// plan-limit trigger counts every non-archived account in the household,
+// but RLS only shows a member shared + own private rows, so a count of
+// visible rows undercounts when private accounts exist on both sides.
+// household_account_usage() is SECURITY DEFINER guarded by is_member and
+// returns the same number the trigger enforces (0 for non-members).
+export function useHouseholdAccountUsage(householdId: string | null) {
+  return useQuery({
+    queryKey: ["household-account-usage", householdId],
+    enabled: !!householdId,
+    queryFn: async (): Promise<number> => {
+      const supabase = createSupabaseBrowser();
+      if (!supabase) throw new Error("supabase not configured");
+      const { data, error } = await supabase.rpc("household_account_usage", {
+        p_household: householdId!,
+      });
+      if (error) throw error;
+      return data ?? 0;
+    },
+  });
+}
+
 // All writes go client→Supabase directly: migration #19 defines per-command RLS
 // policies (accounts_insert/update/delete), so no route handler is involved.
 export function useAccountMutations(householdId: string | null) {
   const queryClient = useQueryClient();
   const key = householdId ? accountsKey(householdId) : null;
-  const invalidate = () => key && queryClient.invalidateQueries({ queryKey: key });
+  // The usage RPC (#264) counts the same rows from the household's side, so
+  // it rides along with the accounts invalidation (create/archive/unarchive
+  // all move it).
+  const invalidate = () => {
+    if (!key) return;
+    queryClient.invalidateQueries({ queryKey: key });
+    queryClient.invalidateQueries({ queryKey: ["household-account-usage", householdId] });
+  };
 
   const create = useMutation({
     mutationFn: async (input: AccountInput) => {
